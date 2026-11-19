@@ -19,6 +19,7 @@
 #include <QItemSelectionModel>
 #include <QAction>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QDoubleSpinBox>
 #include <QDir>
 #include <QDateTime>
@@ -673,6 +674,50 @@ QWidget* MainWindow::createFilterPage()
     sourceForm->addRow(tr("Inductor turns per phase N"), inductorTurns_);
     sourceForm->addRow(tr("B-H curve source"), coreBhSource_);
     advancedLayout->addLayout(sourceForm);
+
+    auto* branchGeometryGroup = new QGroupBox(tr("Independent three-limb geometry overrides"));
+    auto* branchGeometryForm = new QFormLayout(branchGeometryGroup);
+    const auto addGeometryOverride = [branchGeometryForm](
+        const QString& label, QCheckBox*& enabled, QDoubleSpinBox*& value,
+        const QString& suffix, int decimals, double maximum) {
+        auto* row = new QWidget;
+        auto* layout = new QHBoxLayout(row);
+        layout->setContentsMargins(0, 0, 0, 0);
+        enabled = new QCheckBox(QObject::tr("Override"));
+        value = new QDoubleSpinBox;
+        value->setRange(0.0, maximum);
+        value->setDecimals(decimals);
+        value->setSuffix(suffix);
+        value->setEnabled(false);
+        QObject::connect(enabled, &QCheckBox::toggled, value, &QDoubleSpinBox::setEnabled);
+        layout->addWidget(enabled);
+        layout->addWidget(value, 1);
+        branchGeometryForm->addRow(label, row);
+    };
+    const std::array<QString, 3> limbNames{
+        tr("Limb A"), tr("Limb B"), tr("Limb C")
+    };
+    for (std::size_t i = 0; i < limbNames.size(); ++i) {
+        addGeometryOverride(limbNames[i] + tr(" — effective area"),
+            limbAreaOverrideEnabled_[i], limbAreaOverrides_[i], tr(" mm²"), 3, 10000000.0);
+        addGeometryOverride(limbNames[i] + tr(" — mean path"),
+            limbPathOverrideEnabled_[i], limbPathOverrides_[i], tr(" mm"), 2, 10000000.0);
+        addGeometryOverride(limbNames[i] + tr(" — air gap"),
+            limbGapOverrideEnabled_[i], limbGapOverrides_[i], tr(" mm"), 3, 1000000.0);
+    }
+    const std::array<QString, 4> yokeNames{
+        tr("Top A-B"), tr("Top B-C"), tr("Bottom A-B"), tr("Bottom B-C")
+    };
+    for (std::size_t i = 0; i < yokeNames.size(); ++i) {
+        addGeometryOverride(yokeNames[i] + tr(" — effective area"),
+            yokeAreaOverrideEnabled_[i], yokeAreaOverrides_[i], tr(" mm²"), 3, 10000000.0);
+        addGeometryOverride(yokeNames[i] + tr(" — segment path"),
+            yokePathOverrideEnabled_[i], yokePathOverrides_[i], tr(" mm"), 2, 10000000.0);
+    }
+    branchGeometryGroup->setToolTip(tr(
+        "Unchecked fields inherit the corresponding legacy symmetric geometry. "
+        "Checked fields override one branch; an explicitly entered zero air gap is valid."));
+    advancedLayout->addWidget(branchGeometryGroup);
 
     coreBhCurve_ = new QPlainTextEdit;
     coreBhCurve_->setPlaceholderText(
