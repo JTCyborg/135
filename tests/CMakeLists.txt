@@ -120,6 +120,7 @@ add_test(
     NAME Project135SqliteInfrastructureTests
     COMMAND Project135SqliteInfrastructureTests
         ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql
 )
 if(MSVC)
     target_compile_options(Project135SqliteInfrastructureTests PRIVATE /UNDEBUG)
