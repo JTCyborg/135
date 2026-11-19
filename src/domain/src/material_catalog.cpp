@@ -67,7 +67,8 @@ Result<void> CoreMaterialCatalog::add(CoreMaterial material)
     if (materials_.contains(material.id))
         return Result<void>::failure(materialError(
             ErrorCode::InvalidInput, "A material with this ID already exists.", "id"));
-    materials_.emplace(material.id, std::move(material));
+    const auto id = material.id;
+    materials_.emplace(id, std::move(material));
     return Result<void>::success();
 }
 
