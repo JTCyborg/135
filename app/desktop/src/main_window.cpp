@@ -679,6 +679,8 @@ void MainWindow::loadCalculationInputs(int row)
         return;
     }
     const auto input = document.object();
+    if (projectName_) projectName_->setText(QString::fromStdString(record.value()->projectName));
+    projectId_ = QString::fromStdString(record.value()->projectId);
     const auto setNumber = [&input](const char* key, QDoubleSpinBox* control, double divisor = 1.0) {
         if (control && input.value(QLatin1String(key)).isDouble())
             control->setValue(input.value(QLatin1String(key)).toDouble() / divisor);
