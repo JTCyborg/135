@@ -930,6 +930,129 @@ void MainWindow::calculateFilter()
     if (capacitorThermalResult || resistorThermalResult)
         calculationSummary += tr(" Selected material revisions were resolved from the immutable SQLite catalog and evaluated by the thermal bridge.");
     calculationSummary += tr(" Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated.");
+    if (materialStore_) {
+        QJsonObject inputSnapshot;
+        inputSnapshot.insert(QStringLiteral("nominalLineVoltage_V"), nominalVoltage_->value());
+        inputSnapshot.insert(QStringLiteral("fundamentalFrequency_Hz"), fundamentalFrequency_->value());
+        inputSnapshot.insert(QStringLiteral("targetReactivePower_var"), targetReactivePower_->value() * 1000.0);
+        inputSnapshot.insert(QStringLiteral("tuningHarmonicOrder"), tuningHarmonicOrder_->value());
+        inputSnapshot.insert(QStringLiteral("qualityFactor"), qualityFactor_->value());
+        inputSnapshot.insert(QStringLiteral("connection"), filterConnection_->currentText());
+        inputSnapshot.insert(QStringLiteral("sourceResistance_ohm"), sourceResistance);
+        inputSnapshot.insert(QStringLiteral("sourceInductance_H"), sourceInductance);
+        inputSnapshot.insert(QStringLiteral("ambientTemperature_C"),
+            ambientTemperature_ ? ambientTemperature_->value() : 25.0);
+        inputSnapshot.insert(QStringLiteral("capacitorThermalResistance_K_per_W"),
+            capacitorThermalResistance_ ? capacitorThermalResistance_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("capacitorThermalSource"),
+            capacitorThermalSource_ ? capacitorThermalSource_->text() : QString{});
+        inputSnapshot.insert(QStringLiteral("resistorThermalResistance_K_per_W"),
+            resistorThermalResistance_ ? resistorThermalResistance_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("resistorThermalSource"),
+            resistorThermalSource_ ? resistorThermalSource_->text() : QString{});
+        inputSnapshot.insert(QStringLiteral("capacitorRevisionId"),
+            capacitorComponent_ ? capacitorComponent_->currentData().toString() : QString{});
+        inputSnapshot.insert(QStringLiteral("resistorRevisionId"),
+            resistorComponent_ ? resistorComponent_->currentData().toString() : QString{});
+        QJsonArray spectrumSnapshot;
+        if (harmonicSpectrumTable_) {
+            for (int row = 0; row < harmonicSpectrumTable_->rowCount(); ++row) {
+                QJsonObject point;
+                point.insert(QStringLiteral("order"), harmonicSpectrumTable_->item(row, 0)
+                    ? harmonicSpectrumTable_->item(row, 0)->text().toUInt() : 0U);
+                point.insert(QStringLiteral("sequence"), harmonicSpectrumTable_->item(row, 1)
+                    ? harmonicSpectrumTable_->item(row, 1)->text() : QString{});
+                point.insert(QStringLiteral("voltageRms_V"), harmonicSpectrumTable_->item(row, 2)
+                    ? harmonicSpectrumTable_->item(row, 2)->text().toDouble() : 0.0);
+                point.insert(QStringLiteral("phase_deg"), harmonicSpectrumTable_->item(row, 3)
+                    ? harmonicSpectrumTable_->item(row, 3)->text().toDouble() : 0.0);
+                spectrumSnapshot.append(point);
+            }
+        }
+        inputSnapshot.insert(QStringLiteral("harmonicSpectrum"), spectrumSnapshot);
+
+        QJsonArray outputSnapshot;
+        for (int row = 0; row < resultsTable_->rowCount(); ++row) {
+            QJsonObject item;
+            item.insert(QStringLiteral("name"), resultsTable_->item(row, 0)
+                ? resultsTable_->item(row, 0)->text() : QString{});
+            item.insert(QStringLiteral("value"), resultsTable_->item(row, 1)
+                ? resultsTable_->item(row, 1)->text() : QString{});
+            item.insert(QStringLiteral("unit"), resultsTable_->item(row, 2)
+                ? resultsTable_->item(row, 2)->text() : QString{});
+            outputSnapshot.append(item);
+        }
+        QJsonObject resultSnapshot;
+        resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
+        resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
+
+        QJsonObject engineVersions;
+        engineVersions.insert(QStringLiteral("application"), QStringLiteral("Project135-0.1.0"));
+        engineVersions.insert(QStringLiteral("filterSynthesis"), QStringLiteral("filter-synthesis-v1"));
+        engineVersions.insert(QStringLiteral("circuitSolver"), QStringLiteral("circuit-ac-mna-v1"));
+        engineVersions.insert(QStringLiteral("harmonics"), QStringLiteral("harmonics-v1"));
+        engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
+
+        const std::string inputJson = QJsonDocument(inputSnapshot)
+            .toJson(QJsonDocument::Compact).toStdString();
+        const std::string resultJson = QJsonDocument(resultSnapshot)
+            .toJson(QJsonDocument::Compact).toStdString();
+        const std::string versionsJson = QJsonDocument(engineVersions)
+            .toJson(QJsonDocument::Compact).toStdString();
+        const std::string hashEnvelope = "{\\"engineVersions\\":" + versionsJson +
+            ",\\"input\\":" + inputJson + ",\\"result\\":" + resultJson + "}";
+        const auto canonicalEnvelope = p135::infrastructure::sqlite::canonicalizeJson(hashEnvelope);
+        const auto snapshotHash = canonicalEnvelope
+            ? p135::infrastructure::sqlite::sha256Hex(canonicalEnvelope.value())
+            : p135::Result<std::string>::failure(canonicalEnvelope.error());
+
+        if (snapshotHash) {
+            const QString calculationId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+            const QString projectName = projectName_ && !projectName_->text().trimmed().isEmpty()
+                ? projectName_->text().trimmed() : tr("Untitled");
+            p135::infrastructure::sqlite::CalculationRecord snapshot{
+                calculationId.toStdString(),
+                projectId_.toStdString(),
+                projectName.toStdString(),
+                productFamily_ ? productFamily_->currentText().toStdString() : "unknown",
+                inputJson,
+                resultJson,
+                versionsJson,
+                snapshotHash.value(),
+                "desktop-user",
+                QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs).toStdString()
+            };
+            std::vector<p135::infrastructure::sqlite::CalculationMaterialReference> materialReferences;
+            const auto addMaterialReference = [&materialReferences](QComboBox* selector) {
+                if (!selector) return;
+                const QString revisionId = selector->currentData().toString();
+                if (revisionId.isEmpty()) return;
+                materialReferences.push_back({
+                    QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString(),
+                    revisionId.toStdString()
+                });
+            };
+            addMaterialReference(capacitorComponent_);
+            addMaterialReference(resistorComponent_);
+            const auto saved = materialStore_->recordCalculation(snapshot, materialReferences);
+            if (saved) {
+                calculationSummary += tr(" Immutable calculation snapshot saved: %1.")
+                    .arg(calculationId);
+                appendLog(tr("Calculation snapshot %1 saved with %2 exact material revision links.")
+                    .arg(calculationId).arg(materialReferences.size()));
+            } else {
+                calculationSummary += tr(" Calculation snapshot NOT_SAVED: %1.")
+                    .arg(QString::fromStdString(saved.error().message));
+                appendLog(tr("Calculation snapshot save failed: %1")
+                    .arg(QString::fromStdString(saved.error().message)));
+            }
+        } else {
+            calculationSummary += tr(" Calculation snapshot NOT_SAVED: canonical JSON/hash generation failed.");
+        }
+    } else {
+        calculationSummary += tr(" Calculation snapshot NOT_SAVED: material database is unavailable.");
+    }
+
     resultsNote_->setText(calculationSummary);
     status_->setText(tr("Filter synthesized and AC network solved"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
