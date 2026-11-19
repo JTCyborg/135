@@ -54,6 +54,7 @@ private:
     QDoubleSpinBox* capacitorThermalResistance_{};
     QLineEdit* capacitorThermalSource_{};
     QDoubleSpinBox* resistorThermalResistance_{};
+    QDoubleSpinBox* ambientTemperature_{};
     QLineEdit* resistorThermalSource_{};
     QPlainTextEdit* log_{};
     QTableWidget* resultsTable_{};
