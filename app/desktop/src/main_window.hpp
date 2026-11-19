@@ -15,6 +15,7 @@ class QPlainTextEdit;
 class QSpinBox;
 class QTableWidget;
 class QTabWidget;
+class PlotWidget;
 
 namespace p135::infrastructure::sqlite { class SqliteMaterialRevisionStore; }
 
@@ -36,6 +37,7 @@ private:
     void refreshCalculationHistory();
     void showCalculationDetails(int row);
     void loadCalculationInputs(int row);
+    void compareSelectedCalculationGraphs();
     void updateProjectTitle();
     void appendLog(const QString& message);
     void calculateFilter();
@@ -61,6 +63,10 @@ private:
     QLineEdit* resistorThermalSource_{};
     QPlainTextEdit* log_{};
     QTableWidget* resultsTable_{};
+    PlotWidget* resultsBankCurrentPlot_{};
+    PlotWidget* resultsBusImpedancePlot_{};
+    PlotWidget* historyComparisonPlot_{};
+    QComboBox* historyPlotMetric_{};
     QTableWidget* historyTable_{};
     QPlainTextEdit* historyDetails_{};
     QLineEdit* historySearch_{};
