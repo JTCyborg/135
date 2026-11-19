@@ -1,5 +1,6 @@
 add_library(Project135Filter
     src/synthesis.cpp
+    src/network.cpp
 )
 add_library(Project135::Filter ALIAS Project135Filter)
 
@@ -7,7 +8,7 @@ target_include_directories(Project135Filter
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-target_link_libraries(Project135Filter PUBLIC Project135::Core)
+target_link_libraries(Project135Filter PUBLIC Project135::Core Project135::Circuit)
 target_compile_features(Project135Filter PUBLIC cxx_std_20)
 
 if(MSVC)
