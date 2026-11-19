@@ -52,3 +52,14 @@ if(MSVC)
 else()
     target_compile_options(Project135DomainTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135ComponentCatalogTests
+    domain/component_catalog_tests.cpp
+)
+target_link_libraries(Project135ComponentCatalogTests PRIVATE Project135::Domain)
+add_test(NAME Project135ComponentCatalogTests COMMAND Project135ComponentCatalogTests)
+if(MSVC)
+    target_compile_options(Project135ComponentCatalogTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ComponentCatalogTests PRIVATE -UNDEBUG)
+endif()
