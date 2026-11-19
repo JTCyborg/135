@@ -17,7 +17,7 @@ Windows desktop engineering platform for calculation, design, optimization and C
 - Strongly typed SI quantity wrappers, Result/error diagnostics and cooperative cancellation.
 - Initial Qt 6 Widgets executable target: `Project135.exe`.
 - Initial pages: Project, Filter definition, Calculation and 3D CAD placeholder.
-- Draft shunt-filter input controls; inputs are not yet connected to product synthesis.
+- Connected three-phase shunt-filter form and first analytical LC-branch synthesis workflow.
 - Visual Studio 2026 x64 Debug/Release presets, including desktop-enabled variants.
 
 ### P135.002 — Circuit Engine (initial linear MNA)
@@ -31,6 +31,6 @@ Windows desktop engineering platform for calculation, design, optimization and C
 - Three-phase Wye/Delta network definition and parallel single-tuned series-RLC branches.
 - Analytical C/L/damping-R sizing from fundamental-frequency reactive power, tuning order and quality factor.
 - Input validation with structured diagnostics and filter regression tests.
-- UI integration, circuit-network verification and harmonic/resonance analysis remain pending.
+- Qt UI calls the synthesis API and displays C/L/R results; circuit-network verification and harmonic/resonance analysis remain pending.
 
 **Verification status:** the user confirmed the existing desktop Debug and Release builds launch successfully before this milestone. The new filter module and tests have been committed but still require a fresh local Debug/Release build and CTest run. See [filter synthesis scope](docs/P135.003_FILTER_SYNTHESIS.md).
