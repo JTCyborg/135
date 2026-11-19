@@ -372,6 +372,17 @@ Result<void> SqliteMaterialRevisionStore::recordUsage(const MaterialUsageReferen
     return transaction.commit();
 }
 
+Result<bool> SqliteMaterialRevisionStore::isArchived(const std::string& materialId) const
+{
+    Statement query(database_.handle(), "SELECT archived FROM materials WHERE material_id=?1;");
+    if (!query) return Result<bool>::failure(storeError(query.error()));
+    sqlite3_bind_text(query.get(), 1, materialId.c_str(), -1, SQLITE_TRANSIENT);
+    const int rc = sqlite3_step(query.get());
+    if (rc == SQLITE_DONE)
+        return Result<bool>::failure(storeError("Material does not exist.", ErrorCode::MissingRequiredData));
+    if (rc != SQLITE_ROW) return Result<bool>::failure(storeError(query.error()));
+    return Result<bool>::success(sqlite3_column_int(query.get(), 0) != 0);
+}
 Result<bool> SqliteMaterialRevisionStore::isMaterialInUse(const std::string& materialId) const
 {
     Statement query(database_.handle(),
