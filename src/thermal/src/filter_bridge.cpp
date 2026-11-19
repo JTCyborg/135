@@ -1,5 +1,7 @@
 #include "p135/thermal/filter_bridge.hpp"
 
+#include <algorithm>
+
 #include <cmath>
 #include <cstddef>
 #include <string>
