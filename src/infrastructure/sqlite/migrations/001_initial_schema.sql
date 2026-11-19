@@ -67,20 +67,20 @@ CREATE INDEX idx_audit_entity_time
     ON audit_log(entity_type, entity_id, occurred_at_utc);
 
 -- A revision is append-only. Corrections always create a new revision.
-CREATE TRIGGER material_revisions_no_update
+CREATE TRIGGER IF NOT EXISTS material_revisions_no_update
 BEFORE UPDATE ON material_revisions
 BEGIN
     SELECT RAISE(ABORT, 'material revisions are immutable');
 END;
 
-CREATE TRIGGER material_revisions_no_delete
+CREATE TRIGGER IF NOT EXISTS material_revisions_no_delete
 BEFORE DELETE ON material_revisions
 BEGIN
     SELECT RAISE(ABORT, 'material revisions cannot be deleted');
 END;
 
 -- Enforce a linear revision chain even when callers bypass Application use cases.
-CREATE TRIGGER material_revisions_validate_chain
+CREATE TRIGGER IF NOT EXISTS material_revisions_validate_chain
 BEFORE INSERT ON material_revisions
 BEGIN
     SELECT CASE
