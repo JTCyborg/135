@@ -156,8 +156,8 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
         model.manufacturer = manufacturer->text().trimmed().toStdString();
         model.series = series->text().trimmed().toStdString();
         model.partNumber = partNumber->text().trimmed().toStdString();
-        model.dataSource = MaterialDataSource::ManufacturerDatasheet;
-        model.sourceReference = "manufacturer-datasheet";
+        model.dataSource = MaterialDataSource::UserDefined;
+        model.sourceReference = "user-entered-unverified";
         model.datasetRevision = "user-entered";
         model.technology = ResistorTechnology::Wirewound;
         model.resistance = units::Resistance{value1->value()};
@@ -193,7 +193,7 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
     const QJsonObject snapshot{
         {QStringLiteral("schemaVersion"), 1}, {QStringLiteral("component"), component},
         {QStringLiteral("dataQuality"), QJsonObject{
-            {QStringLiteral("sourceStatus"), QStringLiteral("USER_ENTERED_MANUFACTURER_DATA")},
+            {QStringLiteral("sourceStatus"), QStringLiteral("USER_ENTERED_UNVERIFIED")},
             {QStringLiteral("designReleaseStatus"), QStringLiteral("NOT_VERIFIED")},
             {QStringLiteral("notes"), QStringLiteral("Typed structural validation passed. Verify the entered values against the cited current manufacturer datasheet before design release.")}
         }}
