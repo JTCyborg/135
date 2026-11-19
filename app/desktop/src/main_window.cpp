@@ -1,5 +1,7 @@
 #include "main_window.hpp"
 
+#include <QAbstractItemView>
+#include <QAction>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFormLayout>
