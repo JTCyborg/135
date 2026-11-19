@@ -51,6 +51,7 @@
 #include <filesystem>
 #include <complex>
 #include <optional>
+#include <vector>
 
 
 namespace {
@@ -202,13 +203,13 @@ MainWindow::MainWindow(QWidget* parent)
                     database_.close();
                 } else {
                     materialStore_ = std::make_unique<p135::infrastructure::sqlite::SqliteMaterialRevisionStore>(database_);
-                const auto seeded = p135::infrastructure::sqlite::seedStarterMaterialCatalog(
-                    *materialStore_, "Project135 built-in starter catalog",
-                    QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs).toStdString());
-                if (!seeded) {
-                    databaseError_ = QString::fromStdString(seeded.error().message);
-                    materialStore_.reset();
-                }
+                    const auto seeded = p135::infrastructure::sqlite::seedStarterMaterialCatalog(
+                        *materialStore_, "Project135 built-in starter catalog",
+                        QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs).toStdString());
+                    if (!seeded) {
+                        databaseError_ = QString::fromStdString(seeded.error().message);
+                        materialStore_.reset();
+                    }
                 }
             }
         }
@@ -959,7 +960,7 @@ void MainWindow::calculateFilter()
             for (int row = 0; row < harmonicSpectrumTable_->rowCount(); ++row) {
                 QJsonObject point;
                 point.insert(QStringLiteral("order"), harmonicSpectrumTable_->item(row, 0)
-                    ? harmonicSpectrumTable_->item(row, 0)->text().toUInt() : 0U);
+                    ? static_cast<double>(harmonicSpectrumTable_->item(row, 0)->text().toUInt()) : 0.0);
                 point.insert(QStringLiteral("sequence"), harmonicSpectrumTable_->item(row, 1)
                     ? harmonicSpectrumTable_->item(row, 1)->text() : QString{});
                 point.insert(QStringLiteral("voltageRms_V"), harmonicSpectrumTable_->item(row, 2)
