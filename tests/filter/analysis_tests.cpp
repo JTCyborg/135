@@ -61,6 +61,22 @@ int main()
     }
 
     {
+        auto wyeRequest = validRequest();
+        wyeRequest.startFrequency = units::Frequency{100.0};
+        wyeRequest.stopFrequency = units::Frequency{100.0};
+        wyeRequest.points = 3;
+        const auto wye = analyzeFrequencyResponse(wyeRequest);
+        assert(wye);
+
+        auto deltaRequest = wyeRequest;
+        deltaRequest.design.network.connection = Connection::Delta;
+        const auto delta = analyzeFrequencyResponse(deltaRequest);
+        assert(delta);
+        assert(std::abs(delta.value().points[1].filterImpedanceMagnitudeOhm * 3.0 -
+                        wye.value().points[1].filterImpedanceMagnitudeOhm) < 1.0e-9);
+    }
+
+    {
         auto request = validRequest();
         request.logarithmicSpacing = false;
         request.points = 101;
