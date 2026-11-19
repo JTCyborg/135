@@ -107,6 +107,10 @@ Result<void> validate(const MagneticProduct& product)
                 !positive(*layer.dielectricStrength))
                 return invalid("Dielectric strength must be positive when specified.",
                                prefix + ".insulation[" + std::to_string(j) + "].dielectricStrength");
+            if (layer.maximumTemperature &&
+                !positive(*layer.maximumTemperature))
+                return invalid("Maximum insulation temperature must be positive when specified.",
+                               prefix + ".insulation[" + std::to_string(j) + "].maximumTemperature");
         }
 
         if (winding.bobbin.used) {
