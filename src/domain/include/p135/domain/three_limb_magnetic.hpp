@@ -57,6 +57,8 @@ struct ThreeLimbMagneticResult {
 struct ThreeLimbMagneticCycleSamplingRequest {
     ThreeLimbMagneticRequest magnetic;
     std::array<std::complex<double>, 3> phaseRmsPhasors{};
+    // Per-phase DC current bias, added to the instantaneous AC waveform.
+    std::array<units::Current, 3> phaseDcCurrents{};
     double relativePeakTolerance{1.0e-3};
     std::size_t maximumSamples{288}; // supported caps: 144 or 288; first pass is 72
 };
