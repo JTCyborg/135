@@ -11,6 +11,7 @@
 #include "p135/filter/network.hpp"
 #include "p135/circuit/solver.hpp"
 #include "p135/domain/component_catalog.hpp"
+#include "p135/domain/magnetic_circuit.hpp"
 #include "p135/thermal/filter_bridge.hpp"
 
 #include <QAbstractItemView>
@@ -619,10 +620,41 @@ QWidget* MainWindow::createFilterPage()
     sourceForm->addRow(tr("Inductor saturation-current reference (Isat)"),
         inductorSaturationCurrent_);
     sourceForm->addRow(tr("Isat evidence reference"), inductorSaturationSource_);
+
+    coreEffectiveAreaMm2_ = new QDoubleSpinBox;
+    coreEffectiveAreaMm2_->setRange(0.0, 10000000.0);
+    coreEffectiveAreaMm2_->setDecimals(3);
+    coreEffectiveAreaMm2_->setSuffix(tr(" mm²"));
+    coreMeanPathMm_ = new QDoubleSpinBox;
+    coreMeanPathMm_->setRange(0.0, 10000000.0);
+    coreMeanPathMm_->setDecimals(2);
+    coreMeanPathMm_->setSuffix(tr(" mm"));
+    coreAirGapMm_ = new QDoubleSpinBox;
+    coreAirGapMm_->setRange(0.0, 1000000.0);
+    coreAirGapMm_->setDecimals(3);
+    coreAirGapMm_->setSuffix(tr(" mm"));
+    inductorTurns_ = new QSpinBox;
+    inductorTurns_->setRange(0, 1000000);
+    coreBhSource_ = new QLineEdit;
+    coreBhSource_->setPlaceholderText(tr("Manufacturer datasheet / measured B-H report and revision"));
+    sourceForm->addRow(tr("Core effective area Ae"), coreEffectiveAreaMm2_);
+    sourceForm->addRow(tr("Mean magnetic path le"), coreMeanPathMm_);
+    sourceForm->addRow(tr("Total air gap"), coreAirGapMm_);
+    sourceForm->addRow(tr("Inductor turns N"), inductorTurns_);
+    sourceForm->addRow(tr("B-H curve source"), coreBhSource_);
     advancedLayout->addLayout(sourceForm);
 
+    coreBhCurve_ = new QPlainTextEdit;
+    coreBhCurve_->setPlaceholderText(
+        tr("Enter measured B-H points, one per line: H [A/m], B [T]\n"
+           "Example format only (replace with actual material data):\n"
+           "0, 0\n100, 0.5\n1000, 1.0"));
+    coreBhCurve_->setMaximumHeight(125);
+    advancedLayout->addWidget(new QLabel(tr("Core material B-H curve — H [A/m], B [T]")));
+    advancedLayout->addWidget(coreBhCurve_);
+
     auto* saturationHelp = new QLabel(tr(
-        "The red line compares the calculated peak phase current (√2 × RMS) with the entered manufacturer Isat reference. Enter a peak-current rating per phase and its source. This is a reference comparison, not a magnetic-core saturation simulation: DC bias, core geometry, B-H curve and inductance roll-off are not modelled."));
+        "Red line: entered manufacturer peak-current reference. Purple line: calculated B-H knee current from the entered core geometry and measured B-H curve. The B-H model assumes a uniform single magnetic path and no DC bias, fringing or hysteresis. Datasheet DC-bias Isat defined by a specified inductance drop is not directly interchangeable with the B-H knee current."));
     saturationHelp->setWordWrap(true);
     advancedLayout->addWidget(saturationHelp);
 
