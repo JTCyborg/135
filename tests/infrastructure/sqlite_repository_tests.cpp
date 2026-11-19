@@ -57,18 +57,20 @@ int main(int argc, char** argv)
         const auto latestSecond = store.latestRevision("MAT-TEST");
         assert(latestSecond && latestSecond.value() && latestSecond.value()->revisionNumber == 2);
 
-        assert(database.execute(
-            "INSERT INTO material_usage(usage_id,revision_id,product_id,usage_kind,created_at_utc) "
-            "VALUES('USE-1','REV-1','PRODUCT-1','product','2026-01-03T00:00:00Z');"));
-        const auto inUse = store.isMaterialInUse("MAT-TEST");
-        assert(inUse && inUse.value());
-
-        assert(store.setArchived("MAT-TEST", true, "test-author", "2026-01-04T00:00:00Z"));
+        assert(store.setArchived("MAT-TEST", true, "test-author", "2026-01-03T00:00:00Z"));
         assert(!store.appendRevision(MaterialRevision{
             "REV-3", "MAT-TEST", 3, std::string("REV-2"), "core-material", "{}",
             first.contentHash, "test://datasheet", "dataset-3", "test-author",
-            "2026-01-05T00:00:00Z"
+            "2026-01-04T00:00:00Z"
         }));
+        assert(store.setArchived("MAT-TEST", false, "test-author", "2026-01-05T00:00:00Z"));
+
+        assert(database.execute(
+            "INSERT INTO material_usage(usage_id,revision_id,product_id,usage_kind,created_at_utc) "
+            "VALUES('USE-1','REV-1','PRODUCT-1','product','2026-01-06T00:00:00Z');"));
+        const auto inUse = store.isMaterialInUse("MAT-TEST");
+        assert(inUse && inUse.value());
+        assert(!store.setArchived("MAT-TEST", true, "test-author", "2026-01-07T00:00:00Z"));
         assert(!database.execute("UPDATE material_revisions SET payload_json='changed';"));
     }
 
