@@ -1,1 +1,22 @@
+# Local developer-specific CMake presets
 /CMakeUserPresets.json
+
+# Visual Studio local workspace/cache
+/.vs/
+
+# CMake generated build trees and binaries
+/out/
+/build/
+/cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# IDE and OS noise
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+.DS_Store
+Thumbs.db
