@@ -12,8 +12,8 @@ target_include_directories(Project135InfrastructureSqlite
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sqlite/include>
 )
 target_link_libraries(Project135InfrastructureSqlite
-    PUBLIC Project135::Core
-    PRIVATE unofficial::sqlite3::sqlite3 OpenSSL::Crypto
+    PUBLIC Project135::Core unofficial::sqlite3::sqlite3
+    PRIVATE OpenSSL::Crypto
 )
 target_compile_features(Project135InfrastructureSqlite PUBLIC cxx_std_20)
 
