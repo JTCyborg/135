@@ -2,6 +2,7 @@
 #include "material_database_widget.hpp"
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
+#include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
 #include "p135/filter/synthesis.hpp"
 #include "p135/filter/network.hpp"
@@ -64,6 +65,13 @@ MainWindow::MainWindow(QWidget* parent)
                 database_.close();
             } else {
                 materialStore_ = std::make_unique<p135::infrastructure::sqlite::SqliteMaterialRevisionStore>(database_);
+                const auto seeded = p135::infrastructure::sqlite::seedStarterMaterialCatalog(
+                    *materialStore_, "Project135 built-in starter catalog",
+                    QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs).toStdString());
+                if (!seeded) {
+                    databaseError_ = QString::fromStdString(seeded.error().message);
+                    materialStore_.reset();
+                }
             }
         }
     }
