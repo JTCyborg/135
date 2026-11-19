@@ -3,6 +3,7 @@
 #include "p135/application/material_revision_use_cases.hpp"
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateTime>
