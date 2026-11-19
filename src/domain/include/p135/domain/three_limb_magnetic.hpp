@@ -12,11 +12,21 @@ namespace p135::domain {
 /// branch is mirrored for negative H; each limb has one winding and the two
 /// yoke levels each contain two inter-limb segments.
 struct ThreeLimbMagneticGeometry {
+    // Legacy symmetric defaults. Per-branch values below override these
+    // when non-zero, preserving existing callers and saved inputs.
     units::Area limbEffectiveArea;
     units::Length limbMeanPath;
     units::Length limbAirGap;
     units::Area yokeEffectiveArea;
     units::Length yokeSegmentPath;
+
+    // Optional independent geometry: limbs A/B/C; yokes top AB, top BC,
+    // bottom AB, bottom BC. A zero entry inherits its legacy scalar value.
+    std::array<units::Area, 3> limbEffectiveAreas{};
+    std::array<units::Length, 3> limbMeanPaths{};
+    std::array<units::Length, 3> limbAirGaps{};
+    std::array<units::Area, 4> yokeEffectiveAreas{};
+    std::array<units::Length, 4> yokeSegmentPaths{};
 };
 
 struct ThreeLimbMagneticRequest {
