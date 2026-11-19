@@ -75,6 +75,18 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
     if (!validation) return Result<TopoDS_Shape>::failure(validation.error());
 
     const auto& g = geometry.core;
+    for (std::size_t i = 0; i < g.joints.size(); ++i) {
+        if (g.joints[i].construction == domain::CoreJointType::StepLap) {
+            Error error;
+            error.code = ErrorCode::UnsupportedConfiguration;
+            error.message = "Step-Lap physical packet geometry is validated but not yet supported by the OCCT builder.";
+            error.diagnostics.push_back(Diagnostic{
+                Severity::Error, "CAD_STEP_LAP_NOT_IMPLEMENTED", error.message,
+                "core.joints[" + std::to_string(i) + "]", std::nullopt, std::nullopt
+            });
+            return Result<TopoDS_Shape>::failure(std::move(error));
+        }
+    }
     const double width = g.coreOverallWidth.si();
     const double height = g.coreOverallHeight.si();
     // Derive limb centers from the explicit physical limb and window widths.
