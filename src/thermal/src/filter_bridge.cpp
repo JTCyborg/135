@@ -104,13 +104,21 @@ Result<CapacitorThermalResult> analyzeFilterCapacitorThermals(
             return Result<CapacitorThermalResult>::failure(
                 invalid("Aggregate capacitor RMS current is invalid.", field + ".rippleCurrent"));
 
+        const bool componentEvidenceVerified =
+            capacitor->dataSource == domain::MaterialDataSource::ManufacturerDatasheet ||
+            capacitor->dataSource == domain::MaterialDataSource::Measurement;
+
         CapacitorThermalAssessment assessment;
         assessment.branchId = assignment.branchId;
         assessment.capacitorComponentId = capacitor->id;
         assessment.rippleCurrentRmsA = rmsCurrent;
         assessment.ratedRippleCurrent = capacitor->rippleCurrent;
 
-        if (!capacitor->rippleCurrent || capacitor->rippleCurrent->si() <= 0.0) {
+        if (!componentEvidenceVerified) {
+            assessment.rippleCurrentStatus = AssessmentStatus::NotVerified;
+            assessment.rippleCurrentExplanation =
+                "NOT_VERIFIED: component values are user-defined and have not been verified against a datasheet or measurement.";
+        } else if (!capacitor->rippleCurrent || capacitor->rippleCurrent->si() <= 0.0) {
             assessment.rippleCurrentStatus = AssessmentStatus::NotVerified;
             assessment.rippleCurrentExplanation =
                 "NOT_VERIFIED: a positive datasheet/measurement ripple-current rating is required.";
@@ -141,8 +149,10 @@ Result<CapacitorThermalResult> analyzeFilterCapacitorThermals(
         thermalNode.temperatureLimitSourceReference = capacitor->sourceReference +
             " (dataset revision " + capacitor->datasetRevision + ")";
 
-        if (!lossAvailable)
+        if (!lossAvailable || !componentEvidenceVerified) {
             thermalNode.lossSourceReference.clear();
+            thermalNode.temperatureLimitSourceReference.clear();
+        }
 
         SteadyStateRequest singleNodeRequest;
         singleNodeRequest.ambientTemperature = ambientTemperature;
@@ -224,6 +234,8 @@ Result<SteadyStateResult> analyzeDampingResistorThermals(
         node.thermalResistanceSourceReference = assignment.thermalResistanceSourceReference;
         node.temperatureLimitSourceReference = resistor->sourceReference +
             " (dataset revision " + resistor->datasetRevision + ")";
+        if (resistor->dataSource == domain::MaterialDataSource::UserDefined)
+            node.temperatureLimitSourceReference.clear();
         thermalRequest.nodes.push_back(std::move(node));
     }
 
