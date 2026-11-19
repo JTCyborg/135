@@ -105,7 +105,4 @@ BEGIN
     END;
 END;
 
-INSERT INTO schema_migrations(version, name, checksum_sha256, applied_at_utc)
-VALUES (1, 'initial_material_revision_store',
-        'MIGRATION_CHECKSUM_SET_BY_MIGRATION_RUNNER',
-        strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+-- The migration runner records version, checksum and applied_at_utc after this DDL succeeds.
