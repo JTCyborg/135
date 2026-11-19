@@ -1,4 +1,5 @@
 #include "p135/domain/magnetic_product.hpp"
+#include "p135/domain/magnetic_circuit.hpp"
 #include "p135/domain/material_catalog.hpp"
 
 #include <cassert>
@@ -46,6 +47,53 @@ MagneticProduct validProduct()
 int main()
 {
     assert(validate(validProduct()));
+
+    {
+        MagneticCircuitRequest request;
+        request.core.effectiveArea = units::Area{4.0e-4};
+        request.core.meanMagneticPath = units::Length{0.25};
+        request.core.airGap = units::Length{1.0e-3};
+        request.turns = 100;
+        request.current = units::Current{1.0};
+        request.material = validProduct().coreMaterial;
+        request.material.bhCurve = {
+            {units::MagneticFieldStrength{0.0}, units::FluxDensity{0.0}},
+            {units::MagneticFieldStrength{100.0}, units::FluxDensity{0.5}},
+            {units::MagneticFieldStrength{1000.0}, units::FluxDensity{1.0}}
+        };
+        const auto operating = analyzeMagneticCircuit(request);
+        assert(operating);
+        assert(operating.value().withinBhCurveRange);
+        assert(operating.value().fluxDensity.si() > 0.0);
+        assert(operating.value().flux.si() > 0.0);
+        assert(operating.value().secantInductance.si() > 0.0);
+        assert(operating.value().differentialInductance.si() > 0.0);
+        assert(operating.value().kneeFluxDensity.has_value());
+        assert(operating.value().kneeCurrent.has_value());
+        assert(operating.value().kneeUtilization.has_value());
+        assert(std::abs(operating.value().kneeFluxDensity->si() - 0.5) < 1.0e-12);
+
+        auto atKnee = request;
+        atKnee.current = *operating.value().kneeCurrent;
+        const auto kneeResult = analyzeMagneticCircuit(atKnee);
+        assert(kneeResult);
+        assert(std::abs(kneeResult.value().fluxDensity.si() - 0.5) < 1.0e-9);
+
+        auto beyondCurve = request;
+        beyondCurve.current = units::Current{11.0};
+        const auto outOfDomain = analyzeMagneticCircuit(beyondCurve);
+        assert(!outOfDomain);
+        assert(outOfDomain.error().code == ErrorCode::ModelOutOfDomain);
+
+        auto invalidRatio = request;
+        invalidRatio.kneeSlopeRatio = 1.0;
+        assert(!analyzeMagneticCircuit(invalidRatio));
+
+        auto invalidTurns = request;
+        invalidTurns.turns = 0;
+        assert(!analyzeMagneticCircuit(invalidTurns));
+    }
+
 
     CoreMaterialCatalog catalog;
     auto material = validProduct().coreMaterial;
