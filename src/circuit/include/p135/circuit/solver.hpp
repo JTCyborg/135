@@ -111,4 +111,26 @@ struct ElectricalResult {
 Result<ElectricalResult> solve(const Study& study,
                                const CancellationToken& cancellation = {});
 
+enum class SweepSpacing { Linear, Logarithmic };
+
+struct FrequencySweep {
+    Study study;
+    units::Frequency startFrequency{units::Frequency{0.0}};
+    units::Frequency stopFrequency{units::Frequency{0.0}};
+    std::size_t points{101};
+    SweepSpacing spacing{SweepSpacing::Logarithmic};
+};
+
+struct FrequencySweepPoint {
+    units::Frequency frequency{units::Frequency{0.0}};
+    ElectricalResult result;
+};
+
+struct FrequencyResponse {
+    std::vector<FrequencySweepPoint> points;
+};
+
+Result<FrequencyResponse> sweep(const FrequencySweep& request,
+                                const CancellationToken& cancellation = {});
+
 } // namespace p135::circuit
