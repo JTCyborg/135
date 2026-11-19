@@ -63,8 +63,10 @@ int main()
         const auto wye = analyzeHarmonics(validRequest(Connection::Wye));
         const auto delta = analyzeHarmonics(validRequest(Connection::Delta));
         assert(wye && delta);
-        assert(delta.value().branchStresses.front().totalRmsCurrentA >
-               wye.value().branchStresses.front().totalRmsCurrentA);
+        const double currentRatio =
+            delta.value().branchStresses.front().totalRmsCurrentA /
+            wye.value().branchStresses.front().totalRmsCurrentA;
+        assert(std::abs(currentRatio - 1.0 / std::sqrt(3.0)) < 1.0e-6);
     }
     {
         auto request = validRequest();
