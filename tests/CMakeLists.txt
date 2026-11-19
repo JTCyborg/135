@@ -66,8 +66,9 @@ endif()
 
 add_executable(Project135ThermalTests
     thermal/steady_state_tests.cpp
+    thermal/filter_bridge_tests.cpp
 )
-target_link_libraries(Project135ThermalTests PRIVATE Project135::Thermal)
+target_link_libraries(Project135ThermalTests PRIVATE Project135::Thermal Project135::Filter Project135::Domain)
 add_test(NAME Project135ThermalTests COMMAND Project135ThermalTests)
 if(MSVC)
     target_compile_options(Project135ThermalTests PRIVATE /UNDEBUG)
