@@ -1545,6 +1545,22 @@ void MainWindow::calculateFilter()
     addResult(tr("Peak three-phase bank current in sweep"), peakBankCurrent, tr("A RMS"));
     addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
+    if (magneticCircuitBase && magneticSweepValid && !magneticFluxDensityPoints.empty()) {
+        const auto peak = std::max_element(magneticFluxDensityPoints.begin(),
+            magneticFluxDensityPoints.end(), [](const auto& a, const auto& b) {
+                return a.second < b.second;
+            });
+        addResult(tr("Peak core flux density in sweep"), peak->second, tr("T"));
+        addResult(tr("Frequency at peak core flux density"), peak->first, tr("Hz"));
+        if (magneticKneeFluxDensityT)
+            addResult(tr("B-H knee flux density (criterion)"), *magneticKneeFluxDensityT, tr("T"));
+        if (magneticKneeCurrentA)
+            addResult(tr("B-H knee current (criterion)"), *magneticKneeCurrentA, tr("A peak / phase"));
+        else
+            appendLog(tr("B-H knee NOT_VERIFIED: supplied curve has no segment meeting the configured slope-drop criterion."));
+    } else if (!magneticModelWarning.isEmpty()) {
+        appendLog(magneticModelWarning);
+    }
 
     if (impedanceResult) {
         addResult(tr("Source/filter impedance scan points"),
