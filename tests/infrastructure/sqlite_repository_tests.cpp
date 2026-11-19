@@ -107,6 +107,20 @@ int main(int argc, char** argv)
         assert(inUse && inUse.value());
         assert(!store.setArchived("MAT-TEST", true, "test-author", "2026-01-07T00:00:00Z"));
         assert(!database.execute("UPDATE material_revisions SET payload_json='changed';"));
+        RestoreMaterialRevision restore(store);
+        const auto restored = restore.execute(
+            "REV-1", "REV-3", "integration-test", "2026-01-08T00:00:00Z");
+        assert(restored);
+        assert(restored.value().revisionNumber == 3);
+        assert(restored.value().parentRevisionId == std::optional<std::string>{"REV-2"});
+        assert(restored.value().payload == first.payload);
+        assert(restored.value().sourceReference == "restore:REV-1");
+        const auto restoredLatest = store.latestRevision("MAT-TEST");
+        assert(restoredLatest && restoredLatest.value());
+        assert(restoredLatest.value()->revisionId == "REV-3");
+        const auto restoredHistory = store.revisionHistory("MAT-TEST");
+        assert(restoredHistory && restoredHistory.value().size() == 3);
+
     }
 
     {
