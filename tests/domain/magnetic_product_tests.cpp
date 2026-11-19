@@ -64,6 +64,43 @@ int main()
     missingProvenance.sourceReference.clear();
     assert(!validate(missingProvenance));
 
+    ConductorMaterialCatalog conductorCatalog;
+    ConductorMaterial copper;
+    copper.id = "COND-CU-TEST";
+    copper.grade = "Test copper";
+    copper.sourceReference = "test fixture";
+    copper.datasetRevision = "1";
+    copper.resistivityAt20C = units::Resistivity{1.72e-8};
+    copper.temperatureCoefficient = units::TemperatureCoefficient{0.0039};
+    copper.density = units::Density{8960.0};
+    assert(conductorCatalog.add(copper));
+    assert(conductorCatalog.size() == 1);
+    assert(conductorCatalog.find("COND-CU-TEST") != nullptr);
+    assert(!conductorCatalog.add(copper));
+    auto invalidConductor = copper;
+    invalidConductor.id = "COND-BAD";
+    invalidConductor.resistivityAt20C = units::Resistivity{-1.0};
+    assert(!validate(invalidConductor));
+
+    InsulationMaterialCatalog insulationCatalog;
+    InsulationMaterial insulation;
+    insulation.id = "INS-TEST";
+    insulation.grade = "Test film";
+    insulation.sourceReference = "test fixture";
+    insulation.datasetRevision = "1";
+    insulation.thermalClass = InsulationThermalClass::F;
+    insulation.maximumTemperature = units::TemperatureKelvin{428.15};
+    insulation.dielectricStrength = units::ElectricFieldStrength{1.0e7};
+    insulation.relativePermittivity = 3.2;
+    assert(insulationCatalog.add(insulation));
+    assert(insulationCatalog.size() == 1);
+    assert(insulationCatalog.find("INS-TEST") != nullptr);
+    assert(!insulationCatalog.add(insulation));
+    auto missingInsulationData = insulation;
+    missingInsulationData.id = "INS-MISSING";
+    missingInsulationData.dielectricStrength = units::ElectricFieldStrength{};
+    assert(!validate(missingInsulationData));
+
     auto missingBh = validProduct();
     missingBh.coreMaterial.bhCurve.clear();
     const auto missingBhResult = validate(missingBh);
