@@ -24,7 +24,7 @@ ReactorPhysicalGeometry validGeometry()
     g.core.yokeDepths.fill(units::Length{0.08});
     g.core.limbCenterSpacings = {units::Length{0.10}, units::Length{0.10}, units::Length{0.20}};
     g.core.coreOverallHeight = units::Length{0.20};
-    g.core.coreOverallWidth = units::Length{0.30};
+    g.core.coreOverallWidth = units::Length{0.24};
     g.core.laminationConstruction = "test packet construction";
     for (auto& b : g.bobbins) {
         b.innerWidth = units::Length{0.035}; b.innerHeight = units::Length{0.11};
@@ -56,5 +56,9 @@ int main()
     auto invalid = geometry;
     invalid.core.coreOverallHeight = units::Length{0.05};
     assert(!p135::cad::buildThreeLimbCoreShape(invalid));
+
+    auto invalidWindowStack = geometry;
+    invalidWindowStack.core.windowWidths[0] = units::Length{0.05};
+    assert(!p135::cad::buildThreeLimbCoreShape(invalidWindowStack));
     return 0;
 }
