@@ -33,8 +33,8 @@ struct InsulationMaterial {
     units::TemperatureKelvin maximumTemperature;
     units::ElectricFieldStrength dielectricStrength;
     // Optional properties remain explicitly unavailable when not supplied.
-    double relativePermittivity{};
-    units::Density density;
+    std::optional<double> relativePermittivity;
+    std::optional<units::Density> density;
 };
 
 /// Missing loss data means core-loss calculations are NOT_VERIFIED, never zero-loss.
