@@ -9,6 +9,7 @@
 
 class QComboBox;
 class QDoubleSpinBox;
+class QLineEdit;
 class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
@@ -35,6 +36,7 @@ private:
     void updateProjectTitle();
     void appendLog(const QString& message);
     void calculateFilter();
+    void refreshComponentSelectors();
 
     QLineEdit* projectName_{};
     QComboBox* productFamily_{};
@@ -47,6 +49,12 @@ private:
     QDoubleSpinBox* sourceResistance_{};
     QDoubleSpinBox* sourceInductance_{};
     QTableWidget* harmonicSpectrumTable_{};
+    QComboBox* capacitorComponent_{};
+    QComboBox* resistorComponent_{};
+    QDoubleSpinBox* capacitorThermalResistance_{};
+    QLineEdit* capacitorThermalSource_{};
+    QDoubleSpinBox* resistorThermalResistance_{};
+    QLineEdit* resistorThermalSource_{};
     QPlainTextEdit* log_{};
     QTableWidget* resultsTable_{};
     QLabel* resultsNote_{};
