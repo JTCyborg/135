@@ -77,26 +77,38 @@ Result<void> MigrationRunner::apply(const Migration& migration)
     if (!transaction.active())
         return Result<void>::failure(migrationError("Cannot begin migration transaction."));
 
+    // Check the ledger before executing DDL: replaying indexes/triggers is not idempotent.
+    sqlite3_stmt* tableQuery = nullptr;
+    if (sqlite3_prepare_v2(database_.handle(),
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations';",
+        -1, &tableQuery, nullptr) != SQLITE_OK)
+        return Result<void>::failure(migrationError(sqlite3_errmsg(database_.handle())));
+    const bool ledgerExists = sqlite3_step(tableQuery) == SQLITE_ROW;
+    sqlite3_finalize(tableQuery);
+
+    if (ledgerExists) {
+        sqlite3_stmt* appliedQuery = nullptr;
+        if (sqlite3_prepare_v2(database_.handle(),
+            "SELECT checksum_sha256 FROM schema_migrations WHERE version=?1;",
+            -1, &appliedQuery, nullptr) != SQLITE_OK)
+            return Result<void>::failure(migrationError(sqlite3_errmsg(database_.handle())));
+        sqlite3_bind_int(appliedQuery, 1, migration.version);
+        const int appliedResult = sqlite3_step(appliedQuery);
+        if (appliedResult == SQLITE_ROW) {
+            const auto* stored = reinterpret_cast<const char*>(sqlite3_column_text(appliedQuery, 0));
+            const std::string storedHash = stored ? stored : "";
+            sqlite3_finalize(appliedQuery);
+            if (storedHash != hash.value())
+                return Result<void>::failure(migrationError("Applied migration checksum mismatch."));
+            return transaction.commit();
+        }
+        sqlite3_finalize(appliedQuery);
+        if (appliedResult != SQLITE_DONE)
+            return Result<void>::failure(migrationError(sqlite3_errmsg(database_.handle())));
+    }
+
     auto schema = database_.execute(sql);
     if (!schema) return schema;
-
-    sqlite3_stmt* query = nullptr;
-    const char* selectSql = "SELECT checksum_sha256 FROM schema_migrations WHERE version = ?1;";
-    if (sqlite3_prepare_v2(database_.handle(), selectSql, -1, &query, nullptr) != SQLITE_OK)
-        return Result<void>::failure(migrationError(sqlite3_errmsg(database_.handle())));
-    sqlite3_bind_int(query, 1, migration.version);
-    const int queryResult = sqlite3_step(query);
-    if (queryResult == SQLITE_ROW) {
-        const auto* stored = reinterpret_cast<const char*>(sqlite3_column_text(query, 0));
-        const std::string storedHash = stored ? stored : "";
-        sqlite3_finalize(query);
-        if (storedHash != hash.value())
-            return Result<void>::failure(migrationError("Applied migration checksum mismatch."));
-        return transaction.commit();
-    }
-    sqlite3_finalize(query);
-    if (queryResult != SQLITE_DONE)
-        return Result<void>::failure(migrationError(sqlite3_errmsg(database_.handle())));
 
     sqlite3_stmt* insert = nullptr;
     const char* insertSql =
