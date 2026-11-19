@@ -42,6 +42,17 @@ else()
     target_compile_options(Project135FilterNetworkTests PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135FilterAnalysisTests
+    filter/analysis_tests.cpp
+)
+target_link_libraries(Project135FilterAnalysisTests PRIVATE Project135::Filter)
+add_test(NAME Project135FilterAnalysisTests COMMAND Project135FilterAnalysisTests)
+if(MSVC)
+    target_compile_options(Project135FilterAnalysisTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135FilterAnalysisTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135DomainTests
     domain/magnetic_product_tests.cpp
 )
