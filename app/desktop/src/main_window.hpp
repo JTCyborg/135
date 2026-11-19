@@ -58,6 +58,8 @@ private:
     QDoubleSpinBox* coreEffectiveAreaMm2_{};
     QDoubleSpinBox* coreMeanPathMm_{};
     QDoubleSpinBox* coreAirGapMm_{};
+    QDoubleSpinBox* coreYokeEffectiveAreaMm2_{};
+    QDoubleSpinBox* coreYokeSegmentPathMm_{};
     QSpinBox* inductorTurns_{};
     QPlainTextEdit* coreBhCurve_{};
     QLineEdit* coreBhSource_{};
@@ -73,6 +75,7 @@ private:
     QTableWidget* resultsTable_{};
     PlotWidget* resultsBankCurrentPlot_{};
     PlotWidget* resultsBusImpedancePlot_{};
+    PlotWidget* resultsCoreFluxPlot_{};
     PlotWidget* historyComparisonPlot_{};
     QComboBox* historyPlotMetric_{};
     QTableWidget* historyTable_{};
