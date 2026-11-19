@@ -127,6 +127,10 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
             return Result<HarmonicAnalysisResult>::failure(
                 invalid("Filter bank admittance is outside the supported numeric domain."));
 
+        // For a balanced, transposed network the positive- and negative-sequence
+        // per-phase driving-point impedances are identical in this scalar model.
+        // Sequence is retained in the input contract for traceability; zero sequence
+        // is intentionally unsupported because its path depends on grounding/topology.
         const Complex sourceImpedance{sourceR, omega * sourceL};
         const Complex divider = Complex{1.0, 0.0} + sourceImpedance * bankAdmittance;
         if (!finite(divider) || std::abs(divider) <= std::numeric_limits<double>::min())
@@ -181,7 +185,19 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
             resistorVoltageSquared[index] += resistorVoltage * resistorVoltage;
             resistorLoss[index] += currentMagnitude * currentMagnitude *
                                    branch.dampingResistance.si();
+
+            if (!std::isfinite(branchCurrentSquared[index]) ||
+                !std::isfinite(capacitorVoltageSquared[index]) ||
+                !std::isfinite(inductorVoltageSquared[index]) ||
+                !std::isfinite(resistorVoltageSquared[index]) ||
+                !std::isfinite(resistorLoss[index]))
+                return Result<HarmonicAnalysisResult>::failure(
+                    invalid("Aggregated component stress is outside the supported numeric domain."));
         }
+        if (!std::isfinite(harmonicBusVoltageSquared) ||
+            !std::isfinite(harmonicSourceCurrentSquared))
+            return Result<HarmonicAnalysisResult>::failure(
+                invalid("Aggregated harmonic distortion is outside the supported numeric domain."));
     }
 
     if (!positiveFinite(fundamentalBusVoltage) ||
@@ -195,6 +211,10 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
                            fundamentalBusVoltage;
     result.sourceCurrentThd = std::sqrt(harmonicSourceCurrentSquared) /
                               fundamentalSourceCurrent;
+    if (!std::isfinite(result.busVoltageThd) ||
+        !std::isfinite(result.sourceCurrentThd))
+        return Result<HarmonicAnalysisResult>::failure(
+            invalid("Calculated THD is outside the supported numeric domain."));
 
     for (std::size_t index = 0; index < request.design.branches.size(); ++index) {
         result.branchStresses.push_back(BranchHarmonicStress{
