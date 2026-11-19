@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QString>
 
 #include "p135/infrastructure/sqlite/sqlite_database.hpp"
 
