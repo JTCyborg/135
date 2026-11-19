@@ -15,7 +15,7 @@ using p135::application::RestoreMaterialRevision;
 
 int main(int argc, char** argv)
 {
-    assert(argc == 2);
+    assert(argc == 3);
     const auto canonical = canonicalizeJson("{ \"b\": 2, \"a\": 1 }");
     assert(canonical && canonical.value() == "{\"a\":1,\"b\":2}");
     assert(!canonicalizeJson("{"));
@@ -38,6 +38,9 @@ int main(int argc, char** argv)
         const Migration migration{1, "initial_material_revision_store", argv[1]};
         assert(runner.apply(migration));
         assert(runner.apply(migration));
+        const Migration calculationMigration{2, "calculation_snapshots", argv[2]};
+        assert(runner.apply(calculationMigration));
+        assert(runner.apply(calculationMigration));
 
         SqliteMaterialRevisionStore store(database);
         MaterialRevision first{
@@ -109,10 +112,35 @@ int main(int argc, char** argv)
             "USE-1", "REV-1", MaterialUsageKind::Product, "PRODUCT-1",
             "2026-01-06T00:00:00Z", "test-author"
         }));
-        assert(store.recordUsage(MaterialUsageReference{
-            "USE-2", "REV-2", MaterialUsageKind::Calculation, "CALC-1",
-            "2026-01-06T00:00:01Z", "test-author"
+
+        const std::string calculationPayload =
+            "{\\"engineVersions\\":{\\"filter\\":\\"harmonics-v1\\",\\"thermal\\":\\"thermal-v1\\"},"
+            "\\"input\\":{\\"frequencyHz\\":50,\\"voltageV\\":400},"
+            "\\"result\\":{\\"status\\":\\"NOT_VERIFIED\\"}}";
+        const auto calculationHash = sha256Hex(calculationPayload);
+        assert(calculationHash);
+        CalculationRecord calculation{
+            "CALC-1", "PROJECT-1", "Integration test project", "shunt-passive-filter",
+            "{\\"frequencyHz\\":50,\\"voltageV\\":400}",
+            "{\\"status\\":\\"NOT_VERIFIED\\"}",
+            "{\\"filter\\":\\"harmonics-v1\\",\\"thermal\\":\\"thermal-v1\\"}",
+            calculationHash.value(), "test-author", "2026-01-06T00:00:01Z"
+        };
+        assert(store.recordCalculation(calculation, {
+            {"USE-2", "REV-2"}
         }));
+        const auto savedCalculation = store.findCalculation("CALC-1");
+        assert(savedCalculation && savedCalculation.value());
+        assert(savedCalculation.value()->contentHash == calculation.contentHash);
+        assert(savedCalculation.value()->inputJson == calculation.inputJson);
+        assert(!store.findCalculation("MISSING-CALC").value());
+
+        auto brokenCalculation = calculation;
+        brokenCalculation.calculationId = "CALC-ROLLBACK";
+        assert(!store.recordCalculation(brokenCalculation, {
+            {"USE-ROLLBACK", "REV-1"}, {"USE-MISSING", "REV-MISSING"}
+        }));
+        assert(!store.findCalculation("CALC-ROLLBACK").value());
         const auto inUse = store.isMaterialInUse("MAT-TEST");
         assert(inUse && inUse.value());
         assert(!store.setArchived("MAT-TEST", true, "test-author", "2026-01-07T00:00:00Z"));
