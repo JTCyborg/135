@@ -16,6 +16,7 @@ domain::ResistorComponent makeResistor()
     resistor.series = "Power series";
     resistor.partNumber = "R100W";
     resistor.dataSource = domain::MaterialDataSource::ManufacturerDatasheet;
+    resistor.evidenceVerified = true;
     resistor.sourceReference = "datasheet:example-resistor";
     resistor.datasetRevision = "rev-4";
     resistor.technology = domain::ResistorTechnology::Wirewound;
@@ -76,6 +77,20 @@ int main()
     assert(userEnteredResistorResult.value().nodes.front().status ==
            AssessmentStatus::NotVerified);
 
+    auto unreviewedResistor = resistor;
+    unreviewedResistor.id = "RES-CATALOG-NOT-REVIEWED";
+    unreviewedResistor.evidenceVerified = false;
+    domain::ResistorCatalog unreviewedResistorCatalog;
+    assert(unreviewedResistorCatalog.add(unreviewedResistor));
+    auto unreviewedAssignment = assignment;
+    unreviewedAssignment.resistorComponentId = unreviewedResistor.id;
+    const auto unreviewedResistorResult = analyzeDampingResistorThermals(
+        harmonic, {unreviewedAssignment}, unreviewedResistorCatalog,
+        units::TemperatureKelvin{298.15}, "study-catalog-unreviewed");
+    assert(unreviewedResistorResult);
+    assert(unreviewedResistorResult.value().nodes.front().status ==
+           AssessmentStatus::NotVerified);
+
     assignment.thermalResistanceKPerW.reset();
     const auto incomplete = analyzeDampingResistorThermals(
         harmonic, {assignment}, catalog, units::TemperatureKelvin{298.15}, "study-2026-11-19-r1");
@@ -114,6 +129,7 @@ int main()
         capacitor.series = "Film series";
         capacitor.partNumber = "MKP-100UF";
         capacitor.dataSource = domain::MaterialDataSource::ManufacturerDatasheet;
+        capacitor.evidenceVerified = true;
         capacitor.sourceReference = "datasheet:example-film-cap";
         capacitor.datasetRevision = "cap-rev-7";
         capacitor.dielectric = domain::CapacitorDielectric::PolypropyleneFilm;
@@ -220,6 +236,21 @@ int main()
         assert(constantNotTrusted);
         assert(!constantNotTrusted.value().capacitors.front().esrLoss);
         assert(constantNotTrusted.value().capacitors.front().thermal.status == AssessmentStatus::NotVerified);
+
+        auto unreviewedCap = capacitor;
+        unreviewedCap.id = "CAP-CATALOG-NOT-REVIEWED";
+        unreviewedCap.evidenceVerified = false;
+        domain::CapacitorCatalog unreviewedCapCatalog;
+        assert(unreviewedCapCatalog.add(unreviewedCap));
+        capAssignment.capacitorComponentId = unreviewedCap.id;
+        const auto unreviewedCapResult = analyzeFilterCapacitorThermals(
+            harmonicWithCapCurrents, {capAssignment}, unreviewedCapCatalog,
+            units::TemperatureKelvin{298.15}, "harmonics-unreviewed-catalog");
+        assert(unreviewedCapResult);
+        assert(unreviewedCapResult.value().capacitors.front().rippleCurrentStatus ==
+               AssessmentStatus::NotVerified);
+        assert(unreviewedCapResult.value().capacitors.front().thermal.status ==
+               AssessmentStatus::NotVerified);
 
         auto userEnteredCap = capacitor;
         userEnteredCap.id = "CAP-USER-ENTERED";
