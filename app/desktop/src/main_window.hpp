@@ -55,6 +55,12 @@ private:
     QDoubleSpinBox* sourceInductance_{};
     QDoubleSpinBox* inductorSaturationCurrent_{};
     QLineEdit* inductorSaturationSource_{};
+    QDoubleSpinBox* coreEffectiveAreaMm2_{};
+    QDoubleSpinBox* coreMeanPathMm_{};
+    QDoubleSpinBox* coreAirGapMm_{};
+    QSpinBox* inductorTurns_{};
+    QPlainTextEdit* coreBhCurve_{};
+    QLineEdit* coreBhSource_{};
     QTableWidget* harmonicSpectrumTable_{};
     QComboBox* capacitorComponent_{};
     QComboBox* resistorComponent_{};
