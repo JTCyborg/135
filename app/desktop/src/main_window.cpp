@@ -2,6 +2,7 @@
 #include "material_database_widget.hpp"
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
+#include "p135/infrastructure/sqlite/canonical_json.hpp"
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
 #include "p135/filter/synthesis.hpp"
@@ -41,6 +42,7 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QUuid>
 
 #include <cstdint>
 #include <cstddef>
@@ -165,6 +167,7 @@ bool resistorFromRevision(const p135::application::MaterialRevision& revision,
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
+    projectId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
     setWindowTitle("Project135 — Engineering Design");
     resize(1280, 820);
 
@@ -214,6 +217,7 @@ MainWindow::MainWindow(QWidget* parent)
     auto* fileMenu = menuBar()->addMenu(tr("&File"));
     auto* newProject = fileMenu->addAction(tr("New project"));
     connect(newProject, &QAction::triggered, this, [this] {
+        projectId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
         projectName_->clear();
         productFamily_->setCurrentIndex(0);
         updateProjectTitle();
