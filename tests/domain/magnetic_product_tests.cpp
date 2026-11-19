@@ -74,6 +74,10 @@ int main()
     copper.temperatureCoefficient = units::TemperatureCoefficient{0.0039};
     copper.density = units::Density{8960.0};
     assert(conductorCatalog.add(copper));
+    auto negativeTemperatureCoefficient = copper;
+    negativeTemperatureCoefficient.id = "COND-NTC-TEST";
+    negativeTemperatureCoefficient.temperatureCoefficient = units::TemperatureCoefficient{-0.002};
+    assert(validate(negativeTemperatureCoefficient));
     assert(conductorCatalog.size() == 1);
     assert(conductorCatalog.find("COND-CU-TEST") != nullptr);
     assert(!conductorCatalog.add(copper));
@@ -93,6 +97,15 @@ int main()
     insulation.dielectricStrength = units::ElectricFieldStrength{1.0e7};
     insulation.relativePermittivity = 3.2;
     assert(insulationCatalog.add(insulation));
+    auto unspecifiedOptionalProperties = insulation;
+    unspecifiedOptionalProperties.id = "INS-OPTIONAL-ABSENT";
+    unspecifiedOptionalProperties.relativePermittivity.reset();
+    unspecifiedOptionalProperties.density.reset();
+    assert(validate(unspecifiedOptionalProperties));
+    auto invalidPermittivity = insulation;
+    invalidPermittivity.id = "INS-BAD-PERMITTIVITY";
+    invalidPermittivity.relativePermittivity = 0.0;
+    assert(!validate(invalidPermittivity));
     assert(insulationCatalog.size() == 1);
     assert(insulationCatalog.find("INS-TEST") != nullptr);
     assert(!insulationCatalog.add(insulation));
