@@ -14,6 +14,7 @@
 #include "p135/thermal/filter_bridge.hpp"
 
 #include <QAbstractItemView>
+#include <QItemSelectionModel>
 #include <QAction>
 #include <QComboBox>
 #include <QDoubleSpinBox>
