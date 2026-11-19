@@ -314,7 +314,7 @@ bool capacitorFromRevision(const p135::application::MaterialRevision& revision,
             p135::units::Resistance{point.value(QStringLiteral("esr_ohm")).toDouble()}
         });
     }
-    const double esl = number("esl_H", number("equivalentSeriesInductance_H"));
+    const double esl = numberOr("esl_H", number("equivalentSeriesInductance_H"));
     if (esl > 0.0) capacitor.esl = p135::units::Inductance{esl};
     const double ripple = number("rippleCurrent_A");
     if (ripple > 0.0) capacitor.rippleCurrent = p135::units::Current{ripple};
@@ -1765,11 +1765,11 @@ void MainWindow::calculateFilter()
         addResult(tr("Capacitor ripple current"),
                   assessment.rippleCurrentRmsA, tr("A RMS"));
         addTextResult(tr("Capacitor ripple-current status"),
-            assessment.rippleCurrentExplanation);
+            QString::fromStdString(assessment.rippleCurrentExplanation));
         if (assessment.thermal.estimatedTemperature)
             addResult(tr("Capacitor estimated temperature"),
                       assessment.thermal.estimatedTemperature->si() - 273.15, tr("°C"));
-        addTextResult(tr("Capacitor thermal status"), assessment.thermal.explanation);
+        addTextResult(tr("Capacitor thermal status"), QString::fromStdString(assessment.thermal.explanation));
     }
     if (resistorThermalResult && !resistorThermalResult->nodes.empty()) {
         const auto& assessment = resistorThermalResult->nodes.front();
@@ -1779,7 +1779,7 @@ void MainWindow::calculateFilter()
         if (assessment.estimatedTemperature)
             addResult(tr("Damping resistor estimated temperature"),
                       assessment.estimatedTemperature->si() - 273.15, tr("°C"));
-        addTextResult(tr("Damping resistor thermal status"), assessment.explanation);
+        addTextResult(tr("Damping resistor thermal status"), QString::fromStdString(assessment.explanation));
     }
 
     if (harmonicResult) {
@@ -2097,8 +2097,8 @@ void MainWindow::calculateFilter()
             .toJson(QJsonDocument::Compact).toStdString();
         const std::string versionsJson = QJsonDocument(engineVersions)
             .toJson(QJsonDocument::Compact).toStdString();
-        const std::string hashEnvelope = "{\\"engineVersions\\":" + versionsJson +
-            ",\\"input\\":" + inputJson + ",\\"result\\":" + resultJson + "}";
+        const std::string hashEnvelope = "{\"engineVersions\":" + versionsJson +
+            ",\"input\":" + inputJson + ",\"result\":" + resultJson + "}";
         const auto canonicalEnvelope = p135::infrastructure::sqlite::canonicalizeJson(hashEnvelope);
         const auto snapshotHash = canonicalEnvelope
             ? p135::infrastructure::sqlite::sha256Hex(canonicalEnvelope.value())
