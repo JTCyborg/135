@@ -234,6 +234,10 @@ MainWindow::MainWindow(QWidget* parent)
     viewMenu->addAction(tr("Results"), this, [this] { tabs_->setCurrentIndex(2); });
     viewMenu->addAction(tr("CAD"), this, [this] { tabs_->setCurrentIndex(3); });
     viewMenu->addAction(tr("Material database"), this, [this] { tabs_->setCurrentIndex(4); });
+    viewMenu->addAction(tr("Calculation history"), this, [this] {
+        tabs_->setCurrentIndex(5);
+        refreshCalculationHistory();
+    });
 
     auto* toolbar = addToolBar(tr("Main"));
     toolbar->addAction(tr("New project"), this, [this] {
@@ -243,6 +247,10 @@ MainWindow::MainWindow(QWidget* parent)
     });
     toolbar->addAction(tr("Project"), this, [this] { tabs_->setCurrentIndex(0); });
     toolbar->addAction(tr("Materials"), this, [this] { tabs_->setCurrentIndex(4); });
+    toolbar->addAction(tr("History"), this, [this] {
+        tabs_->setCurrentIndex(5);
+        refreshCalculationHistory();
+    });
     toolbar->addAction(tr("Calculate"), this, [this] {
         calculateFilter();
         tabs_->setCurrentIndex(2);
@@ -254,6 +262,7 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createResultsPage(), tr("Calculation"));
     tabs_->addTab(createCadPage(), tr("3D CAD"));
     tabs_->addTab(createMaterialsPage(), tr("Materials"));
+    tabs_->addTab(createHistoryPage(), tr("Calculation history"));
     setCentralWidget(tabs_);
 
     status_ = new QLabel(tr("Ready — filter synthesis available"));
@@ -496,6 +505,150 @@ QWidget* MainWindow::createMaterialsPage()
     layout->addWidget(message);
     layout->addStretch();
     return page;
+}
+
+QWidget* MainWindow::createHistoryPage()
+{
+    auto* page = new QWidget;
+    auto* layout = new QVBoxLayout(page);
+    auto* heading = new QLabel(tr("Calculation history"));
+    heading->setStyleSheet("font-size: 20px; font-weight: 600;");
+    layout->addWidget(heading);
+
+    auto* searchRow = new QHBoxLayout;
+    historySearch_ = new QLineEdit;
+    historySearch_->setPlaceholderText(tr("Search by calculation ID, project, product family or author"));
+    auto* refresh = new QPushButton(tr("Refresh"));
+    searchRow->addWidget(historySearch_, 1);
+    searchRow->addWidget(refresh);
+    layout->addLayout(searchRow);
+
+    historyTable_ = new QTableWidget(0, 5);
+    historyTable_->setHorizontalHeaderLabels({
+        tr("Created (UTC)"), tr("Project"), tr("Product"), tr("Calculation ID"), tr("Author")
+    });
+    historyTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    historyTable_->horizontalHeader()->setStretchLastSection(true);
+    historyTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    historyTable_->setSelectionMode(QAbstractItemView::SingleSelection);
+    historyTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    layout->addWidget(historyTable_, 2);
+
+    historyDetails_ = new QPlainTextEdit;
+    historyDetails_->setReadOnly(true);
+    historyDetails_->setPlaceholderText(tr("Select a calculation to inspect its immutable inputs, results, engine versions and exact material revisions."));
+    historyDetails_->setMinimumHeight(240);
+    layout->addWidget(historyDetails_, 3);
+
+    connect(refresh, &QPushButton::clicked, this, [this] { refreshCalculationHistory(); });
+    connect(historySearch_, &QLineEdit::returnPressed, this, [this] { refreshCalculationHistory(); });
+    connect(historyTable_, &QTableWidget::currentCellChanged, this,
+        [this](int currentRow, int, int, int) { showCalculationDetails(currentRow); });
+    refreshCalculationHistory();
+    return page;
+}
+
+void MainWindow::refreshCalculationHistory()
+{
+    if (!historyTable_ || !historyDetails_) return;
+    historyTable_->setRowCount(0);
+    historyDetails_->clear();
+    if (!materialStore_) {
+        historyDetails_->setPlainText(tr("Calculation history is unavailable: %1").arg(databaseError_));
+        return;
+    }
+    const auto records = materialStore_->listCalculations(
+        historySearch_ ? historySearch_->text().trimmed().toStdString() : std::string{}, 500, 0);
+    if (!records) {
+        historyDetails_->setPlainText(tr("Cannot load calculation history: %1")
+            .arg(QString::fromStdString(records.error().message)));
+        return;
+    }
+    for (const auto& record : records.value()) {
+        const int row = historyTable_->rowCount();
+        historyTable_->insertRow(row);
+        const QStringList values{
+            QString::fromStdString(record.createdAtUtc),
+            QString::fromStdString(record.projectName),
+            QString::fromStdString(record.productFamily),
+            QString::fromStdString(record.calculationId),
+            QString::fromStdString(record.author)
+        };
+        for (int column = 0; column < values.size(); ++column) {
+            auto* item = new QTableWidgetItem(values[column]);
+            if (column == 3)
+                item->setData(Qt::UserRole, QString::fromStdString(record.calculationId));
+            historyTable_->setItem(row, column, item);
+        }
+    }
+    if (historyTable_->rowCount() > 0) {
+        historyTable_->selectRow(0);
+        showCalculationDetails(0);
+    } else {
+        historyDetails_->setPlainText(tr("No saved calculations match this search."));
+    }
+    status_->setText(tr("Calculation history: %1 snapshot(s)").arg(records.value().size()));
+}
+
+void MainWindow::showCalculationDetails(int row)
+{
+    if (!historyTable_ || !historyDetails_ || !materialStore_ ||
+        row < 0 || row >= historyTable_->rowCount()) return;
+    const auto* idItem = historyTable_->item(row, 3);
+    if (!idItem) return;
+    const auto record = materialStore_->findCalculation(
+        idItem->data(Qt::UserRole).toString().toStdString());
+    if (!record || !record.value()) {
+        historyDetails_->setPlainText(record
+            ? tr("Calculation snapshot no longer exists.")
+            : tr("Cannot read calculation: %1").arg(QString::fromStdString(record.error().message)));
+        return;
+    }
+    const auto& value = *record.value();
+    QString details;
+    details += tr("Calculation: %1\nProject: %2 (%3)\nProduct family: %4\n"
+                  "Created (UTC): %5\nAuthor: %6\nSHA-256: %7\n")
+        .arg(QString::fromStdString(value.calculationId),
+             QString::fromStdString(value.projectName),
+             QString::fromStdString(value.projectId),
+             QString::fromStdString(value.productFamily),
+             QString::fromStdString(value.createdAtUtc),
+             QString::fromStdString(value.author),
+             QString::fromStdString(value.contentHash));
+    const auto prettyJson = [](const std::string& json) {
+        const auto document = QJsonDocument::fromJson(QByteArray::fromStdString(json));
+        return document.isNull() ? QString::fromStdString(json)
+            : QString::fromUtf8(document.toJson(QJsonDocument::Indented));
+    };
+    details += tr("\n=== INPUT PARAMETERS ===\n%1").arg(prettyJson(value.inputJson));
+    details += tr("\n=== RESULTS ===\n%1").arg(prettyJson(value.resultJson));
+    details += tr("\n=== ENGINE VERSIONS ===\n%1").arg(prettyJson(value.engineVersionsJson));
+    details += tr("\n=== EXACT MATERIAL REVISIONS ===\n");
+    const auto links = materialStore_->calculationMaterials(value.calculationId);
+    if (!links) {
+        details += tr("Cannot load material links: %1").arg(QString::fromStdString(links.error().message));
+    } else if (links.value().empty()) {
+        details += tr("No material revisions were selected for this calculation.\n");
+    } else {
+        for (const auto& link : links.value()) {
+            const auto revision = materialStore_->findRevision(link.revisionId);
+            if (!revision || !revision.value()) {
+                details += tr("Revision %1: unavailable (%2)\n")
+                    .arg(QString::fromStdString(link.revisionId),
+                         revision ? tr("not found") : QString::fromStdString(revision.error().message));
+                continue;
+            }
+            details += tr("Usage %1 — material %2, revision %3 (r%4), type %5, dataset %6, source %7\n")
+                .arg(QString::fromStdString(link.usageId),
+                     QString::fromStdString(revision.value()->materialId),
+                     QString::fromStdString(revision.value()->revisionId))
+                .arg(revision.value()->revisionNumber)
+                .arg(QString::fromStdString(revision.value()->recordType),
+                     QString::fromStdString(revision.value()->datasetRevision),
+                     QString::fromStdString(revision.value()->sourceReference));
+        }
+    }
+    historyDetails_->setPlainText(details);
 }
 
 QWidget* MainWindow::createCadPage()
