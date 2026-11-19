@@ -1,11 +1,13 @@
 #pragma once
 
-#include "p135/domain/magnetic_product.hpp"
+#include "p135/core/result.hpp"
+#include "p135/core/units.hpp"
 
 #include <cstddef>
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace p135::domain {
 
@@ -17,6 +19,12 @@ enum class CapacitorDielectric {
 enum class CapacitorTechnology {
     MetallizedFilm, FilmFoil, CeramicMLCC, CeramicDisc,
     AluminumElectrolytic, TantalumElectrolytic, Other
+};
+
+/// Datasheet/measurement ESR point. Curves are interpolated log-log and never extrapolated.
+struct CapacitorEsrPoint {
+    units::Frequency frequency;
+    units::Resistance esr;
 };
 
 /// A physical capacitor component. Optional frequency/thermal characteristics
@@ -37,7 +45,8 @@ struct CapacitorComponent {
     units::Voltage ratedVoltage; // DC or AC rating as identified by voltageRatingIsAC
     bool voltageRatingIsAC{false};
 
-    std::optional<units::Resistance> esr;
+    std::optional<units::Resistance> esr; // frequency-independent only when source explicitly says so
+    std::vector<CapacitorEsrPoint> esrFrequencyCurve;
     std::optional<units::Inductance> esl;
     std::optional<double> dissipationFactor;
     std::optional<units::Current> rippleCurrent;
@@ -74,6 +83,10 @@ struct ResistorComponent {
 
 [[nodiscard]] Result<void> validate(const CapacitorComponent& capacitor);
 [[nodiscard]] Result<void> validate(const ResistorComponent& resistor);
+
+/// Log-log interpolation between adjacent supplied ESR points. No extrapolation.
+[[nodiscard]] Result<units::Resistance> interpolateCapacitorEsr(
+    const CapacitorComponent& capacitor, units::Frequency frequency);
 
 class CapacitorCatalog {
 public:
