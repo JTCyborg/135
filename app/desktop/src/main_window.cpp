@@ -181,7 +181,7 @@ protected:
             painter.setPen(QColor(180, 35, 35));
             painter.drawText(QRectF(area.left() + 5, y - 19, area.width() - 10, 17),
                 Qt::AlignRight | Qt::AlignVCenter,
-                tr("Inductor Isat limit: %1 A peak").arg(*saturationPeakCurrentA_, 0, 'g', 5));
+                tr("Entered Isat reference: %1 A peak").arg(*saturationPeakCurrentA_, 0, 'g', 5));
         }
 
         const std::vector<QColor> colors{QColor(35, 105, 190), QColor(205, 70, 55),
@@ -1498,6 +1498,16 @@ void MainWindow::calculateFilter()
     if (capacitorThermalResult || resistorThermalResult)
         calculationSummary += tr(" Selected material revisions were resolved from the immutable SQLite catalog and evaluated by the thermal bridge.");
     calculationSummary += tr(" Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated.");
+    if (!impedanceResult)
+        calculationSummary += tr(" Resonance-frequency zones NOT_VERIFIED: source impedance R/L is required.");
+    else if (resonanceBands.empty())
+        calculationSummary += tr(" No bounded -3 dB parallel-resonance zone was identified within the scanned frequency range.");
+    else
+        calculationSummary += tr(" Shaded resonance zones show the -3 dB bandwidth around local bus-impedance peaks.");
+    if (!saturationPeakReference)
+        calculationSummary += tr(" Inductor saturation comparison NOT_VERIFIED: enter the manufacturer's peak Isat per phase and its evidence reference.");
+    else
+        calculationSummary += tr(" Red dashed line is the entered Isat reference; calculated phase peak current is sqrt(2) times the AC RMS branch current. This is a rating comparison, not a magnetic saturation model.");
     std::vector<PlotBand> resonanceBands;
     if (impedanceResult) {
         const auto& points = impedanceResult->points;
