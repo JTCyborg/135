@@ -32,6 +32,7 @@ struct DensityTag {};
 struct ResistivityTag {};
 struct TemperatureCoefficientTag {};
 struct ElectricFieldStrengthTag {};
+struct CoreLossDensityTag {};
 struct TemperatureKelvinTag {};
 struct TemperatureDifferenceTag {};
 struct FluxDensityTag {};
@@ -54,6 +55,7 @@ using Density = Quantity<DensityTag>;                         // kg/m^3
 using Resistivity = Quantity<ResistivityTag>;                 // ohm*m
 using TemperatureCoefficient = Quantity<TemperatureCoefficientTag>; // 1/K
 using ElectricFieldStrength = Quantity<ElectricFieldStrengthTag>; // V/m
+using CoreLossDensity = Quantity<CoreLossDensityTag>;             // W/kg
 using TemperatureKelvin = Quantity<TemperatureKelvinTag>;     // K absolute
 using TemperatureDifference = Quantity<TemperatureDifferenceTag>; // K delta
 using FluxDensity = Quantity<FluxDensityTag>;                 // T
