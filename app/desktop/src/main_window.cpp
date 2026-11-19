@@ -1,6 +1,8 @@
 #include "main_window.hpp"
 
 #include "p135/filter/synthesis.hpp"
+#include "p135/filter/network.hpp"
+#include "p135/circuit/solver.hpp"
 
 #include <QAbstractItemView>
 #include <QAction>
@@ -255,6 +257,30 @@ void MainWindow::calculateFilter()
         return;
     }
 
+    const auto circuitResult = p135::filter::buildCircuit(result.value());
+    if (!circuitResult) {
+        const QString message = QString::fromStdString(circuitResult.error().message);
+        resultsNote_->setText(tr("Circuit generation failed: %1").arg(message));
+        status_->setText(tr("Circuit generation failed"));
+        appendLog(tr("Circuit generation failed: %1").arg(message));
+        QMessageBox::warning(this, tr("Circuit generation failed"), message);
+        return;
+    }
+
+    const auto electricalResult = p135::circuit::solve(p135::circuit::Study{
+        circuitResult.value(),
+        p135::circuit::AnalysisKind::AcSteadyState,
+        p135::units::Frequency{fundamentalFrequency_->value()}
+    });
+    if (!electricalResult) {
+        const QString message = QString::fromStdString(electricalResult.error().message);
+        resultsNote_->setText(tr("AC network solution failed: %1").arg(message));
+        status_->setText(tr("AC network solution failed"));
+        appendLog(tr("AC network solution failed: %1").arg(message));
+        QMessageBox::warning(this, tr("Circuit solver failed"), message);
+        return;
+    }
+
     const auto& branch = result.value().branches.front();
     const auto addResult = [this](const QString& name, double value, const QString& unit) {
         const int row = resultsTable_->rowCount();
@@ -273,9 +299,21 @@ void MainWindow::calculateFilter()
     addResult(tr("Target three-phase reactive power"), branch.targetReactivePower.si() / 1000.0,
               tr("kvar"));
     addResult(tr("Branch quality factor"), branch.qualityFactor, tr("—"));
+    addResult(tr("MNA filter-bank active power"), electricalResult.value().powerBalance.totalActivePowerW, tr("W"));
+    addResult(tr("MNA filter-bank reactive power"),
+              [&electricalResult] {
+                  double q = 0.0;
+                  for (std::size_t i = 3; i < electricalResult.value().branches.size(); ++i)
+                      q += electricalResult.value().branches[i].complexPowerVA.imag();
+                  return q;
+              }(), tr("var"));
+    addResult(tr("MNA matrix order"),
+              static_cast<double>(electricalResult.value().solver.matrixOrder), tr("unknowns"));
+    addResult(tr("MNA relative residual"),
+              electricalResult.value().solver.relativeResidual, tr("—"));
 
-    resultsNote_->setText(tr("Analytical ideal-component sizing completed. This is not a complete engineering approval: capacitor/reactor stress ratings, network impedance, harmonic spectrum, resonance interaction, losses, temperature and standards checks are not yet evaluated."));
-    status_->setText(tr("Single-tuned branch synthesized"));
+    resultsNote_->setText(tr("LC branch synthesis and balanced three-phase AC MNA verification completed at the fundamental frequency. The MNA circuit currently uses an ideal balanced voltage source and ideal R/L/C components. Capacitor/reactor stress ratings, source impedance, harmonic spectrum, resonance interaction, losses, temperature and standards checks are not yet evaluated."));
+    status_->setText(tr("Filter synthesized and AC network solved"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
         .arg(targetReactivePower_->value())
         .arg(tuningHarmonicOrder_->value())
