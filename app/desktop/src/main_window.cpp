@@ -21,6 +21,7 @@
 #include <QDateTime>
 #include <QCoreApplication>
 #include <QStandardPaths>
+#include <QSettings>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
@@ -168,7 +169,12 @@ bool resistorFromRevision(const p135::application::MaterialRevision& revision,
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
-    projectId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    QSettings settings;
+    projectId_ = settings.value(QStringLiteral("project/currentId")).toString();
+    if (projectId_.isEmpty()) {
+        projectId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        settings.setValue(QStringLiteral("project/currentId"), projectId_);
+    }
     setWindowTitle("Project135 — Engineering Design");
     resize(1280, 820);
 
@@ -241,6 +247,9 @@ MainWindow::MainWindow(QWidget* parent)
 
     auto* toolbar = addToolBar(tr("Main"));
     toolbar->addAction(tr("New project"), this, [this] {
+        projectId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        QSettings settings;
+        settings.setValue(QStringLiteral("project/currentId"), projectId_);
         projectName_->clear();
         updateProjectTitle();
         tabs_->setCurrentIndex(0);
@@ -264,6 +273,11 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createMaterialsPage(), tr("Materials"));
     tabs_->addTab(createHistoryPage(), tr("Calculation history"));
     setCentralWidget(tabs_);
+
+    projectName_->setText(settings.value(QStringLiteral("project/name"), projectName_->text()).toString());
+    const int savedFamily = productFamily_->findText(
+        settings.value(QStringLiteral("project/productFamily"), productFamily_->currentText()).toString());
+    if (savedFamily >= 0) productFamily_->setCurrentIndex(savedFamily);
 
     status_ = new QLabel(tr("Ready — filter synthesis available"));
     statusBar()->addPermanentWidget(status_);
@@ -305,6 +319,8 @@ QWidget* MainWindow::createProjectPage()
     layout->addStretch();
     connect(projectName_, &QLineEdit::textChanged, this, [this] { updateProjectTitle(); });
     connect(productFamily_, &QComboBox::currentTextChanged, this, [this](const QString& value) {
+        QSettings settings;
+        settings.setValue(QStringLiteral("project/productFamily"), value);
         appendLog(tr("Product family selected: %1").arg(value));
     });
     return page;
@@ -1354,6 +1370,9 @@ void MainWindow::updateProjectTitle()
 {
     const QString name = projectName_ ? projectName_->text().trimmed() : QString{};
     setWindowTitle(QString("Project135 — %1").arg(name.isEmpty() ? tr("Untitled") : name));
+    QSettings settings;
+    settings.setValue(QStringLiteral("project/currentId"), projectId_);
+    if (projectName_) settings.setValue(QStringLiteral("project/name"), name);
 }
 
 void MainWindow::appendLog(const QString& message)
