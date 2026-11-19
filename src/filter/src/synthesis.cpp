@@ -78,14 +78,18 @@ Result<FilterDesign> synthesize(const FilterSpecification& specification)
         const double tuningFrequency = fundamental * harmonicOrder;
         const double omegaTuning = kTwoPi * tuningFrequency;
         const double qPerPhase = branch.targetReactivePower.si() / 3.0;
-        const double detuningFactor = 1.0 - 1.0 / (harmonicOrder * harmonicOrder);
-
-        // Fundamental-frequency reactive power of a series LC branch:
-        // Q = U_phase^2 * omega1 * C / (1 - (f1 / ftune)^2).
-        const double capacitance =
-            qPerPhase * detuningFactor / (omega1 * phaseVoltage * phaseVoltage);
+        // Solve the series-RLC sizing with damping resistance included, so
+        // the requested fundamental reactive power is met by the actual
+        // R-L-C circuit rather than by an ideal lossless approximation.
+        const double reactanceSlope =
+            (omegaTuning * omegaTuning - omega1 * omega1) / omega1;
+        const double normalizedResistance = omegaTuning / branch.qualityFactor;
         const double inductance =
-            1.0 / (omegaTuning * omegaTuning * capacitance);
+            phaseVoltage * phaseVoltage * reactanceSlope /
+            (qPerPhase * (reactanceSlope * reactanceSlope +
+                          normalizedResistance * normalizedResistance));
+        const double capacitance =
+            1.0 / (omegaTuning * omegaTuning * inductance);
         const double resistance =
             omegaTuning * inductance / branch.qualityFactor;
 
