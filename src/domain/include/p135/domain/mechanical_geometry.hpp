@@ -11,7 +11,14 @@
 namespace p135::domain {
 
 enum class CoreJointType { Butt, StepLap, DistributedGap, Custom };
-enum class AirGapLocation { LimbA, LimbB, LimbC, YokeTopAB, YokeTopBC, YokeBottomAB, YokeBottomBC, Multiple, None };
+enum class CoreSegment { LimbA, LimbB, LimbC, YokeTopAB, YokeTopBC, YokeBottomAB, YokeBottomBC };
+
+struct AirGapPhysicalGeometry {
+    CoreSegment segment{CoreSegment::LimbA};
+    // Distance from the lower end of a limb or the left end of a yoke segment.
+    units::Length positionFromSegmentStart;
+    units::Length length;
+};
 
 // Physical dimensions used by CAD. These are deliberately distinct from
 // effective magnetic Ae/Aw/le values in CoreGeometry and ThreeLimbMagneticGeometry.
@@ -27,8 +34,7 @@ struct ThreeLimbCorePhysicalGeometry {
     units::Length coreOverallHeight;
     units::Length coreOverallWidth;
     CoreJointType jointType{CoreJointType::Custom};
-    AirGapLocation airGapLocation{AirGapLocation::None};
-    std::array<units::Length, 7> airGapLengths{}; // A/B/C limbs then four yoke segments
+    std::vector<AirGapPhysicalGeometry> airGaps; // zero or more explicitly positioned cuts
     std::string laminationConstruction; // e.g. packet/step-lap description; no implicit default
 };
 
