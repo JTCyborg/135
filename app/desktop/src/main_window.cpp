@@ -12,6 +12,7 @@
 #include "p135/circuit/solver.hpp"
 #include "p135/domain/component_catalog.hpp"
 #include "p135/domain/magnetic_circuit.hpp"
+#include "p135/domain/three_limb_magnetic.hpp"
 #include "p135/thermal/filter_bridge.hpp"
 
 #include <QAbstractItemView>
@@ -57,6 +58,7 @@
 #include <QWidget>
 #include <QUuid>
 
+#include <array>
 #include <cstdint>
 #include <cstddef>
 #include <cmath>
@@ -651,14 +653,24 @@ QWidget* MainWindow::createFilterPage()
     coreAirGapMm_->setRange(0.0, 1000000.0);
     coreAirGapMm_->setDecimals(3);
     coreAirGapMm_->setSuffix(tr(" mm"));
+    coreYokeEffectiveAreaMm2_ = new QDoubleSpinBox;
+    coreYokeEffectiveAreaMm2_->setRange(0.0, 10000000.0);
+    coreYokeEffectiveAreaMm2_->setDecimals(3);
+    coreYokeEffectiveAreaMm2_->setSuffix(tr(" mm²"));
+    coreYokeSegmentPathMm_ = new QDoubleSpinBox;
+    coreYokeSegmentPathMm_->setRange(0.0, 10000000.0);
+    coreYokeSegmentPathMm_->setDecimals(2);
+    coreYokeSegmentPathMm_->setSuffix(tr(" mm"));
     inductorTurns_ = new QSpinBox;
     inductorTurns_->setRange(0, 1000000);
     coreBhSource_ = new QLineEdit;
     coreBhSource_->setPlaceholderText(tr("Manufacturer datasheet / measured B-H report and revision"));
     sourceForm->addRow(tr("Core effective area Ae"), coreEffectiveAreaMm2_);
     sourceForm->addRow(tr("Mean magnetic path le"), coreMeanPathMm_);
-    sourceForm->addRow(tr("Total air gap"), coreAirGapMm_);
-    sourceForm->addRow(tr("Inductor turns N"), inductorTurns_);
+    sourceForm->addRow(tr("Total air gap per limb"), coreAirGapMm_);
+    sourceForm->addRow(tr("Yoke effective area Ay"), coreYokeEffectiveAreaMm2_);
+    sourceForm->addRow(tr("Yoke segment path ly"), coreYokeSegmentPathMm_);
+    sourceForm->addRow(tr("Inductor turns per phase N"), inductorTurns_);
     sourceForm->addRow(tr("B-H curve source"), coreBhSource_);
     advancedLayout->addLayout(sourceForm);
 
@@ -751,6 +763,13 @@ QWidget* MainWindow::createResultsPage()
     resultsBankCurrentPlot_ = new PlotWidget;
     resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
     layout->addWidget(resultsBankCurrentPlot_);
+
+    auto* coreFluxPlotTitle = new QLabel(tr("Three-limb core peak flux density — frequency sweep"));
+    coreFluxPlotTitle->setStyleSheet("font-weight: 600;");
+    layout->addWidget(coreFluxPlotTitle);
+    resultsCoreFluxPlot_ = new PlotWidget;
+    resultsCoreFluxPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
+    layout->addWidget(resultsCoreFluxPlot_);
 
     auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
     impedancePlotTitle->setStyleSheet("font-weight: 600;");
