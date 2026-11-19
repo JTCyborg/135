@@ -240,6 +240,10 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
     edges[6] = Edge{4, 5, yokeArea, yokePath, 0.0, 0.0};
 
     std::array<double, nodeCount> potential{};
+    // Seed each top-limb node with its winding MMF. This removes most of the
+    // direct limb excitation before Newton balances the shared yoke network.
+    for (std::size_t phase = 0; phase < 3; ++phase)
+        potential[phase] = edges[phase].mmf;
     auto state = evaluateNetwork(material, edges, potential);
     if (!state)
         return fail(ErrorCode::ModelOutOfDomain,
@@ -252,10 +256,9 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
     std::size_t iterations = 0;
     for (; iterations < request.maximumIterations && state->norm > tolerance; ++iterations) {
         std::array<std::array<double, unknownCount + 1>, unknownCount> matrix{};
-        for (const auto& edge : edges) {
-            const double p = edge.area; // keep geometry access explicit in the Jacobian below
-            (void)p;
-            const double permeance = state->permeance[&edge - edges.data()];
+        for (std::size_t edgeIndex = 0; edgeIndex < edges.size(); ++edgeIndex) {
+            const auto& edge = edges[edgeIndex];
+            const double permeance = state->permeance[edgeIndex];
             const std::size_t a = edge.from;
             const std::size_t b = edge.to;
             if (a < unknownCount) matrix[a][a] += permeance;
