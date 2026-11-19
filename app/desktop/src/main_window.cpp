@@ -1,4 +1,7 @@
 #include "main_window.hpp"
+#include "material_database_widget.hpp"
+#include "p135/infrastructure/sqlite/migration_runner.hpp"
+#include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
 
 #include "p135/filter/synthesis.hpp"
 #include "p135/filter/network.hpp"
@@ -8,6 +11,9 @@
 #include <QAction>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QDir>
+#include <QCoreApplication>
+#include <QStandardPaths>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHeaderView>
@@ -30,12 +36,37 @@
 #include <cstddef>
 #include <cmath>
 #include <string>
+#include <filesystem>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
     setWindowTitle("Project135 — Engineering Design");
     resize(1280, 820);
+
+    const QString dataDirectory = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (dataDirectory.isEmpty() || !QDir().mkpath(dataDirectory)) {
+        databaseError_ = tr("Cannot create the application data directory.");
+    } else {
+        const QString databasePath = dataDirectory + "/project135-materials.sqlite";
+        const auto opened = database_.open(databasePath.toStdString());
+        if (!opened) {
+            databaseError_ = QString::fromStdString(opened.error().message);
+        } else {
+            const QString migrationPath = QCoreApplication::applicationDirPath()
+                + "/migrations/001_initial_schema.sql";
+            p135::infrastructure::sqlite::MigrationRunner migrations(database_);
+            const auto migrated = migrations.apply(p135::infrastructure::sqlite::Migration{
+                1, "initial_material_revision_store", std::filesystem::path(migrationPath.toStdString())
+            });
+            if (!migrated) {
+                databaseError_ = QString::fromStdString(migrated.error().message);
+                database_.close();
+            } else {
+                materialStore_ = std::make_unique<p135::infrastructure::sqlite::SqliteMaterialRevisionStore>(database_);
+            }
+        }
+    }
 
     auto* fileMenu = menuBar()->addMenu(tr("&File"));
     auto* newProject = fileMenu->addAction(tr("New project"));
@@ -54,6 +85,7 @@ MainWindow::MainWindow(QWidget* parent)
     viewMenu->addAction(tr("Filter definition"), this, [this] { tabs_->setCurrentIndex(1); });
     viewMenu->addAction(tr("Results"), this, [this] { tabs_->setCurrentIndex(2); });
     viewMenu->addAction(tr("CAD"), this, [this] { tabs_->setCurrentIndex(3); });
+    viewMenu->addAction(tr("Material database"), this, [this] { tabs_->setCurrentIndex(4); });
 
     auto* toolbar = addToolBar(tr("Main"));
     toolbar->addAction(tr("New project"), this, [this] {
@@ -62,6 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
         tabs_->setCurrentIndex(0);
     });
     toolbar->addAction(tr("Project"), this, [this] { tabs_->setCurrentIndex(0); });
+    toolbar->addAction(tr("Materials"), this, [this] { tabs_->setCurrentIndex(4); });
     toolbar->addAction(tr("Calculate"), this, [this] {
         calculateFilter();
         tabs_->setCurrentIndex(2);
@@ -72,11 +105,18 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createFilterPage(), tr("Filter definition"));
     tabs_->addTab(createResultsPage(), tr("Calculation"));
     tabs_->addTab(createCadPage(), tr("3D CAD"));
+    tabs_->addTab(createMaterialsPage(), tr("Materials"));
     setCentralWidget(tabs_);
 
     status_ = new QLabel(tr("Ready — filter synthesis available"));
     statusBar()->addPermanentWidget(status_);
     appendLog(tr("Project135 desktop started. Core and filter synthesis remain independent from Qt."));
+    if (!databaseError_.isEmpty()) {
+        status_->setText(tr("Material database unavailable"));
+        appendLog(tr("Material database initialization failed: %1").arg(databaseError_));
+    } else {
+        appendLog(tr("SQLite material database initialized."));
+    }
     updateProjectTitle();
 }
 
@@ -198,6 +238,19 @@ QWidget* MainWindow::createResultsPage()
     log_->setMaximumBlockCount(500);
     log_->setPlaceholderText(tr("Application and engineering activity log"));
     layout->addWidget(log_);
+    return page;
+}
+
+QWidget* MainWindow::createMaterialsPage()
+{
+    if (materialStore_)
+        return new MaterialDatabaseWidget(*materialStore_);
+    auto* page = new QWidget;
+    auto* layout = new QVBoxLayout(page);
+    auto* message = new QLabel(tr("Material database could not be initialized: %1").arg(databaseError_));
+    message->setWordWrap(true);
+    layout->addWidget(message);
+    layout->addStretch();
     return page;
 }
 
