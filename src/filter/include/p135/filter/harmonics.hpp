@@ -47,8 +47,16 @@ struct BranchHarmonicStress {
     double dampingResistorLossW{};
 };
 
+struct BranchHarmonicPoint {
+    std::uint32_t branchId{};
+    std::uint32_t order{};
+    units::Frequency frequency;
+    double capacitorCurrentRmsA{};
+};
+
 struct HarmonicAnalysisResult {
     std::vector<HarmonicAnalysisPoint> points;
+    std::vector<BranchHarmonicPoint> branchPoints;
     std::vector<BranchHarmonicStress> branchStresses;
     double busVoltageThd{};
     double sourceCurrentThd{};
