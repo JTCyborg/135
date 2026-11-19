@@ -1315,10 +1315,37 @@ void MainWindow::calculateFilter()
 
     if (!anyMagneticInput)
         magneticModelWarning = tr("Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied.");
+
+    std::optional<p135::domain::ThreeLimbMagneticRequest> threeLimbMagneticBase;
+    QString threeLimbModelWarning;
+    if (magneticCircuitBase) {
+        const double yokeArea = coreYokeEffectiveAreaMm2_
+            ? coreYokeEffectiveAreaMm2_->value() * 1.0e-6 : 0.0;
+        const double yokePath = coreYokeSegmentPathMm_
+            ? coreYokeSegmentPathMm_->value() * 1.0e-3 : 0.0;
+        if (yokeArea > 0.0 && yokePath > 0.0) {
+            p135::domain::ThreeLimbMagneticRequest request;
+            request.geometry.limbEffectiveArea = magneticCircuitBase->core.effectiveArea;
+            request.geometry.limbMeanPath = magneticCircuitBase->core.meanMagneticPath;
+            request.geometry.limbAirGap = magneticCircuitBase->core.airGap;
+            request.geometry.yokeEffectiveArea = p135::units::Area{yokeArea};
+            request.geometry.yokeSegmentPath = p135::units::Length{yokePath};
+            request.turns = {magneticCircuitBase->turns,
+                             magneticCircuitBase->turns,
+                             magneticCircuitBase->turns};
+            request.material = magneticCircuitBase->material;
+            threeLimbMagneticBase = std::move(request);
+        } else {
+            threeLimbModelWarning = tr("Coupled three-limb model NOT_VERIFIED: enter both yoke effective area Ay and one yoke segment path ly.");
+        }
+    }
+
     std::optional<double> magneticKneeCurrentA;
     std::optional<double> magneticKneeFluxDensityT;
     std::vector<std::pair<double, double>> magneticFluxDensityPoints;
+    std::vector<std::array<double, 8>> threeLimbFluxDensitySweep;
     bool magneticSweepValid = magneticCircuitBase.has_value();
+    bool threeLimbSweepValid = threeLimbMagneticBase.has_value();
     if (magneticCircuitBase) {
         auto kneeProbe = *magneticCircuitBase;
         kneeProbe.current = p135::units::Current{0.0};
@@ -1375,9 +1402,61 @@ void MainWindow::calculateFilter()
 
             }
         }
+        if (threeLimbMagneticBase && threeLimbSweepValid) {
+            std::array<std::complex<double>, 3> phasePhasors{};
+            bool phaseCurrentsAvailable = true;
+            for (std::size_t phase = 0; phase < 3; ++phase) {
+                const std::size_t branchIndex = 3U + phase * 3U;
+                if (branchIndex >= point.result.branches.size()) {
+                    phaseCurrentsAvailable = false;
+                    break;
+                }
+                phasePhasors[phase] = point.result.branches[branchIndex].rmsCurrent;
+            }
+            if (!phaseCurrentsAvailable) {
+                threeLimbSweepValid = false;
+                threeLimbModelWarning = tr("Coupled magnetic sweep NOT_VERIFIED: phase branch currents are missing from the AC result.");
+            } else {
+                std::array<double, 8> peakDensities{};
+                peakDensities[0] = point.frequency.si();
+                constexpr int timeSamples = 72;
+                for (int sample = 0; sample < timeSamples && threeLimbSweepValid; ++sample) {
+                    const double angle = 2.0 * pi * static_cast<double>(sample) /
+                        static_cast<double>(timeSamples);
+                    const auto timeRotation = std::polar(1.0, angle);
+                    auto magneticRequest = *threeLimbMagneticBase;
+                    for (std::size_t phase = 0; phase < 3; ++phase) {
+                        const double instantaneousPeak =
+                            std::sqrt(2.0) * std::real(phasePhasors[phase] * timeRotation);
+                        magneticRequest.phaseCurrents[phase] =
+                            p135::units::Current{instantaneousPeak};
+                    }
+                    const auto magneticPoint =
+                        p135::domain::analyzeThreeLimbMagneticCircuit(magneticRequest);
+                    if (!magneticPoint) {
+                        threeLimbSweepValid = false;
+                        threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz, time sample %2: %3")
+                            .arg(point.frequency.si(), 0, 'g', 6)
+                            .arg(sample)
+                            .arg(QString::fromStdString(magneticPoint.error().message));
+                        break;
+                    }
+                    for (std::size_t phase = 0; phase < 3; ++phase)
+                        peakDensities[phase + 1] = std::max(peakDensities[phase + 1],
+                            std::abs(magneticPoint.value().limbFluxDensity[phase].si()));
+                    for (std::size_t yoke = 0; yoke < 4; ++yoke)
+                        peakDensities[yoke + 4] = std::max(peakDensities[yoke + 4],
+                            std::abs(magneticPoint.value().yokeFluxDensity[yoke].si()));
+                }
+                if (threeLimbSweepValid)
+                    threeLimbFluxDensitySweep.push_back(peakDensities);
+            }
+        }
     }
     if (magneticCircuitBase && !magneticSweepValid)
         magneticFluxDensityPoints.clear();
+    if (threeLimbMagneticBase && !threeLimbSweepValid)
+        threeLimbFluxDensitySweep.clear();
 
     std::optional<p135::filter::HarmonicAnalysisResult> harmonicResult;
     std::optional<p135::filter::FrequencyResponseResult> impedanceResult;
