@@ -139,6 +139,30 @@ void testLogarithmicFrequencySweep() {
     assert(near(response.value().points[2].frequency.si(), 1000.0));
 }
 
+void testLinearFrequencySweep() {
+    Circuit c;
+    c.referenceNode = Gnd;
+    c.nodes = {{Gnd, "0"}, {N1, "input"}, {N2, "output"}};
+    c.elements = {
+        Element::makeVoltageSource(1, N1, Gnd, {1.0, 0.0}, "Vin"),
+        Element::makeResistor(2, N1, N2, units::Resistance{1000.0}, "R"),
+        Element::makeCapacitor(3, N2, Gnd, units::Capacitance{1.0e-6}, "C")
+    };
+
+    FrequencySweep request;
+    request.study = Study{c, AnalysisKind::AcSteadyState, units::Frequency{100.0}};
+    request.startFrequency = units::Frequency{100.0};
+    request.stopFrequency = units::Frequency{500.0};
+    request.points = 5;
+    request.spacing = SweepSpacing::Linear;
+
+    const auto response = sweep(request);
+    assert(response);
+    assert(response.value().points.size() == 5);
+    for (std::size_t i = 0; i < 5; ++i)
+        assert(near(response.value().points[i].frequency.si(), 100.0 * (i + 1)));
+}
+
 void testSweepRejectsInvalidRequest() {
     Circuit c;
     c.referenceNode = Gnd;
@@ -165,6 +189,7 @@ int main() {
     testSingularCircuitIsRejected();
     testAcRlPhaseAndReactivePower();
     testLogarithmicFrequencySweep();
+    testLinearFrequencySweep();
     testSweepRejectsInvalidRequest();
     return 0;
 }
