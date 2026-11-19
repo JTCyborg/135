@@ -2,6 +2,10 @@
 
 #include <QMainWindow>
 
+#include "p135/infrastructure/sqlite/sqlite_database.hpp"
+
+#include <memory>
+
 class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
@@ -10,6 +14,8 @@ class QPlainTextEdit;
 class QSpinBox;
 class QTableWidget;
 class QTabWidget;
+
+namespace p135::infrastructure::sqlite { class SqliteMaterialRevisionStore; }
 
 class MainWindow final : public QMainWindow
 {
@@ -23,6 +29,7 @@ private:
     QWidget* createFilterPage();
     QWidget* createResultsPage();
     QWidget* createCadPage();
+    QWidget* createMaterialsPage();
     void updateProjectTitle();
     void appendLog(const QString& message);
     void calculateFilter();
@@ -40,4 +47,7 @@ private:
     QLabel* resultsNote_{};
     QLabel* status_{};
     QTabWidget* tabs_{};
+    p135::infrastructure::sqlite::SqliteDatabase database_;
+    std::unique_ptr<p135::infrastructure::sqlite::SqliteMaterialRevisionStore> materialStore_;
+    QString databaseError_;
 };
