@@ -97,10 +97,12 @@ public:
     }
 
     void setEngineeringGuides(std::vector<PlotBand> resonanceBands,
-                              std::optional<double> saturationPeakCurrentA = std::nullopt)
+                              std::optional<double> saturationPeakCurrentA = std::nullopt,
+                              std::optional<double> magneticKneeCurrentA = std::nullopt)
     {
         resonanceBands_ = std::move(resonanceBands);
         saturationPeakCurrentA_ = saturationPeakCurrentA;
+        magneticKneeCurrentA_ = magneticKneeCurrentA;
         update();
     }
 
@@ -137,8 +139,9 @@ protected:
 
         const double logMin = std::log10(minX);
         const double logMax = std::log10(maxX);
-        const double yMax = std::max(maxY * 1.08,
-            saturationPeakCurrentA_.value_or(0.0) * 1.08);
+        const double yMax = std::max({maxY * 1.08,
+            saturationPeakCurrentA_.value_or(0.0) * 1.08,
+            magneticKneeCurrentA_.value_or(0.0) * 1.08});
         const auto xPixel = [&area, logMin, logMax](double frequency) {
             return area.left() + (std::log10(frequency) - logMin) /
                 (logMax - logMin) * area.width();
@@ -185,6 +188,17 @@ protected:
                 tr("Entered Isat reference: %1 A peak").arg(*saturationPeakCurrentA_, 0, 'g', 5));
         }
 
+        if (magneticKneeCurrentA_ && std::isfinite(*magneticKneeCurrentA_) &&
+            *magneticKneeCurrentA_ > 0.0) {
+            const double y = area.bottom() - (*magneticKneeCurrentA_ / yMax) * area.height();
+            painter.setPen(QPen(QColor(125, 65, 165), 2.0, Qt::DashDotLine));
+            painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
+            painter.setPen(QColor(115, 55, 155));
+            painter.drawText(QRectF(area.left() + 5, y - 19, area.width() - 10, 17),
+                Qt::AlignRight | Qt::AlignVCenter,
+                tr("B-H knee criterion: %1 A peak").arg(*magneticKneeCurrentA_, 0, 'g', 5));
+        }
+
         const std::vector<QColor> colors{QColor(35, 105, 190), QColor(205, 70, 55),
             QColor(35, 145, 90), QColor(150, 85, 175)};
         int curveIndex = 0;
@@ -227,6 +241,7 @@ private:
     QString yLabel_;
     std::vector<PlotBand> resonanceBands_;
     std::optional<double> saturationPeakCurrentA_;
+    std::optional<double> magneticKneeCurrentA_;
 };
 
 
