@@ -764,7 +764,7 @@ QWidget* MainWindow::createHistoryPage()
 
     auto* compareRow = new QHBoxLayout;
     historyPlotMetric_ = new QComboBox;
-    historyPlotMetric_->addItem(tr("Filter bank current (A)"), QStringLiteral("bankCurrent_A"));
+    historyPlotMetric_->addItem(tr("Phase peak current (A)"), QStringLiteral("phasePeakCurrent_A"));
     historyPlotMetric_->addItem(tr("Bus impedance (Ω)"), QStringLiteral("busImpedance_Ohm"));
     auto* compareGraphs = new QPushButton(tr("Compare graphs of selected calculations"));
     compareRow->addWidget(historyPlotMetric_);
@@ -915,10 +915,10 @@ void MainWindow::compareSelectedCalculationGraphs()
     }
 
     const QString metricKey = historyPlotMetric_->currentData().toString();
-    const bool currentMetric = metricKey == QStringLiteral("bankCurrent_A");
+    const bool currentMetric = metricKey == QStringLiteral("phasePeakCurrent_A");
     const QString arrayKey = currentMetric ? QStringLiteral("frequencySweep")
                                             : QStringLiteral("impedanceScan");
-    const QString yLabel = currentMetric ? tr("Bank current (A)") : tr("Bus impedance (Ω)");
+    const QString yLabel = currentMetric ? tr("Phase peak current (A)") : tr("Bus impedance (Ω)");
     std::vector<PlotCurve> curves;
     QStringList comparisonIds;
 
@@ -1629,13 +1629,17 @@ void MainWindow::calculateFilter()
             }
         }
 
-        if (resultsBankCurrentPlot_)
+        if (resultsBankCurrentPlot_) {
             resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
-                tr("Frequency (Hz, logarithmic)"), tr("Bank current (A)"));
-        if (resultsBusImpedancePlot_)
+                tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
+            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference);
+        }
+        if (resultsBusImpedancePlot_) {
             resultsBusImpedancePlot_->setCurves(impedanceResult
                 ? std::vector<PlotCurve>{busImpedanceCurve} : std::vector<PlotCurve>{},
                 tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+            resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
+        }
 
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
@@ -1715,26 +1719,32 @@ void MainWindow::calculateFilter()
     // when the material database is unavailable and its snapshot cannot be saved.
     PlotCurve liveCurrentCurve{tr("Current calculation"), {}};
     for (const auto& point : sweepResult.value().points) {
-        double currentSquared = 0.0;
+        double maximumPhaseRmsCurrent = 0.0;
         for (const std::size_t index : {3U, 6U, 9U}) {
             if (index < point.result.branches.size())
-                currentSquared += std::norm(point.result.branches[index].rmsCurrent);
+                maximumPhaseRmsCurrent = std::max(maximumPhaseRmsCurrent,
+                    std::abs(point.result.branches[index].rmsCurrent));
         }
-        liveCurrentCurve.points.emplace_back(point.frequency.si(), std::sqrt(currentSquared));
+        liveCurrentCurve.points.emplace_back(point.frequency.si(),
+            std::sqrt(2.0) * maximumPhaseRmsCurrent);
     }
-    if (resultsBankCurrentPlot_)
+    if (resultsBankCurrentPlot_) {
         resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
-            tr("Frequency (Hz, logarithmic)"), tr("Bank current (A)"));
+            tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
+        resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference);
+    }
     PlotCurve liveBusImpedanceCurve{tr("Current calculation"), {}};
     if (impedanceResult) {
         for (const auto& point : impedanceResult->points)
             liveBusImpedanceCurve.points.emplace_back(
                 point.frequency.si(), point.busImpedanceMagnitudeOhm);
     }
-    if (resultsBusImpedancePlot_)
+    if (resultsBusImpedancePlot_) {
         resultsBusImpedancePlot_->setCurves(impedanceResult
             ? std::vector<PlotCurve>{liveBusImpedanceCurve} : std::vector<PlotCurve>{},
             tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+        resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
+    }
 
     resultsNote_->setText(calculationSummary);
     status_->setText(tr("Filter synthesized and AC network solved"));
