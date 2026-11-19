@@ -36,6 +36,8 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPainter>
+#include <QColor>
+#include <QSizePolicy>
 #include <QPainterPath>
 #include <QPaintEvent>
 #include <QFontMetrics>
