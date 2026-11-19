@@ -45,7 +45,8 @@ struct CapacitorComponent {
     units::Voltage ratedVoltage; // DC or AC rating as identified by voltageRatingIsAC
     bool voltageRatingIsAC{false};
 
-    std::optional<units::Resistance> esr; // frequency-independent only when source explicitly says so
+    std::optional<units::Resistance> esr;
+    bool esrConfirmedFrequencyIndependent{false};
     std::vector<CapacitorEsrPoint> esrFrequencyCurve;
     std::optional<units::Inductance> esl;
     std::optional<double> dissipationFactor;
