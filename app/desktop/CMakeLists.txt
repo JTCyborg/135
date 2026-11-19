@@ -27,3 +27,19 @@ set_target_properties(Project135 PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/bin"
 )
+
+# Copy Qt runtime DLLs and the Windows platform plugin beside the executable.
+# Without this deployment step a freshly built GUI may silently fail to start
+# when launched outside a Qt-enabled developer command prompt.
+if(TARGET Qt6::windeployqt)
+    add_custom_command(TARGET Project135 POST_BUILD
+        COMMAND Qt6::windeployqt
+            --no-translations
+            --no-compiler-runtime
+            "$<TARGET_FILE:Project135>"
+        COMMENT "Deploying Qt runtime for Project135"
+        VERBATIM
+    )
+else()
+    message(WARNING "Qt6::windeployqt target is unavailable; Project135 runtime deployment must be performed manually.")
+endif()
