@@ -9,6 +9,8 @@
 #include "p135/filter/analysis.hpp"
 #include "p135/filter/network.hpp"
 #include "p135/circuit/solver.hpp"
+#include "p135/domain/component_catalog.hpp"
+#include "p135/thermal/filter_bridge.hpp"
 
 #include <QAbstractItemView>
 #include <QAction>
@@ -22,6 +24,9 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenuBar>
@@ -44,6 +49,109 @@
 #include <filesystem>
 #include <complex>
 #include <optional>
+
+
+namespace {
+bool revisionIsUserDefined(const p135::application::MaterialRevision& revision,
+                           const QJsonObject& document)
+{
+    const QString sourceStatus = document.value(QStringLiteral("dataQuality")).toObject()
+        .value(QStringLiteral("sourceStatus")).toString();
+    return revision.sourceReference == "user-defined" ||
+           revision.sourceReference == "user-entered-unverified" ||
+           sourceStatus == QStringLiteral("USER_ENTERED_UNVERIFIED");
+}
+
+bool capacitorFromRevision(const p135::application::MaterialRevision& revision,
+                           p135::domain::CapacitorComponent& capacitor)
+{
+    const auto document = QJsonDocument::fromJson(QByteArray::fromStdString(revision.payload));
+    if (!document.isObject()) return false;
+    const auto root = document.object();
+    const auto component = root.value(QStringLiteral("component")).toObject();
+    if (component.isEmpty()) return false;
+
+    capacitor = {};
+    capacitor.id = component.value(QStringLiteral("id")).toString().toStdString();
+    capacitor.manufacturer = component.value(QStringLiteral("manufacturer")).toString().toStdString();
+    capacitor.series = component.value(QStringLiteral("series")).toString().toStdString();
+    capacitor.partNumber = component.value(QStringLiteral("partNumber")).toString().toStdString();
+    capacitor.dataSource = revisionIsUserDefined(revision, root)
+        ? p135::domain::MaterialDataSource::UserDefined
+        : p135::domain::MaterialDataSource::ManufacturerDatasheet;
+    capacitor.sourceReference = revision.sourceReference;
+    capacitor.datasetRevision = revision.datasetRevision;
+
+    const auto number = [&component](const char* key, double fallback = 0.0) {
+        const auto value = component.value(QLatin1String(key));
+        return value.isDouble() ? value.toDouble() : fallback;
+    };
+    capacitor.capacitance = p135::units::Capacitance{
+        number("capacitance_F")};
+    capacitor.toleranceFraction = number("tolerance_fraction",
+        number("capacitanceTolerance_fraction", 0.05));
+    capacitor.ratedVoltage = p135::units::Voltage{
+        number("ratedVoltageDC_V", number("ratedVoltage_V"))};
+    capacitor.voltageRatingIsAC = component.value(QStringLiteral("voltageRatingIsAC")).toBool(false);
+    capacitor.minimumTemperature = p135::units::TemperatureKelvin{
+        number("minimumTemperature_K", 223.15)};
+    capacitor.maximumTemperature = p135::units::TemperatureKelvin{
+        number("maximumTemperature_K", number("maximumCaseTemperature_K"))};
+    const double esr = number("esr_ohm", number("equivalentSeriesResistance_ohm"));
+    if (esr > 0.0) capacitor.esr = p135::units::Resistance{esr};
+    capacitor.esrConfirmedFrequencyIndependent =
+        component.value(QStringLiteral("esr_frequency_independent_confirmed")).toBool(false);
+    const auto curve = component.value(QStringLiteral("esr_frequency_curve")).toArray();
+    for (const auto& value : curve) {
+        const auto point = value.toObject();
+        capacitor.esrFrequencyCurve.push_back({
+            p135::units::Frequency{point.value(QStringLiteral("frequency_Hz")).toDouble()},
+            p135::units::Resistance{point.value(QStringLiteral("esr_ohm")).toDouble()}
+        });
+    }
+    const double esl = number("esl_H", number("equivalentSeriesInductance_H"));
+    if (esl > 0.0) capacitor.esl = p135::units::Inductance{esl};
+    const double ripple = number("rippleCurrent_A");
+    if (ripple > 0.0) capacitor.rippleCurrent = p135::units::Current{ripple};
+    return static_cast<bool>(p135::domain::validate(capacitor));
+}
+
+bool resistorFromRevision(const p135::application::MaterialRevision& revision,
+                          p135::domain::ResistorComponent& resistor)
+{
+    const auto document = QJsonDocument::fromJson(QByteArray::fromStdString(revision.payload));
+    if (!document.isObject()) return false;
+    const auto root = document.object();
+    const auto component = root.value(QStringLiteral("component")).toObject();
+    if (component.isEmpty()) return false;
+
+    resistor = {};
+    resistor.id = component.value(QStringLiteral("id")).toString().toStdString();
+    resistor.manufacturer = component.value(QStringLiteral("manufacturer")).toString().toStdString();
+    resistor.series = component.value(QStringLiteral("series")).toString().toStdString();
+    resistor.partNumber = component.value(QStringLiteral("partNumber")).toString().toStdString();
+    resistor.dataSource = revisionIsUserDefined(revision, root)
+        ? p135::domain::MaterialDataSource::UserDefined
+        : p135::domain::MaterialDataSource::ManufacturerDatasheet;
+    resistor.sourceReference = revision.sourceReference;
+    resistor.datasetRevision = revision.datasetRevision;
+    resistor.resistance = p135::units::Resistance{
+        component.value(QStringLiteral("resistance_ohm")).toDouble()};
+    resistor.toleranceFraction = component.value(QStringLiteral("tolerance_fraction")).toDouble();
+    resistor.ratedPower = p135::units::Power{
+        component.value(QStringLiteral("ratedPower_W")).toDouble()};
+    resistor.maximumWorkingVoltage = p135::units::Voltage{
+        component.value(QStringLiteral("maximumWorkingVoltage_V")).toDouble()};
+    resistor.minimumTemperature = p135::units::TemperatureKelvin{
+        component.value(QStringLiteral("minimumTemperature_K")).toDouble()};
+    resistor.maximumTemperature = p135::units::TemperatureKelvin{
+        component.value(QStringLiteral("maximumTemperature_K")).toDouble()};
+    const auto tcr = component.value(QStringLiteral("temperatureCoefficient_per_K"));
+    if (tcr.isDouble())
+        resistor.temperatureCoefficient = p135::units::TemperatureCoefficient{tcr.toDouble()};
+    return static_cast<bool>(p135::domain::validate(resistor));
+}
+} // namespace
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -215,6 +323,34 @@ QWidget* MainWindow::createFilterPage()
     form->addRow(tr("Tuning harmonic order"), tuningHarmonicOrder_);
     form->addRow(tr("Branch quality factor"), qualityFactor_);
     layout->addWidget(group);
+
+    auto* componentGroup = new QGroupBox(tr("Selected components and installation thermal data"));
+    auto* componentForm = new QFormLayout(componentGroup);
+    capacitorComponent_ = new QComboBox;
+    resistorComponent_ = new QComboBox;
+    capacitorThermalResistance_ = new QDoubleSpinBox;
+    capacitorThermalResistance_->setRange(0.0, 1000000.0);
+    capacitorThermalResistance_->setDecimals(4);
+    capacitorThermalResistance_->setSuffix(tr(" K/W"));
+    capacitorThermalSource_ = new QLineEdit;
+    capacitorThermalSource_->setPlaceholderText(tr("Rθ source: assembly datasheet or measurement"));
+    resistorThermalResistance_ = new QDoubleSpinBox;
+    resistorThermalResistance_->setRange(0.0, 1000000.0);
+    resistorThermalResistance_->setDecimals(4);
+    resistorThermalResistance_->setSuffix(tr(" K/W"));
+    resistorThermalSource_ = new QLineEdit;
+    resistorThermalSource_->setPlaceholderText(tr("Rθ source: mounting/heatsink measurement"));
+    componentForm->addRow(tr("Filter capacitor revision"), capacitorComponent_);
+    componentForm->addRow(tr("Capacitor-to-ambient Rθ"), capacitorThermalResistance_);
+    componentForm->addRow(tr("Capacitor Rθ evidence"), capacitorThermalSource_);
+    componentForm->addRow(tr("Damping resistor revision"), resistorComponent_);
+    componentForm->addRow(tr("Resistor-to-ambient Rθ"), resistorThermalResistance_);
+    componentForm->addRow(tr("Resistor Rθ evidence"), resistorThermalSource_);
+    auto* refreshComponents = new QPushButton(tr("Refresh component revisions"));
+    componentForm->addRow(refreshComponents);
+    connect(refreshComponents, &QPushButton::clicked, this, [this] { refreshComponentSelectors(); });
+    layout->addWidget(componentGroup);
+    refreshComponentSelectors();
 
     auto* note = new QLabel(tr("The target reactive power is the total three-phase fundamental-frequency value for this branch. Synthesis uses ideal C and L and derives a series damping resistor from Q factor. Optional source impedance and harmonic spectrum inputs below enable impedance-scan, THD and branch-stress estimates; component ratings, thermal derating and standards compliance remain outside this calculation."));
     note->setWordWrap(true);
@@ -562,6 +698,83 @@ void MainWindow::calculateFilter()
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
     }
 
+    std::optional<p135::thermal::CapacitorThermalResult> capacitorThermalResult;
+    std::optional<p135::thermal::SteadyStateResult> resistorThermalResult;
+    QString componentAssessmentWarning;
+    if (harmonicResult && materialStore_) {
+        const QString capacitorRevisionId = capacitorComponent_
+            ? capacitorComponent_->currentData().toString() : QString{};
+        if (!capacitorRevisionId.isEmpty()) {
+            const auto revision = materialStore_->findRevision(capacitorRevisionId.toStdString());
+            if (revision && revision.value()) {
+                p135::domain::CapacitorComponent capacitor;
+                if (capacitorFromRevision(*revision.value(), capacitor)) {
+                    p135::domain::CapacitorCatalog catalog;
+                    if (catalog.add(capacitor)) {
+                        p135::thermal::FilterCapacitorThermalAssignment assignment;
+                        assignment.branchId = 1;
+                        assignment.capacitorComponentId = capacitor.id;
+                        if (capacitorThermalResistance_ && capacitorThermalResistance_->value() > 0.0)
+                            assignment.thermalResistanceKPerW = capacitorThermalResistance_->value();
+                        if (capacitorThermalSource_)
+                            assignment.thermalResistanceSourceReference =
+                                capacitorThermalSource_->text().trimmed().toStdString();
+                        const auto assessment = p135::thermal::analyzeFilterCapacitorThermals(
+                            *harmonicResult, {assignment}, catalog,
+                            p135::units::TemperatureKelvin{298.15},
+                            QStringLiteral("desktop-harmonic-study-%1")
+                                .arg(QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs))
+                                .toStdString());
+                        if (assessment) capacitorThermalResult = assessment.value();
+                        else componentAssessmentWarning += tr(" Capacitor thermal assessment failed: %1")
+                            .arg(QString::fromStdString(assessment.error().message));
+                    }
+                } else {
+                    componentAssessmentWarning += tr(" Selected capacitor revision is not a supported typed component snapshot.");
+                }
+            } else {
+                componentAssessmentWarning += tr(" Selected capacitor revision could not be loaded from SQLite.");
+            }
+        }
+
+        const QString resistorRevisionId = resistorComponent_
+            ? resistorComponent_->currentData().toString() : QString{};
+        if (!resistorRevisionId.isEmpty()) {
+            const auto revision = materialStore_->findRevision(resistorRevisionId.toStdString());
+            if (revision && revision.value()) {
+                p135::domain::ResistorComponent resistor;
+                if (resistorFromRevision(*revision.value(), resistor)) {
+                    p135::domain::ResistorCatalog catalog;
+                    if (catalog.add(resistor)) {
+                        p135::thermal::DampingResistorThermalAssignment assignment;
+                        assignment.branchId = 1;
+                        assignment.resistorComponentId = resistor.id;
+                        if (resistorThermalResistance_ && resistorThermalResistance_->value() > 0.0)
+                            assignment.thermalResistanceKPerW = resistorThermalResistance_->value();
+                        if (resistorThermalSource_)
+                            assignment.thermalResistanceSourceReference =
+                                resistorThermalSource_->text().trimmed().toStdString();
+                        const auto assessment = p135::thermal::analyzeDampingResistorThermals(
+                            *harmonicResult, {assignment}, catalog,
+                            p135::units::TemperatureKelvin{298.15},
+                            QStringLiteral("desktop-harmonic-study-%1")
+                                .arg(QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs))
+                                .toStdString());
+                        if (assessment) resistorThermalResult = assessment.value();
+                        else componentAssessmentWarning += tr(" Resistor thermal assessment failed: %1")
+                            .arg(QString::fromStdString(assessment.error().message));
+                    }
+                } else {
+                    componentAssessmentWarning += tr(" Selected resistor revision is not a supported typed component snapshot.");
+                }
+            } else {
+                componentAssessmentWarning += tr(" Selected resistor revision could not be loaded from SQLite.");
+            }
+        }
+    } else if (!harmonicResult) {
+        componentAssessmentWarning = tr(" Component losses and thermal assessment NOT_VERIFIED until a valid harmonic study is available.");
+    }
+
     const auto& branch = result.value().branches.front();
     const auto addResult = [this](const QString& name, double value, const QString& unit) {
         const int row = resultsTable_->rowCount();
@@ -614,6 +827,39 @@ void MainWindow::calculateFilter()
         }
     }
 
+    if (capacitorThermalResult && !capacitorThermalResult->capacitors.empty()) {
+        const auto& assessment = capacitorThermalResult->capacitors.front();
+        addResult(tr("Selected capacitor ESR loss"),
+                  assessment.esrLoss ? assessment.esrLoss->si() : 0.0,
+                  assessment.esrLoss ? tr("W") : tr("NOT_VERIFIED"));
+        addResult(tr("Capacitor ripple current"),
+                  assessment.rippleCurrentRmsA, tr("A RMS"));
+        addResult(tr("Capacitor ripple-current status"),
+                  static_cast<double>(assessment.rippleCurrentStatus == p135::thermal::AssessmentStatus::Pass ? 1 :
+                      assessment.rippleCurrentStatus == p135::thermal::AssessmentStatus::Fail ? -1 : 0),
+                  assessment.rippleCurrentExplanation);
+        if (assessment.thermal.estimatedTemperature)
+            addResult(tr("Capacitor estimated temperature"),
+                      assessment.thermal.estimatedTemperature->si() - 273.15, tr("°C"));
+        addResult(tr("Capacitor thermal status"),
+                  static_cast<double>(assessment.thermal.status == p135::thermal::AssessmentStatus::Pass ? 1 :
+                      assessment.thermal.status == p135::thermal::AssessmentStatus::Fail ? -1 : 0),
+                  assessment.thermal.explanation);
+    }
+    if (resistorThermalResult && !resistorThermalResult->nodes.empty()) {
+        const auto& assessment = resistorThermalResult->nodes.front();
+        addResult(tr("Damping resistor harmonic loss"),
+                  assessment.loss ? assessment.loss->si() : 0.0,
+                  assessment.loss ? tr("W") : tr("NOT_VERIFIED"));
+        if (assessment.estimatedTemperature)
+            addResult(tr("Damping resistor estimated temperature"),
+                      assessment.estimatedTemperature->si() - 273.15, tr("°C"));
+        addResult(tr("Damping resistor thermal status"),
+                  static_cast<double>(assessment.status == p135::thermal::AssessmentStatus::Pass ? 1 :
+                      assessment.status == p135::thermal::AssessmentStatus::Fail ? -1 : 0),
+                  assessment.explanation);
+    }
+
     if (harmonicResult) {
         addResult(tr("PCC voltage THD"),
                   harmonicResult->busVoltageThd * 100.0, tr("%"));
@@ -647,13 +893,48 @@ void MainWindow::calculateFilter()
         calculationSummary += tr(" Harmonic THD and harmonic component stress NOT_VERIFIED.");
     if (!advancedWarning.isEmpty())
         calculationSummary += QStringLiteral(" ") + advancedWarning;
-    calculationSummary += tr(" Models assume balanced positive/negative sequence and ideal RLC components; zero sequence, component tolerances, thermal derating and standards compliance are not evaluated.");
+    if (!componentAssessmentWarning.isEmpty())
+        calculationSummary += QStringLiteral(" ") + componentAssessmentWarning;
+    if (capacitorThermalResult || resistorThermalResult)
+        calculationSummary += tr(" Selected material revisions were resolved from the immutable SQLite catalog and evaluated by the thermal bridge.");
+    calculationSummary += tr(" Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated.");
     resultsNote_->setText(calculationSummary);
     status_->setText(tr("Filter synthesized and AC network solved"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
         .arg(targetReactivePower_->value())
         .arg(tuningHarmonicOrder_->value())
         .arg(filterConnection_->currentText()));
+}
+
+
+void MainWindow::refreshComponentSelectors()
+{
+    if (!materialStore_) return;
+    const auto populate = [this](QComboBox* combo, const std::string& recordType,
+                                 const QString& emptyLabel) {
+        if (!combo) return;
+        const QString previous = combo->currentData().toString();
+        combo->clear();
+        combo->addItem(emptyLabel, QString{});
+        p135::infrastructure::sqlite::MaterialCatalogFilter filter;
+        filter.recordType = recordType;
+        filter.pageSize = 500;
+        const auto revisions = materialStore_->searchLatestRevisions(filter);
+        if (!revisions) {
+            appendLog(tr("Cannot load %1 component revisions: %2")
+                .arg(emptyLabel, QString::fromStdString(revisions.error().message)));
+            return;
+        }
+        for (const auto& revision : revisions.value()) {
+            combo->addItem(QString::fromStdString(revision.materialId) +
+                QStringLiteral(" — r%1").arg(revision.revisionNumber),
+                QString::fromStdString(revision.revisionId));
+        }
+        const int previousIndex = combo->findData(previous);
+        if (previousIndex >= 0) combo->setCurrentIndex(previousIndex);
+    };
+    populate(capacitorComponent_, "capacitor", tr("— no capacitor selected —"));
+    populate(resistorComponent_, "resistor", tr("— no resistor selected —"));
 }
 
 void MainWindow::updateProjectTitle()
