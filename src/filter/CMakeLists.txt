@@ -2,6 +2,7 @@ add_library(Project135Filter
     src/synthesis.cpp
     src/network.cpp
     src/analysis.cpp
+    src/harmonics.cpp
 )
 add_library(Project135::Filter ALIAS Project135Filter)
 
