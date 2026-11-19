@@ -29,9 +29,9 @@ HarmonicAnalysisRequest validRequest(Connection connection = Connection::Wye)
     request.design = makeDesign(connection);
     request.source = {units::Resistance{0.08}, units::Inductance{0.001}};
     request.sourceVoltageSpectrum = {
-        {1, {230.9401076758503, 0.0}},
-        {5, {10.0, -2.0}},
-        {7, {5.0, 1.0}}
+        {1, HarmonicSequence::Positive, {230.9401076758503, 0.0}},
+        {5, HarmonicSequence::Negative, {10.0, -2.0}},
+        {7, HarmonicSequence::Positive, {5.0, 1.0}}
     };
     return request;
 }
