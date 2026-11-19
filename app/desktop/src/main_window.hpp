@@ -9,7 +9,6 @@
 
 class QComboBox;
 class QDoubleSpinBox;
-class QLineEdit;
 class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
