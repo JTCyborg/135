@@ -86,6 +86,76 @@ void testSingularCircuitIsRejected() {
     assert(!invalid);
     assert(invalid.error().code == ErrorCode::SingularSystem);
 }
+
+void testAcRlPhaseAndReactivePower() {
+    Circuit c;
+    c.referenceNode = Gnd;
+    c.nodes = {{Gnd, "0"}, {N1, "input"}, {N2, "load"}};
+    c.elements = {
+        Element::makeVoltageSource(1, N1, Gnd, {1.0, 0.0}, "Vin"),
+        Element::makeResistor(2, N1, N2, units::Resistance{10.0}, "R"),
+        Element::makeInductor(3, N2, Gnd, units::Inductance{0.01}, "L")
+    };
+
+    const auto r = solve(Study{c, AnalysisKind::AcSteadyState, units::Frequency{50.0}});
+    assert(r);
+    const auto current = r.value().branches[2].rmsCurrent;
+    assert(current.real() > 0.0);
+    assert(current.imag() < 0.0);
+    assert(r.value().branches[2].complexPowerVA.imag() > 0.0);
+    assert(std::abs(r.value().powerBalance.totalActivePowerW) < 1.0e-9);
+    assert(std::abs(r.value().powerBalance.totalReactivePowerVar) < 1.0e-9);
+}
+
+void testLogarithmicFrequencySweep() {
+    Circuit c;
+    c.referenceNode = Gnd;
+    c.nodes = {{Gnd, "0"}, {N1, "input"}, {N2, "output"}};
+    c.elements = {
+        Element::makeVoltageSource(1, N1, Gnd, {1.0, 0.0}, "Vin"),
+        Element::makeResistor(2, N1, N2, units::Resistance{1000.0}, "R"),
+        Element::makeCapacitor(3, N2, Gnd, units::Capacitance{1.0e-6}, "C")
+    };
+
+    FrequencySweep request;
+    request.study = Study{c, AnalysisKind::AcSteadyState, units::Frequency{1000.0}};
+    request.startFrequency = units::Frequency{100.0};
+    request.stopFrequency = units::Frequency{10000.0};
+    request.points = 5;
+    request.spacing = SweepSpacing::Logarithmic;
+
+    const auto response = sweep(request);
+    assert(response);
+    assert(response.value().points.size() == 5);
+    assert(near(response.value().points.front().frequency.si(), 100.0));
+    assert(near(response.value().points.back().frequency.si(), 10000.0));
+
+    double previousMagnitude = 2.0;
+    for (const auto& point : response.value().points) {
+        const double magnitude = std::abs(point.result.nodeVoltages[2].rmsVoltage);
+        assert(magnitude < previousMagnitude);
+        previousMagnitude = magnitude;
+    }
+    assert(near(response.value().points[2].frequency.si(), 1000.0));
+}
+
+void testSweepRejectsInvalidRequest() {
+    Circuit c;
+    c.referenceNode = Gnd;
+    c.nodes = {{Gnd, "0"}, {N1, "input"}};
+    c.elements = {Element::makeVoltageSource(1, N1, Gnd, {1.0, 0.0})};
+
+    FrequencySweep request;
+    request.study = Study{c, AnalysisKind::DcOperatingPoint, units::Frequency{0.0}};
+    request.startFrequency = units::Frequency{10.0};
+    request.stopFrequency = units::Frequency{1000.0};
+    request.points = 10;
+
+    const auto response = sweep(request);
+    assert(!response);
+    assert(response.error().code == ErrorCode::InvalidInput);
+}
+
 }
 
 int main() {
@@ -93,5 +163,8 @@ int main() {
     testAcRcLowPass();
     testDcInductorShort();
     testSingularCircuitIsRejected();
+    testAcRlPhaseAndReactivePower();
+    testLogarithmicFrequencySweep();
+    testSweepRejectsInvalidRequest();
     return 0;
 }
