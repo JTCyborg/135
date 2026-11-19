@@ -697,10 +697,6 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
     resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
-        if (resultsBankCurrentPlot_)
-            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference);
-        if (resultsBusImpedancePlot_)
-            resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
     layout->addWidget(resultsBankCurrentPlot_);
 
     auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
