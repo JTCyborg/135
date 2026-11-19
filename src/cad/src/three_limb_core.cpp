@@ -68,12 +68,17 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
         const double limbWidth = g.limbWidths[i].si();
         const double x = centers[i] - 0.5 * limbWidth;
         const double depth = g.limbDepths[i].si();
-        if (x < 0.0 || x + limbWidth > width)
+        // The domain stack-up is accepted with a relative dimensional
+        // tolerance. Apply the same tolerance here so harmless floating-point
+        // round-off at the outermost limb does not reject a valid core.
+        const double widthTolerance = std::max(1.0e-9, std::abs(width) * 1.0e-6);
+        if (x < -widthTolerance || x + limbWidth > width + widthTolerance)
             return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
                 "Limb lies outside the declared overall core width.",
                 "core.limbWidths[" + std::to_string(i) + "]");
+        const double xClamped = std::clamp(x, 0.0, width - limbWidth);
         const auto limb = BRepPrimAPI_MakeBox(
-            gp_Pnt(x * toMillimetres, limbBottom * toMillimetres, 0.0),
+            gp_Pnt(xClamped * toMillimetres, limbBottom * toMillimetres, 0.0),
             limbWidth * toMillimetres, (limbTop - limbBottom) * toMillimetres,
             depth * toMillimetres).Shape();
         if (limb.IsNull() || !BRepCheck_Analyzer(limb).IsValid())
