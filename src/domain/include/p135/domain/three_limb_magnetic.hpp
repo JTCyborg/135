@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
 namespace p135::domain {
 
@@ -21,12 +22,12 @@ struct ThreeLimbMagneticGeometry {
     units::Length yokeSegmentPath;
 
     // Optional independent geometry: limbs A/B/C; yokes top AB, top BC,
-    // bottom AB, bottom BC. A zero entry inherits its legacy scalar value.
-    std::array<units::Area, 3> limbEffectiveAreas{};
-    std::array<units::Length, 3> limbMeanPaths{};
-    std::array<units::Length, 3> limbAirGaps{};
-    std::array<units::Area, 4> yokeEffectiveAreas{};
-    std::array<units::Length, 4> yokeSegmentPaths{};
+    // bottom AB, bottom BC. An unset entry inherits its legacy scalar value; explicit zero is validated normally.
+    std::array<std::optional<units::Area>, 3> limbEffectiveAreas{};
+    std::array<std::optional<units::Length>, 3> limbMeanPaths{};
+    std::array<std::optional<units::Length>, 3> limbAirGaps{};
+    std::array<std::optional<units::Area>, 4> yokeEffectiveAreas{};
+    std::array<std::optional<units::Length>, 4> yokeSegmentPaths{};
 };
 
 struct ThreeLimbMagneticRequest {
