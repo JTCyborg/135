@@ -1545,8 +1545,13 @@ void MainWindow::calculateFilter()
         calculationSummary += tr(" Shaded resonance zones show the -3 dB bandwidth around local bus-impedance peaks.");
     if (!saturationPeakReference)
         calculationSummary += tr(" Inductor saturation comparison NOT_VERIFIED: enter the manufacturer's peak Isat per phase and its evidence reference.");
-    else
+    else {
         calculationSummary += tr(" Red dashed line is the entered Isat reference; calculated phase peak current is sqrt(2) times the AC RMS branch current. This is a rating comparison, not a magnetic saturation model.");
+        if (inductorSaturationSource_ && !inductorSaturationSource_->text().trimmed().isEmpty())
+            calculationSummary += tr(" Isat evidence reference recorded but not independently verified.");
+        else
+            calculationSummary += tr(" Isat evidence reference missing: comparison NOT_VERIFIED.");
+    }
 
     if (materialStore_) {
         QJsonObject inputSnapshot;
