@@ -38,6 +38,26 @@ if(P135_BUILD_TESTS)
 endif()
 
 if(P135_BUILD_DESKTOP)
+    # Qt can be selected explicitly through Qt6_DIR or P135_QT6_ROOT.
+    # On Windows, also discover the standard Qt for MSVC installation layout.
+    set(P135_QT6_ROOT "" CACHE PATH "Qt 6 installation root (contains lib/cmake/Qt6)")
+
+    if(NOT Qt6_DIR)
+        if(P135_QT6_ROOT AND EXISTS "${P135_QT6_ROOT}/lib/cmake/Qt6/Qt6Config.cmake")
+            set(Qt6_DIR "${P135_QT6_ROOT}/lib/cmake/Qt6")
+        elseif(WIN32)
+            file(GLOB _P135_QT6_CONFIGS LIST_DIRECTORIES false
+                "C:/Qt/*/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake"
+            )
+            if(_P135_QT6_CONFIGS)
+                list(SORT _P135_QT6_CONFIGS COMPARE NATURAL ORDER DESCENDING)
+                list(GET _P135_QT6_CONFIGS 0 _P135_QT6_CONFIG)
+                get_filename_component(Qt6_DIR "${_P135_QT6_CONFIG}" DIRECTORY)
+                message(STATUS "Project135: auto-detected Qt 6 at ${Qt6_DIR}")
+            endif()
+        endif()
+    endif()
+
     find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets)
     add_subdirectory(app/desktop)
 endif()
