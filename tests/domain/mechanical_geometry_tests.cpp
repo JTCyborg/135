@@ -68,7 +68,7 @@ int main()
     assert(!validate(gapAtBoundary));
 
     auto gapOutside = valid;
-    gapOutside.core.airGaps.push_back({CoreSegment::LimbA, units::Length{0.10}, units::Length{0.001}});
+    gapOutside.core.airGaps.push_back({CoreSegment::LimbA, units::Length{0.12}, units::Length{0.001}});
     assert(!validate(gapOutside));
 
     auto locatedGap = valid;
