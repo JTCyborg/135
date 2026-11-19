@@ -134,7 +134,7 @@ Project135/
 |---|---|---|
 | P135.001 | Core foundation, CMake, Qt 6 desktop shell, базовая структура проекта | **Частично выполнен**: Core foundation и Qt GUI shell; SQLite, persistence, versioned domain model и material database не реализованы |
 | P135.002 | Circuit Engine: линейный MNA, DC/AC, R/L/C, частотный sweep и тестовые схемы | **Реализована начальная версия**: MNA DC/AC, R/L/C и AC frequency sweep; требуется расширение моделей и подтверждение полной Debug/Release CI-сборки |
-| P135.003 | Доменная модель Shunt Passive Filter, синтез однонастроенных LC-ветвей и генерация трёхфазной схемы | **Реализована начальная версия**: C/L/R synthesis, Wye/Delta circuit builder, AC MNA и UI Calculate; harmonic network model и конструктивный расчёт компонентов отсутствуют |
+| P135.003 | Доменная модель Shunt Passive Filter, синтез однонастроенных LC-ветвей и генерация трёхфазной схемы | **Реализована начальная версия**: C/L/R synthesis с учётом потерь damping R, Wye/Delta circuit builder, AC MNA и UI Calculate; harmonic network model и конструктивный расчёт компонентов отсутствуют |
 | P135.004 | Harmonics Engine: спектр, импеданс сети, резонансы, THD и частотные характеристики | Запланирован; текущий Circuit sweep сам по себе не является полноценным Harmonics Engine |
 | P135.005 | Реактор и магнитопровод: аналитический магнитный расчёт | Запланирован |
 | P135.006 | Конденсаторная батарея и резистивные элементы с частотными/тепловыми моделями | Запланирован |
@@ -147,7 +147,7 @@ Project135/
 
 ### 12.1 Текущий статус desktop-приложения
 
-Целевой GUI executable: Project135.exe, Qt 6 Widgets. Desktop target включается параметром P135_BUILD_DESKTOP=ON; базовые core/test presets не требуют Qt. Добавлены страницы Project, Filter definition, Calculation и 3D CAD placeholder. Страница Filter definition содержит параметры сети, соединение Y/Delta, целевую реактивную мощность, порядок настройки и добротность. Calculate выполняет аналитический синтез C/L/R, строит идеальную трёхфазную схему, запускает AC MNA на фундаментальной частоте и частотный sweep. Это пока только электрический предварительный расчёт идеализированной ветви. Нет выбора магнитопровода, проводника, изоляции, каркаса, технологии навивки, тепловой модели, каталога материалов и конструктивной проверки. 3D CAD пока placeholder. Для Windows post-build шаг вызывает windeployqt и копирует Qt DLL и платформенный plugin рядом с exe, чтобы приложение запускалось вне Qt Developer Command Prompt. CI должен собирать GUI в Debug/Release и проверять наличие Project135.exe, Qt6Widgets.dll и platforms/qwindows.dll.
+Целевой GUI executable: Project135.exe, Qt 6 Widgets. Desktop target включается параметром P135_BUILD_DESKTOP=ON; базовые core/test presets не требуют Qt. Добавлены страницы Project, Filter definition, Calculation и 3D CAD placeholder. Страница Filter definition содержит параметры сети, соединение Y/Delta, целевую реактивную мощность, порядок настройки и добротность. Calculate выполняет аналитический синтез C/L/R, строит идеальную трёхфазную схему, запускает AC MNA на фундаментальной частоте и частотный sweep. Это пока только электрический предварительный расчёт идеализированной ветви. Синтез учитывает активные потери последовательного демпфирующего резистора при достижении заданной фундаментальной реактивной мощности. Нет выбора магнитопровода, проводника, изоляции, каркаса, технологии навивки, тепловой модели, каталога материалов и конструктивной проверки. 3D CAD пока placeholder. Для Windows post-build шаг вызывает windeployqt и копирует Qt DLL и платформенный plugin рядом с exe, чтобы приложение запускалось вне Qt Developer Command Prompt. CI должен собирать GUI в Debug/Release и проверять наличие Project135.exe, Qt6Widgets.dll и platforms/qwindows.dll.
 
 Для сборки GUI использовать presets vs2026-desktop-debug и vs2026-desktop-release. Выходной файл задаётся в out/build/<preset>/bin/Project135.exe (для multi-config генератора фактический каталог конфигурации может зависеть от CMake). Требуются Qt 6.5+ Widgets, корректно настроенный Qt package path и windeployqt из той же Qt-установки.
 
@@ -224,7 +224,9 @@ UI shell не считается завершением P135.001: далее н�
 | D01 | Типы геометрии сердечника, семейства материалов, проводников, технологий намотки, изоляции и охлаждения | **Добавлено** в `src/domain/include/p135/domain/magnetic_product.hpp` |
 | D02 | Структуры CoreGeometry, CoreMaterial с B-H точками, Conductor, InsulationLayer, Bobbin, Winding и CoolingConfiguration | **Добавлено**; поля хранят SI-величины |
 | D03 | Базовая структурная валидация геометрии, B-H данных, проводника, слоёв обмотки, изоляции, каркаса и температур | **Добавлено** в `src/domain/src/magnetic_product.cpp`; это не физическая/нормативная проверка |
-| D04 | CMake target Project135::Domain и отдельный тестовый executable | **Добавлено**; прохождение MSVC CI после последних коммитов ожидается/требует проверки |
+| D04 | CMake target Project135::Domain и отдельный тестовый executable | **Добавлено**; MSVC CI для нового target ещё ожидается |
+| D08 | Типизация плотности, удельного сопротивления, температурного коэффициента и электрической прочности в SI | **Добавлено** в Core units и domain model |
+| D09 | Исправить учёт активных потерь демпфирующего резистора при синтезе фильтра и убрать дублирующее определение frequency sweep | **Исправление внесено**; повторное прохождение Debug/Release CI ожидается |
 | D05 | Проверка B-H кривой на физическую корректность и модель потерь сердечника | Запланировано |
 | D06 | Полная геометрическая раскладка витков с учётом изоляции и технологических зазоров | Запланировано |
 | D07 | Material repository, источники данных, редакции и persistence | Запланировано |
