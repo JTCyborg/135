@@ -19,45 +19,45 @@
     },
     {
       "name": "vs2026-debug",
-      "displayName": "VS 2026 x64 Debug",
+      "displayName": "VS 2026 x64 Debug — Core and tests",
       "inherits": "windows-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
     },
     {
       "name": "vs2026-release",
-      "displayName": "VS 2026 x64 Release",
+      "displayName": "VS 2026 x64 Release — Core and tests",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "vs2026-desktop-debug",
+      "displayName": "VS 2026 x64 Debug — Desktop",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "P135_BUILD_DESKTOP": "ON"
+      }
+    },
+    {
+      "name": "vs2026-desktop-release",
+      "displayName": "VS 2026 x64 Release — Desktop",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "P135_BUILD_DESKTOP": "ON"
       }
     }
   ],
   "buildPresets": [
-    {
-      "name": "build-debug",
-      "configurePreset": "vs2026-debug",
-      "configuration": "Debug"
-    },
-    {
-      "name": "build-release",
-      "configurePreset": "vs2026-release",
-      "configuration": "Release"
-    }
+    { "name": "build-debug", "configurePreset": "vs2026-debug", "configuration": "Debug" },
+    { "name": "build-release", "configurePreset": "vs2026-release", "configuration": "Release" },
+    { "name": "build-desktop-debug", "configurePreset": "vs2026-desktop-debug", "configuration": "Debug" },
+    { "name": "build-desktop-release", "configurePreset": "vs2026-desktop-release", "configuration": "Release" }
   ],
   "testPresets": [
-    {
-      "name": "test-debug",
-      "configurePreset": "vs2026-debug",
-      "configuration": "Debug",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "test-release",
-      "configurePreset": "vs2026-release",
-      "configuration": "Release",
-      "output": { "outputOnFailure": true }
-    }
+    { "name": "test-debug", "configurePreset": "vs2026-debug", "configuration": "Debug", "output": { "outputOnFailure": true } },
+    { "name": "test-release", "configurePreset": "vs2026-release", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "test-desktop-debug", "configurePreset": "vs2026-desktop-debug", "configuration": "Debug", "output": { "outputOnFailure": true } },
+    { "name": "test-desktop-release", "configurePreset": "vs2026-desktop-release", "configuration": "Release", "output": { "outputOnFailure": true } }
   ]
 }
