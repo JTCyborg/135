@@ -36,6 +36,7 @@ struct CoreLossDensityTag {};
 struct TemperatureKelvinTag {};
 struct TemperatureDifferenceTag {};
 struct FluxDensityTag {};
+struct MagneticFluxTag {};
 struct MagneticFieldStrengthTag {};
 struct TimeTag {};
 struct AngleTag {};
@@ -58,7 +59,8 @@ using ElectricFieldStrength = Quantity<ElectricFieldStrengthTag>; // V/m
 using CoreLossDensity = Quantity<CoreLossDensityTag>;             // W/kg
 using TemperatureKelvin = Quantity<TemperatureKelvinTag>;     // K absolute
 using TemperatureDifference = Quantity<TemperatureDifferenceTag>; // K delta
-using FluxDensity = Quantity<FluxDensityTag>;                 // T
+using FluxDensity = Quantity<FluxDensityTag>;                         // T
+using MagneticFlux = Quantity<MagneticFluxTag>;                       // Wb                 // T
 using MagneticFieldStrength = Quantity<MagneticFieldStrengthTag>; // A/m
 using Time = Quantity<TimeTag>;                               // s
 using Angle = Quantity<AngleTag>;                             // rad
