@@ -9,6 +9,14 @@ namespace p135::infrastructure::sqlite {
 
 enum class MaterialUsageKind { Product, Calculation };
 
+struct MaterialCatalogFilter {
+    std::string recordType;
+    std::string searchText;
+    bool includeArchived{false};
+    std::uint32_t pageSize{100};
+    std::uint64_t pageOffset{};
+};
+
 struct MaterialUsageReference {
     std::string usageId;
     std::string revisionId;
@@ -38,6 +46,9 @@ public:
     [[nodiscard]] Result<bool> isMaterialInUse(const std::string& materialId) const override;
     [[nodiscard]] Result<std::vector<application::MaterialRevision>>
     revisionHistory(const std::string& materialId) const;
+    /// Search material identities with their latest immutable revision; default hides archived rows.
+    [[nodiscard]] Result<std::vector<application::MaterialRevision>>
+    searchLatestRevisions(const MaterialCatalogFilter& filter) const;
     /// Append a durable exact-revision reference from a saved product or calculation.
     [[nodiscard]] Result<void> recordUsage(const MaterialUsageReference& usage);
 
