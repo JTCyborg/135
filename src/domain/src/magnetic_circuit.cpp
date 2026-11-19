@@ -114,14 +114,17 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
                     "Requested current drives flux beyond the measured B-H curve; no extrapolation was performed.",
                     "current");
 
-    double low = bMin;
-    double high = bMax;
-    for (int iteration = 0; iteration < 100; ++iteration) {
-        const double middle = 0.5 * (low + high);
-        if (requiredMmf(middle) < mmf) low = middle;
-        else high = middle;
+    double b = 0.0;
+    if (mmf > 0.0) {
+        double low = bMin;
+        double high = bMax;
+        for (int iteration = 0; iteration < 100; ++iteration) {
+            const double middle = 0.5 * (low + high);
+            if (requiredMmf(middle) < mmf) low = middle;
+            else high = middle;
+        }
+        b = 0.5 * (low + high);
     }
-    const double b = 0.5 * (low + high);
     const auto operating = interpolateBh(request.material, b);
     if (!operating)
         return fail(ErrorCode::ModelOutOfDomain,
