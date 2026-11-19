@@ -143,10 +143,13 @@ int main(int argc, char** argv)
         MaterialCatalogFilter coreMaterials;
         coreMaterials.recordType = "core-material";
         const auto coreCatalog = store.searchLatestRevisions(coreMaterials);
-        assert(coreCatalog && coreCatalog.value().size() == 2);
+        // MAT-TEST was inserted above; the two starter ferrites make three records total.
+        assert(coreCatalog && coreCatalog.value().size() == 3);
         const auto n87 = store.latestRevision("MAT-TDK-N87");
         assert(n87 && n87.value());
         assert(n87.value()->payload.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
+        const auto n97 = store.latestRevision("MAT-TDK-N97");
+        assert(n97 && n97.value());
         const auto copper = store.latestRevision("MAT-CU-C11000-ETP");
         assert(copper && copper.value());
         assert(copper.value()->payload.find("1.707e-08") != std::string::npos);
