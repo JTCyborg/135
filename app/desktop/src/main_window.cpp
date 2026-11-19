@@ -692,7 +692,7 @@ QWidget* MainWindow::createResultsPage()
     resultsTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     layout->addWidget(resultsTable_);
 
-    auto* currentPlotTitle = new QLabel(tr("Filter bank current — frequency sweep"));
+    auto* currentPlotTitle = new QLabel(tr("Inductor phase peak current — frequency sweep"));
     currentPlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
