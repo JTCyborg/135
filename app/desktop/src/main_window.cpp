@@ -596,7 +596,59 @@ void MainWindow::calculateFilter()
     addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
 
-    resultsNote_->setText(tr("LC branch synthesis, balanced three-phase AC MNA verification at the fundamental frequency and a logarithmic 0.5–15× fundamental-frequency current sweep completed. The peak current is the maximum RMS vector sum of the three phase branch currents in the ideal-source model; it is not a harmonic attenuation or compliance result. Source impedance, background harmonic voltage, feeder impedance, capacitor/reactor stress ratings, losses, temperature and standards checks are not yet evaluated."));
+    if (impedanceResult) {
+        addResult(tr("Source/filter impedance scan points"),
+                  static_cast<double>(impedanceResult->points.size()), tr("points"));
+        addResult(tr("Detected parallel-resonance candidates"),
+                  static_cast<double>(impedanceResult->resonancePeaks.size()), tr("peaks"));
+        if (!impedanceResult->resonancePeaks.empty()) {
+            const auto* strongest = &impedanceResult->resonancePeaks.front();
+            for (const auto& peak : impedanceResult->resonancePeaks) {
+                if (peak.busImpedanceMagnitudeOhm > strongest->busImpedanceMagnitudeOhm)
+                    strongest = &peak;
+            }
+            addResult(tr("Strongest resonance candidate frequency"),
+                      strongest->frequency.si(), tr("Hz"));
+            addResult(tr("Strongest resonance candidate bus impedance"),
+                      strongest->busImpedanceMagnitudeOhm, tr("Ω"));
+        }
+    }
+
+    if (harmonicResult) {
+        addResult(tr("PCC voltage THD"),
+                  harmonicResult->busVoltageThd * 100.0, tr("%"));
+        addResult(tr("Source current THD"),
+                  harmonicResult->sourceCurrentThd * 100.0, tr("%"));
+        addResult(tr("PCC fundamental phase voltage"),
+                  harmonicResult->busFundamentalVoltageV, tr("V RMS"));
+        addResult(tr("Source fundamental phase current"),
+                  harmonicResult->sourceFundamentalCurrentA, tr("A RMS"));
+        if (!harmonicResult->branchStresses.empty()) {
+            const auto& stress = harmonicResult->branchStresses.front();
+            addResult(tr("Branch total RMS current"), stress.totalRmsCurrentA, tr("A"));
+            addResult(tr("Capacitor total RMS voltage"), stress.capacitorRmsVoltageV, tr("V"));
+            addResult(tr("Reactor total RMS voltage"), stress.inductorRmsVoltageV, tr("V"));
+            addResult(tr("Damping resistor total RMS voltage"),
+                      stress.dampingResistorRmsVoltageV, tr("V"));
+            addResult(tr("Damping resistor harmonic active loss"),
+                      stress.dampingResistorLossW, tr("W"));
+        }
+    }
+
+    QString calculationSummary = tr("LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed.");
+    if (impedanceResult)
+        calculationSummary += tr(" Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures.");
+    else
+        calculationSummary += tr(" Source/filter impedance scan NOT_VERIFIED.");
+    if (harmonicResult)
+        calculationSummary += tr(" Harmonic response and component RMS stress were calculated from %1 entered non-fundamental voltage harmonics.")
+            .arg(suppliedHarmonics);
+    else
+        calculationSummary += tr(" Harmonic THD and harmonic component stress NOT_VERIFIED.");
+    if (!advancedWarning.isEmpty())
+        calculationSummary += QStringLiteral(" ") + advancedWarning;
+    calculationSummary += tr(" Models assume balanced positive/negative sequence and ideal RLC components; zero sequence, component tolerances, thermal derating and standards compliance are not evaluated.");
+    resultsNote_->setText(calculationSummary);
     status_->setText(tr("Filter synthesized and AC network solved"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
         .arg(targetReactivePower_->value())
