@@ -446,6 +446,30 @@ SqliteMaterialRevisionStore::findCalculation(const std::string& calculationId) c
     return Result<std::optional<CalculationRecord>>::success(std::move(value));
 }
 
+Result<std::vector<CalculationMaterialReference>>
+SqliteMaterialRevisionStore::calculationMaterials(const std::string& calculationId) const
+{
+    if (calculationId.empty())
+        return Result<std::vector<CalculationMaterialReference>>::failure(storeError(
+            "Calculation ID is required.", ErrorCode::MissingRequiredData));
+    Statement query(database_.handle(),
+        "SELECT usage_id,revision_id FROM material_usage "
+        "WHERE usage_kind='calculation' AND calculation_id=?1 ORDER BY usage_id;");
+    if (!query)
+        return Result<std::vector<CalculationMaterialReference>>::failure(storeError(query.error()));
+    sqlite3_bind_text(query.get(),1,calculationId.c_str(),-1,SQLITE_TRANSIENT);
+    std::vector<CalculationMaterialReference> references;
+    int rc = SQLITE_ROW;
+    while ((rc = sqlite3_step(query.get())) == SQLITE_ROW) {
+        references.push_back(CalculationMaterialReference{
+            columnText(query.get(),0), columnText(query.get(),1)
+        });
+    }
+    if (rc != SQLITE_DONE)
+        return Result<std::vector<CalculationMaterialReference>>::failure(storeError(query.error()));
+    return Result<std::vector<CalculationMaterialReference>>::success(std::move(references));
+}
+
 Result<void> SqliteMaterialRevisionStore::recordUsage(const MaterialUsageReference& usage)
 {
     if (usage.usageId.empty() || usage.revisionId.empty() || usage.targetId.empty() ||
