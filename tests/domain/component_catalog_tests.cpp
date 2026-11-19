@@ -1,6 +1,7 @@
 #include "p135/domain/component_catalog.hpp"
 
 #include <cassert>
+#include <cmath>
 #include <limits>
 
 using namespace p135;
