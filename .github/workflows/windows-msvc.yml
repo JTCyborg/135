@@ -37,6 +37,23 @@ jobs:
           arch: win64_msvc2022_64
           cache: true
 
+      - name: Fetch vcpkg manifest baseline
+        shell: pwsh
+        run: |
+          $manifest = Get-Content vcpkg.json -Raw | ConvertFrom-Json
+          $baseline = $manifest.'builtin-baseline'
+          if ([string]::IsNullOrWhiteSpace($baseline)) {
+            throw "vcpkg.json does not define builtin-baseline"
+          }
+          git -C "$env:VCPKG_INSTALLATION_ROOT" fetch --no-tags origin $baseline
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to fetch vcpkg baseline commit $baseline"
+          }
+          git -C "$env:VCPKG_INSTALLATION_ROOT" cat-file -e "$baseline^{commit}"
+          if ($LASTEXITCODE -ne 0) {
+            throw "vcpkg baseline commit $baseline is not available locally"
+          }
+
       - name: Install native dependencies
         shell: pwsh
         run: vcpkg install --triplet x64-windows
