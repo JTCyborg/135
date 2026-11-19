@@ -148,3 +148,15 @@ if(MSVC)
 else()
     target_compile_options(Project135MechanicalGeometryTests PRIVATE -UNDEBUG)
 endif()
+
+
+add_executable(Project135CadTests
+    cad/cad_tests.cpp
+)
+target_link_libraries(Project135CadTests PRIVATE Project135::Cad)
+add_test(NAME Project135CadTests COMMAND Project135CadTests)
+if(MSVC)
+    target_compile_options(Project135CadTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135CadTests PRIVATE -UNDEBUG)
+endif()
