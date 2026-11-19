@@ -52,16 +52,16 @@ struct Conductor {
     units::Length bareWidth;
     units::Length bareThickness;
     units::Length insulationBuild;
-    double resistivityAt20C{1.724e-8}; // ohm*m, copper default is a nominal reference only
-    double temperatureCoefficient{0.00393}; // 1/K
+    units::Resistivity resistivityAt20C{1.724e-8}; // nominal copper reference only
+    units::TemperatureCoefficient temperatureCoefficient{0.00393}; // nominal copper reference only
 };
 
 struct InsulationLayer {
     InsulationPosition position{InsulationPosition::Turn};
     std::string material;
     units::Length thickness;
-    std::optional<double> dielectricStrength; // V/m; absent means NOT_VERIFIED
-    std::optional<double> maximumTemperature; // K absolute
+    std::optional<units::ElectricFieldStrength> dielectricStrength; // absent means NOT_VERIFIED
+    std::optional<units::TemperatureKelvin> maximumTemperature; // K absolute
 };
 
 struct Bobbin {
