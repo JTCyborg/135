@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-and-test:
-    name: MSVC x64 ${{ matrix.configuration }}
+    name: MSVC x64 ${{ matrix.configuration }} (Qt desktop)
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -23,16 +23,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          cache: true
+
       - name: Configure
         run: >-
           cmake -S . -B build
           -G "Visual Studio 17 2022"
           -A x64
           -DP135_BUILD_TESTS=ON
-          -DP135_BUILD_DESKTOP=OFF
+          -DP135_BUILD_DESKTOP=ON
 
       - name: Build
         run: cmake --build build --config ${{ matrix.configuration }} --parallel
 
       - name: Test
         run: ctest --test-dir build -C ${{ matrix.configuration }} --output-on-failure
+
+      - name: Verify desktop executable and Qt deployment
+        shell: pwsh
+        run: |
+          $exe = "build/bin/Project135.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Project135.exe was not produced at $exe"
+          }
+          if (-not (Test-Path "build/bin/Qt6Widgets.dll")) {
+            throw "Qt6Widgets.dll was not deployed beside Project135.exe"
+          }
+          if (-not (Test-Path "build/bin/platforms/qwindows.dll")) {
+            throw "Qt Windows platform plugin qwindows.dll was not deployed"
+          }
+
+      - name: Upload desktop build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Project135-${{ matrix.configuration }}
+          path: build/bin/
+          if-no-files-found: error
