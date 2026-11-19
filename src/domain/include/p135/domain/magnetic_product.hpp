@@ -12,6 +12,7 @@ namespace p135::domain {
 
 enum class CoreGeometryType { ThreeLimb, ThreeSinglePhase, EI, UI, Toroidal, StripWound, Custom };
 enum class CoreMaterialFamily { CRGO, ElectricalSteel, Amorphous, Nanocrystalline, Ferrite, Powder };
+enum class MaterialDataSource { ManufacturerDatasheet, Measurement, UserDefined };
 enum class ConductorShape { Round, Rectangular, Foil, Litz, Busbar };
 enum class WindingTechnology { Layer, Sectional, Disc, Foil, Multilayer, Litz };
 enum class WindingDirection { Clockwise, CounterClockwise };
@@ -32,6 +33,13 @@ struct BHPoint {
     units::FluxDensity fluxDensity;
 };
 
+struct CoreLossPoint {
+    units::Frequency frequency;
+    units::FluxDensity peakFluxDensity;
+    units::TemperatureKelvin temperature;
+    units::CoreLossDensity specificLoss;
+};
+
 struct CoreMaterial {
     std::string id;
     std::string manufacturer;
@@ -41,7 +49,11 @@ struct CoreMaterial {
     std::vector<BHPoint> bhCurve;
     // Loss data must be supplied as measured/manufacturer data before core-loss
     // calculations can be considered verified.
+    MaterialDataSource dataSource{MaterialDataSource::UserDefined};
+    std::string sourceReference;
+    std::string datasetRevision;
     std::string lossDataReference;
+    std::vector<CoreLossPoint> lossData;
 };
 
 struct Conductor {
