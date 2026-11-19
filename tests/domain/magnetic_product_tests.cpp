@@ -4,6 +4,7 @@
 #include "p135/domain/material_catalog.hpp"
 
 #include <cassert>
+#include <complex>
 #include <cmath>
 
 using namespace p135;
@@ -204,6 +205,37 @@ int main()
                          balanced.value().limbFluxDensity[i].si()) > 1.0e-8;
         }
         assert(changedLimbState);
+
+        ThreeLimbMagneticCycleSamplingRequest sampling;
+        sampling.magnetic = request;
+        sampling.phaseRmsPhasors = {
+            std::complex<double>{0.2, 0.0},
+            std::polar(0.1, -2.0 * 3.14159265358979323846 / 3.0),
+            std::polar(0.1,  2.0 * 3.14159265358979323846 / 3.0)
+        };
+        sampling.relativePeakTolerance = 1.0e-3;
+        sampling.maximumSamples = 288;
+        const auto convergedCycle = sampleThreeLimbMagneticCycle(sampling);
+        assert(convergedCycle);
+        assert(convergedCycle.value().converged);
+        assert(convergedCycle.value().samplesUsed == 144 ||
+               convergedCycle.value().samplesUsed == 288);
+        assert(convergedCycle.value().relativePeakChange <=
+               sampling.relativePeakTolerance);
+        for (const auto density : convergedCycle.value().peakAbsoluteFluxDensity)
+            assert(std::isfinite(density.si()) && density.si() >= 0.0);
+
+        auto strictSampling = sampling;
+        strictSampling.relativePeakTolerance = 1.0e-14;
+        strictSampling.maximumSamples = 144;
+        const auto cappedCycle = sampleThreeLimbMagneticCycle(strictSampling);
+        assert(cappedCycle);
+        assert(!cappedCycle.value().converged);
+        assert(cappedCycle.value().samplesUsed == 144);
+
+        auto invalidSampling = sampling;
+        invalidSampling.maximumSamples = 200;
+        assert(!sampleThreeLimbMagneticCycle(invalidSampling));
 
         auto invalidLimbArea = asymmetric;
         invalidLimbArea.geometry.limbEffectiveAreas[1] = units::Area{-1.0};
