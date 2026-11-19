@@ -147,10 +147,12 @@ Result<ElectricalResult> solve(const Study& study, const CancellationToken& canc
     for (const auto& node : circuit.nodes)
         if (node.id != circuit.referenceNode) unknownNode.emplace(node.id, next++);
 
-    std::vector<std::size_t> voltageBranch;
-    voltageBranch.reserve(circuit.elements.size());
+    std::unordered_map<ComponentId, bool> componentIds;
     std::size_t voltageCount = 0;
     for (const auto& e : circuit.elements) {
+        if (!componentIds.emplace(e.id, true).second)
+            return Result<ElectricalResult>::failure(
+                makeError(ErrorCode::InvalidInput, "Duplicate component identifier."));
         if (!nodeIndex.contains(e.positive) || !nodeIndex.contains(e.negative))
             return Result<ElectricalResult>::failure(
                 makeError(ErrorCode::InvalidInput, "Element references an unknown node."));
