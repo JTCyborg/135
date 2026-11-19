@@ -38,11 +38,16 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
     const auto& g = geometry.core;
     const double width = g.coreOverallWidth.si();
     const double height = g.coreOverallHeight.si();
-    const double spacingAB = g.limbCenterSpacings[0].si();
-    const double spacingBC = g.limbCenterSpacings[1].si();
-    const double centerA = (width - spacingAB - spacingBC) * 0.5;
-    const double centerB = centerA + spacingAB;
-    const double centerC = centerB + spacingBC;
+    // Derive limb centers from the explicit physical limb and window widths.
+    // Domain validation guarantees these stack-ups equal the declared overall
+    // width and center spacings; no magnetic Ae/Aw/le values are used here.
+    const double limbA = g.limbWidths[0].si();
+    const double limbB = g.limbWidths[1].si();
+    const double windowAB = g.windowWidths[0].si();
+    const double windowBC = g.windowWidths[1].si();
+    const double centerA = 0.5 * limbA;
+    const double centerB = centerA + 0.5 * limbA + windowAB + 0.5 * limbB;
+    const double centerC = centerB + 0.5 * limbB + windowBC + 0.5 * g.limbWidths[2].si();
     const std::array<double, 3> centers{centerA, centerB, centerC};
 
     const double bottomYoke = 0.5 * (g.yokeThicknesses[2].si() + g.yokeThicknesses[3].si());
