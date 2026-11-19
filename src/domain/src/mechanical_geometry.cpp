@@ -1,10 +1,12 @@
 #include "p135/domain/mechanical_geometry.hpp"
 
 #include <algorithm>
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace p135::domain {
 namespace {
@@ -83,15 +85,38 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
     if (expectedRightWindowHeight <= 0.0 || !dimensionsMatch(g.windowHeights[1].si(), expectedRightWindowHeight))
         return invalid("Right clear window height must match overall height minus its top and bottom yoke thicknesses.", "core.windowHeights[1]");
 
-    for (std::size_t i = 0; i < g.airGapLengths.size(); ++i) {
-        if (!nonNegative(g.airGapLengths[i])) return invalid("Air-gap lengths must be finite and non-negative.", "core.airGapLengths[" + std::to_string(i) + "]");
+    const double limbLength = g.coreOverallHeight.si() -
+        0.5 * (g.yokeThicknesses[0].si() + g.yokeThicknesses[1].si()) -
+        0.5 * (g.yokeThicknesses[2].si() + g.yokeThicknesses[3].si());
+    const std::array<double, 7> segmentLengths{{
+        limbLength, limbLength, limbLength,
+        0.5 * (g.limbWidths[0].si() + g.limbWidths[1].si()) + g.windowWidths[0].si(),
+        0.5 * (g.limbWidths[1].si() + g.limbWidths[2].si()) + g.windowWidths[1].si(),
+        0.5 * (g.limbWidths[0].si() + g.limbWidths[1].si()) + g.windowWidths[0].si(),
+        0.5 * (g.limbWidths[1].si() + g.limbWidths[2].si()) + g.windowWidths[1].si()
+    }};
+    std::array<std::vector<std::pair<double, double>>, 7> intervals;
+    for (std::size_t i = 0; i < g.airGaps.size(); ++i) {
+        const auto& gap = g.airGaps[i];
+        const auto segmentIndex = static_cast<std::size_t>(gap.segment);
+        const std::string field = "core.airGaps[" + std::to_string(i) + "]";
+        if (segmentIndex >= segmentLengths.size())
+            return invalid("Air gap must reference one of the seven physical core segments.", field + ".segment");
+        if (!positive(gap.length) || !positive(gap.positionFromSegmentStart))
+            return invalid("Air gap requires a positive length and a positive position from the segment start.", field);
+        const double start = gap.positionFromSegmentStart.si();
+        const double end = start + gap.length.si();
+        if (!std::isfinite(end) || end >= segmentLengths[segmentIndex])
+            return invalid("Air gap must lie strictly inside its referenced core segment.", field);
+        intervals[segmentIndex].push_back({start, end});
     }
-    const bool anyGap = std::any_of(g.airGapLengths.begin(), g.airGapLengths.end(),
-        [](units::Length value) { return value.si() > 0.0; });
-    if (anyGap && g.airGapLocation == AirGapLocation::None)
-        return invalid("A non-zero air gap requires an explicit air-gap location.", "core.airGapLocation");
-    if (!anyGap && g.airGapLocation != AirGapLocation::None)
-        return invalid("Air-gap location is set but all physical air-gap lengths are zero.", "core.airGapLocation");
+    for (auto& segmentGaps : intervals) {
+        std::sort(segmentGaps.begin(), segmentGaps.end());
+        for (std::size_t i = 1; i < segmentGaps.size(); ++i) {
+            if (segmentGaps[i].first < segmentGaps[i - 1].second)
+                return invalid("Air gaps on the same core segment must not overlap.", "core.airGaps");
+        }
+    }
     if (g.laminationConstruction.empty())
         return invalid("Lamination/packet construction description is required.", "core.laminationConstruction");
     return Result<void>::success();
