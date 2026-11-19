@@ -144,7 +144,7 @@ int main()
             assert(std::abs(flux.si()) < 1.0e-15);
 
         request.phaseCurrents = {
-            units::Current{1.0}, units::Current{-0.5}, units::Current{-0.5}
+            units::Current{0.2}, units::Current{-0.1}, units::Current{-0.1}
         };
         const auto balanced = analyzeThreeLimbMagneticCircuit(request);
         assert(balanced);
