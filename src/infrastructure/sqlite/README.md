@@ -58,7 +58,7 @@ identity/revision/audit records, validates SHA-256 against the stored payload by
 revision or latest revision, archives/restores identities with audit events, and checks whether
 any saved product/calculation references a revision. SQLite triggers enforce immutable snapshots
 and linear revision lineage. Canonical JSON generation/validation, a public usage-write API,
-import/export, and broader concurrency/rollback tests remain unfinished. The adapter uses `canonicalizeJson` to validate and deterministically serialize UTF-8 JSON
+import/export, revision comparison/restore, catalog search/filtering, and broader concurrency/rollback tests remain unfinished. The adapter uses `canonicalizeJson` to validate and deterministically serialize UTF-8 JSON
 (sorted object keys and compact representation), and `sha256Hex` to hash canonical bytes.
 Stored snapshots are rejected unless their payload is already in canonical form and the
 provided SHA-256 matches. JSON parsing/canonicalization is implemented with nlohmann-json.
