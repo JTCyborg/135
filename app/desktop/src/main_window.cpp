@@ -273,6 +273,9 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createMaterialsPage(), tr("Materials"));
     tabs_->addTab(createHistoryPage(), tr("Calculation history"));
     setCentralWidget(tabs_);
+    connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
+        if (index == 5) refreshCalculationHistory();
+    });
 
     projectName_->setText(settings.value(QStringLiteral("project/name"), projectName_->text()).toString());
     const int savedFamily = productFamily_->findText(
