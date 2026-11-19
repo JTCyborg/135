@@ -147,9 +147,9 @@ Project135/
 
 ### 12.1 Текущий статус desktop-приложения
 
-Целевой GUI executable: Project135.exe, Qt 6 Widgets. Desktop target включается параметром P135_BUILD_DESKTOP=ON; базовые core/test presets не требуют Qt. Добавлены страницы Project, Filter definition, Calculation и 3D CAD placeholder. Форма фильтра пока хранит только черновые значения в UI-сеансе: они не являются валидированной инженерной моделью и не передаются в Circuit Engine. Команда Calculate намеренно не создаёт фиктивный результат.
+Целевой GUI executable: Project135.exe, Qt 6 Widgets. Desktop target включается параметром P135_BUILD_DESKTOP=ON; базовые core/test presets не требуют Qt. Добавлены страницы Project, Filter definition, Calculation и 3D CAD placeholder. Форма фильтра пока хранит только черновые значения в UI-сеансе: они не являются валидированной инженерной моделью и не передаются в Circuit Engine. Команда Calculate намеренно не создаёт фиктивный результат. Для Windows post-build шаг вызывает windeployqt и копирует Qt DLL и платформенный plugin рядом с exe, чтобы приложение запускалось вне Qt Developer Command Prompt. CI должен собирать GUI в Debug/Release и проверять наличие Project135.exe, Qt6Widgets.dll и platforms/qwindows.dll.
 
-Для сборки GUI использовать presets vs2026-desktop-debug и vs2026-desktop-release. Выходной файл задаётся в out/build/<preset>/bin/Project135.exe (для multi-config генератора фактический каталог конфигурации может зависеть от CMake). Требуются Qt 6.5+ Widgets и корректно настроенный Qt package path.
+Для сборки GUI использовать presets vs2026-desktop-debug и vs2026-desktop-release. Выходной файл задаётся в out/build/<preset>/bin/Project135.exe (для multi-config генератора фактический каталог конфигурации может зависеть от CMake). Требуются Qt 6.5+ Widgets, корректно настроенный Qt package path и windeployqt из той же Qt-установки.
 
 UI shell не считается завершением P135.001: далее нужны persistence/SQLite, версионируемая доменная модель, material repository, полноценная навигация проекта и интеграция расчётных сценариев.
 
