@@ -19,6 +19,7 @@ if(MSVC)
 endif()
 
 set_target_properties(Project135 PROPERTIES
+    AUTOMOC ON
     OUTPUT_NAME "Project135"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
