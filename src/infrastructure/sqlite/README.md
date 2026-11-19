@@ -1,0 +1,34 @@
+# SQLite persistence schema
+
+This directory contains ordered SQL migrations for the Project135 infrastructure adapter.
+The first migration establishes the persistent material identity, immutable revision snapshots,
+revision-to-revision lineage, saved product/calculation usage references, and audit events.
+
+## Migration runner contract
+
+The C++ migration runner must:
+
+1. Open the database and enable `PRAGMA foreign_keys = ON` on every connection.
+2. Start a transaction before applying a migration.
+3. Read the migration file as UTF-8 and calculate SHA-256 over its exact bytes.
+4. Check `schema_migrations`: an already-applied version must have the same checksum;
+   a mismatch is a hard error and must never be silently reapplied.
+5. Execute the migration and insert its version, name, calculated checksum and UTC timestamp
+   into `schema_migrations` in the same transaction.
+6. Commit only after both the DDL and migration record succeed; otherwise roll back.
+
+The checksum column is intentionally populated by the runner, not embedded as a placeholder
+inside the SQL file. This avoids self-referential checksums and makes modified migrations detectable.
+
+## Storage invariants
+
+- A material identity is separate from its immutable revision snapshots.
+- Revision IDs and per-material revision numbers are unique.
+- A trigger enforces a contiguous linear revision chain and matching record type.
+- UPDATE and DELETE against revision snapshots are rejected by SQLite triggers.
+- Usage references point to the exact revision used by a product or calculation.
+- Archival state and audit events are separate from immutable revision payloads.
+- All serialized engineering quantities are SI; display-unit conversion belongs at boundaries.
+
+The schema is a migration artifact, not yet a production repository implementation.
+The SQLite C++ adapter, transaction wrapper, migration runner and integration tests remain open work.
