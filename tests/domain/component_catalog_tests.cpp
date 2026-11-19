@@ -24,6 +24,10 @@ int main()
     capacitor.ratedVoltage = units::Voltage{1000.0};
     capacitor.voltageRatingIsAC = true;
     capacitor.esr = units::Resistance{0.015};
+    capacitor.esrFrequencyCurve = {
+        {units::Frequency{50.0}, units::Resistance{0.1}},
+        {units::Frequency{500.0}, units::Resistance{0.01}}
+    };
     capacitor.esl = units::Inductance{35.0e-9};
     capacitor.dissipationFactor = 0.001;
     capacitor.rippleCurrent = units::Current{12.0};
@@ -36,6 +40,24 @@ int main()
     assert(catalog.size() == 1);
     assert(catalog.find("CAP-TEST-001") != nullptr);
     assert(!catalog.add(capacitor));
+
+    const auto interpolatedEsr = interpolateCapacitorEsr(
+        capacitor, units::Frequency{std::sqrt(50.0 * 500.0)});
+    assert(interpolatedEsr);
+    assert(std::abs(interpolatedEsr.value().si() - std::sqrt(0.1 * 0.01)) < 1.0e-12);
+    assert(!interpolateCapacitorEsr(capacitor, units::Frequency{10.0}));
+
+    auto invalidEsrCurve = capacitor;
+    invalidEsrCurve.id = "CAP-BAD-ESR-CURVE";
+    invalidEsrCurve.esrFrequencyCurve[1].frequency = units::Frequency{25.0};
+    assert(!validate(invalidEsrCurve));
+
+    auto unconfirmedConstantEsr = capacitor;
+    unconfirmedConstantEsr.esrFrequencyCurve.clear();
+    unconfirmedConstantEsr.esrConfirmedFrequencyIndependent = false;
+    assert(!interpolateCapacitorEsr(unconfirmedConstantEsr, units::Frequency{50.0}));
+    unconfirmedConstantEsr.esrConfirmedFrequencyIndependent = true;
+    assert(interpolateCapacitorEsr(unconfirmedConstantEsr, units::Frequency{50.0}));
 
     auto invalidCapacitance = capacitor;
     invalidCapacitance.id = "CAP-BAD-C";
