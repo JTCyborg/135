@@ -29,17 +29,22 @@ set_target_properties(Project135 PROPERTIES
 )
 
 # Copy Qt runtime DLLs and the Windows platform plugin beside the executable.
-# Without this deployment step a freshly built GUI may silently fail to start
-# when launched outside a Qt-enabled developer command prompt.
-if(TARGET Qt6::windeployqt)
+# Qt6_DIR normally points to <Qt>/lib/cmake/Qt6; windeployqt is in <Qt>/bin.
+if(WIN32)
+    get_filename_component(P135_QT_BIN_DIR "${Qt6_DIR}/../../../bin" ABSOLUTE)
+    find_program(P135_WINDEPLOYQT_EXECUTABLE
+        NAMES windeployqt
+        HINTS "${P135_QT_BIN_DIR}"
+    )
+    if(NOT P135_WINDEPLOYQT_EXECUTABLE)
+        message(FATAL_ERROR "windeployqt was not found. Project135 cannot be run as a standalone build without Qt runtime deployment.")
+    endif()
+
     add_custom_command(TARGET Project135 POST_BUILD
-        COMMAND Qt6::windeployqt
+        COMMAND "${P135_WINDEPLOYQT_EXECUTABLE}"
             --no-translations
-            --no-compiler-runtime
             "$<TARGET_FILE:Project135>"
         COMMENT "Deploying Qt runtime for Project135"
         VERBATIM
     )
-else()
-    message(WARNING "Qt6::windeployqt target is unavailable; Project135 runtime deployment must be performed manually.")
 endif()
