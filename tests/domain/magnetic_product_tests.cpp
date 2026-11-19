@@ -6,6 +6,7 @@
 #include <cassert>
 #include <complex>
 #include <cmath>
+#include <limits>
 
 using namespace p135;
 using namespace p135::domain;
@@ -224,6 +225,20 @@ int main()
                sampling.relativePeakTolerance);
         for (const auto density : convergedCycle.value().peakAbsoluteFluxDensity)
             assert(std::isfinite(density.si()) && density.si() >= 0.0);
+
+        // DC bias is superimposed on each instantaneous AC phase current.
+        auto dcBiasedSampling = sampling;
+        dcBiasedSampling.phaseDcCurrents[0] = units::Current{0.05};
+        const auto dcBiasedCycle = sampleThreeLimbMagneticCycle(dcBiasedSampling);
+        assert(dcBiasedCycle);
+        assert(std::isfinite(dcBiasedCycle.value().peakAbsoluteFluxDensity[0].si()));
+        assert(dcBiasedCycle.value().peakAbsoluteFluxDensity[0].si() >
+               convergedCycle.value().peakAbsoluteFluxDensity[0].si());
+
+        auto invalidDcBias = sampling;
+        invalidDcBias.phaseDcCurrents[1] =
+            units::Current{std::numeric_limits<double>::infinity()};
+        assert(!sampleThreeLimbMagneticCycle(invalidDcBias));
 
         auto strictSampling = sampling;
         strictSampling.relativePeakTolerance = 1.0e-14;
