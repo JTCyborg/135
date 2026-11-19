@@ -3,11 +3,14 @@
 #include <QMainWindow>
 #include <QString>
 
+#include <array>
+
 #include "p135/infrastructure/sqlite/sqlite_database.hpp"
 
 #include <memory>
 
 class QComboBox;
+class QCheckBox;
 class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
@@ -60,6 +63,16 @@ private:
     QDoubleSpinBox* coreAirGapMm_{};
     QDoubleSpinBox* coreYokeEffectiveAreaMm2_{};
     QDoubleSpinBox* coreYokeSegmentPathMm_{};
+    std::array<QCheckBox*, 3> limbAreaOverrideEnabled_{};
+    std::array<QCheckBox*, 3> limbPathOverrideEnabled_{};
+    std::array<QCheckBox*, 3> limbGapOverrideEnabled_{};
+    std::array<QCheckBox*, 4> yokeAreaOverrideEnabled_{};
+    std::array<QCheckBox*, 4> yokePathOverrideEnabled_{};
+    std::array<QDoubleSpinBox*, 3> limbAreaOverrides_{};
+    std::array<QDoubleSpinBox*, 3> limbPathOverrides_{};
+    std::array<QDoubleSpinBox*, 3> limbGapOverrides_{};
+    std::array<QDoubleSpinBox*, 4> yokeAreaOverrides_{};
+    std::array<QDoubleSpinBox*, 4> yokePathOverrides_{};
     QSpinBox* inductorTurns_{};
     QPlainTextEdit* coreBhCurve_{};
     QLineEdit* coreBhSource_{};
