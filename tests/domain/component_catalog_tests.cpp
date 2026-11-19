@@ -1,6 +1,7 @@
 #include "p135/domain/component_catalog.hpp"
 
 #include <cassert>
+#include <limits>
 
 using namespace p135;
 using namespace p135::domain;
@@ -68,6 +69,56 @@ int main()
     missingOptionalData.dissipationFactor.reset();
     missingOptionalData.rippleCurrent.reset();
     assert(validate(missingOptionalData)); // structural validity; thermal/loss use remains NOT_VERIFIED
+
+    ResistorCatalog resistorCatalog;
+    ResistorComponent resistor;
+    resistor.id = "RES-TEST-001";
+    resistor.manufacturer = "Test manufacturer";
+    resistor.series = "Pulse series";
+    resistor.partNumber = "TEST-10R-100W";
+    resistor.dataSource = MaterialDataSource::ManufacturerDatasheet;
+    resistor.sourceReference = "synthetic unit-test fixture";
+    resistor.datasetRevision = "fixture-1";
+    resistor.technology = ResistorTechnology::Wirewound;
+    resistor.resistance = units::Resistance{10.0};
+    resistor.toleranceFraction = 0.01;
+    resistor.ratedPower = units::Power{100.0};
+    resistor.maximumWorkingVoltage = units::Voltage{1000.0};
+    resistor.temperatureCoefficient = units::TemperatureCoefficient{100.0e-6};
+    resistor.parasiticInductance = units::Inductance{2.0e-6};
+    resistor.parasiticCapacitance = units::Capacitance{5.0e-12};
+    resistor.singlePulseEnergyJoules = 25.0;
+    resistor.minimumTemperature = units::TemperatureKelvin{233.15};
+    resistor.maximumTemperature = units::TemperatureKelvin{473.15};
+
+    assert(validate(resistor));
+    assert(resistorCatalog.add(resistor));
+    assert(resistorCatalog.size() == 1);
+    assert(resistorCatalog.find("RES-TEST-001") != nullptr);
+    assert(!resistorCatalog.add(resistor));
+
+    auto invalidResistance = resistor;
+    invalidResistance.id = "RES-BAD-R";
+    invalidResistance.resistance = units::Resistance{-1.0};
+    assert(!validate(invalidResistance));
+
+    auto invalidPower = resistor;
+    invalidPower.id = "RES-BAD-P";
+    invalidPower.ratedPower = units::Power{};
+    assert(!validate(invalidPower));
+
+    auto invalidTempco = resistor;
+    invalidTempco.id = "RES-BAD-TCR";
+    invalidTempco.temperatureCoefficient =
+        units::TemperatureCoefficient{std::numeric_limits<double>::quiet_NaN()};
+    assert(!validate(invalidTempco));
+
+    auto optionalPulseUnknown = resistor;
+    optionalPulseUnknown.id = "RES-NO-PULSE-DATA";
+    optionalPulseUnknown.singlePulseEnergyJoules.reset();
+    optionalPulseUnknown.parasiticInductance.reset();
+    optionalPulseUnknown.parasiticCapacitance.reset();
+    assert(validate(optionalPulseUnknown));
 
     return 0;
 }
