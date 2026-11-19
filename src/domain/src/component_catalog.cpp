@@ -139,7 +139,8 @@ Result<units::Resistance> interpolateCapacitorEsr(
         return Result<units::Resistance>::success(units::Resistance{value});
     }
 
-    if (capacitor.esr && finitePositive(capacitor.esr->si()))
+    if (capacitor.esrConfirmedFrequencyIndependent && capacitor.esr &&
+        finitePositive(capacitor.esr->si()))
         return Result<units::Resistance>::success(*capacitor.esr);
 
     return Result<units::Resistance>::failure(capacitorError(
