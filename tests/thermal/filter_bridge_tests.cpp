@@ -150,12 +150,14 @@ int main()
         lowRippleCap.rippleCurrent = units::Current{3.5};
         domain::CapacitorCatalog lowRippleCatalog;
         assert(lowRippleCatalog.add(lowRippleCap));
+        capAssignment.capacitorComponentId = lowRippleCap.id;
         const auto rippleFail = analyzeFilterCapacitorThermals(
             harmonicWithCapCurrents, {capAssignment}, lowRippleCatalog,
             units::TemperatureKelvin{298.15}, "harmonics-cap-test-r2");
         assert(rippleFail);
         assert(rippleFail.value().capacitors.front().rippleCurrentStatus == AssessmentStatus::Fail);
 
+        capAssignment.capacitorComponentId = capacitor.id;
         capAssignment.thermalResistanceKPerW.reset();
         const auto missingRtheta = analyzeFilterCapacitorThermals(
             harmonicWithCapCurrents, {capAssignment}, capacitorCatalog,
@@ -165,10 +167,11 @@ int main()
 
         auto insufficientCurve = capacitor;
         insufficientCurve.id = "CAP-ESR-GAP";
-        insufficientCurve.esrFrequencyCurve.pop_back();
+        insufficientCurve.esrFrequencyCurve.resize(1);
         domain::CapacitorCatalog insufficientCurveCatalog;
         assert(insufficientCurveCatalog.add(insufficientCurve));
         capAssignment.thermalResistanceKPerW = 5.0;
+        capAssignment.capacitorComponentId = insufficientCurve.id;
         const auto noExtrapolation = analyzeFilterCapacitorThermals(
             harmonicWithCapCurrents, {capAssignment}, insufficientCurveCatalog,
             units::TemperatureKelvin{298.15}, "harmonics-cap-test-r4");
@@ -183,6 +186,7 @@ int main()
         unconfirmedConstant.esrConfirmedFrequencyIndependent = false;
         domain::CapacitorCatalog unconfirmedCatalog;
         assert(unconfirmedCatalog.add(unconfirmedConstant));
+        capAssignment.capacitorComponentId = unconfirmedConstant.id;
         const auto constantNotTrusted = analyzeFilterCapacitorThermals(
             harmonicWithCapCurrents, {capAssignment}, unconfirmedCatalog,
             units::TemperatureKelvin{298.15}, "harmonics-cap-test-r5");
