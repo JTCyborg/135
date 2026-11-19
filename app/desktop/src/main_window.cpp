@@ -608,7 +608,7 @@ QWidget* MainWindow::createFilterPage()
     note->setStyleSheet("color: #a66b00;");
     layout->addWidget(note);
 
-    auto* advanced = new QGroupBox(tr("Source impedance and harmonic spectrum"));
+    auto* advanced = new QGroupBox(tr("Source impedance, harmonics and magnetic core"));
     auto* advancedLayout = new QVBoxLayout(advanced);
     auto* sourceForm = new QFormLayout;
 
@@ -1288,10 +1288,27 @@ void MainWindow::calculateFilter()
         }
     }
 
+    if (!anyMagneticInput)
+        magneticModelWarning = tr("Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied.");
     std::optional<double> magneticKneeCurrentA;
     std::optional<double> magneticKneeFluxDensityT;
     std::vector<std::pair<double, double>> magneticFluxDensityPoints;
     bool magneticSweepValid = magneticCircuitBase.has_value();
+    if (magneticCircuitBase) {
+        auto kneeProbe = *magneticCircuitBase;
+        kneeProbe.current = p135::units::Current{0.0};
+        const auto kneeResult = p135::domain::analyzeMagneticCircuit(kneeProbe);
+        if (!kneeResult) {
+            magneticSweepValid = false;
+            magneticModelWarning = tr("Magnetic B-H model NOT_VERIFIED: %1")
+                .arg(QString::fromStdString(kneeResult.error().message));
+        } else {
+            if (kneeResult.value().kneeCurrent)
+                magneticKneeCurrentA = kneeResult.value().kneeCurrent->si();
+            if (kneeResult.value().kneeFluxDensity)
+                magneticKneeFluxDensityT = kneeResult.value().kneeFluxDensity->si();
+        }
+    }
     double peakBankCurrent = 0.0;
     double peakBankCurrentFrequency = 0.0;
     for (const auto& point : sweepResult.value().points) {
@@ -1324,10 +1341,7 @@ void MainWindow::calculateFilter()
             } else {
                 magneticFluxDensityPoints.emplace_back(
                     point.frequency.si(), magneticPoint.value().fluxDensity.si());
-                if (magneticPoint.value().kneeCurrent)
-                    magneticKneeCurrentA = magneticPoint.value().kneeCurrent->si();
-                if (magneticPoint.value().kneeFluxDensity)
-                    magneticKneeFluxDensityT = magneticPoint.value().kneeFluxDensity->si();
+
             }
         }
     }
