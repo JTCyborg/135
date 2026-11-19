@@ -719,6 +719,25 @@ QWidget* MainWindow::createFilterPage()
         "Checked fields override one branch; an explicitly entered zero air gap is valid."));
     advancedLayout->addWidget(branchGeometryGroup);
 
+    auto* dcBiasGroup = new QGroupBox(tr("Per-phase DC current bias"));
+    auto* dcBiasForm = new QFormLayout(dcBiasGroup);
+    const std::array<QString, 3> dcPhaseNames{tr("Phase A"), tr("Phase B"), tr("Phase C")};
+    for (std::size_t i = 0; i < phaseDcBiasCurrentA_.size(); ++i) {
+        phaseDcBiasCurrentA_[i] = new QDoubleSpinBox;
+        phaseDcBiasCurrentA_[i]->setRange(-1000000.0, 1000000.0);
+        phaseDcBiasCurrentA_[i]->setDecimals(4);
+        phaseDcBiasCurrentA_[i]->setValue(0.0);
+        phaseDcBiasCurrentA_[i]->setSuffix(tr(" A DC"));
+        dcBiasForm->addRow(dcPhaseNames[i], phaseDcBiasCurrentA_[i]);
+    }
+    auto* dcBiasHelp = new QLabel(tr(
+        "These values are added to the instantaneous AC phase currents only in the magnetic network. "
+        "They represent externally established DC bias; the circuit AC solver does not calculate a DC operating point. "
+        "This is not a hysteresis or remanence model."));
+    dcBiasHelp->setWordWrap(true);
+    dcBiasForm->addRow(dcBiasHelp);
+    advancedLayout->addWidget(dcBiasGroup);
+
     coreBhCurve_ = new QPlainTextEdit;
     coreBhCurve_->setPlaceholderText(
         tr("Enter measured B-H points, one per line: H [A/m], B [T]\n"
@@ -1146,6 +1165,14 @@ void MainWindow::loadCalculationInputs(int row)
         yokeAreaOverrideEnabled_, yokeAreaOverrides_);
     restoreGeometryOverrides(QStringLiteral("yokePathOverrides"),
         yokePathOverrideEnabled_, yokePathOverrides_);
+    const auto savedDcBias = input.value(QStringLiteral("phaseDcBiasCurrent_A")).toArray();
+    for (std::size_t phase = 0; phase < phaseDcBiasCurrentA_.size(); ++phase) {
+        if (phaseDcBiasCurrentA_[phase]) {
+            phaseDcBiasCurrentA_[phase]->setValue(
+                static_cast<int>(phase) < savedDcBias.size()
+                    ? savedDcBias.at(static_cast<int>(phase)).toDouble(0.0) : 0.0);
+        }
+    }
     if (inductorTurns_ && input.value(QStringLiteral("inductorTurns")).isDouble())
         inductorTurns_->setValue(input.value(QStringLiteral("inductorTurns")).toInt());
     if (coreBhSource_)
@@ -1516,6 +1543,11 @@ void MainWindow::calculateFilter()
                 p135::domain::ThreeLimbMagneticCycleSamplingRequest samplingRequest;
                 samplingRequest.magnetic = *threeLimbMagneticBase;
                 samplingRequest.phaseRmsPhasors = phasePhasors;
+                for (std::size_t phase = 0; phase < 3; ++phase) {
+                    samplingRequest.phaseDcCurrents[phase] = p135::units::Current{
+                        phaseDcBiasCurrentA_[phase] ? phaseDcBiasCurrentA_[phase]->value() : 0.0
+                    };
+                }
                 samplingRequest.relativePeakTolerance = 1.0e-3;
                 samplingRequest.maximumSamples = 288;
                 const auto sampledCycle =
@@ -2047,6 +2079,10 @@ void MainWindow::calculateFilter()
             saveGeometryOverrides(yokeAreaOverrideEnabled_, yokeAreaOverrides_));
         inputSnapshot.insert(QStringLiteral("yokePathOverrides"),
             saveGeometryOverrides(yokePathOverrideEnabled_, yokePathOverrides_));
+        QJsonArray dcBiasSnapshot;
+        for (const auto* control : phaseDcBiasCurrentA_)
+            dcBiasSnapshot.append(control ? control->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("phaseDcBiasCurrent_A"), dcBiasSnapshot);
         inputSnapshot.insert(QStringLiteral("inductorTurns"),
             inductorTurns_ ? inductorTurns_->value() : 0);
         inputSnapshot.insert(QStringLiteral("coreBhSource"),
@@ -2232,6 +2268,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("magneticSinglePath"), QStringLiteral("nonlinear-magnetic-circuit-v1"));
         engineVersions.insert(QStringLiteral("magneticThreeLimb"), QStringLiteral("three-limb-reluctance-network-v1"));
         engineVersions.insert(QStringLiteral("magneticGeometryInput"), QStringLiteral("independent-limb-yoke-overrides-v1"));
+        engineVersions.insert(QStringLiteral("magneticDcBias"), QStringLiteral("per-phase-dc-offset-cycle-sampling-v1"));
         engineVersions.insert(QStringLiteral("magneticTimeSampling"), QStringLiteral("adaptive-72-144-288-peak-B-1e-3-v2"));
         engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v4-three-limb-magnetic-network-v1"));
 
