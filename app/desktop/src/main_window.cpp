@@ -828,6 +828,65 @@ void MainWindow::showCalculationDetails(int row)
     historyDetails_->setPlainText(details);
 }
 
+void MainWindow::compareSelectedCalculationGraphs()
+{
+    if (!historyTable_ || !historyComparisonPlot_ || !materialStore_ || !historyPlotMetric_)
+        return;
+    const auto selected = historyTable_->selectionModel()->selectedRows();
+    if (selected.size() != 2) {
+        historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"),
+            tr("Select exactly two calculations"));
+        return;
+    }
+
+    const QString metricKey = historyPlotMetric_->currentData().toString();
+    const bool currentMetric = metricKey == QStringLiteral("bankCurrent_A");
+    const QString arrayKey = currentMetric ? QStringLiteral("frequencySweep")
+                                            : QStringLiteral("impedanceScan");
+    const QString yLabel = currentMetric ? tr("Bank current (A)") : tr("Bus impedance (Ω)");
+    std::vector<PlotCurve> curves;
+    QStringList comparisonIds;
+
+    for (const auto& selection : selected) {
+        const int row = selection.row();
+        const auto* idItem = historyTable_->item(row, 3);
+        if (!idItem) continue;
+        const QString calculationId = idItem->data(Qt::UserRole).toString();
+        const auto record = materialStore_->findCalculation(calculationId.toStdString());
+        if (!record || !record.value()) continue;
+
+        const auto document = QJsonDocument::fromJson(
+            QByteArray::fromStdString(record.value()->resultJson));
+        if (!document.isObject()) continue;
+        const auto samples = document.object().value(arrayKey).toArray();
+        PlotCurve curve;
+        curve.name = QString::fromStdString(record.value()->projectName) +
+            QStringLiteral(" / ") + QString::fromStdString(record.value()->createdAtUtc) +
+            QStringLiteral(" [") + calculationId.left(8) + QStringLiteral("]");
+        for (const auto& sampleValue : samples) {
+            const auto sample = sampleValue.toObject();
+            const auto frequency = sample.value(QStringLiteral("frequency_Hz"));
+            const auto ordinate = sample.value(metricKey);
+            if (!frequency.isDouble() || !ordinate.isDouble()) continue;
+            curve.points.emplace_back(frequency.toDouble(), ordinate.toDouble());
+        }
+        if (curve.points.size() >= 2) {
+            curves.push_back(std::move(curve));
+            comparisonIds.push_back(calculationId);
+        }
+    }
+
+    if (curves.size() != 2) {
+        historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), yLabel);
+        historyDetails_->appendPlainText(tr("\nGraph comparison unavailable: one or both selected snapshots do not contain this frequency series. Older snapshots created before D43 have no stored plot points."));
+        return;
+    }
+    historyComparisonPlot_->setCurves(std::move(curves),
+        tr("Frequency (Hz, logarithmic)"), yLabel);
+    historyDetails_->appendPlainText(tr("\nGraph comparison: %1 vs %2 (%3).")
+        .arg(comparisonIds[0], comparisonIds[1], yLabel));
+}
+
 void MainWindow::loadCalculationInputs(int row)
 {
     if (!historyTable_ || !materialStore_ || row < 0 || row >= historyTable_->rowCount())
