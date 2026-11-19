@@ -165,6 +165,52 @@ int main()
         for (const auto density : balanced.value().yokeFluxDensity)
             assert(std::isfinite(density.si()));
 
+        // Explicitly populated symmetric arrays must reproduce the legacy
+        // scalar geometry exactly.
+        auto explicitSymmetric = request;
+        explicitSymmetric.geometry.limbEffectiveAreas.fill(request.geometry.limbEffectiveArea);
+        explicitSymmetric.geometry.limbMeanPaths.fill(request.geometry.limbMeanPath);
+        explicitSymmetric.geometry.limbAirGaps.fill(request.geometry.limbAirGap);
+        explicitSymmetric.geometry.yokeEffectiveAreas.fill(request.geometry.yokeEffectiveArea);
+        explicitSymmetric.geometry.yokeSegmentPaths.fill(request.geometry.yokeSegmentPath);
+        const auto symmetricArrays = analyzeThreeLimbMagneticCircuit(explicitSymmetric);
+        assert(symmetricArrays);
+        for (std::size_t i = 0; i < 3; ++i)
+            assert(std::abs(symmetricArrays.value().limbFluxDensity[i].si() -
+                            balanced.value().limbFluxDensity[i].si()) < 1.0e-12);
+        for (std::size_t i = 0; i < 4; ++i)
+            assert(std::abs(symmetricArrays.value().yokeFluxDensity[i].si() -
+                            balanced.value().yokeFluxDensity[i].si()) < 1.0e-12);
+
+        // Unequal limb/yoke sections and independent gaps are accepted and
+        // alter the solved branch state rather than being silently ignored.
+        auto asymmetric = request;
+        asymmetric.geometry.limbEffectiveAreas[0] = units::Area{5.0e-4};
+        asymmetric.geometry.limbMeanPaths[1] = units::Length{0.28};
+        asymmetric.geometry.limbAirGaps[2] = units::Length{1.5e-3};
+        asymmetric.geometry.yokeEffectiveAreas[0] = units::Area{5.5e-4};
+        asymmetric.geometry.yokeSegmentPaths[3] = units::Length{0.18};
+        asymmetric.turns = {100, 105, 95};
+        const auto asymmetricResult = analyzeThreeLimbMagneticCircuit(asymmetric);
+        assert(asymmetricResult);
+        assert(asymmetricResult.value().withinBhCurveRange);
+        assert(asymmetricResult.value().maximumFluxResidual_Wb < 1.0e-12);
+        bool changedLimbState = false;
+        for (std::size_t i = 0; i < 3; ++i) {
+            assert(std::isfinite(asymmetricResult.value().limbFluxDensity[i].si()));
+            changedLimbState = changedLimbState ||
+                std::abs(asymmetricResult.value().limbFluxDensity[i].si() -
+                         balanced.value().limbFluxDensity[i].si()) > 1.0e-8;
+        }
+        assert(changedLimbState);
+
+        auto invalidLimbArea = asymmetric;
+        invalidLimbArea.geometry.limbEffectiveAreas[1] = units::Area{-1.0};
+        const auto invalidLimbAreaResult =
+            analyzeThreeLimbMagneticCircuit(invalidLimbArea);
+        assert(!invalidLimbAreaResult);
+        assert(invalidLimbAreaResult.error().code == ErrorCode::InvalidInput);
+
         auto invalidTurns = request;
         invalidTurns.turns[1] = 0;
         assert(!analyzeThreeLimbMagneticCircuit(invalidTurns));
