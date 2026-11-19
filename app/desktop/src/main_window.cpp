@@ -26,6 +26,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include <cstdint>
+#include <cstddef>
 #include <string>
 
 MainWindow::MainWindow(QWidget* parent)
