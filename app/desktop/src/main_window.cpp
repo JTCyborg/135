@@ -82,22 +82,25 @@ bool capacitorFromRevision(const p135::application::MaterialRevision& revision,
     capacitor.sourceReference = revision.sourceReference;
     capacitor.datasetRevision = revision.datasetRevision;
 
-    const auto number = [&component](const char* key, double fallback = 0.0) {
+    const auto number = [&component](const char* key) {
+        const auto value = component.value(QLatin1String(key));
+        return value.isDouble() ? value.toDouble() : 0.0;
+    };
+    const auto numberOr = [&component](const char* key, double fallback) {
         const auto value = component.value(QLatin1String(key));
         return value.isDouble() ? value.toDouble() : fallback;
     };
-    capacitor.capacitance = p135::units::Capacitance{
-        number("capacitance_F")};
-    capacitor.toleranceFraction = number("tolerance_fraction",
-        number("capacitanceTolerance_fraction", 0.05));
+    capacitor.capacitance = p135::units::Capacitance{number("capacitance_F")};
+    capacitor.toleranceFraction = numberOr("tolerance_fraction",
+        numberOr("capacitanceTolerance_fraction", 0.05));
     capacitor.ratedVoltage = p135::units::Voltage{
-        number("ratedVoltageDC_V", number("ratedVoltage_V"))};
+        numberOr("ratedVoltageDC_V", number("ratedVoltage_V"))};
     capacitor.voltageRatingIsAC = component.value(QStringLiteral("voltageRatingIsAC")).toBool(false);
     capacitor.minimumTemperature = p135::units::TemperatureKelvin{
-        number("minimumTemperature_K", 223.15)};
+        numberOr("minimumTemperature_K", 223.15)};
     capacitor.maximumTemperature = p135::units::TemperatureKelvin{
-        number("maximumTemperature_K", number("maximumCaseTemperature_K"))};
-    const double esr = number("esr_ohm", number("equivalentSeriesResistance_ohm"));
+        numberOr("maximumTemperature_K", number("maximumCaseTemperature_K"))};
+    const double esr = numberOr("esr_ohm", number("equivalentSeriesResistance_ohm"));
     if (esr > 0.0) capacitor.esr = p135::units::Resistance{esr};
     capacitor.esrConfirmedFrequencyIndependent =
         component.value(QStringLiteral("esr_frequency_independent_confirmed")).toBool(false);
