@@ -6,6 +6,7 @@
 #include "p135/filter/harmonics.hpp"
 #include "p135/thermal/steady_state.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
