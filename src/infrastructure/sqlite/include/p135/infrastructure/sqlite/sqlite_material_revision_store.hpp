@@ -26,6 +26,25 @@ struct MaterialUsageReference {
     std::string actor;
 };
 
+/// Immutable calculation snapshot. input/result/engineVersions are canonical JSON.
+struct CalculationRecord {
+    std::string calculationId;
+    std::string projectId;
+    std::string projectName;
+    std::string productFamily;
+    std::string inputJson;
+    std::string resultJson;
+    std::string engineVersionsJson;
+    std::string contentHash;
+    std::string author;
+    std::string createdAtUtc;
+};
+
+struct CalculationMaterialReference {
+    std::string usageId;
+    std::string revisionId;
+};
+
 /// SQLite-backed immutable material revision store and exact-revision usage query.
 class SqliteMaterialRevisionStore final
     : public application::MaterialRevisionRepository,
@@ -52,6 +71,13 @@ public:
     searchLatestRevisions(const MaterialCatalogFilter& filter) const;
     /// Append a durable exact-revision reference from a saved product or calculation.
     [[nodiscard]] Result<void> recordUsage(const MaterialUsageReference& usage);
+    /// Atomically append an immutable calculation snapshot and exact material revision links.
+    [[nodiscard]] Result<void> recordCalculation(
+        const CalculationRecord& calculation,
+        const std::vector<CalculationMaterialReference>& materials);
+    [[nodiscard]] Result<std::optional<CalculationRecord>>
+    findCalculation(const std::string& calculationId) const;
+
 
 private:
     SqliteDatabase& database_;
