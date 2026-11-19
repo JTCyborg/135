@@ -47,6 +47,7 @@
 #include <QRegularExpression>
 #include <QSpinBox>
 #include <QStatusBar>
+#include <QStringList>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
