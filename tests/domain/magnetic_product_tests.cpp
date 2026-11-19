@@ -49,6 +49,7 @@ int main()
 
     CoreMaterialCatalog catalog;
     auto material = validProduct().coreMaterial;
+    material.lossDataReference = "measured loss fixture";
     material.lossData = {{units::Frequency{50.0}, units::FluxDensity{1.0}, units::TemperatureKelvin{293.15}, units::CoreLossDensity{1.2}}};
     assert(catalog.add(material));
     assert(catalog.size() == 1);
