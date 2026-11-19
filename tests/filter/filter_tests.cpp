@@ -37,7 +37,7 @@ int main()
         assert(result.value().branches.size() == 1);
         const auto& branch = result.value().branches.front();
         assert(near(branch.phaseVoltage.si(), 400.0 / std::sqrt(3.0)));
-        assert(near(branch.capacitance.si(), 0.000?));
+        const double expectedC = (100000.0 / 3.0) * (1.0 - 1.0 / 25.0) /\n            (2.0 * 3.14159265358979323846 * 50.0 *\n             std::pow(400.0 / std::sqrt(3.0), 2.0));\n        assert(near(branch.capacitance.si(), expectedC));\n        const double expectedL = 1.0 / std::pow(2.0 * 3.14159265358979323846 * 250.0, 2.0) / expectedC;\n        assert(near(branch.inductance.si(), expectedL));\n        assert(near(branch.dampingResistance.si(),\n                    2.0 * 3.14159265358979323846 * 250.0 * expectedL / 50.0));
     }
 
     {
