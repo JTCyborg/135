@@ -56,6 +56,33 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
         return invalid("A-C center spacing must equal A-B plus B-C within dimensional tolerance.", "core.limbCenterSpacings[2]");
     if (!positive(g.coreOverallHeight) || !positive(g.coreOverallWidth))
         return invalid("Overall core width and height are required.", "core.overallDimensions");
+
+    // The physical windows define the horizontal stack-up; the overall width
+    // and center spacings must agree with those explicit dimensions.
+    const double expectedWidth = g.limbWidths[0].si() + g.windowWidths[0].si() +
+        g.limbWidths[1].si() + g.windowWidths[1].si() + g.limbWidths[2].si();
+    const auto dimensionsMatch = [](double actual, double expected) {
+        return std::abs(actual - expected) <= std::max(1.0e-9, std::abs(expected) * 1.0e-6);
+    };
+    if (!dimensionsMatch(g.coreOverallWidth.si(), expectedWidth))
+        return invalid("Overall core width must equal the three limb widths plus both clear window widths.", "core.coreOverallWidth");
+
+    const double expectedSpacingAB = 0.5 * (g.limbWidths[0].si() + g.limbWidths[1].si()) + g.windowWidths[0].si();
+    const double expectedSpacingBC = 0.5 * (g.limbWidths[1].si() + g.limbWidths[2].si()) + g.windowWidths[1].si();
+    if (!dimensionsMatch(g.limbCenterSpacings[0].si(), expectedSpacingAB))
+        return invalid("A-B center spacing must equal half the adjacent limb widths plus the left clear window.", "core.limbCenterSpacings[0]");
+    if (!dimensionsMatch(g.limbCenterSpacings[1].si(), expectedSpacingBC))
+        return invalid("B-C center spacing must equal half the adjacent limb widths plus the right clear window.", "core.limbCenterSpacings[1]");
+
+    const double expectedLeftWindowHeight = g.coreOverallHeight.si() -
+        g.yokeThicknesses[0].si() - g.yokeThicknesses[2].si();
+    const double expectedRightWindowHeight = g.coreOverallHeight.si() -
+        g.yokeThicknesses[1].si() - g.yokeThicknesses[3].si();
+    if (expectedLeftWindowHeight <= 0.0 || !dimensionsMatch(g.windowHeights[0].si(), expectedLeftWindowHeight))
+        return invalid("Left clear window height must match overall height minus its top and bottom yoke thicknesses.", "core.windowHeights[0]");
+    if (expectedRightWindowHeight <= 0.0 || !dimensionsMatch(g.windowHeights[1].si(), expectedRightWindowHeight))
+        return invalid("Right clear window height must match overall height minus its top and bottom yoke thicknesses.", "core.windowHeights[1]");
+
     for (std::size_t i = 0; i < g.airGapLengths.size(); ++i) {
         if (!nonNegative(g.airGapLengths[i])) return invalid("Air-gap lengths must be finite and non-negative.", "core.airGapLengths[" + std::to_string(i) + "]");
     }
