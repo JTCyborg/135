@@ -1,5 +1,6 @@
 #include "p135/circuit/solver.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <complex>
