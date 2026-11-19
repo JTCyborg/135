@@ -216,7 +216,7 @@ QWidget* MainWindow::createFilterPage()
     form->addRow(tr("Branch quality factor"), qualityFactor_);
     layout->addWidget(group);
 
-    auto* note = new QLabel(tr("The target reactive power is the total three-phase fundamental-frequency value for this branch. The synthesis uses ideal C and L and derives a series damping resistor from Q factor. Capacitor ratings, network impedance, harmonic spectrum, resonance interaction and compliance are not evaluated in this stage."));
+    auto* note = new QLabel(tr("The target reactive power is the total three-phase fundamental-frequency value for this branch. Synthesis uses ideal C and L and derives a series damping resistor from Q factor. Optional source impedance and harmonic spectrum inputs below enable impedance-scan, THD and branch-stress estimates; component ratings, thermal derating and standards compliance remain outside this calculation."));
     note->setWordWrap(true);
     note->setStyleSheet("color: #a66b00;");
     layout->addWidget(note);
