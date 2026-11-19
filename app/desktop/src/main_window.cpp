@@ -221,6 +221,14 @@ void MainWindow::calculateFilter()
         return;
     }
 
+    if (productFamily_ && productFamily_->currentIndex() != 0) {
+        const QString message = tr("Calculation is currently implemented only for Shunt Passive Harmonic Filter.");
+        resultsNote_->setText(message);
+        status_->setText(tr("Selected product family is not implemented yet"));
+        QMessageBox::information(this, tr("Calculation not available"), message);
+        return;
+    }
+
     p135::filter::FilterSpecification specification;
     specification.network.lineToLineVoltage = p135::units::Voltage{nominalVoltage_->value()};
     specification.network.fundamentalFrequency =
