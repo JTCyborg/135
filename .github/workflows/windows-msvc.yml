@@ -49,9 +49,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "Failed to fetch vcpkg baseline commit $baseline"
           }
-          git -C "$env:VCPKG_INSTALLATION_ROOT" cat-file -e "$baseline^{commit}"
+          git -C "$env:VCPKG_INSTALLATION_ROOT" checkout --detach $baseline
           if ($LASTEXITCODE -ne 0) {
-            throw "vcpkg baseline commit $baseline is not available locally"
+            throw "Failed to check out vcpkg baseline commit $baseline"
+          }
+          $checkedOut = git -C "$env:VCPKG_INSTALLATION_ROOT" rev-parse HEAD
+          if ($checkedOut -ne $baseline) {
+            throw "vcpkg checkout does not match manifest baseline: $checkedOut"
           }
 
       - name: Install native dependencies
