@@ -22,6 +22,7 @@ private:
     void reload();
     void createOrEditMaterial();
     void compareSelectedRevisions();
+    void showRevisionHistory();
     void restoreSelectedRevision();
     void toggleArchiveSelected();
     QString selectedRevisionId() const;
