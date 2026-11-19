@@ -6,6 +6,7 @@
 
 #include <QAbstractItemView>
 #include <QCheckBox>
+#include <QJsonArray>
 #include <QComboBox>
 #include <QDateTime>
 #include <QDoubleSpinBox>
@@ -28,6 +29,7 @@
 #include <QUuid>
 
 #include <algorithm>
+#include <cmath>
 #include <set>
 
 using namespace p135;
@@ -72,7 +74,7 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
     QDialog dialog(parent);
     dialog.setWindowTitle(recordType == "capacitor" ?
         QObject::tr("Typed capacitor editor") : QObject::tr("Typed resistor editor"));
-    dialog.resize(520, 560);
+    dialog.resize(620, 720);
     auto* form = new QFormLayout(&dialog);
     auto* id = new QLineEdit(defaultId, &dialog);
     if (!defaultId.isEmpty()) id->setReadOnly(true);
@@ -91,7 +93,13 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
         value1 = addNumber(form, QObject::tr("Capacitance"), 10.0, 0.000001, 1.0e9, 6, " µF");
         value2 = addNumber(form, QObject::tr("Tolerance"), 5.0, 0.0, 99.0, 3, " %");
         value3 = addNumber(form, QObject::tr("Rated DC voltage"), 1000.0, 0.001, 1.0e9, 3, " V");
-        value4 = addNumber(form, QObject::tr("ESR (optional)"), 0.0, 0.0, 1.0e9, 6, " mΩ");
+        value4 = addNumber(form, QObject::tr("Scalar ESR (optional)"), 0.0, 0.0, 1.0e9, 6, " mΩ");
+        auto* constantEsr = new QCheckBox(QObject::tr("Datasheet confirms ESR is frequency-independent"), &dialog);
+        form->addRow(QObject::tr("Scalar ESR model"), constantEsr);
+        auto* esrCurve = new QPlainTextEdit(&dialog);
+        esrCurve->setPlaceholderText(QObject::tr("One point per line: frequency_Hz, ESR_mOhm\nExample: 50, 12.5\nNo extrapolation is performed outside the entered range."));
+        esrCurve->setMaximumHeight(120);
+        form->addRow(QObject::tr("Frequency-dependent ESR curve"), esrCurve);
         auto* esl = addNumber(form, QObject::tr("ESL (optional)"), 0.0, 0.0, 1.0e9, 6, " nH");
         auto* ripple = addNumber(form, QObject::tr("Ripple current (optional)"), 0.0, 0.0, 1.0e9, 3, " A");
         minimum = addNumber(form, QObject::tr("Minimum temperature"), -40.0, -273.14, 1000.0, 2, " °C");
@@ -116,6 +124,32 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
         model.ratedVoltage = units::Voltage{value3->value()};
         model.esr = value4->value() > 0.0 ?
             std::optional<units::Resistance>{units::Resistance{value4->value() * 1.0e-3}} : std::nullopt;
+        model.esrConfirmedFrequencyIndependent = constantEsr->isChecked();
+        const auto curveLines = esrCurve->toPlainText().split('\\n');
+        for (const auto& rawLine : curveLines) {
+            const QString line = rawLine.trimmed();
+            if (line.isEmpty() || line.startsWith('#')) continue;
+            const auto columns = line.split(',', Qt::KeepEmptyParts);
+            if (columns.size() != 2) {
+                QMessageBox::warning(parent, QObject::tr("Invalid ESR curve"),
+                    QObject::tr("Each ESR curve line must contain frequency_Hz,ESR_mOhm."));
+                return {};
+            }
+            bool frequencyOk = false;
+            bool esrOk = false;
+            const double frequencyHz = columns[0].trimmed().toDouble(&frequencyOk);
+            const double esrMilliOhm = columns[1].trimmed().toDouble(&esrOk);
+            if (!frequencyOk || !esrOk || !std::isfinite(frequencyHz) ||
+                !std::isfinite(esrMilliOhm) || frequencyHz <= 0.0 || esrMilliOhm <= 0.0) {
+                QMessageBox::warning(parent, QObject::tr("Invalid ESR curve"),
+                    QObject::tr("ESR curve frequency and resistance must be finite and positive."));
+                return {};
+            }
+            model.esrFrequencyCurve.push_back({
+                units::Frequency{frequencyHz},
+                units::Resistance{esrMilliOhm * 1.0e-3}
+            });
+        }
         model.esl = esl->value() > 0.0 ?
             std::optional<units::Inductance>{units::Inductance{esl->value() * 1.0e-9}} : std::nullopt;
         model.rippleCurrent = ripple->value() > 0.0 ?
@@ -138,6 +172,18 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
             {QStringLiteral("maximumTemperature_K"), model.maximumTemperature.si()},
         };
         if (model.esr) component.insert(QStringLiteral("esr_ohm"), model.esr->si());
+        component.insert(QStringLiteral("esr_frequency_independent_confirmed"),
+                         model.esrConfirmedFrequencyIndependent);
+        if (!model.esrFrequencyCurve.empty()) {
+            QJsonArray curve;
+            for (const auto& point : model.esrFrequencyCurve) {
+                curve.append(QJsonObject{
+                    {QStringLiteral("frequency_Hz"), point.frequency.si()},
+                    {QStringLiteral("esr_ohm"), point.esr.si()}
+                });
+            }
+            component.insert(QStringLiteral("esr_frequency_curve"), curve);
+        }
         if (model.esl) component.insert(QStringLiteral("esl_H"), model.esl->si());
         if (model.rippleCurrent) component.insert(QStringLiteral("rippleCurrent_A"), model.rippleCurrent->si());
     } else {
