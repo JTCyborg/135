@@ -9,9 +9,10 @@
 
 namespace p135::domain {
 
-/// Symmetric three-limb core reluctance network. The positive measured B-H
-/// branch is mirrored for negative H; each limb has one winding and the two
-/// yoke levels each contain two inter-limb segments.
+/// Coupled three-limb core reluctance network. Each limb and yoke segment may
+/// have independent geometry. The positive measured B-H branch is mirrored
+/// for negative H; each limb has one winding and the two yoke levels each
+/// contain two inter-limb segments.
 struct ThreeLimbMagneticGeometry {
     // Legacy symmetric defaults. Per-branch values below override these
     // when non-zero, preserving existing callers and saved inputs.
