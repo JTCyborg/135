@@ -1412,9 +1412,51 @@ void MainWindow::calculateFilter()
                 ? resultsTable_->item(row, 2)->text() : QString{});
             outputSnapshot.append(item);
         }
+        QJsonArray frequencySweepSnapshot;
+        PlotCurve bankCurrentCurve{tr("Current calculation"), {}};
+        for (const auto& point : sweepResult.value().points) {
+            double currentSquared = 0.0;
+            for (const std::size_t index : {3U, 6U, 9U}) {
+                if (index < point.result.branches.size())
+                    currentSquared += std::norm(point.result.branches[index].rmsCurrent);
+            }
+            const double bankCurrent = std::sqrt(currentSquared);
+            const double frequencyHz = point.frequency.si();
+            QJsonObject sample;
+            sample.insert(QStringLiteral("frequency_Hz"), frequencyHz);
+            sample.insert(QStringLiteral("bankCurrent_A"), bankCurrent);
+            frequencySweepSnapshot.append(sample);
+            bankCurrentCurve.points.emplace_back(frequencyHz, bankCurrent);
+        }
+
+        QJsonArray impedanceScanSnapshot;
+        PlotCurve busImpedanceCurve{tr("Current calculation"), {}};
+        if (impedanceResult) {
+            for (const auto& point : impedanceResult->points) {
+                const double frequencyHz = point.frequency.si();
+                QJsonObject sample;
+                sample.insert(QStringLiteral("frequency_Hz"), frequencyHz);
+                sample.insert(QStringLiteral("busImpedance_Ohm"), point.busImpedanceMagnitudeOhm);
+                sample.insert(QStringLiteral("filterImpedance_Ohm"), point.filterImpedanceMagnitudeOhm);
+                sample.insert(QStringLiteral("sourceImpedance_Ohm"), point.sourceImpedanceMagnitudeOhm);
+                impedanceScanSnapshot.append(sample);
+                busImpedanceCurve.points.emplace_back(frequencyHz, point.busImpedanceMagnitudeOhm);
+            }
+        }
+
+        if (resultsBankCurrentPlot_)
+            resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
+                tr("Frequency (Hz, logarithmic)"), tr("Bank current (A)"));
+        if (resultsBusImpedancePlot_)
+            resultsBusImpedancePlot_->setCurves(impedanceResult
+                ? std::vector<PlotCurve>{busImpedanceCurve} : std::vector<PlotCurve>{},
+                tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
+        resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
+        resultSnapshot.insert(QStringLiteral("impedanceScan"), impedanceScanSnapshot);
 
         QJsonObject engineVersions;
         engineVersions.insert(QStringLiteral("application"), QStringLiteral("Project135-0.1.0"));
