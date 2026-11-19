@@ -42,16 +42,23 @@ with OpenSSL SHA-256. Applied migrations are checked before any DDL is replayed;
 mismatches fail closed.
 
 Build dependencies are supplied through the vcpkg manifest (`sqlite3`, `openssl`, `nlohmann-json`).
-For a local Visual Studio 2026 configure, install the manifest dependencies and pass the
-vcpkg toolchain file:
+The Visual Studio 2026 Debug and Release configure presets load the vcpkg toolchain
+from the `VCPKG_ROOT` environment variable. Set `VCPKG_ROOT` to the root directory
+of your vcpkg installation in the environment used to launch Visual Studio, then reload
+the CMake project. Manifest mode reads `vcpkg.json` and installs the declared dependencies
+for the selected x64 triplet; no per-project package paths are required.
+
+For a command-line configure using the same preset:
 
 ```powershell
-vcpkg install --triplet x64-windows
-cmake --preset vs2026-desktop-debug -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+$env:VCPKG_ROOT = "C:\path\to\vcpkg"
+cmake --preset vs2026-desktop-debug
 cmake --build --preset build-desktop-debug
 ctest --preset test-desktop-debug
 ```
 
+Use `vs2026-desktop-release`, `build-desktop-release` and `test-desktop-release`
+for Release. Replace the example path with the actual vcpkg installation directory.
 The adapter now includes `SqliteMaterialRevisionStore`, implementing the Application Layer's
 revision repository and exact-revision usage query contracts. It atomically creates material
 identity/revision/audit records, validates SHA-256 against the stored payload bytes, reads a
