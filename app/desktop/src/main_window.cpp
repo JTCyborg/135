@@ -2086,6 +2086,9 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("circuitSolver"), QStringLiteral("circuit-ac-mna-v1"));
         engineVersions.insert(QStringLiteral("harmonics"), QStringLiteral("harmonics-v1"));
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
+        engineVersions.insert(QStringLiteral("magneticSinglePath"), QStringLiteral("nonlinear-magnetic-circuit-v1"));
+        engineVersions.insert(QStringLiteral("magneticThreeLimb"), QStringLiteral("three-limb-reluctance-network-v1"));
+        engineVersions.insert(QStringLiteral("magneticTimeSampling"), QStringLiteral("72-uniform-samples-per-cycle-v1"));
         engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v4-three-limb-magnetic-network-v1"));
 
         const std::string inputJson = QJsonDocument(inputSnapshot)
