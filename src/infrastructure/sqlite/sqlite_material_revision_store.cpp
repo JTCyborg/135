@@ -36,6 +36,7 @@ public:
     Statement(const Statement&) = delete;
     Statement& operator=(const Statement&) = delete;
     sqlite3_stmt* get() const noexcept { return statement_; }
+    void finalize() noexcept { if (statement_) { sqlite3_finalize(statement_); statement_ = nullptr; } }
     explicit operator bool() const noexcept { return statement_ != nullptr; }
     std::string error() const { return db_ ? sqlite3_errmsg(db_) : "Database is not open."; }
 private:
@@ -175,6 +176,7 @@ Result<void> SqliteMaterialRevisionStore::appendRevision(const MaterialRevision&
     if (sqlite3_column_int(identity.get(), 1) != 0)
         return Result<void>::failure(storeError("Archived material cannot receive a new revision.",
                                                 ErrorCode::InvalidInput));
+    identity.finalize();
 
     Statement insert(database_.handle(),
         "INSERT INTO material_revisions(revision_id,material_id,revision_number,parent_revision_id,"
