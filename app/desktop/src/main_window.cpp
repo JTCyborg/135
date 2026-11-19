@@ -1,5 +1,7 @@
 #include "main_window.hpp"
 
+#include "p135/filter/synthesis.hpp"
+
 #include <QAbstractItemView>
 #include <QAction>
 #include <QComboBox>
@@ -13,12 +15,16 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTableWidget>
+#include <QTableWidgetItem>
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWidget>
+
+#include <string>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -52,10 +58,8 @@ MainWindow::MainWindow(QWidget* parent)
     });
     toolbar->addAction(tr("Project"), this, [this] { tabs_->setCurrentIndex(0); });
     toolbar->addAction(tr("Calculate"), this, [this] {
+        calculateFilter();
         tabs_->setCurrentIndex(2);
-        appendLog(tr("Calculation is not enabled yet: the product-level filter model and validation are the next implementation step."));
-        QMessageBox::information(this, tr("Calculation not available"),
-            tr("The desktop shell is operational. Engineering filter synthesis is not yet connected; no design result has been generated."));
     });
 
     tabs_ = new QTabWidget(this);
@@ -65,9 +69,9 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createCadPage(), tr("3D CAD"));
     setCentralWidget(tabs_);
 
-    status_ = new QLabel(tr("Ready — desktop shell"));
+    status_ = new QLabel(tr("Ready — filter synthesis available"));
     statusBar()->addPermanentWidget(status_);
-    appendLog(tr("Project135 desktop started. Core remains independent from Qt."));
+    appendLog(tr("Project135 desktop started. Core and filter synthesis remain independent from Qt."));
     updateProjectTitle();
 }
 
@@ -84,12 +88,13 @@ QWidget* MainWindow::createProjectPage()
     projectName_ = new QLineEdit(tr("New engineering project"));
     projectName_->setPlaceholderText(tr("Project name"));
     productFamily_ = new QComboBox;
-    productFamily_->addItems({tr("Shunt passive harmonic filter"), tr("VFD output filter"), tr("Reactor / inductor"), tr("Power transformer"), tr("AFE reactor")});
+    productFamily_->addItems({tr("Shunt passive harmonic filter"), tr("VFD output filter"),
+        tr("Reactor / inductor"), tr("Power transformer"), tr("AFE reactor")});
     form->addRow(tr("Name"), projectName_);
     form->addRow(tr("Product family"), productFamily_);
     layout->addWidget(group);
 
-    auto* note = new QLabel(tr("This is the first desktop application shell. Project persistence, revision history, material database and validated engineering workflows will be added in subsequent milestones."));
+    auto* note = new QLabel(tr("The first supported calculation workflow is a three-phase shunt filter with single-tuned series RLC branches. Other product families remain planned and are not calculated yet."));
     note->setWordWrap(true);
     note->setStyleSheet("color: palette(mid);");
     layout->addWidget(note);
@@ -105,49 +110,62 @@ QWidget* MainWindow::createFilterPage()
 {
     auto* page = new QWidget;
     auto* layout = new QVBoxLayout(page);
-    auto* heading = new QLabel(tr("Electrical definition — initial input form"));
+    auto* heading = new QLabel(tr("Three-phase shunt filter — single-tuned branch"));
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
 
-    auto* group = new QGroupBox(tr("Network and filter targets"));
+    auto* group = new QGroupBox(tr("Network and branch parameters"));
     auto* form = new QFormLayout(group);
-    filterTopology_ = new QComboBox;
-    filterTopology_->addItems({tr("Single-tuned LC branch"), tr("Double-tuned branch"), tr("High-pass branch"), tr("C-type branch"), tr("Multi-branch bank")});
+
     nominalVoltage_ = new QDoubleSpinBox;
     nominalVoltage_->setRange(1.0, 1000000.0);
     nominalVoltage_->setValue(400.0);
-    nominalVoltage_->setSuffix(tr(" V"));
+    nominalVoltage_->setSuffix(tr(" V L-L"));
     nominalVoltage_->setDecimals(1);
+
     fundamentalFrequency_ = new QDoubleSpinBox;
     fundamentalFrequency_->setRange(1.0, 1000.0);
     fundamentalFrequency_->setValue(50.0);
     fundamentalFrequency_->setSuffix(tr(" Hz"));
+
     targetReactivePower_ = new QDoubleSpinBox;
-    targetReactivePower_->setRange(0.0, 100000000.0);
+    targetReactivePower_->setRange(0.001, 100000000.0);
     targetReactivePower_->setValue(100.0);
-    targetReactivePower_->setSuffix(tr(" kvar"));
-    targetReactivePower_->setDecimals(2);
-    form->addRow(tr("Topology"), filterTopology_);
+    targetReactivePower_->setSuffix(tr(" kvar total"));
+    targetReactivePower_->setDecimals(3);
+
+    filterConnection_ = new QComboBox;
+    filterConnection_->addItem(tr("Wye (Y)"), static_cast<int>(p135::filter::Connection::Wye));
+    filterConnection_->addItem(tr("Delta (Δ)"), static_cast<int>(p135::filter::Connection::Delta));
+
+    tuningHarmonicOrder_ = new QSpinBox;
+    tuningHarmonicOrder_->setRange(2, 100);
+    tuningHarmonicOrder_->setValue(5);
+
+    qualityFactor_ = new QDoubleSpinBox;
+    qualityFactor_->setRange(0.1, 10000.0);
+    qualityFactor_->setValue(50.0);
+    qualityFactor_->setDecimals(2);
+
     form->addRow(tr("Nominal line voltage"), nominalVoltage_);
     form->addRow(tr("Fundamental frequency"), fundamentalFrequency_);
+    form->addRow(tr("Branch connection"), filterConnection_);
     form->addRow(tr("Target reactive power"), targetReactivePower_);
+    form->addRow(tr("Tuning harmonic order"), tuningHarmonicOrder_);
+    form->addRow(tr("Branch quality factor"), qualityFactor_);
     layout->addWidget(group);
 
-    auto* warning = new QLabel(tr("Input values are currently a UI draft only. No assumptions about connection, detuning, component ratings or compliance are made, and these values are not yet passed to the solver."));
-    warning->setWordWrap(true);
-    warning->setStyleSheet("color: #a66b00;");
-    layout->addWidget(warning);
+    auto* note = new QLabel(tr("The target reactive power is the total three-phase fundamental-frequency value for this branch. The synthesis uses ideal C and L and derives a series damping resistor from Q factor. Capacitor ratings, network impedance, harmonic spectrum, resonance interaction and compliance are not evaluated in this stage."));
+    note->setWordWrap(true);
+    note->setStyleSheet("color: #a66b00;");
+    layout->addWidget(note);
 
-    auto* apply = new QPushButton(tr("Record inputs in session log"));
-    connect(apply, &QPushButton::clicked, this, [this] {
-        appendLog(tr("Draft inputs: %1; ULL=%2 V; f=%3 Hz; Qtarget=%4 kvar.")
-            .arg(filterTopology_->currentText())
-            .arg(nominalVoltage_->value())
-            .arg(fundamentalFrequency_->value())
-            .arg(targetReactivePower_->value()));
-        status_->setText(tr("Draft inputs recorded — not calculated"));
+    auto* calculate = new QPushButton(tr("Synthesize LC branch"));
+    connect(calculate, &QPushButton::clicked, this, [this] {
+        calculateFilter();
+        tabs_->setCurrentIndex(2);
     });
-    layout->addWidget(apply);
+    layout->addWidget(calculate);
     layout->addStretch();
     return page;
 }
@@ -156,17 +174,20 @@ QWidget* MainWindow::createResultsPage()
 {
     auto* page = new QWidget;
     auto* layout = new QVBoxLayout(page);
-    auto* heading = new QLabel(tr("Calculation results"));
+    auto* heading = new QLabel(tr("Filter synthesis results"));
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
-    auto* table = new QTableWidget(0, 3);
-    table->setHorizontalHeaderLabels({tr("Quantity"), tr("Value"), tr("Status")});
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    layout->addWidget(table);
-    auto* empty = new QLabel(tr("No calculation has been performed. Results will appear here only after the product model, validation and solver integration are implemented."));
-    empty->setWordWrap(true);
-    layout->addWidget(empty);
+
+    resultsTable_ = new QTableWidget(0, 3);
+    resultsTable_->setHorizontalHeaderLabels({tr("Parameter"), tr("Value"), tr("Unit")});
+    resultsTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    resultsTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    layout->addWidget(resultsTable_);
+
+    resultsNote_ = new QLabel(tr("No synthesis has been performed."));
+    resultsNote_->setWordWrap(true);
+    layout->addWidget(resultsNote_);
+
     log_ = new QPlainTextEdit;
     log_->setReadOnly(true);
     log_->setMaximumBlockCount(500);
@@ -190,6 +211,67 @@ QWidget* MainWindow::createCadPage()
     layout->addWidget(placeholder);
     layout->addStretch();
     return page;
+}
+
+void MainWindow::calculateFilter()
+{
+    if (!nominalVoltage_ || !fundamentalFrequency_ || !targetReactivePower_ ||
+        !filterConnection_ || !tuningHarmonicOrder_ || !qualityFactor_ ||
+        !resultsTable_ || !resultsNote_) {
+        return;
+    }
+
+    p135::filter::FilterSpecification specification;
+    specification.network.lineToLineVoltage = p135::units::Voltage{nominalVoltage_->value()};
+    specification.network.fundamentalFrequency =
+        p135::units::Frequency{fundamentalFrequency_->value()};
+    specification.network.connection = static_cast<p135::filter::Connection>(
+        filterConnection_->currentData().toInt());
+    specification.branches.push_back(p135::filter::SingleTunedBranchSpecification{
+        1,
+        "Single-tuned branch",
+        static_cast<std::uint32_t>(tuningHarmonicOrder_->value()),
+        p135::units::Power{targetReactivePower_->value() * 1000.0},
+        qualityFactor_->value()
+    });
+
+    const auto result = p135::filter::synthesize(specification);
+    resultsTable_->setRowCount(0);
+
+    if (!result) {
+        const auto& error = result.error();
+        resultsNote_->setText(tr("Synthesis failed: %1").arg(QString::fromStdString(error.message)));
+        status_->setText(tr("Filter synthesis failed"));
+        appendLog(tr("Filter synthesis failed: %1").arg(QString::fromStdString(error.message)));
+        QMessageBox::warning(this, tr("Invalid filter definition"), resultsNote_->text());
+        return;
+    }
+
+    const auto& branch = result.value().branches.front();
+    const auto addResult = [this](const QString& name, double value, const QString& unit) {
+        const int row = resultsTable_->rowCount();
+        resultsTable_->insertRow(row);
+        resultsTable_->setItem(row, 0, new QTableWidgetItem(name));
+        resultsTable_->setItem(row, 1, new QTableWidgetItem(QString::number(value, 'g', 10)));
+        resultsTable_->setItem(row, 2, new QTableWidgetItem(unit));
+    };
+
+    addResult(tr("Phase RMS voltage"), branch.phaseVoltage.si(), tr("V"));
+    addResult(tr("Capacitance per phase"), branch.capacitance.si() * 1.0e6, tr("µF"));
+    addResult(tr("Inductance per phase"), branch.inductance.si() * 1.0e3, tr("mH"));
+    addResult(tr("Series damping resistance"), branch.dampingResistance.si(), tr("Ω"));
+    addResult(tr("Tuning frequency"), fundamentalFrequency_->value() *
+              static_cast<double>(branch.tuningHarmonicOrder), tr("Hz"));
+    addResult(tr("Target three-phase reactive power"), branch.targetReactivePower.si() / 1000.0,
+              tr("kvar"));
+    addResult(tr("Branch quality factor"), branch.qualityFactor, tr("—"));
+
+    resultsNote_->setText(tr("Analytical ideal-component sizing completed. This is not a complete engineering approval: capacitor/reactor stress ratings, network impedance, harmonic spectrum, resonance interaction, losses, temperature and standards checks are not yet evaluated."));
+    status_->setText(tr("Single-tuned branch synthesized"));
+    appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
+        .arg(targetReactivePower_->value())
+        .arg(tuningHarmonicOrder_->value())
+        .arg(filterConnection_->currentText()));
 }
 
 void MainWindow::updateProjectTitle()
