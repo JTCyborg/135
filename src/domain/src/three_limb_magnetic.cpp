@@ -178,18 +178,21 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
     std::array<double, 4> yokeAreas{};
     std::array<double, 4> yokePaths{};
     for (std::size_t i = 0; i < limbAreas.size(); ++i) {
-        const double area = g.limbEffectiveAreas[i].si();
-        const double path = g.limbMeanPaths[i].si();
-        const double gap = g.limbAirGaps[i].si();
-        limbAreas[i] = area == 0.0 ? g.limbEffectiveArea.si() : area;
-        limbPaths[i] = path == 0.0 ? g.limbMeanPath.si() : path;
-        limbGaps[i] = gap == 0.0 ? g.limbAirGap.si() : gap;
+        const double area = g.limbEffectiveAreas[i]
+            ? g.limbEffectiveAreas[i]->si() : g.limbEffectiveArea.si();
+        const double path = g.limbMeanPaths[i]
+            ? g.limbMeanPaths[i]->si() : g.limbMeanPath.si();
+        const double gap = g.limbAirGaps[i]
+            ? g.limbAirGaps[i]->si() : g.limbAirGap.si();
+        limbAreas[i] = area;
+        limbPaths[i] = path;
+        limbGaps[i] = gap;
     }
     for (std::size_t i = 0; i < yokeAreas.size(); ++i) {
-        const double area = g.yokeEffectiveAreas[i].si();
-        const double path = g.yokeSegmentPaths[i].si();
-        yokeAreas[i] = area == 0.0 ? g.yokeEffectiveArea.si() : area;
-        yokePaths[i] = path == 0.0 ? g.yokeSegmentPath.si() : path;
+        yokeAreas[i] = g.yokeEffectiveAreas[i]
+            ? g.yokeEffectiveAreas[i]->si() : g.yokeEffectiveArea.si();
+        yokePaths[i] = g.yokeSegmentPaths[i]
+            ? g.yokeSegmentPaths[i]->si() : g.yokeSegmentPath.si();
     }
     const bool validLimbs =
         std::all_of(limbAreas.begin(), limbAreas.end(),
