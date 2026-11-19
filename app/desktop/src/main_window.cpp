@@ -623,6 +623,20 @@ QWidget* MainWindow::createResultsPage()
     resultsTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     layout->addWidget(resultsTable_);
 
+    auto* currentPlotTitle = new QLabel(tr("Filter bank current — frequency sweep"));
+    currentPlotTitle->setStyleSheet("font-weight: 600;");
+    layout->addWidget(currentPlotTitle);
+    resultsBankCurrentPlot_ = new PlotWidget;
+    resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bank current (A)"));
+    layout->addWidget(resultsBankCurrentPlot_);
+
+    auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
+    impedancePlotTitle->setStyleSheet("font-weight: 600;");
+    layout->addWidget(impedancePlotTitle);
+    resultsBusImpedancePlot_ = new PlotWidget;
+    resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+    layout->addWidget(resultsBusImpedancePlot_);
+
     resultsNote_ = new QLabel(tr("No synthesis has been performed."));
     resultsNote_->setWordWrap(true);
     layout->addWidget(resultsNote_);
@@ -671,9 +685,22 @@ QWidget* MainWindow::createHistoryPage()
     historyTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     historyTable_->horizontalHeader()->setStretchLastSection(true);
     historyTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
-    historyTable_->setSelectionMode(QAbstractItemView::SingleSelection);
+    historyTable_->setSelectionMode(QAbstractItemView::ExtendedSelection);
     historyTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     layout->addWidget(historyTable_, 2);
+
+    auto* compareRow = new QHBoxLayout;
+    historyPlotMetric_ = new QComboBox;
+    historyPlotMetric_->addItem(tr("Filter bank current (A)"), QStringLiteral("bankCurrent_A"));
+    historyPlotMetric_->addItem(tr("Bus impedance (Ω)"), QStringLiteral("busImpedance_Ohm"));
+    auto* compareGraphs = new QPushButton(tr("Compare graphs of selected calculations"));
+    compareRow->addWidget(historyPlotMetric_);
+    compareRow->addWidget(compareGraphs);
+    layout->addLayout(compareRow);
+    historyComparisonPlot_ = new PlotWidget;
+    historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Selected metric"));
+    layout->addWidget(historyComparisonPlot_);
+
     auto* loadInputs = new QPushButton(tr("Load selected inputs into editor"));
     layout->addWidget(loadInputs);
 
@@ -690,6 +717,10 @@ QWidget* MainWindow::createHistoryPage()
     connect(loadInputs, &QPushButton::clicked, this, [this] {
         if (historyTable_) loadCalculationInputs(historyTable_->currentRow());
     });
+    connect(compareGraphs, &QPushButton::clicked, this,
+        [this] { compareSelectedCalculationGraphs(); });
+    connect(historyPlotMetric_, &QComboBox::currentIndexChanged, this,
+        [this](int) { compareSelectedCalculationGraphs(); });
     refreshCalculationHistory();
     return page;
 }
