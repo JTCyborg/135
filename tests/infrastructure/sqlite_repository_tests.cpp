@@ -72,8 +72,22 @@ int main(int argc, char** argv)
         const auto history = store.revisionHistory("MAT-TEST");
         assert(history && history.value().size() == 2);
         assert(history.value()[0].revisionNumber == 1 && history.value()[1].revisionNumber == 2);
+        MaterialCatalogFilter catalogFilter;
+        catalogFilter.searchText = "mat-test";
+        const auto catalog = store.searchLatestRevisions(catalogFilter);
+        assert(catalog && catalog.value().size() == 1);
+        assert(catalog.value()[0].revisionId == "REV-2");
+        catalogFilter.pageOffset = 1;
+        const auto nextPage = store.searchLatestRevisions(catalogFilter);
+        assert(nextPage && nextPage.value().empty());
+        catalogFilter.pageSize = 0;
+        assert(!store.searchLatestRevisions(catalogFilter));
 
         assert(store.setArchived("MAT-TEST", true, "test-author", "2026-01-03T00:00:00Z"));
+        MaterialCatalogFilter activeOnly;
+        assert(store.searchLatestRevisions(activeOnly).value().empty());
+        activeOnly.includeArchived = true;
+        assert(store.searchLatestRevisions(activeOnly).value().size() == 1);
         assert(!store.appendRevision(MaterialRevision{
             "REV-3", "MAT-TEST", 3, std::string("REV-2"), "core-material", "{}",
             first.contentHash, "test://datasheet", "dataset-3", "test-author",
