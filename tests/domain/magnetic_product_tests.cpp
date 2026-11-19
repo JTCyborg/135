@@ -210,8 +210,8 @@ int main()
         sampling.magnetic = request;
         sampling.phaseRmsPhasors = {
             std::complex<double>{0.2, 0.0},
-            std::polar(0.1, -2.0 * 3.14159265358979323846 / 3.0),
-            std::polar(0.1,  2.0 * 3.14159265358979323846 / 3.0)
+            std::polar(0.12, -1.73),
+            std::polar(0.11,  2.31)
         };
         sampling.relativePeakTolerance = 1.0e-3;
         sampling.maximumSamples = 288;
