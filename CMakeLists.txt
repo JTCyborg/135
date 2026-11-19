@@ -33,6 +33,10 @@ add_subdirectory(src/core)
 add_subdirectory(src/circuit)
 add_subdirectory(src/filter)
 add_subdirectory(src/domain)
+
+# OCCT is isolated in the CAD target; domain and solver APIs remain kernel-independent.
+find_package(OpenCASCADE CONFIG REQUIRED)
+add_subdirectory(src/cad)
 add_subdirectory(src/thermal)
 add_subdirectory(src/application)
 add_subdirectory(src/infrastructure)
