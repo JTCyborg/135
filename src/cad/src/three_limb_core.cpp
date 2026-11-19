@@ -97,7 +97,6 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
         return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
             "Core height does not leave a positive limb height between yokes.", "core.coreOverallHeight");
 
-    constexpr double toMillimetres = 1000.0;
     const auto gapsFor = [&](domain::CoreSegment segment) {
         std::vector<std::pair<double, double>> result;
         for (const auto& gap : g.airGaps) {
