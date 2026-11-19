@@ -128,15 +128,15 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
         component = QJsonObject{
             {QStringLiteral("id"), QString::fromStdString(model.id)}, {QStringLiteral("manufacturer"), QString::fromStdString(model.manufacturer)},
             {QStringLiteral("series"), QString::fromStdString(model.series)}, {QStringLiteral("partNumber"), QString::fromStdString(model.partNumber)},
-            {"technology", "metallized-polypropylene-film"},
-            {"capacitance_F", model.capacitance.si()},
-            {"tolerance_fraction", model.toleranceFraction},
-            {"ratedVoltageDC_V", model.ratedVoltage.si()},
-            {"minimumTemperature_K", model.minimumTemperature.si()},
-            {"maximumTemperature_K", model.maximumTemperature.si()},
-            {"esr_ohm", model.esr ? model.esr->si() : 0.0},
-            {"esl_H", model.esl ? model.esl->si() : 0.0},
-            {"rippleCurrent_A", model.rippleCurrent ? model.rippleCurrent->si() : 0.0}
+            {QStringLiteral("technology"), QStringLiteral("metallized-polypropylene-film")},
+            {QStringLiteral("capacitance_F"), model.capacitance.si()},
+            {QStringLiteral("tolerance_fraction"), model.toleranceFraction},
+            {QStringLiteral("ratedVoltageDC_V"), model.ratedVoltage.si()},
+            {QStringLiteral("minimumTemperature_K"), model.minimumTemperature.si()},
+            {QStringLiteral("maximumTemperature_K"), model.maximumTemperature.si()},
+            {QStringLiteral("esr_ohm"), model.esr ? model.esr->si() : 0.0},
+            {QStringLiteral("esl_H"), model.esl ? model.esl->si() : 0.0},
+            {QStringLiteral("rippleCurrent_A"), model.rippleCurrent ? model.rippleCurrent->si() : 0.0}
         };
     } else {
         value1 = addNumber(form, QObject::tr("Resistance"), 10.0, 0.000001, 1.0e12, 6, " Ω");
@@ -174,25 +174,27 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
             return {};
         }
         component = QJsonObject{
-            {"id", model.id.c_str()}, {"manufacturer", model.manufacturer.c_str()},
-            {"series", model.series.c_str()}, {"partNumber", model.partNumber.c_str()},
-            {"technology", "wirewound"},
-            {"resistance_ohm", model.resistance.si()},
-            {"tolerance_fraction", model.toleranceFraction},
-            {"ratedPower_W", model.ratedPower.si()},
-            {"maximumWorkingVoltage_V", model.maximumWorkingVoltage.si()},
-            {"minimumTemperature_K", model.minimumTemperature.si()},
-            {"maximumTemperature_K", model.maximumTemperature.si()},
-            {"temperatureCoefficient_per_K", model.temperatureCoefficient ?
+            {QStringLiteral("id"), QString::fromStdString(model.id)},
+            {QStringLiteral("manufacturer"), QString::fromStdString(model.manufacturer)},
+            {QStringLiteral("series"), QString::fromStdString(model.series)},
+            {QStringLiteral("partNumber"), QString::fromStdString(model.partNumber)},
+            {QStringLiteral("technology"), QStringLiteral("wirewound")},
+            {QStringLiteral("resistance_ohm"), model.resistance.si()},
+            {QStringLiteral("tolerance_fraction"), model.toleranceFraction},
+            {QStringLiteral("ratedPower_W"), model.ratedPower.si()},
+            {QStringLiteral("maximumWorkingVoltage_V"), model.maximumWorkingVoltage.si()},
+            {QStringLiteral("minimumTemperature_K"), model.minimumTemperature.si()},
+            {QStringLiteral("maximumTemperature_K"), model.maximumTemperature.si()},
+            {QStringLiteral("temperatureCoefficient_per_K"), model.temperatureCoefficient ?
                 model.temperatureCoefficient->si() : 0.0}
         };
     }
     const QJsonObject snapshot{
         {QStringLiteral("schemaVersion"), 1}, {QStringLiteral("component"), component},
         {QStringLiteral("dataQuality"), QJsonObject{
-            {QStringLiteral("sourceStatus"), "USER_ENTERED_MANUFACTURER_DATA"},
-            {QStringLiteral("designReleaseStatus"), "NOT_VERIFIED"},
-            {QStringLiteral("notes"), "Typed structural validation passed. Verify the entered values against the cited current manufacturer datasheet before design release."}
+            {QStringLiteral("sourceStatus"), QStringLiteral("USER_ENTERED_MANUFACTURER_DATA")},
+            {QStringLiteral("designReleaseStatus"), QStringLiteral("NOT_VERIFIED")},
+            {QStringLiteral("notes"), QStringLiteral("Typed structural validation passed. Verify the entered values against the cited current manufacturer datasheet before design release.")}
         }}
     };
     return QString::fromUtf8(QJsonDocument(snapshot).toJson(QJsonDocument::Indented));
