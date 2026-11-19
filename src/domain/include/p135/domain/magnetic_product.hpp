@@ -37,7 +37,7 @@ struct CoreMaterial {
     std::string manufacturer;
     std::string grade;
     CoreMaterialFamily family{CoreMaterialFamily::ElectricalSteel};
-    units::Mass density;
+    units::Density density;
     std::vector<BHPoint> bhCurve;
     // Loss data must be supplied as measured/manufacturer data before core-loss
     // calculations can be considered verified.
