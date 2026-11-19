@@ -188,6 +188,7 @@ int main()
         asymmetric.geometry.limbEffectiveAreas[0] = units::Area{5.0e-4};
         asymmetric.geometry.limbMeanPaths[1] = units::Length{0.28};
         asymmetric.geometry.limbAirGaps[2] = units::Length{1.5e-3};
+        asymmetric.geometry.limbAirGaps[0] = units::Length{0.0}; // Explicit ungapped limb.
         asymmetric.geometry.yokeEffectiveAreas[0] = units::Area{5.5e-4};
         asymmetric.geometry.yokeSegmentPaths[3] = units::Length{0.18};
         asymmetric.turns = {100, 105, 95};
