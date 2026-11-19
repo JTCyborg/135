@@ -165,6 +165,68 @@ std::vector<SeedRecord> starterRecords()
         }}
     };
 
+    const json tdkCapSmall = {
+        {"schemaVersion", 1},
+        {"component", {
+            {"id", "TDK-B32776H1335K000"}, {"manufacturer", "TDK Electronics"},
+            {"series", "B3277*H"}, {"orderingCode", "B32776H1335K000"},
+            {"technology", "metallized polypropylene film (MKP)"},
+            {"application", "DC link"},
+            {"capacitance_F", 3.3e-6}, {"capacitanceTolerance_fraction", 0.10},
+            {"ratedVoltageDC_V", 1100.0}, {"maximumCaseTemperature_K", 378.15},
+            {"equivalentSeriesResistance_ohm", 0.0228},
+            {"equivalentSeriesInductance_H", 19.0e-9},
+            {"construction", "radial boxed; 2 or 4 pins"},
+            {"aecQ200", true}
+        }},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_CATALOG_LISTING"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "ESR and ESL are catalog-listed typical values. Verify ripple-current, voltage derating, lifetime and thermal conditions against the current full datasheet before design release."}
+        }}
+    };
+
+    const json tdkCapLarge = {
+        {"schemaVersion", 1},
+        {"component", {
+            {"id", "TDK-B32778G4177K000"}, {"manufacturer", "TDK Electronics"},
+            {"series", "B3277*D/E/G/J/T"}, {"orderingCode", "B32778G4177K000"},
+            {"technology", "metallized polypropylene film (MKP)"},
+            {"application", "DC link"},
+            {"capacitance_F", 170.0e-6}, {"capacitanceTolerance_fraction", 0.10},
+            {"ratedVoltageDC_V", 450.0}, {"maximumCaseTemperature_K", 378.15},
+            {"equivalentSeriesResistance_ohm", 0.0026},
+            {"equivalentSeriesInductance_H", 17.0e-9},
+            {"construction", "radial boxed"},
+            {"aecQ200", false}
+        }},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_CATALOG_LISTING"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "ESR and ESL are catalog-listed typical values. Verify ripple-current, voltage derating, lifetime and thermal conditions against the current full datasheet before design release."}
+        }}
+    };
+
+    const json vishayRh50 = {
+        {"schemaVersion", 1},
+        {"component", {
+            {"id", "VISHAY-RH50-SERIES"}, {"manufacturer", "Vishay Sfernice"},
+            {"series", "RH50"}, {"technology", "wirewound, aluminum-housed, chassis-mount"},
+            {"ratedPowerAt25C_W", 50.0}, {"maximumWorkingVoltageRMS_V", 1285.0},
+            {"resistanceRange_ohm", {0.01, 130000.0}},
+            {"availableTolerance_percent", {0.5, 1.0, 2.0, 5.0, 10.0}},
+            {"temperatureCoefficient_ppm_per_K", {
+                {"below_5_ohm", 100.0}, {"5_to_10_ohm", 50.0}, {"above_10_ohm", 25.0}
+            }},
+            {"mounting", "chassis; heatsink thermal conditions apply"}
+        }},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_DATASHEET"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "RH50 is a series-level record, not a selected resistance SKU. Rated power depends on mounting and thermal conditions; verify derating curve, pulse overload and selected part number."}
+        }}
+    };
+
     return {
         {"MAT-TDK-N87", "SEED-TDK-N87-R1", "core-material",
          "https://www.tdk-electronics.tdk.com/download/187238/990c299b916e9f3eb7e44ad563b7f0b9/pdf-n87.pdf",
@@ -178,6 +240,16 @@ std::vector<SeedRecord> starterRecords()
         {"MAT-DUPONT-NOMEX-410", "SEED-DUPONT-NOMEX410-R1", "insulation-material",
          "https://www.dupont.com/content/dam/dupont/amer/us/en/safety/public/documents/en/Nomex_410_Tech_Data_Sheet.pdf",
          "DuPont Nomex 410 technical data sheet; 0.25 mm reference thickness", nomex}
+,
+        {"COMP-TDK-B32776H1335K000", "SEED-TDK-B32776H1335K000-R1", "capacitor",
+         "https://www.tdk-electronics.tdk.com/en/3191480/products/product-catalog/film-capacitors/capacitors-for-dc-link/search-results-deltacap-capacitors",
+         "TDK ordering-code catalog listing; B32776H1335K000", tdkCapSmall},
+        {"COMP-TDK-B32778G4177K000", "SEED-TDK-B32778G4177K000-R1", "capacitor",
+         "https://www.tdk-electronics.tdk.com/en/3191480/products/product-catalog/film-capacitors/capacitors-for-dc-link/search-results-deltacap-capacitors",
+         "TDK ordering-code catalog listing; B32778G4177K000", tdkCapLarge},
+        {"COMP-VISHAY-RH50", "SEED-VISHAY-RH50-R1", "resistor",
+         "https://www.vishay.com/docs/50013/rh.pdf",
+         "Vishay RH series datasheet; RH50 series specifications", vishayRh50}
     };
 }
 
