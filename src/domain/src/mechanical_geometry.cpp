@@ -1,5 +1,6 @@
 #include "p135/domain/mechanical_geometry.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <utility>
