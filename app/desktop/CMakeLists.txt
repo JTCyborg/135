@@ -3,6 +3,8 @@ qt_add_executable(Project135
     src/main.cpp
     src/main_window.cpp
     src/main_window.hpp
+    src/material_database_widget.cpp
+    src/material_database_widget.hpp
 )
 
 target_link_libraries(Project135
@@ -11,9 +13,17 @@ target_link_libraries(Project135
         Project135::Core
         Project135::Circuit
         Project135::Filter
+        Project135::InfrastructureSqlite
 )
 
 target_compile_features(Project135 PRIVATE cxx_std_20)
+
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin/migrations")
+configure_file(
+    "${PROJECT_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql"
+    "${CMAKE_BINARY_DIR}/bin/migrations/001_initial_schema.sql"
+    COPYONLY
+)
 
 if(MSVC)
     target_compile_options(Project135 PRIVATE /W4 /permissive- /Zc:__cplusplus)
