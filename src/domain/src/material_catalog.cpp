@@ -122,11 +122,11 @@ Result<void> validate(const ConductorMaterial& material)
             "Conductor data provenance and dataset revision are required.",
             "provenance", "CONDUCTOR_MATERIAL_INVALID"));
     if (!finitePositive(material.resistivityAt20C.si()) ||
-        !finitePositive(material.temperatureCoefficient.si()) ||
+        !std::isfinite(material.temperatureCoefficient.si()) ||
         !finitePositive(material.density.si()))
         return Result<void>::failure(materialError(
             ErrorCode::InvalidInput,
-            "Conductor resistivity, temperature coefficient and density must be positive.",
+            "Conductor resistivity and density must be positive; temperature coefficient must be finite.",
             "physicalProperties", "CONDUCTOR_MATERIAL_INVALID"));
     return Result<void>::success();
 }
@@ -162,12 +162,12 @@ Result<void> validate(const InsulationMaterial& material)
         return Result<void>::failure(materialError(
             ErrorCode::MissingMaterialProperty, "Insulation thermal class is required.",
             "thermalClass", "INSULATION_MATERIAL_INVALID"));
-    if (material.relativePermittivity != 0.0 &&
-        (!std::isfinite(material.relativePermittivity) || material.relativePermittivity <= 0.0))
+    if (material.relativePermittivity &&
+        (!std::isfinite(*material.relativePermittivity) || *material.relativePermittivity <= 0.0))
         return Result<void>::failure(materialError(
             ErrorCode::InvalidInput, "Relative permittivity must be positive when supplied.",
             "relativePermittivity", "INSULATION_MATERIAL_INVALID"));
-    if (material.density.si() != 0.0 && !finitePositive(material.density.si()))
+    if (material.density && !finitePositive(material.density->si()))
         return Result<void>::failure(materialError(
             ErrorCode::InvalidInput, "Density must be positive when supplied.",
             "density", "INSULATION_MATERIAL_INVALID"));
