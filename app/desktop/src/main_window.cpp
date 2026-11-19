@@ -79,6 +79,9 @@ bool capacitorFromRevision(const p135::application::MaterialRevision& revision,
     capacitor.dataSource = revisionIsUserDefined(revision, root)
         ? p135::domain::MaterialDataSource::UserDefined
         : p135::domain::MaterialDataSource::ManufacturerDatasheet;
+    capacitor.evidenceVerified =
+        root.value(QStringLiteral("dataQuality")).toObject()
+            .value(QStringLiteral("designReleaseStatus")).toString() == QStringLiteral("VERIFIED");
     capacitor.sourceReference = revision.sourceReference;
     capacitor.datasetRevision = revision.datasetRevision;
 
@@ -136,6 +139,9 @@ bool resistorFromRevision(const p135::application::MaterialRevision& revision,
     resistor.dataSource = revisionIsUserDefined(revision, root)
         ? p135::domain::MaterialDataSource::UserDefined
         : p135::domain::MaterialDataSource::ManufacturerDatasheet;
+    resistor.evidenceVerified =
+        root.value(QStringLiteral("dataQuality")).toObject()
+            .value(QStringLiteral("designReleaseStatus")).toString() == QStringLiteral("VERIFIED");
     resistor.sourceReference = revision.sourceReference;
     resistor.datasetRevision = revision.datasetRevision;
     resistor.resistance = p135::units::Resistance{
