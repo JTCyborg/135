@@ -1,6 +1,7 @@
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
+#include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 #include "p135/application/material_revision_use_cases.hpp"
 
 #include <cassert>
@@ -135,6 +136,20 @@ int main(int argc, char** argv)
         assert(restoredLatest.value()->revisionId == "REV-3");
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
+        const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
+        assert(seeded && seeded.value() == 4);
+        const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
+        assert(seededAgain && seededAgain.value() == 0);
+        MaterialCatalogFilter coreMaterials;
+        coreMaterials.recordType = "core-material";
+        const auto coreCatalog = store.searchLatestRevisions(coreMaterials);
+        assert(coreCatalog && coreCatalog.value().size() == 2);
+        const auto n87 = store.latestRevision("MAT-TDK-N87");
+        assert(n87 && n87.value());
+        assert(n87.value()->payload.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
+        const auto copper = store.latestRevision("MAT-CU-C11000-ETP");
+        assert(copper && copper.value());
+        assert(copper.value()->payload.find("1.707e-08") != std::string::npos);
 
     }
 
