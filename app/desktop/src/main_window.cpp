@@ -44,6 +44,7 @@
 #include <QFontMetrics>
 #include <QFrame>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QTabWidget>
@@ -1211,20 +1212,105 @@ void MainWindow::calculateFilter()
         return;
     }
 
+    std::optional<p135::domain::MagneticCircuitRequest> magneticCircuitBase;
+    QString magneticModelWarning;
+    const bool anyMagneticInput =
+        (coreEffectiveAreaMm2_ && coreEffectiveAreaMm2_->value() > 0.0) ||
+        (coreMeanPathMm_ && coreMeanPathMm_->value() > 0.0) ||
+        (inductorTurns_ && inductorTurns_->value() > 0) ||
+        (coreBhCurve_ && !coreBhCurve_->toPlainText().trimmed().isEmpty()) ||
+        (coreBhSource_ && !coreBhSource_->text().trimmed().isEmpty());
+    if (anyMagneticInput) {
+        p135::domain::MagneticCircuitRequest request;
+        request.core.effectiveArea = p135::units::Area{
+            coreEffectiveAreaMm2_ ? coreEffectiveAreaMm2_->value() * 1.0e-6 : 0.0};
+        request.core.meanMagneticPath = p135::units::Length{
+            coreMeanPathMm_ ? coreMeanPathMm_->value() * 1.0e-3 : 0.0};
+        request.core.airGap = p135::units::Length{
+            coreAirGapMm_ ? coreAirGapMm_->value() * 1.0e-3 : 0.0};
+        request.turns = inductorTurns_ ? static_cast<std::uint32_t>(inductorTurns_->value()) : 0U;
+        request.material.id = "USER_BH_CURVE";
+        request.material.grade = "User-entered B-H curve";
+        request.material.dataSource = p135::domain::MaterialDataSource::UserDefined;
+        request.material.sourceReference = coreBhSource_ ? coreBhSource_->text().trimmed().toStdString() : "";
+        request.material.datasetRevision = "user-entered-v1";
+        bool curveValid = true;
+        if (coreBhCurve_) {
+            const auto lines = coreBhCurve_->toPlainText().split(QRegularExpression("[\\r\\n]+"),
+                Qt::SkipEmptyParts);
+            for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
+                const QString line = lines[lineIndex].trimmed();
+                if (line.startsWith('#')) continue;
+                const auto fields = line.split(QRegularExpression("[,;\\s]+"), Qt::SkipEmptyParts);
+                bool hOk = false;
+                bool bOk = false;
+                if (fields.size() != 2) {
+                    curveValid = false;
+                    break;
+                }
+                const double h = fields[0].toDouble(&hOk);
+                const double b = fields[1].toDouble(&bOk);
+                if (!hOk || !bOk || !std::isfinite(h) || !std::isfinite(b)) {
+                    curveValid = false;
+                    break;
+                }
+                request.material.bhCurve.push_back({
+                    p135::units::MagneticFieldStrength{h},
+                    p135::units::FluxDensity{b}
+                });
+            }
+        }
+        if (request.core.effectiveArea.si() > 0.0 &&
+            request.core.meanMagneticPath.si() > 0.0 &&
+            request.turns > 0 && !request.material.sourceReference.empty() &&
+            curveValid && request.material.bhCurve.size() >= 2) {
+            magneticCircuitBase = std::move(request);
+        } else {
+            magneticModelWarning = tr("Magnetic B-H model NOT_VERIFIED: supply Ae, le, air gap, turns, at least two valid H,B points and a material source reference.");
+        }
+    }
+
+    std::optional<double> magneticKneeCurrentA;
+    std::optional<double> magneticKneeFluxDensityT;
+    std::vector<std::pair<double, double>> magneticFluxDensityPoints;
+    bool magneticSweepValid = magneticCircuitBase.has_value();
     double peakBankCurrent = 0.0;
     double peakBankCurrentFrequency = 0.0;
     for (const auto& point : sweepResult.value().points) {
         double currentSquared = 0.0;
+        double maximumPhaseRmsCurrent = 0.0;
         // For the current single-branch Wye/Delta model, the three phase
         // series-branch currents are the R elements at indices 3, 6 and 9.
         for (const std::size_t index : {3U, 6U, 9U}) {
-            if (index < point.result.branches.size())
-                currentSquared += std::norm(point.result.branches[index].rmsCurrent);
+            if (index < point.result.branches.size()) {
+                const double phaseRms = std::abs(point.result.branches[index].rmsCurrent);
+                currentSquared += phaseRms * phaseRms;
+                maximumPhaseRmsCurrent = std::max(maximumPhaseRmsCurrent, phaseRms);
+            }
         }
         const double bankCurrent = std::sqrt(currentSquared);
+        const double phasePeakCurrent = std::sqrt(2.0) * maximumPhaseRmsCurrent;
         if (bankCurrent > peakBankCurrent) {
             peakBankCurrent = bankCurrent;
             peakBankCurrentFrequency = point.frequency.si();
+        }
+        if (magneticCircuitBase && magneticSweepValid) {
+            auto magneticRequest = *magneticCircuitBase;
+            magneticRequest.current = p135::units::Current{phasePeakCurrent};
+            const auto magneticPoint = p135::domain::analyzeMagneticCircuit(magneticRequest);
+            if (!magneticPoint) {
+                magneticSweepValid = false;
+                magneticModelWarning = tr("Magnetic B-H sweep NOT_VERIFIED at %1 Hz: %2")
+                    .arg(point.frequency.si(), 0, 'g', 6)
+                    .arg(QString::fromStdString(magneticPoint.error().message));
+            } else {
+                magneticFluxDensityPoints.emplace_back(
+                    point.frequency.si(), magneticPoint.value().fluxDensity.si());
+                if (magneticPoint.value().kneeCurrent)
+                    magneticKneeCurrentA = magneticPoint.value().kneeCurrent->si();
+                if (magneticPoint.value().kneeFluxDensity)
+                    magneticKneeFluxDensityT = magneticPoint.value().kneeFluxDensity->si();
+            }
         }
     }
 
