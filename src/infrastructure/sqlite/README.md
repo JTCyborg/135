@@ -32,3 +32,26 @@ inside the SQL file. This avoids self-referential checksums and makes modified m
 
 The schema is a migration artifact, not yet a production repository implementation.
 The SQLite C++ adapter, transaction wrapper, migration runner and integration tests remain open work.
+
+## C++ adapter
+
+The first C++ infrastructure slice is built as `Project135::InfrastructureSqlite`.
+It provides a move-only SQLite connection with foreign-key enforcement, a busy timeout,
+explicit immediate transactions, and a migration runner that hashes exact migration bytes
+with OpenSSL SHA-256. Applied migrations are checked before any DDL is replayed; checksum
+mismatches fail closed.
+
+Build dependencies are supplied through the vcpkg manifest (`sqlite3`, `openssl`).
+For a local Visual Studio 2026 configure, install the manifest dependencies and pass the
+vcpkg toolchain file:
+
+```powershell
+vcpkg install --triplet x64-windows
+cmake --preset vs2026-desktop-debug -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --build --preset build-desktop-debug
+ctest --preset test-desktop-debug
+```
+
+The adapter currently implements connection and migration execution. Material revision
+CRUD, audit writes, usage queries, canonical JSON serialization and repository-level
+concurrency tests remain unfinished.
