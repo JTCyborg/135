@@ -44,7 +44,13 @@ int main()
         const auto result = analyzeHarmonics(validRequest());
         assert(result);
         assert(result.value().points.size() == 3);
+        assert(result.value().branchPoints.size() == 3);
         assert(result.value().branchStresses.size() == 1);
+        for (const auto& point : result.value().branchPoints) {
+            assert(point.branchId == 1);
+            assert(point.capacitorCurrentRmsA > 0.0);
+            assert(point.frequency.si() > 0.0);
+        }
         assert(result.value().busFundamentalVoltageV > 0.0);
         assert(result.value().sourceFundamentalCurrentA > 0.0);
         assert(std::isfinite(result.value().busVoltageThd));
