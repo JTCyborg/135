@@ -157,7 +157,7 @@ int main(int argc, char** argv)
         const auto filmCap = store.latestRevision("COMP-TDK-B32776H1335K000");
         assert(filmCap && filmCap.value());
         assert(filmCap.value()->payload.find("1100") != std::string::npos);
-        assert(filmCap.value()->payload.find("2.28e-2") != std::string::npos);
+        assert(filmCap.value()->payload.find("0.0228") != std::string::npos);
         MaterialCatalogFilter resistors;
         resistors.recordType = "resistor";
         const auto resistorCatalog = store.searchLatestRevisions(resistors);
