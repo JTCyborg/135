@@ -85,6 +85,7 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
 
     HarmonicAnalysisResult result;
     result.points.reserve(request.sourceVoltageSpectrum.size());
+    result.branchPoints.reserve(request.sourceVoltageSpectrum.size() * request.design.branches.size());
     result.branchStresses.reserve(request.design.branches.size());
 
     std::vector<double> branchCurrentSquared(request.design.branches.size(), 0.0);
@@ -172,6 +173,9 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
             const Complex branchCurrent =
                 deltaBranchFactor * busVoltage / branchImpedances[index];
             const double currentMagnitude = std::abs(branchCurrent);
+            result.branchPoints.push_back(BranchHarmonicPoint{
+                branch.id, harmonic.order, units::Frequency{frequency}, currentMagnitude
+            });
             const double capacitorVoltage = currentMagnitude /
                 (omega * branch.capacitance.si());
             const double inductorVoltage = currentMagnitude *
