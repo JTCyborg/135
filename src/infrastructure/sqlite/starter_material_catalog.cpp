@@ -239,8 +239,7 @@ std::vector<SeedRecord> starterRecords()
          "Copper.org C11000 reference; conductivity and density; resistivity derived", copper},
         {"MAT-DUPONT-NOMEX-410", "SEED-DUPONT-NOMEX410-R1", "insulation-material",
          "https://www.dupont.com/content/dam/dupont/amer/us/en/safety/public/documents/en/Nomex_410_Tech_Data_Sheet.pdf",
-         "DuPont Nomex 410 technical data sheet; 0.25 mm reference thickness", nomex}
-,
+         "DuPont Nomex 410 technical data sheet; 0.25 mm reference thickness", nomex},
         {"COMP-TDK-B32776H1335K000", "SEED-TDK-B32776H1335K000-R1", "capacitor",
          "https://www.tdk-electronics.tdk.com/en/3191480/products/product-catalog/film-capacitors/capacitors-for-dc-link/search-results-deltacap-capacitors",
          "TDK ordering-code catalog listing; B32776H1335K000", tdkCapSmall},
