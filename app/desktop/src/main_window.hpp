@@ -53,6 +53,8 @@ private:
     QDoubleSpinBox* targetReactivePower_{};
     QDoubleSpinBox* sourceResistance_{};
     QDoubleSpinBox* sourceInductance_{};
+    QDoubleSpinBox* inductorSaturationCurrent_{};
+    QLineEdit* inductorSaturationSource_{};
     QTableWidget* harmonicSpectrumTable_{};
     QComboBox* capacitorComponent_{};
     QComboBox* resistorComponent_{};
