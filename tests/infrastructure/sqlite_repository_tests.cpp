@@ -42,6 +42,8 @@ int main(int argc, char** argv)
             "test://datasheet", "dataset-1", "test-author", "2026-01-01T00:00:00Z"
         };
         assert(store.appendRevision(first));
+        const auto initiallyArchived = store.isArchived("MAT-TEST");
+        assert(initiallyArchived && !initiallyArchived.value());
 
         const auto found = store.findRevision("REV-1");
         assert(found && found.value());
@@ -84,6 +86,8 @@ int main(int argc, char** argv)
         assert(!store.searchLatestRevisions(catalogFilter));
 
         assert(store.setArchived("MAT-TEST", true, "test-author", "2026-01-03T00:00:00Z"));
+        const auto archivedState = store.isArchived("MAT-TEST");
+        assert(archivedState && archivedState.value());
         MaterialCatalogFilter activeOnly;
         assert(store.searchLatestRevisions(activeOnly).value().empty());
         activeOnly.includeArchived = true;
@@ -94,6 +98,8 @@ int main(int argc, char** argv)
             "2026-01-04T00:00:00Z"
         }));
         assert(store.setArchived("MAT-TEST", false, "test-author", "2026-01-05T00:00:00Z"));
+        const auto activeState = store.isArchived("MAT-TEST");
+        assert(activeState && !activeState.value());
 
         assert(store.recordUsage(MaterialUsageReference{
             "USE-1", "REV-1", MaterialUsageKind::Product, "PRODUCT-1",
