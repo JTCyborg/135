@@ -10,9 +10,12 @@
 
 namespace p135::filter {
 
+enum class HarmonicSequence { Positive, Negative };
+
 struct HarmonicVoltage {
     std::uint32_t order{};
-    /// Per-phase RMS positive-sequence Thevenin voltage phasor.
+    HarmonicSequence sequence{HarmonicSequence::Positive};
+    /// Phase-A RMS Thevenin voltage phasor for the declared balanced sequence.
     std::complex<double> phaseVoltageRms{};
 };
 
@@ -53,7 +56,7 @@ struct HarmonicAnalysisResult {
     double sourceFundamentalCurrentA{};
 };
 
-/// Calculates a balanced positive-sequence harmonic response using a per-phase
+/// Calculates a balanced positive-/negative-sequence harmonic response using a per-phase
 /// Thevenin source and ideal shunt RLC branches. THD is a ratio (e.g. 0.05 = 5%).
 [[nodiscard]] Result<HarmonicAnalysisResult> analyzeHarmonics(
     const HarmonicAnalysisRequest& request);
