@@ -50,12 +50,12 @@ int main(int argc, char** argv)
 
         MaterialRevision second{
             "REV-2", "MAT-TEST", 2, std::string("REV-1"), "core-material", "{ }",
-            "cdb4ee2aea69cc6a8b8c4d0f8a6e3f6b4c7b1c5e8d9f0a1b2c3d4e5f60718293",
+            "257c1be96ae69f4b01c2c69bdb6d78605f59175819fb007d0bf245bf48444c4a",
             "test://datasheet", "dataset-2", "test-author", "2026-01-02T00:00:00Z"
         };
-        // Use a payload whose SHA-256 is known through OpenSSL in the adapter contract:
-        // malformed content hashes are rejected before any database mutation.
-        assert(!store.appendRevision(second));
+        assert(store.appendRevision(second));
+        const auto latestSecond = store.latestRevision("MAT-TEST");
+        assert(latestSecond && latestSecond.value() && latestSecond.value()->revisionNumber == 2);
 
         assert(database.execute(
             "INSERT INTO material_usage(usage_id,revision_id,product_id,usage_kind,created_at_utc) "
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 
         assert(store.setArchived("MAT-TEST", true, "test-author", "2026-01-04T00:00:00Z"));
         assert(!store.appendRevision(MaterialRevision{
-            "REV-3", "MAT-TEST", 2, std::string("REV-1"), "core-material", "{}",
+            "REV-3", "MAT-TEST", 3, std::string("REV-2"), "core-material", "{}",
             first.contentHash, "test://datasheet", "dataset-3", "test-author",
             "2026-01-05T00:00:00Z"
         }));
