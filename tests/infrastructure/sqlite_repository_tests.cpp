@@ -137,7 +137,7 @@ int main(int argc, char** argv)
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
         const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
-        assert(seeded && seeded.value() == 4);
+        assert(seeded && seeded.value() == 7);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
         MaterialCatalogFilter coreMaterials;
@@ -150,6 +150,21 @@ int main(int argc, char** argv)
         const auto copper = store.latestRevision("MAT-CU-C11000-ETP");
         assert(copper && copper.value());
         assert(copper.value()->payload.find("1.707e-08") != std::string::npos);
+        MaterialCatalogFilter capacitors;
+        capacitors.recordType = "capacitor";
+        const auto capacitorCatalog = store.searchLatestRevisions(capacitors);
+        assert(capacitorCatalog && capacitorCatalog.value().size() == 2);
+        const auto filmCap = store.latestRevision("COMP-TDK-B32776H1335K000");
+        assert(filmCap && filmCap.value());
+        assert(filmCap.value()->payload.find("1100") != std::string::npos);
+        assert(filmCap.value()->payload.find("2.28e-2") != std::string::npos);
+        MaterialCatalogFilter resistors;
+        resistors.recordType = "resistor";
+        const auto resistorCatalog = store.searchLatestRevisions(resistors);
+        assert(resistorCatalog && resistorCatalog.value().size() == 1);
+        const auto rh50 = store.latestRevision("COMP-VISHAY-RH50");
+        assert(rh50 && rh50.value());
+        assert(rh50.value()->payload.find("1285") != std::string::npos);
 
     }
 
