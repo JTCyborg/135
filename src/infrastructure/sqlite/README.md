@@ -52,6 +52,11 @@ cmake --build --preset build-desktop-debug
 ctest --preset test-desktop-debug
 ```
 
-The adapter currently implements connection and migration execution. Material revision
-CRUD, audit writes, usage queries, canonical JSON serialization and repository-level
-concurrency tests remain unfinished.
+The adapter now includes `SqliteMaterialRevisionStore`, implementing the Application Layer's
+revision repository and exact-revision usage query contracts. It atomically creates material
+identity/revision/audit records, validates SHA-256 against the stored payload bytes, reads a
+revision or latest revision, archives/restores identities with audit events, and checks whether
+any saved product/calculation references a revision. SQLite triggers enforce immutable snapshots
+and linear revision lineage. Canonical JSON generation/validation, a public usage-write API,
+import/export, and broader concurrency/rollback tests remain unfinished. The adapter treats the
+payload as already-canonical UTF-8 JSON; it does not yet canonicalize arbitrary JSON input.
