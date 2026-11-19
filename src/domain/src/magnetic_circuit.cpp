@@ -70,17 +70,36 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
         return fail(ErrorCode::InvalidInput,
                     "Knee slope ratio must be strictly between zero and one.",
                     "kneeSlopeRatio");
-    const auto materialCheck = validate(request.material);
-    if (!materialCheck)
-        return Result<MagneticCircuitResult>::failure(materialCheck.error());
+    const auto& material = request.material;
+    if (material.grade.empty() || material.sourceReference.empty() ||
+        material.datasetRevision.empty() ||
+        (material.dataSource == MaterialDataSource::ManufacturerDatasheet &&
+         material.manufacturer.empty()))
+        return fail(ErrorCode::MissingRequiredData,
+                    "B-H grade, provenance, dataset revision and datasheet manufacturer (when applicable) are required.",
+                    "material.provenance");
 
-    const auto& bh = request.material.bhCurve;
+    const auto& bh = material.bhCurve;
+    if (bh.size() < 2)
+        return fail(ErrorCode::MissingMaterialProperty,
+                    "At least two B-H points are required.",
+                    "material.bhCurve");
     const double bMin = bh.front().fluxDensity.si();
     const double bMax = bh.back().fluxDensity.si();
-    if (bMin > 0.0)
+    if (std::abs(bMin) > 1.0e-12 ||
+        std::abs(bh.front().fieldStrength.si()) > 1.0e-9)
         return fail(ErrorCode::MissingMaterialProperty,
-                    "B-H curve must include a zero-flux origin for this solver.",
+                    "B-H curve must include the (H=0, B=0) origin.",
                     "material.bhCurve");
+    for (std::size_t i = 1; i < bh.size(); ++i) {
+        if (!std::isfinite(bh[i].fieldStrength.si()) ||
+            !std::isfinite(bh[i].fluxDensity.si()) ||
+            bh[i].fieldStrength.si() <= bh[i - 1].fieldStrength.si() ||
+            bh[i].fluxDensity.si() <= bh[i - 1].fluxDensity.si())
+            return fail(ErrorCode::InvalidInput,
+                        "B-H points must be strictly increasing in both H and B.",
+                        "material.bhCurve");
+    }
 
     const double mmf = static_cast<double>(request.turns) * current;
     const auto requiredMmf = [&](double b) -> double {
