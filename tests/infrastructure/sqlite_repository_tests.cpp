@@ -1,3 +1,4 @@
+#include "p135/infrastructure/sqlite/canonical_json.hpp"
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
 
@@ -11,6 +12,12 @@ using p135::application::MaterialRevision;
 int main(int argc, char** argv)
 {
     assert(argc == 2);
+    const auto canonical = canonicalizeJson("{ \"b\": 2, \"a\": 1 }");
+    assert(canonical && canonical.value() == "{\"a\":1,\"b\":2}");
+    assert(!canonicalizeJson("{"));
+    const auto knownHash = sha256Hex("{\"a\":1}");
+    assert(knownHash &&
+        knownHash.value() == "015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862");
     const auto databasePath = std::filesystem::temp_directory_path() /
         "project135_sqlite_material_store_tests.db";
     std::error_code ignored;
@@ -48,9 +55,15 @@ int main(int argc, char** argv)
         invalidHash.contentHash = std::string(64, '0');
         assert(!store.appendRevision(invalidHash));
 
+        auto nonCanonical = first;
+        nonCanonical.revisionId = "REV-WHITESPACE";
+        nonCanonical.payload = "{ }";
+        nonCanonical.contentHash = sha256Hex(nonCanonical.payload).value();
+        assert(!store.appendRevision(nonCanonical));
+
         MaterialRevision second{
-            "REV-2", "MAT-TEST", 2, std::string("REV-1"), "core-material", "{ }",
-            "257c1be96ae69f4b01c2c69bdb6d78605f59175819fb007d0bf245bf48444c4a",
+            "REV-2", "MAT-TEST", 2, std::string("REV-1"), "core-material", "{\"a\":1}",
+            "015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
             "test://datasheet", "dataset-2", "test-author", "2026-01-02T00:00:00Z"
         };
         assert(store.appendRevision(second));
