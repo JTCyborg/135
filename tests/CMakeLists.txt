@@ -64,6 +64,17 @@ else()
     target_compile_options(Project135FilterHarmonicsTests PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135ThermalTests
+    thermal/steady_state_tests.cpp
+)
+target_link_libraries(Project135ThermalTests PRIVATE Project135::Thermal)
+add_test(NAME Project135ThermalTests COMMAND Project135ThermalTests)
+if(MSVC)
+    target_compile_options(Project135ThermalTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ThermalTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135DomainTests
     domain/magnetic_product_tests.cpp
 )
