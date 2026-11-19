@@ -1,5 +1,6 @@
 add_library(Project135Domain
     src/magnetic_product.cpp
+    src/magnetic_circuit.cpp
     src/material_catalog.cpp
     src/component_catalog.cpp
 )
