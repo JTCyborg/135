@@ -73,6 +73,7 @@ int main()
     auto second = first;
     second.revisionId = "REV-2";
     second.revisionNumber = 2;
+    second.payload = R"({"id":"MAT-1","grade":"updated"})";
     second.parentRevisionId = "REV-1";
     second.createdAtUtc = "2026-01-02T00:00:00Z";
     assert(create.execute(second));
@@ -88,6 +89,26 @@ int main()
     wrongParent.revisionNumber = 3;
     wrongParent.parentRevisionId = "OTHER-MATERIAL-REV";
     assert(!create.execute(wrongParent));
+
+    CompareMaterialRevisions compare(repository);
+    const auto same = compare.execute("REV-1", "REV-1");
+    assert(same && same.value().payloadEqual && same.value().recordTypeEqual);
+    const auto different = compare.execute("REV-1", "REV-2");
+    assert(different && !different.value().payloadEqual);
+    assert(!compare.execute("REV-1", "MISSING"));
+
+    RestoreMaterialRevision restore(repository);
+    const auto restored = restore.execute(
+        "REV-1", "REV-3", "restorer", "2026-01-03T12:00:00Z");
+    assert(restored);
+    assert(restored.value().revisionNumber == 3);
+    assert(restored.value().parentRevisionId == std::optional<std::string>{"REV-2"});
+    assert(restored.value().payload == first.payload);
+    assert(restored.value().sourceReference == "restore:REV-1");
+    assert(restored.value().author == "restorer");
+    const auto latestRestored = repository.latestRevision("MAT-1");
+    assert(latestRestored && latestRestored.value()->revisionId == "REV-3");
+    assert(!restore.execute("MISSING", "REV-4", "restorer", "2026-01-04T00:00:00Z"));
 
     FakeUsage usage;
     ArchiveMaterial archive(repository, usage);
