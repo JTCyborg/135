@@ -78,7 +78,10 @@ endif()
 add_executable(Project135SqliteInfrastructureTests
     infrastructure/sqlite_repository_tests.cpp
 )
-target_link_libraries(Project135SqliteInfrastructureTests PRIVATE Project135::InfrastructureSqlite)
+target_link_libraries(Project135SqliteInfrastructureTests PRIVATE
+    Project135::InfrastructureSqlite
+    Project135::Application
+)
 add_test(
     NAME Project135SqliteInfrastructureTests
     COMMAND Project135SqliteInfrastructureTests
