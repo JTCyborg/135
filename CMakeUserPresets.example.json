@@ -1,0 +1,60 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "vs2026-desktop-debug-local",
+      "displayName": "VS 2026 x64 Debug — Desktop (local Qt)",
+      "inherits": "vs2026-desktop-debug",
+      "cacheVariables": {
+        "Qt6_DIR": "C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6"
+      }
+    },
+    {
+      "name": "vs2026-desktop-release-local",
+      "displayName": "VS 2026 x64 Release — Desktop (local Qt)",
+      "inherits": "vs2026-desktop-release",
+      "cacheVariables": {
+        "Qt6_DIR": "C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-desktop-debug-local",
+      "displayName": "Build Desktop Debug (local Qt)",
+      "configurePreset": "vs2026-desktop-debug-local",
+      "configuration": "Debug"
+    },
+    {
+      "name": "build-desktop-release-local",
+      "displayName": "Build Desktop Release (local Qt)",
+      "configurePreset": "vs2026-desktop-release-local",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-desktop-debug-local",
+      "displayName": "Test Desktop Debug (local Qt)",
+      "configurePreset": "vs2026-desktop-debug-local",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-desktop-release-local",
+      "displayName": "Test Desktop Release (local Qt)",
+      "configurePreset": "vs2026-desktop-release-local",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
