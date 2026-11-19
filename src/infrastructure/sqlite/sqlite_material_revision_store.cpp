@@ -1,12 +1,9 @@
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
+#include "p135/infrastructure/sqlite/canonical_json.hpp"
 
-#include <openssl/evp.h>
 #include <sqlite3.h>
 
-#include <array>
-#include <iomanip>
 #include <limits>
-#include <sstream>
 #include <string>
 #include <utility>
 
@@ -85,20 +82,6 @@ std::optional<MaterialRevision> readRevision(sqlite3_stmt* statement)
     return value;
 }
 
-Result<std::string> payloadHash(const std::string& payload)
-{
-    std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
-    unsigned int length = 0;
-    if (EVP_Digest(payload.data(), payload.size(), digest.data(), &length,
-                   EVP_sha256(), nullptr) != 1 || length != 32)
-        return Result<std::string>::failure(storeError("Unable to calculate snapshot SHA-256."));
-    std::ostringstream output;
-    output << std::hex << std::setfill('0');
-    for (unsigned int i = 0; i < length; ++i)
-        output << std::setw(2) << static_cast<unsigned int>(digest[i]);
-    return Result<std::string>::success(output.str());
-}
-
 constexpr const char* kRevisionColumns =
     "revision_id,material_id,revision_number,parent_revision_id,record_type,"
     "payload_json,content_hash,source_reference,dataset_revision,author,created_at_utc";
@@ -146,10 +129,16 @@ Result<void> SqliteMaterialRevisionStore::appendRevision(const MaterialRevision&
         revision.revisionNumber > static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
         return Result<void>::failure(storeError("Revision metadata is incomplete or revision number exceeds SQLite INTEGER range.",
                                                 ErrorCode::InvalidInput));
-    const auto calculatedHash = payloadHash(revision.payload);
+    const auto canonicalPayload = canonicalizeJson(revision.payload);
+    if (!canonicalPayload) return Result<void>::failure(canonicalPayload.error());
+    if (canonicalPayload.value() != revision.payload)
+        return Result<void>::failure(storeError(
+            "Snapshot JSON is valid but not canonical; serialize it with canonicalizeJson first.",
+            ErrorCode::InvalidInput));
+    const auto calculatedHash = sha256Hex(revision.payload);
     if (!calculatedHash) return Result<void>::failure(calculatedHash.error());
     if (calculatedHash.value() != revision.contentHash)
-        return Result<void>::failure(storeError("Snapshot content hash does not match payload.",
+        return Result<void>::failure(storeError("Snapshot content hash does not match canonical payload.",
                                                 ErrorCode::InvalidInput));
 
     Transaction transaction(database_);
