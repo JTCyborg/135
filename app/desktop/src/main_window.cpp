@@ -1119,6 +1119,33 @@ void MainWindow::loadCalculationInputs(int row)
     setNumber("coreAirGap_mm", coreAirGapMm_);
     setNumber("coreYokeEffectiveArea_mm2", coreYokeEffectiveAreaMm2_);
     setNumber("coreYokeSegmentPath_mm", coreYokeSegmentPathMm_);
+    const auto restoreGeometryOverrides = [&input](
+        const QString& key, const auto& enabledControls, const auto& valueControls) {
+        const auto values = input.value(key).toArray();
+        for (std::size_t i = 0; i < enabledControls.size(); ++i) {
+            const bool hasEntry = static_cast<int>(i) < values.size();
+            const auto entry = hasEntry ? values.at(static_cast<int>(i)).toObject()
+                                        : QJsonObject{};
+            if (enabledControls[i]) {
+                enabledControls[i]->setChecked(
+                    hasEntry && entry.value(QStringLiteral("enabled")).toBool(false));
+            }
+            if (valueControls[i]) {
+                valueControls[i]->setValue(
+                    hasEntry ? entry.value(QStringLiteral("value")).toDouble(0.0) : 0.0);
+            }
+        }
+    };
+    restoreGeometryOverrides(QStringLiteral("limbAreaOverrides"),
+        limbAreaOverrideEnabled_, limbAreaOverrides_);
+    restoreGeometryOverrides(QStringLiteral("limbPathOverrides"),
+        limbPathOverrideEnabled_, limbPathOverrides_);
+    restoreGeometryOverrides(QStringLiteral("limbGapOverrides"),
+        limbGapOverrideEnabled_, limbGapOverrides_);
+    restoreGeometryOverrides(QStringLiteral("yokeAreaOverrides"),
+        yokeAreaOverrideEnabled_, yokeAreaOverrides_);
+    restoreGeometryOverrides(QStringLiteral("yokePathOverrides"),
+        yokePathOverrideEnabled_, yokePathOverrides_);
     if (inductorTurns_ && input.value(QStringLiteral("inductorTurns")).isDouble())
         inductorTurns_->setValue(input.value(QStringLiteral("inductorTurns")).toInt());
     if (coreBhSource_)
@@ -1997,6 +2024,29 @@ void MainWindow::calculateFilter()
             coreYokeEffectiveAreaMm2_ ? coreYokeEffectiveAreaMm2_->value() : 0.0);
         inputSnapshot.insert(QStringLiteral("coreYokeSegmentPath_mm"),
             coreYokeSegmentPathMm_ ? coreYokeSegmentPathMm_->value() : 0.0);
+        const auto saveGeometryOverrides = [](const auto& enabledControls,
+                                               const auto& valueControls) {
+            QJsonArray values;
+            for (std::size_t i = 0; i < enabledControls.size(); ++i) {
+                QJsonObject entry;
+                entry.insert(QStringLiteral("enabled"),
+                    enabledControls[i] && enabledControls[i]->isChecked());
+                entry.insert(QStringLiteral("value"),
+                    valueControls[i] ? valueControls[i]->value() : 0.0);
+                values.append(entry);
+            }
+            return values;
+        };
+        inputSnapshot.insert(QStringLiteral("limbAreaOverrides"),
+            saveGeometryOverrides(limbAreaOverrideEnabled_, limbAreaOverrides_));
+        inputSnapshot.insert(QStringLiteral("limbPathOverrides"),
+            saveGeometryOverrides(limbPathOverrideEnabled_, limbPathOverrides_));
+        inputSnapshot.insert(QStringLiteral("limbGapOverrides"),
+            saveGeometryOverrides(limbGapOverrideEnabled_, limbGapOverrides_));
+        inputSnapshot.insert(QStringLiteral("yokeAreaOverrides"),
+            saveGeometryOverrides(yokeAreaOverrideEnabled_, yokeAreaOverrides_));
+        inputSnapshot.insert(QStringLiteral("yokePathOverrides"),
+            saveGeometryOverrides(yokePathOverrideEnabled_, yokePathOverrides_));
         inputSnapshot.insert(QStringLiteral("inductorTurns"),
             inductorTurns_ ? inductorTurns_->value() : 0);
         inputSnapshot.insert(QStringLiteral("coreBhSource"),
