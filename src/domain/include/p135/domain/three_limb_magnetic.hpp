@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <complex>
 #include <optional>
 
 namespace p135::domain {
@@ -52,6 +53,29 @@ struct ThreeLimbMagneticResult {
     double maximumFluxResidual_Wb{};
     bool withinBhCurveRange{false};
 };
+
+struct ThreeLimbMagneticCycleSamplingRequest {
+    ThreeLimbMagneticRequest magnetic;
+    std::array<std::complex<double>, 3> phaseRmsPhasors{};
+    double relativePeakTolerance{1.0e-3};
+    std::size_t maximumSamples{288}; // supported caps: 144 or 288; first pass is 72
+};
+
+struct ThreeLimbMagneticCycleSamplingResult {
+    // Absolute peak B in A/B/C limbs followed by top AB, top BC,
+    // bottom AB and bottom BC yoke segments.
+    std::array<units::FluxDensity, 7> peakAbsoluteFluxDensity{};
+    std::size_t samplesUsed{};
+    double relativePeakChange{};
+    bool converged{false};
+};
+
+/// Samples one electrical cycle on nested 72/144/288 grids. Convergence is
+/// based on the maximum relative change across all seven branch peak |B| values.
+/// Reaching maximumSamples without meeting tolerance returns a successful
+/// diagnostic result with converged=false (NOT_VERIFIED), not a solver failure.
+[[nodiscard]] Result<ThreeLimbMagneticCycleSamplingResult>
+sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& request);
 
 /// Solves the coupled six-node / seven-branch nonlinear reluctance network.
 /// No B-H extrapolation is permitted. Negative excitation uses odd symmetry
