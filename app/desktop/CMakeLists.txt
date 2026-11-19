@@ -14,6 +14,7 @@ target_link_libraries(Project135
         Project135::Circuit
         Project135::Filter
         Project135::Domain
+        Project135::Cad
         Project135::Thermal
         Project135::InfrastructureSqlite
 )
