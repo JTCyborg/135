@@ -187,13 +187,25 @@ MainWindow::MainWindow(QWidget* parent)
                 databaseError_ = QString::fromStdString(migrated.error().message);
                 database_.close();
             } else {
-                materialStore_ = std::make_unique<p135::infrastructure::sqlite::SqliteMaterialRevisionStore>(database_);
+                const QString calculationMigrationPath = QCoreApplication::applicationDirPath()
+                    + "/migrations/002_calculation_snapshots.sql";
+                const auto calculationMigrated = migrations.apply(
+                    p135::infrastructure::sqlite::Migration{
+                        2, "calculation_snapshots",
+                        std::filesystem::path(calculationMigrationPath.toStdString())
+                    });
+                if (!calculationMigrated) {
+                    databaseError_ = QString::fromStdString(calculationMigrated.error().message);
+                    database_.close();
+                } else {
+                    materialStore_ = std::make_unique<p135::infrastructure::sqlite::SqliteMaterialRevisionStore>(database_);
                 const auto seeded = p135::infrastructure::sqlite::seedStarterMaterialCatalog(
                     *materialStore_, "Project135 built-in starter catalog",
                     QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs).toStdString());
                 if (!seeded) {
                     databaseError_ = QString::fromStdString(seeded.error().message);
                     materialStore_.reset();
+                }
                 }
             }
         }
