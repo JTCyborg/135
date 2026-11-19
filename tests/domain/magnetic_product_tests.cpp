@@ -1,5 +1,6 @@
 #include "p135/domain/magnetic_product.hpp"
 #include "p135/domain/magnetic_circuit.hpp"
+#include "p135/domain/three_limb_magnetic.hpp"
 #include "p135/domain/material_catalog.hpp"
 
 #include <cassert>
@@ -115,6 +116,69 @@ int main()
         assert(missingOriginResult.error().code == ErrorCode::MissingMaterialProperty);
     }
 
+
+    {
+        ThreeLimbMagneticRequest request;
+        request.geometry.limbEffectiveArea = units::Area{4.0e-4};
+        request.geometry.limbMeanPath = units::Length{0.25};
+        request.geometry.limbAirGap = units::Length{1.0e-3};
+        request.geometry.yokeEffectiveArea = units::Area{4.0e-4};
+        request.geometry.yokeSegmentPath = units::Length{0.15};
+        request.turns = {100, 100, 100};
+        request.phaseCurrents = {
+            units::Current{0.0}, units::Current{0.0}, units::Current{0.0}
+        };
+        request.material = validProduct().coreMaterial;
+        request.material.density = units::Density{};
+        request.material.bhCurve = {
+            {units::MagneticFieldStrength{0.0}, units::FluxDensity{0.0}},
+            {units::MagneticFieldStrength{100.0}, units::FluxDensity{0.5}},
+            {units::MagneticFieldStrength{1000.0}, units::FluxDensity{1.0}}
+        };
+        const auto zero = analyzeThreeLimbMagneticCircuit(request);
+        assert(zero);
+        assert(zero.value().withinBhCurveRange);
+        for (const auto flux : zero.value().limbFlux)
+            assert(std::abs(flux.si()) < 1.0e-15);
+        for (const auto flux : zero.value().yokeFlux)
+            assert(std::abs(flux.si()) < 1.0e-15);
+
+        request.phaseCurrents = {
+            units::Current{1.0}, units::Current{-0.5}, units::Current{-0.5}
+        };
+        const auto balanced = analyzeThreeLimbMagneticCircuit(request);
+        assert(balanced);
+        assert(balanced.value().withinBhCurveRange);
+        assert(balanced.value().iterations > 0);
+        assert(balanced.value().maximumFluxResidual_Wb < 1.0e-12);
+        double limbFluxSum = 0.0;
+        for (const auto flux : balanced.value().limbFlux) {
+            assert(std::isfinite(flux.si()));
+            limbFluxSum += flux.si();
+        }
+        assert(std::abs(limbFluxSum) < 1.0e-12);
+        for (const auto density : balanced.value().limbFluxDensity)
+            assert(std::isfinite(density.si()));
+        for (const auto density : balanced.value().yokeFluxDensity)
+            assert(std::isfinite(density.si()));
+
+        auto invalidTurns = request;
+        invalidTurns.turns[1] = 0;
+        assert(!analyzeThreeLimbMagneticCircuit(invalidTurns));
+
+        auto invalidYoke = request;
+        invalidYoke.geometry.yokeEffectiveArea = units::Area{-1.0};
+        assert(!analyzeThreeLimbMagneticCircuit(invalidYoke));
+
+        auto outsideCurve = request;
+        outsideCurve.phaseCurrents = {
+            units::Current{1000.0}, units::Current{-500.0}, units::Current{-500.0}
+        };
+        const auto outside = analyzeThreeLimbMagneticCircuit(outsideCurve);
+        assert(!outside);
+        assert(outside.error().code == ErrorCode::ModelOutOfDomain ||
+               outside.error().code == ErrorCode::NonConvergence);
+    }
 
     CoreMaterialCatalog catalog;
     auto material = validProduct().coreMaterial;
