@@ -729,7 +729,7 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(coreBhCurve_);
 
     auto* saturationHelp = new QLabel(tr(
-        "Red line: entered manufacturer peak-current reference. Purple line: single-path B-H knee-current estimate. For the coupled three-limb model, also enter yoke area Ay and yoke segment length ly; the core-flux chart then shows the peak |B| in each limb and yoke over sampled three-phase cycles. The network assumes symmetric geometry and odd-symmetric B-H data; it does not include fringing, joints, hysteresis or DC offset."));
+        "Red line: entered manufacturer peak-current reference. Purple line: single-path B-H knee-current estimate. For the coupled three-limb model, enter yoke area Ay and yoke segment length ly. Optional branch overrides let you specify independent A/B/C limb areas, paths and air gaps, plus each of the four yoke segment areas and paths; unchecked overrides inherit the common values. The model still uses one shared B-H curve and does not include fringing, joints, hysteresis or DC offset."));
     saturationHelp->setWordWrap(true);
     advancedLayout->addWidget(saturationHelp);
 
@@ -2231,6 +2231,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
         engineVersions.insert(QStringLiteral("magneticSinglePath"), QStringLiteral("nonlinear-magnetic-circuit-v1"));
         engineVersions.insert(QStringLiteral("magneticThreeLimb"), QStringLiteral("three-limb-reluctance-network-v1"));
+        engineVersions.insert(QStringLiteral("magneticGeometryInput"), QStringLiteral("independent-limb-yoke-overrides-v1"));
         engineVersions.insert(QStringLiteral("magneticTimeSampling"), QStringLiteral("adaptive-72-144-288-peak-B-1e-3-v2"));
         engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v4-three-limb-magnetic-network-v1"));
 
