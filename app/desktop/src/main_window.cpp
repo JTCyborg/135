@@ -450,6 +450,118 @@ void MainWindow::calculateFilter()
         }
     }
 
+    std::optional<p135::filter::HarmonicAnalysisResult> harmonicResult;
+    std::optional<p135::filter::FrequencyResponseResult> impedanceResult;
+    QString advancedWarning;
+    const double sourceResistance = sourceResistance_ ? sourceResistance_->value() : 0.0;
+    const double sourceInductance = sourceInductance_
+        ? sourceInductance_->value() * 1.0e-3 : 0.0;
+    const bool hasSourceImpedance = sourceResistance > 0.0 || sourceInductance > 0.0;
+
+    if (hasSourceImpedance) {
+        p135::filter::FrequencyResponseRequest impedanceRequest;
+        impedanceRequest.design = result.value();
+        impedanceRequest.source = {
+            p135::units::Resistance{sourceResistance},
+            p135::units::Inductance{sourceInductance}
+        };
+        impedanceRequest.startFrequency =
+            p135::units::Frequency{fundamentalFrequency_->value() * 0.5};
+        impedanceRequest.stopFrequency =
+            p135::units::Frequency{fundamentalFrequency_->value() * 15.0};
+        impedanceRequest.points = 501;
+        impedanceRequest.logarithmicSpacing = true;
+        const auto impedance = p135::filter::analyzeFrequencyResponse(impedanceRequest);
+        if (impedance) {
+            impedanceResult = impedance.value();
+        } else {
+            advancedWarning = tr("Impedance scan NOT_VERIFIED: %1")
+                .arg(QString::fromStdString(impedance.error().message));
+        }
+    }
+
+    int suppliedHarmonics = 0;
+    bool spectrumValid = true;
+    p135::filter::HarmonicAnalysisRequest harmonicRequest;
+    harmonicRequest.design = result.value();
+    harmonicRequest.source = {
+        p135::units::Resistance{sourceResistance},
+        p135::units::Inductance{sourceInductance}
+    };
+    constexpr double pi = 3.1415926535897932384626433832795;
+    const double fundamentalPhaseVoltage = nominalVoltage_->value() / std::sqrt(3.0);
+    harmonicRequest.sourceVoltageSpectrum.push_back({
+        1,
+        p135::filter::HarmonicSequence::Positive,
+        {fundamentalPhaseVoltage, 0.0}
+    });
+
+    if (harmonicSpectrumTable_) {
+        for (int row = 0; row < harmonicSpectrumTable_->rowCount(); ++row) {
+            const auto* orderItem = harmonicSpectrumTable_->item(row, 0);
+            const auto* sequenceItem = harmonicSpectrumTable_->item(row, 1);
+            const auto* magnitudeItem = harmonicSpectrumTable_->item(row, 2);
+            const auto* phaseItem = harmonicSpectrumTable_->item(row, 3);
+            if (!orderItem || !sequenceItem || !magnitudeItem || !phaseItem) {
+                advancedWarning = tr("Harmonic spectrum row %1 is incomplete.").arg(row + 1);
+                spectrumValid = false;
+                break;
+            }
+
+            bool orderOk = false;
+            bool magnitudeOk = false;
+            bool phaseOk = false;
+            const uint order = orderItem->text().toUInt(&orderOk);
+            const double magnitude = magnitudeItem->text().toDouble(&magnitudeOk);
+            const double phaseDegrees = phaseItem->text().toDouble(&phaseOk);
+            if (!orderOk || order < 2 || !magnitudeOk || !phaseOk ||
+                !std::isfinite(magnitude) || magnitude < 0.0 ||
+                !std::isfinite(phaseDegrees)) {
+                advancedWarning = tr("Harmonic spectrum row %1 has invalid order, RMS voltage or phase.")
+                    .arg(row + 1);
+                spectrumValid = false;
+                break;
+            }
+            if (magnitude == 0.0)
+                continue;
+
+            p135::filter::HarmonicSequence sequence;
+            if (sequenceItem->text().compare(tr("Positive"), Qt::CaseInsensitive) == 0) {
+                sequence = p135::filter::HarmonicSequence::Positive;
+            } else if (sequenceItem->text().compare(tr("Negative"), Qt::CaseInsensitive) == 0) {
+                sequence = p135::filter::HarmonicSequence::Negative;
+            } else {
+                advancedWarning = tr("Harmonic spectrum row %1 sequence must be Positive or Negative.")
+                    .arg(row + 1);
+                spectrumValid = false;
+                break;
+            }
+
+            harmonicRequest.sourceVoltageSpectrum.push_back({
+                static_cast<std::uint32_t>(order),
+                sequence,
+                std::polar(magnitude, phaseDegrees * pi / 180.0)
+            });
+            ++suppliedHarmonics;
+        }
+    }
+
+    if (!hasSourceImpedance && suppliedHarmonics > 0) {
+        advancedWarning = tr("Harmonic analysis NOT_VERIFIED: enter source R and/or L from a network study.");
+    } else if (hasSourceImpedance && suppliedHarmonics > 0 && spectrumValid) {
+        const auto harmonics = p135::filter::analyzeHarmonics(harmonicRequest);
+        if (harmonics) {
+            harmonicResult = harmonics.value();
+        } else {
+            advancedWarning = tr("Harmonic analysis NOT_VERIFIED: %1")
+                .arg(QString::fromStdString(harmonics.error().message));
+        }
+    } else if (!spectrumValid && advancedWarning.isEmpty()) {
+        advancedWarning = tr("Harmonic analysis NOT_VERIFIED: invalid input spectrum.");
+    } else if (suppliedHarmonics == 0 && advancedWarning.isEmpty()) {
+        advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
+    }
+
     const auto& branch = result.value().branches.front();
     const auto addResult = [this](const QString& name, double value, const QString& unit) {
         const int row = resultsTable_->rowCount();
