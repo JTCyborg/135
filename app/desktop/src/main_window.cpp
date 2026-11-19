@@ -1235,6 +1235,7 @@ void MainWindow::calculateFilter()
     const bool anyMagneticInput =
         (coreEffectiveAreaMm2_ && coreEffectiveAreaMm2_->value() > 0.0) ||
         (coreMeanPathMm_ && coreMeanPathMm_->value() > 0.0) ||
+        (coreAirGapMm_ && coreAirGapMm_->value() > 0.0) ||
         (inductorTurns_ && inductorTurns_->value() > 0) ||
         (coreBhCurve_ && !coreBhCurve_->toPlainText().trimmed().isEmpty()) ||
         (coreBhSource_ && !coreBhSource_->text().trimmed().isEmpty());
