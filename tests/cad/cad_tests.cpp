@@ -1,10 +1,13 @@
 #include "p135/cad/three_limb_core.hpp"
 
 #include <BRepCheck_Analyzer.hxx>
+#include <BRepBndLib.hxx>
+#include <Bnd_Box.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
 
 #include <cassert>
+#include <cmath>
 
 using namespace p135;
 using namespace p135::domain;
@@ -49,6 +52,16 @@ int main()
     assert(shape);
     assert(!shape.value().IsNull());
     assert(BRepCheck_Analyzer(shape.value()).IsValid());
+
+    Bnd_Box bounds;
+    BRepBndLib::Add(shape.value(), bounds);
+    Standard_Real xMin = 0.0, yMin = 0.0, zMin = 0.0;
+    Standard_Real xMax = 0.0, yMax = 0.0, zMax = 0.0;
+    bounds.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+    assert(std::abs((xMax - xMin) - 240.0) < 1.0e-6);
+    assert(std::abs((yMax - yMin) - 200.0) < 1.0e-6);
+    assert(std::abs((zMax - zMin) - 80.0) < 1.0e-6);
+
     std::size_t solidCount = 0;
     for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next()) ++solidCount;
     assert(solidCount == 7);
