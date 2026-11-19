@@ -41,6 +41,9 @@ Result<FilterDesign> synthesize(const FilterSpecification& specification)
     if (!finitePositive(fundamental))
         return invalid("Fundamental frequency must be finite and greater than zero.",
                        "network.fundamentalFrequency");
+    if (specification.network.connection != Connection::Wye &&
+        specification.network.connection != Connection::Delta)
+        return invalid("Connection must be Wye or Delta.", "network.connection");
     if (specification.branches.empty())
         return invalid("At least one single-tuned branch is required.", "branches");
 
