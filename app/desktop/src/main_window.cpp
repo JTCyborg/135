@@ -1256,8 +1256,8 @@ void MainWindow::calculateFilter()
         if (coreBhCurve_) {
             const auto lines = coreBhCurve_->toPlainText().split(QRegularExpression("[\\r\\n]+"),
                 Qt::SkipEmptyParts);
-            for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
-                const QString line = lines[lineIndex].trimmed();
+            for (const auto& rawLine : lines) {
+                const QString line = rawLine.trimmed();
                 if (line.startsWith('#')) continue;
                 const auto fields = line.split(QRegularExpression("[,;\\s]+"), Qt::SkipEmptyParts);
                 bool hOk = false;
