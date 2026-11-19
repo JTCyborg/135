@@ -8,6 +8,7 @@ Windows desktop engineering platform for calculation, design, optimization and C
 - [Core API и контракты расчётных модулей](docs/CORE_API.md)
 - [P135.001 — Desktop UI shell](docs/P135.001_DESKTOP_UI.md)
 - [P135.002 — Circuit Engine / MNA](docs/P135.002_CIRCUIT_ENGINE.md)
+- [P135.003 — Filter synthesis](docs/P135.003_FILTER_SYNTHESIS.md)
 
 ## Current development status
 
@@ -25,4 +26,11 @@ Windows desktop engineering platform for calculation, design, optimization and C
 - Complex RMS phasors, branch currents, power balance and residual diagnostics.
 - Initial analytical regression tests and frequency sweep API.
 
-**Verification status:** the Qt desktop target and engineering tests have not yet been built in the target Windows/MSVC + Qt environment. The desktop shell is an initial UI prototype, not a completed filter-design workflow. See [desktop UI scope](docs/P135.001_DESKTOP_UI.md) and [Circuit Engine scope](docs/P135.002_CIRCUIT_ENGINE.md).
+### P135.003 — Shunt Passive Filter synthesis (first slice)
+- New Qt-independent `Project135Filter` library.
+- Three-phase Wye/Delta network definition and parallel single-tuned series-RLC branches.
+- Analytical C/L/damping-R sizing from fundamental-frequency reactive power, tuning order and quality factor.
+- Input validation with structured diagnostics and filter regression tests.
+- UI integration, circuit-network verification and harmonic/resonance analysis remain pending.
+
+**Verification status:** the user confirmed the existing desktop Debug and Release builds launch successfully before this milestone. The new filter module and tests have been committed but still require a fresh local Debug/Release build and CTest run. See [filter synthesis scope](docs/P135.003_FILTER_SYNTHESIS.md).
