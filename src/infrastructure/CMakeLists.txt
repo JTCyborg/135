@@ -1,7 +1,9 @@
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(Project135InfrastructureSqlite
+    sqlite/canonical_json.cpp
     sqlite/sqlite_database.cpp
     sqlite/migration_runner.cpp
     sqlite/sqlite_material_revision_store.cpp
@@ -14,7 +16,7 @@ target_include_directories(Project135InfrastructureSqlite
 )
 target_link_libraries(Project135InfrastructureSqlite
     PUBLIC Project135::Core unofficial::sqlite3::sqlite3
-    PRIVATE OpenSSL::Crypto
+    PRIVATE OpenSSL::Crypto nlohmann_json::nlohmann_json
 )
 target_compile_features(Project135InfrastructureSqlite PUBLIC cxx_std_20)
 
