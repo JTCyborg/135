@@ -30,6 +30,13 @@ ReactorPhysicalGeometry validGeometry()
     g.core.coreOverallHeight = units::Length{0.20};
     g.core.coreOverallWidth = units::Length{0.24};
     g.core.laminationConstruction = "test packet construction";
+    for (const auto interface : {
+             CoreJointInterface::TopYokeABToLimbA, CoreJointInterface::TopYokeABToLimbB,
+             CoreJointInterface::TopYokeBCToLimbB, CoreJointInterface::TopYokeBCToLimbC,
+             CoreJointInterface::BottomYokeABToLimbA, CoreJointInterface::BottomYokeABToLimbB,
+             CoreJointInterface::BottomYokeBCToLimbB, CoreJointInterface::BottomYokeBCToLimbC}) {
+        g.core.joints.push_back({interface, CoreJointType::Butt, {}});
+    }
     for (auto& b : g.bobbins) {
         b.innerWidth = units::Length{0.035}; b.innerHeight = units::Length{0.11};
         b.axialLength = units::Length{0.075}; b.wallThickness = units::Length{0.001};
@@ -76,6 +83,15 @@ int main()
     std::size_t solidCount = 0;
     for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next()) ++solidCount;
     assert(solidCount == 7);
+
+    auto stepLapGeometry = geometry;
+    stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
+    stepLapGeometry.core.joints[0].stepLapPackets = {
+        {units::Length{0.0}, units::Length{0.04}, units::Length{0.02}, units::Length{0.02}},
+        {units::Length{0.04}, units::Length{0.04}, units::Length{0.03}, units::Length{0.03}}
+    };
+    assert(validate(stepLapGeometry.core));
+    assert(!p135::cad::buildThreeLimbCoreShape(stepLapGeometry));
 
     auto invalid = geometry;
     invalid.core.coreOverallHeight = units::Length{0.05};
