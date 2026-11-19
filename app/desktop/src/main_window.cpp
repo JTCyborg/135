@@ -696,7 +696,11 @@ QWidget* MainWindow::createResultsPage()
     currentPlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
-    resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bank current (A)"));
+    resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
+        if (resultsBankCurrentPlot_)
+            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference);
+        if (resultsBusImpedancePlot_)
+            resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
     layout->addWidget(resultsBankCurrentPlot_);
 
     auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
@@ -1494,6 +1498,48 @@ void MainWindow::calculateFilter()
     if (capacitorThermalResult || resistorThermalResult)
         calculationSummary += tr(" Selected material revisions were resolved from the immutable SQLite catalog and evaluated by the thermal bridge.");
     calculationSummary += tr(" Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated.");
+    std::vector<PlotBand> resonanceBands;
+    if (impedanceResult) {
+        const auto& points = impedanceResult->points;
+        const auto interpolateLogFrequency = [](const p135::filter::FrequencyResponsePoint& a,
+                                                  const p135::filter::FrequencyResponsePoint& b,
+                                                  double targetMagnitude) {
+            const double ya = a.busImpedanceMagnitudeOhm;
+            const double yb = b.busImpedanceMagnitudeOhm;
+            if (std::abs(yb - ya) <= std::numeric_limits<double>::epsilon())
+                return a.frequency.si();
+            const double fraction = std::clamp((targetMagnitude - ya) / (yb - ya), 0.0, 1.0);
+            return std::exp(std::log(a.frequency.si()) +
+                fraction * (std::log(b.frequency.si()) - std::log(a.frequency.si())));
+        };
+        for (std::size_t peak = 1; peak + 1 < points.size(); ++peak) {
+            const double peakMagnitude = points[peak].busImpedanceMagnitudeOhm;
+            if (!(peakMagnitude > points[peak - 1].busImpedanceMagnitudeOhm &&
+                  peakMagnitude >= points[peak + 1].busImpedanceMagnitudeOhm))
+                continue;
+            // Parallel-resonance bandwidth: boundaries at -3 dB of the impedance peak.
+            const double boundary = peakMagnitude / std::sqrt(2.0);
+            std::size_t left = peak;
+            while (left > 0 && points[left].busImpedanceMagnitudeOhm >= boundary) --left;
+            std::size_t right = peak;
+            while (right + 1 < points.size() &&
+                   points[right].busImpedanceMagnitudeOhm >= boundary) ++right;
+            if (left == peak || right == peak || left + 1 >= points.size() || right >= points.size())
+                continue;
+            const double startHz = interpolateLogFrequency(points[left], points[left + 1], boundary);
+            const double stopHz = interpolateLogFrequency(points[right - 1], points[right], boundary);
+            if (std::isfinite(startHz) && std::isfinite(stopHz) && stopHz > startHz) {
+                resonanceBands.push_back(PlotBand{
+                    startHz, stopHz,
+                    tr("Resonance %1 Hz").arg(points[peak].frequency.si(), 0, 'g', 4)
+                });
+            }
+        }
+    }
+    const std::optional<double> saturationPeakReference =
+        inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0
+            ? std::optional<double>{inductorSaturationCurrent_->value()} : std::nullopt;
+
     if (materialStore_) {
         QJsonObject inputSnapshot;
         inputSnapshot.insert(QStringLiteral("nominalLineVoltage_V"), nominalVoltage_->value());
@@ -1553,18 +1599,19 @@ void MainWindow::calculateFilter()
         QJsonArray frequencySweepSnapshot;
         PlotCurve bankCurrentCurve{tr("Current calculation"), {}};
         for (const auto& point : sweepResult.value().points) {
-            double currentSquared = 0.0;
+            double maximumPhaseRmsCurrent = 0.0;
             for (const std::size_t index : {3U, 6U, 9U}) {
                 if (index < point.result.branches.size())
-                    currentSquared += std::norm(point.result.branches[index].rmsCurrent);
+                    maximumPhaseRmsCurrent = std::max(maximumPhaseRmsCurrent,
+                        std::abs(point.result.branches[index].rmsCurrent));
             }
-            const double bankCurrent = std::sqrt(currentSquared);
+            const double phasePeakCurrent = std::sqrt(2.0) * maximumPhaseRmsCurrent;
             const double frequencyHz = point.frequency.si();
             QJsonObject sample;
             sample.insert(QStringLiteral("frequency_Hz"), frequencyHz);
-            sample.insert(QStringLiteral("bankCurrent_A"), bankCurrent);
+            sample.insert(QStringLiteral("phasePeakCurrent_A"), phasePeakCurrent);
             frequencySweepSnapshot.append(sample);
-            bankCurrentCurve.points.emplace_back(frequencyHz, bankCurrent);
+            bankCurrentCurve.points.emplace_back(frequencyHz, phasePeakCurrent);
         }
 
         QJsonArray impedanceScanSnapshot;
@@ -1602,7 +1649,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("circuitSolver"), QStringLiteral("circuit-ac-mna-v1"));
         engineVersions.insert(QStringLiteral("harmonics"), QStringLiteral("harmonics-v1"));
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
-        engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v1"));
+        engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v2-resonance-isat-v1"));
 
         const std::string inputJson = QJsonDocument(inputSnapshot)
             .toJson(QJsonDocument::Compact).toStdString();
