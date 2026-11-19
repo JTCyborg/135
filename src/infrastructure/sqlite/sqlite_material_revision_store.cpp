@@ -230,6 +230,21 @@ Result<void> SqliteMaterialRevisionStore::setArchived(const std::string& materia
     Transaction transaction(database_);
     if (!transaction.active())
         return Result<void>::failure(storeError("Cannot begin archive transaction."));
+    if (archived) {
+        Statement usage(database_.handle(),
+            "SELECT 1 FROM material_usage u "
+            "JOIN material_revisions r ON r.revision_id=u.revision_id "
+            "WHERE r.material_id=?1 LIMIT 1;");
+        if (!usage) return Result<void>::failure(storeError(usage.error()));
+        sqlite3_bind_text(usage.get(), 1, materialId.c_str(), -1, SQLITE_TRANSIENT);
+        const int usageResult = sqlite3_step(usage.get());
+        if (usageResult == SQLITE_ROW)
+            return Result<void>::failure(storeError(
+                "Material is referenced by a saved product or calculation.",
+                ErrorCode::InvalidInput));
+        if (usageResult != SQLITE_DONE)
+            return Result<void>::failure(storeError(usage.error()));
+    }
     Statement update(database_.handle(),
         "UPDATE materials SET archived=?1,modified_at_utc=?2 WHERE material_id=?3;");
     if (!update) return Result<void>::failure(storeError(update.error()));
