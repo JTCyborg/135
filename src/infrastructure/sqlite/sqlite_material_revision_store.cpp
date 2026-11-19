@@ -5,6 +5,7 @@
 
 #include <array>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -141,8 +142,9 @@ Result<void> SqliteMaterialRevisionStore::appendRevision(const MaterialRevision&
     if (revision.revisionId.empty() || revision.materialId.empty() || revision.recordType.empty() ||
         revision.payload.empty() || revision.contentHash.empty() || revision.sourceReference.empty() ||
         revision.datasetRevision.empty() || revision.author.empty() || revision.createdAtUtc.empty() ||
-        revision.revisionNumber == 0)
-        return Result<void>::failure(storeError("Revision metadata and payload must be complete.",
+        revision.revisionNumber == 0 ||
+        revision.revisionNumber > static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
+        return Result<void>::failure(storeError("Revision metadata is incomplete or revision number exceeds SQLite INTEGER range.",
                                                 ErrorCode::MissingRequiredData));
     const auto calculatedHash = payloadHash(revision.payload);
     if (!calculatedHash) return Result<void>::failure(calculatedHash.error());
