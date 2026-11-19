@@ -157,6 +157,19 @@ int main()
         assert(rippleFail);
         assert(rippleFail.value().capacitors.front().rippleCurrentStatus == AssessmentStatus::Fail);
 
+        auto unratedCap = capacitor;
+        unratedCap.id = "CAP-NO-RIPPLE-RATING";
+        unratedCap.rippleCurrent.reset();
+        domain::CapacitorCatalog unratedCatalog;
+        assert(unratedCatalog.add(unratedCap));
+        capAssignment.capacitorComponentId = unratedCap.id;
+        const auto missingRippleRating = analyzeFilterCapacitorThermals(
+            harmonicWithCapCurrents, {capAssignment}, unratedCatalog,
+            units::TemperatureKelvin{298.15}, "harmonics-cap-test-r2b");
+        assert(missingRippleRating);
+        assert(missingRippleRating.value().capacitors.front().rippleCurrentStatus ==
+               AssessmentStatus::NotVerified);
+
         capAssignment.capacitorComponentId = capacitor.id;
         capAssignment.thermalResistanceKPerW.reset();
         const auto missingRtheta = analyzeFilterCapacitorThermals(
