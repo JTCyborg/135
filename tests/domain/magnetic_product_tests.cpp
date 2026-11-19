@@ -1,4 +1,5 @@
 #include "p135/domain/magnetic_product.hpp"
+#include "p135/domain/material_catalog.hpp"
 
 #include <cassert>
 
@@ -17,6 +18,9 @@ MagneticProduct validProduct()
     product.core.stackingFactor = 0.95;
     product.coreMaterial.id = "MAT-TEST";
     product.coreMaterial.grade = "Test grade";
+    product.coreMaterial.manufacturer = "Test manufacturer";
+    product.coreMaterial.sourceReference = "test fixture";
+    product.coreMaterial.datasetRevision = "1";
     product.coreMaterial.density = units::Density{7650.0};
     product.coreMaterial.bhCurve = {
         {units::MagneticFieldStrength{0.0}, units::FluxDensity{0.0}},
@@ -42,6 +46,22 @@ MagneticProduct validProduct()
 int main()
 {
     assert(validate(validProduct()));
+
+    CoreMaterialCatalog catalog;
+    auto material = validProduct().coreMaterial;
+    material.lossData = {{units::Frequency{50.0}, units::FluxDensity{1.0}, units::TemperatureKelvin{293.15}, units::CoreLossDensity{1.2}}};
+    assert(catalog.add(material));
+    assert(catalog.size() == 1);
+    assert(catalog.find("MAT-TEST") != nullptr);
+    assert(!catalog.add(material));
+    auto invalidLoss = material;
+    invalidLoss.id = "MAT-BAD";
+    invalidLoss.lossData.front().specificLoss = units::CoreLossDensity{-1.0};
+    assert(!catalog.add(invalidLoss));
+    auto missingProvenance = material;
+    missingProvenance.id = "MAT-NOPROV";
+    missingProvenance.sourceReference.clear();
+    assert(!validate(missingProvenance));
 
     auto missingBh = validProduct();
     missingBh.coreMaterial.bhCurve.clear();
