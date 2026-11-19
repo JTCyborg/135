@@ -5,6 +5,7 @@
   "dependencies": [
     "sqlite3",
     "openssl",
-    "nlohmann-json"
+    "nlohmann-json",
+    "opencascade"
   ]
 }
