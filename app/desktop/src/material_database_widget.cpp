@@ -126,8 +126,8 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
             return {};
         }
         component = QJsonObject{
-            {"id", model.id.c_str()}, {"manufacturer", model.manufacturer.c_str()},
-            {"series", model.series.c_str()}, {"partNumber", model.partNumber.c_str()},
+            {QStringLiteral("id"), QString::fromStdString(model.id)}, {QStringLiteral("manufacturer"), QString::fromStdString(model.manufacturer)},
+            {QStringLiteral("series"), QString::fromStdString(model.series)}, {QStringLiteral("partNumber"), QString::fromStdString(model.partNumber)},
             {"technology", "metallized-polypropylene-film"},
             {"capacitance_F", model.capacitance.si()},
             {"tolerance_fraction", model.toleranceFraction},
@@ -188,11 +188,11 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
         };
     }
     const QJsonObject snapshot{
-        {"schemaVersion", 1}, {"component", component},
-        {"dataQuality", QJsonObject{
-            {"sourceStatus", "USER_ENTERED_MANUFACTURER_DATA"},
-            {"designReleaseStatus", "NOT_VERIFIED"},
-            {"notes", "Typed structural validation passed. Verify the entered values against the cited current manufacturer datasheet before design release."}
+        {QStringLiteral("schemaVersion"), 1}, {QStringLiteral("component"), component},
+        {QStringLiteral("dataQuality"), QJsonObject{
+            {QStringLiteral("sourceStatus"), "USER_ENTERED_MANUFACTURER_DATA"},
+            {QStringLiteral("designReleaseStatus"), "NOT_VERIFIED"},
+            {QStringLiteral("notes"), "Typed structural validation passed. Verify the entered values against the cited current manufacturer datasheet before design release."}
         }}
     };
     return QString::fromUtf8(QJsonDocument(snapshot).toJson(QJsonDocument::Indented));
