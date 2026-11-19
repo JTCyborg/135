@@ -123,6 +123,11 @@ Result<FrequencyResponseResult> analyzeFrequencyResponse(
             bankAdmittance += 1.0 / branchImpedance;
         }
 
+        // A balanced Delta bank has a per-phase Y-equivalent with
+        // three times the branch-bank admittance (Z_Y = Z_Delta / 3).
+        if (request.design.network.connection == Connection::Delta)
+            bankAdmittance *= 3.0;
+
         if (!finite(bankAdmittance) ||
             std::abs(bankAdmittance) <= std::numeric_limits<double>::min()) {
             return Result<FrequencyResponseResult>::failure(
