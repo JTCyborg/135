@@ -90,12 +90,14 @@ MaterialDatabaseWidget::MaterialDatabaseWidget(SqliteMaterialRevisionStore& stor
     auto* actions = new QHBoxLayout;
     auto* create = new QPushButton(tr("New material"));
     auto* edit = new QPushButton(tr("New revision / edit"));
+    auto* history = new QPushButton(tr("Revision history"));
     auto* compare = new QPushButton(tr("Compare selected (2)"));
     auto* restore = new QPushButton(tr("Restore selected revision"));
     auto* archive = new QPushButton(tr("Archive / unarchive"));
     auto* refresh = new QPushButton(tr("Refresh"));
     actions->addWidget(create);
     actions->addWidget(edit);
+    actions->addWidget(history);
     actions->addWidget(compare);
     actions->addWidget(restore);
     actions->addWidget(archive);
@@ -117,6 +119,7 @@ MaterialDatabaseWidget::MaterialDatabaseWidget(SqliteMaterialRevisionStore& stor
     connect(edit, &QPushButton::clicked, this, [this] { createOrEditMaterial(); });
     connect(table_, &QTableWidget::cellDoubleClicked, this,
             [this](int, int) { createOrEditMaterial(); });
+    connect(history, &QPushButton::clicked, this, [this] { showRevisionHistory(); });
     connect(compare, &QPushButton::clicked, this, [this] { compareSelectedRevisions(); });
     connect(restore, &QPushButton::clicked, this, [this] { restoreSelectedRevision(); });
     connect(archive, &QPushButton::clicked, this, [this] { toggleArchiveSelected(); });
@@ -302,6 +305,120 @@ void MaterialDatabaseWidget::compareSelectedRevisions()
     box.setIcon(QMessageBox::Information);
     box.setStandardButtons(QMessageBox::Ok);
     box.exec();
+}
+
+void MaterialDatabaseWidget::showRevisionHistory()
+{
+    const auto rows = table_->selectionModel()->selectedRows();
+    if (rows.size() != 1) {
+        QMessageBox::information(this, tr("Revision history"), tr("Select one material."));
+        return;
+    }
+    const std::string materialId = table_->item(rows.front().row(), 0)
+        ->data(Qt::UserRole + 1).toString().toStdString();
+    const auto history = store_.revisionHistory(materialId);
+    if (!history) {
+        QMessageBox::warning(this, tr("Revision history"), errorText(history.error()));
+        return;
+    }
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Revision history — %1").arg(QString::fromStdString(materialId)));
+    dialog.resize(900, 480);
+    auto* layout = new QVBoxLayout(&dialog);
+    auto* revisions = new QTableWidget(0, 5);
+    revisions->setHorizontalHeaderLabels({tr("Revision"), tr("Revision ID"), tr("Parent"), tr("Author"), tr("Created (UTC)")});
+    revisions->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    revisions->setSelectionBehavior(QAbstractItemView::SelectRows);
+    revisions->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    revisions->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    for (const auto& revision : history.value()) {
+        const int row = revisions->rowCount();
+        revisions->insertRow(row);
+        auto* number = new QTableWidgetItem(QString::number(revision.revisionNumber));
+        number->setData(Qt::UserRole, QString::fromStdString(revision.revisionId));
+        revisions->setItem(row, 0, number);
+        revisions->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(revision.revisionId)));
+        revisions->setItem(row, 2, new QTableWidgetItem(revision.parentRevisionId
+            ? QString::fromStdString(*revision.parentRevisionId) : QStringLiteral("—")));
+        revisions->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(revision.author)));
+        revisions->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(revision.createdAtUtc)));
+    }
+    layout->addWidget(revisions);
+    auto* actions = new QHBoxLayout;
+    auto* compare = new QPushButton(tr("Compare two revisions"));
+    auto* restore = new QPushButton(tr("Restore selected revision"));
+    auto* close = new QPushButton(tr("Close"));
+    actions->addWidget(compare);
+    actions->addWidget(restore);
+    actions->addStretch();
+    actions->addWidget(close);
+    layout->addLayout(actions);
+    connect(close, &QPushButton::clicked, &dialog, &QDialog::accept);
+    connect(compare, &QPushButton::clicked, &dialog, [this, revisions, &dialog] {
+        const auto selectedRows = revisions->selectionModel()->selectedRows();
+        if (selectedRows.size() != 2) {
+            QMessageBox::information(&dialog, tr("Compare revisions"), tr("Select exactly two revisions."));
+            return;
+        }
+        const auto leftId = revisions->item(selectedRows[0].row(), 0)->data(Qt::UserRole).toString().toStdString();
+        const auto rightId = revisions->item(selectedRows[1].row(), 0)->data(Qt::UserRole).toString().toStdString();
+        CompareMaterialRevisions compareUseCase(store_);
+        const auto result = compareUseCase.execute(leftId, rightId);
+        if (!result) {
+            QMessageBox::warning(&dialog, tr("Compare revisions"), errorText(result.error()));
+            return;
+        }
+        const auto& value = result.value();
+        const QString text = tr("Revision %1 vs %2\nPayload: %3\nRecord type: %4\nProvenance: %5\n\nLEFT\n%6\n\nRIGHT\n%7")
+            .arg(value.left.revisionNumber).arg(value.right.revisionNumber)
+            .arg(value.payloadEqual ? tr("identical") : tr("different"))
+            .arg(value.recordTypeEqual ? tr("identical") : tr("different"))
+            .arg(value.provenanceEqual ? tr("identical") : tr("different"))
+            .arg(QString::fromStdString(value.left.payload))
+            .arg(QString::fromStdString(value.right.payload));
+        QMessageBox box(&dialog);
+        box.setWindowTitle(tr("Revision comparison"));
+        box.setText(text);
+        box.setTextInteractionFlags(Qt::TextSelectableByMouse);
+        box.exec();
+    });
+    connect(restore, &QPushButton::clicked, &dialog, [this, revisions, &dialog, materialId] {
+        const auto selectedRows = revisions->selectionModel()->selectedRows();
+        if (selectedRows.size() != 1) {
+            QMessageBox::information(&dialog, tr("Restore revision"), tr("Select exactly one revision."));
+            return;
+        }
+        const auto sourceId = revisions->item(selectedRows.front().row(), 0)
+            ->data(Qt::UserRole).toString().toStdString();
+        bool accepted = false;
+        const QString actor = QInputDialog::getText(&dialog, tr("Restore revision"),
+            tr("Restored by"), QLineEdit::Normal, "local-user", &accepted);
+        if (!accepted || actor.trimmed().isEmpty()) return;
+        const auto archived = store_.isArchived(materialId);
+        if (!archived) {
+            QMessageBox::warning(&dialog, tr("Restore revision"), errorText(archived.error()));
+            return;
+        }
+        const auto timestamp = utcNow();
+        if (archived.value()) {
+            const auto unarchived = store_.setArchived(materialId, false, actor.trimmed().toStdString(), timestamp);
+            if (!unarchived) {
+                QMessageBox::warning(&dialog, tr("Restore revision"), errorText(unarchived.error()));
+                return;
+            }
+        }
+        RestoreMaterialRevision restoreUseCase(store_);
+        const auto restored = restoreUseCase.execute(sourceId, newRevisionId(), actor.trimmed().toStdString(), timestamp);
+        if (!restored) {
+            QMessageBox::warning(&dialog, tr("Restore revision"), errorText(restored.error()));
+            return;
+        }
+        QMessageBox::information(&dialog, tr("Restore revision"),
+            tr("Restored as revision %1.").arg(restored.value().revisionNumber));
+        dialog.accept();
+        reload();
+    });
+    dialog.exec();
 }
 
 void MaterialDatabaseWidget::restoreSelectedRevision()
