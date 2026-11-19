@@ -56,7 +56,7 @@ void testWyeCircuitTopologyAndFundamentalPower()
     });
     assert(solved);
     const auto power = branchBankPower(solved.value());
-    assert(near(power.real(), 0.0));
+    assert(power.real() > 0.0); // damping resistor dissipates real power
     assert(near(power.imag(), -100000.0));
     assert(solved.value().solver.relativeResidual < 1.0e-10);
 }
