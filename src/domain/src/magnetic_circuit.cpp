@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <utility>
 #include <string>
 
 namespace p135::domain {
@@ -132,7 +133,7 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
         const double segmentSlope =
             (bh[i].fieldStrength.si() - bh[i - 1].fieldStrength.si()) /
             (bh[i].fluxDensity.si() - bh[i - 1].fluxDensity.si());
-        if (segmentSlope <= initialSlope * request.kneeSlopeRatio) {
+        if (segmentSlope >= initialSlope / request.kneeSlopeRatio) {
             const double kneeB = bh[i - 1].fluxDensity.si();
             const double kneeH = bh[i - 1].fieldStrength.si();
             const double kneeMmf = kneeH * path + kneeB * gap / vacuumPermeability;
