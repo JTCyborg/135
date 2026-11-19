@@ -1,4 +1,5 @@
 #include "p135/domain/magnetic_product.hpp"
+#include "p135/domain/material_catalog.hpp"
 
 #include <cmath>
 #include <string>
@@ -42,26 +43,9 @@ Result<void> validate(const MagneticProduct& product)
         return invalid("Stacking factor must be in the interval (0, 1].",
                        "core.stackingFactor");
 
-    if (product.coreMaterial.id.empty() || product.coreMaterial.grade.empty())
-        return invalid("Core material ID and grade are required.", "coreMaterial");
-    if (!positive(product.coreMaterial.density.si()))
-        return invalid("Core material density must be positive.", "coreMaterial.density");
-    if (product.coreMaterial.bhCurve.size() < 2)
-        return invalid("At least two measured B-H points are required.",
-                       "coreMaterial.bhCurve", ErrorCode::MissingMaterialProperty);
-
-    double previousH = -1.0;
-    double previousB = -1.0;
-    for (std::size_t i = 0; i < product.coreMaterial.bhCurve.size(); ++i) {
-        const auto& point = product.coreMaterial.bhCurve[i];
-        const double h = point.fieldStrength.si();
-        const double b = point.fluxDensity.si();
-        if (!nonNegative(h) || !nonNegative(b) || h <= previousH || b < previousB)
-            return invalid("B-H points must be finite, non-negative and ordered by increasing H with non-decreasing B.",
-                           "coreMaterial.bhCurve[" + std::to_string(i) + "]");
-        previousH = h;
-        previousB = b;
-    }
+    const auto materialValidation = validate(product.coreMaterial);
+    if (!materialValidation)
+        return Result<void>::failure(materialValidation.error());
 
     if (product.windings.empty())
         return invalid("At least one winding is required.", "windings");
