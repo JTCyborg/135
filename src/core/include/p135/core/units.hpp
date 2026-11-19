@@ -38,6 +38,7 @@ struct TemperatureDifferenceTag {};
 struct FluxDensityTag {};
 struct MagneticFluxTag {};
 struct MagneticFieldStrengthTag {};
+struct MagneticPotentialTag {}; // A-turn (magnetomotive potential)
 struct TimeTag {};
 struct AngleTag {};
 
@@ -62,6 +63,7 @@ using TemperatureDifference = Quantity<TemperatureDifferenceTag>; // K delta
 using FluxDensity = Quantity<FluxDensityTag>;                         // T
 using MagneticFlux = Quantity<MagneticFluxTag>;                       // Wb                 // T
 using MagneticFieldStrength = Quantity<MagneticFieldStrengthTag>; // A/m
+using MagneticPotential = Quantity<MagneticPotentialTag>; // A-turn
 using Time = Quantity<TimeTag>;                               // s
 using Angle = Quantity<AngleTag>;                             // rad
 
