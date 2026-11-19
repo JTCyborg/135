@@ -21,9 +21,19 @@ bool finitePositive(double value) { return std::isfinite(value) && value > 0.0; 
 
 Result<void> validate(const CoreMaterial& material)
 {
-    if (material.id.empty() || material.grade.empty() || material.manufacturer.empty())
+    if (material.id.empty() || material.grade.empty())
         return Result<void>::failure(materialError(
-            ErrorCode::MissingRequiredData, "Material ID, manufacturer and grade are required.", "material"));
+            ErrorCode::MissingRequiredData, "Material ID and grade are required.", "material"));
+    if (material.dataSource == MaterialDataSource::ManufacturerDatasheet &&
+        material.manufacturer.empty())
+        return Result<void>::failure(materialError(
+            ErrorCode::MissingRequiredData,
+            "Manufacturer is required for manufacturer-datasheet material data.", "manufacturer"));
+    if (material.dataSource != MaterialDataSource::ManufacturerDatasheet &&
+        material.dataSource != MaterialDataSource::Measurement &&
+        material.dataSource != MaterialDataSource::UserDefined)
+        return Result<void>::failure(materialError(
+            ErrorCode::InvalidInput, "Unsupported material data source.", "dataSource"));
     if (!finitePositive(material.density.si()))
         return Result<void>::failure(materialError(
             ErrorCode::MissingMaterialProperty, "Material density must be positive.", "density"));
@@ -46,6 +56,11 @@ Result<void> validate(const CoreMaterial& material)
         previousH = h;
         previousB = b;
     }
+
+    if (!material.lossData.empty() && material.lossDataReference.empty())
+        return Result<void>::failure(materialError(
+            ErrorCode::MissingRequiredData,
+            "A separate provenance reference is required for core-loss data.", "lossDataReference"));
 
     for (const auto& point : material.lossData) {
         if (!finitePositive(point.frequency.si()) ||
