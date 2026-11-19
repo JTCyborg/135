@@ -107,6 +107,12 @@ int main(int argc, char** argv)
         assert(inUse && inUse.value());
         assert(!store.setArchived("MAT-TEST", true, "test-author", "2026-01-07T00:00:00Z"));
         assert(!database.execute("UPDATE material_revisions SET payload_json='changed';"));
+        CompareMaterialRevisions compare(store);
+        const auto comparison = compare.execute("REV-1", "REV-2");
+        assert(comparison);
+        assert(!comparison.value().payloadEqual);
+        assert(comparison.value().recordTypeEqual);
+
         RestoreMaterialRevision restore(store);
         const auto restored = restore.execute(
             "REV-1", "REV-3", "integration-test", "2026-01-08T00:00:00Z");
