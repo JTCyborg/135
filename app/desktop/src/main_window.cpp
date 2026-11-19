@@ -1481,33 +1481,6 @@ void MainWindow::calculateFilter()
         }
     }
 
-    QString calculationSummary = tr("LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed.");
-    if (impedanceResult)
-        calculationSummary += tr(" Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures.");
-    else
-        calculationSummary += tr(" Source/filter impedance scan NOT_VERIFIED.");
-    if (harmonicResult)
-        calculationSummary += tr(" Harmonic response and component RMS stress were calculated from %1 entered non-fundamental voltage harmonics.")
-            .arg(suppliedHarmonics);
-    else
-        calculationSummary += tr(" Harmonic THD and harmonic component stress NOT_VERIFIED.");
-    if (!advancedWarning.isEmpty())
-        calculationSummary += QStringLiteral(" ") + advancedWarning;
-    if (!componentAssessmentWarning.isEmpty())
-        calculationSummary += QStringLiteral(" ") + componentAssessmentWarning;
-    if (capacitorThermalResult || resistorThermalResult)
-        calculationSummary += tr(" Selected material revisions were resolved from the immutable SQLite catalog and evaluated by the thermal bridge.");
-    calculationSummary += tr(" Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated.");
-    if (!impedanceResult)
-        calculationSummary += tr(" Resonance-frequency zones NOT_VERIFIED: source impedance R/L is required.");
-    else if (resonanceBands.empty())
-        calculationSummary += tr(" No bounded -3 dB parallel-resonance zone was identified within the scanned frequency range.");
-    else
-        calculationSummary += tr(" Shaded resonance zones show the -3 dB bandwidth around local bus-impedance peaks.");
-    if (!saturationPeakReference)
-        calculationSummary += tr(" Inductor saturation comparison NOT_VERIFIED: enter the manufacturer's peak Isat per phase and its evidence reference.");
-    else
-        calculationSummary += tr(" Red dashed line is the entered Isat reference; calculated phase peak current is sqrt(2) times the AC RMS branch current. This is a rating comparison, not a magnetic saturation model.");
     std::vector<PlotBand> resonanceBands;
     if (impedanceResult) {
         const auto& points = impedanceResult->points;
@@ -1549,6 +1522,35 @@ void MainWindow::calculateFilter()
     const std::optional<double> saturationPeakReference =
         inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0
             ? std::optional<double>{inductorSaturationCurrent_->value()} : std::nullopt;
+
+
+    QString calculationSummary = tr("LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed.");
+    if (impedanceResult)
+        calculationSummary += tr(" Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures.");
+    else
+        calculationSummary += tr(" Source/filter impedance scan NOT_VERIFIED.");
+    if (harmonicResult)
+        calculationSummary += tr(" Harmonic response and component RMS stress were calculated from %1 entered non-fundamental voltage harmonics.")
+            .arg(suppliedHarmonics);
+    else
+        calculationSummary += tr(" Harmonic THD and harmonic component stress NOT_VERIFIED.");
+    if (!advancedWarning.isEmpty())
+        calculationSummary += QStringLiteral(" ") + advancedWarning;
+    if (!componentAssessmentWarning.isEmpty())
+        calculationSummary += QStringLiteral(" ") + componentAssessmentWarning;
+    if (capacitorThermalResult || resistorThermalResult)
+        calculationSummary += tr(" Selected material revisions were resolved from the immutable SQLite catalog and evaluated by the thermal bridge.");
+    calculationSummary += tr(" Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated.");
+    if (!impedanceResult)
+        calculationSummary += tr(" Resonance-frequency zones NOT_VERIFIED: source impedance R/L is required.");
+    else if (resonanceBands.empty())
+        calculationSummary += tr(" No bounded -3 dB parallel-resonance zone was identified within the scanned frequency range.");
+    else
+        calculationSummary += tr(" Shaded resonance zones show the -3 dB bandwidth around local bus-impedance peaks.");
+    if (!saturationPeakReference)
+        calculationSummary += tr(" Inductor saturation comparison NOT_VERIFIED: enter the manufacturer's peak Isat per phase and its evidence reference.");
+    else
+        calculationSummary += tr(" Red dashed line is the entered Isat reference; calculated phase peak current is sqrt(2) times the AC RMS branch current. This is a rating comparison, not a magnetic saturation model.");
 
     if (materialStore_) {
         QJsonObject inputSnapshot;
