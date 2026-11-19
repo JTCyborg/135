@@ -11,7 +11,7 @@ Error capacitorError(ErrorCode code, std::string message, std::string field)
     error.code = code;
     error.message = std::move(message);
     error.diagnostics.push_back(Diagnostic{
-        Severity::Error, "CAPACITOR_COMPONENT_INVALID", error.message,
+        Severity::Error, "COMPONENT_CATALOG_INVALID", error.message,
         std::move(field), std::nullopt, std::nullopt
     });
     return error;
