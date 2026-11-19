@@ -104,8 +104,8 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
         model.manufacturer = manufacturer->text().trimmed().toStdString();
         model.series = series->text().trimmed().toStdString();
         model.partNumber = partNumber->text().trimmed().toStdString();
-        model.dataSource = MaterialDataSource::ManufacturerDatasheet;
-        model.sourceReference = "manufacturer-datasheet";
+        model.dataSource = MaterialDataSource::UserDefined;
+        model.sourceReference = "user-entered-unverified";
         model.datasetRevision = "user-entered";
         model.dielectric = CapacitorDielectric::PolypropyleneFilm;
         model.technology = CapacitorTechnology::MetallizedFilm;
@@ -134,10 +134,10 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
             {QStringLiteral("ratedVoltageDC_V"), model.ratedVoltage.si()},
             {QStringLiteral("minimumTemperature_K"), model.minimumTemperature.si()},
             {QStringLiteral("maximumTemperature_K"), model.maximumTemperature.si()},
-            {QStringLiteral("esr_ohm"), model.esr ? model.esr->si() : 0.0},
-            {QStringLiteral("esl_H"), model.esl ? model.esl->si() : 0.0},
-            {QStringLiteral("rippleCurrent_A"), model.rippleCurrent ? model.rippleCurrent->si() : 0.0}
         };
+        if (model.esr) component.insert(QStringLiteral("esr_ohm"), model.esr->si());
+        if (model.esl) component.insert(QStringLiteral("esl_H"), model.esl->si());
+        if (model.rippleCurrent) component.insert(QStringLiteral("rippleCurrent_A"), model.rippleCurrent->si());
     } else {
         value1 = addNumber(form, QObject::tr("Resistance"), 10.0, 0.000001, 1.0e12, 6, " Ω");
         value2 = addNumber(form, QObject::tr("Tolerance"), 1.0, 0.0, 99.0, 3, " %");
@@ -185,9 +185,10 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
             {QStringLiteral("maximumWorkingVoltage_V"), model.maximumWorkingVoltage.si()},
             {QStringLiteral("minimumTemperature_K"), model.minimumTemperature.si()},
             {QStringLiteral("maximumTemperature_K"), model.maximumTemperature.si()},
-            {QStringLiteral("temperatureCoefficient_per_K"), model.temperatureCoefficient ?
-                model.temperatureCoefficient->si() : 0.0}
         };
+        if (model.temperatureCoefficient)
+            component.insert(QStringLiteral("temperatureCoefficient_per_K"),
+                             model.temperatureCoefficient->si());
     }
     const QJsonObject snapshot{
         {QStringLiteral("schemaVersion"), 1}, {QStringLiteral("component"), component},
