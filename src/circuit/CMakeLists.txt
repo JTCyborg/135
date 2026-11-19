@@ -1,5 +1,6 @@
 add_library(Project135Circuit
     src/solver.cpp
+    src/frequency_sweep.cpp
 )
 add_library(Project135::Circuit ALIAS Project135Circuit)
 
