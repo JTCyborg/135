@@ -101,9 +101,13 @@ Result<FrequencyResponseResult> analyzeFrequencyResponse(
     for (std::size_t index = 0; index < request.points; ++index) {
         const double fraction = static_cast<double>(index) /
                                 static_cast<double>(request.points - 1);
-        const double frequency = request.logarithmicSpacing
-            ? std::exp(logStart + (logStop - logStart) * fraction)
-            : start + (stop - start) * fraction;
+        // Preserve user-specified endpoints exactly; exp(log(start)) can
+        // otherwise differ from start by a few ULPs.
+        const double frequency = index == 0 ? start
+            : (index + 1 == request.points ? stop
+                : (request.logarithmicSpacing
+                    ? std::exp(logStart + (logStop - logStart) * fraction)
+                    : start + (stop - start) * fraction));
         const double omega = kTwoPi * frequency;
 
         Complex bankAdmittance{};
