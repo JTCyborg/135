@@ -36,6 +36,8 @@ struct CapacitorComponent {
     std::string series;
     std::string partNumber;
     MaterialDataSource dataSource{MaterialDataSource::UserDefined};
+    /// True only after the specific snapshot has passed source/data-quality review.
+    bool evidenceVerified{false};
     std::string sourceReference;
     std::string datasetRevision;
 
@@ -68,6 +70,8 @@ struct ResistorComponent {
     std::string series;
     std::string partNumber;
     MaterialDataSource dataSource{MaterialDataSource::UserDefined};
+    /// True only after the specific snapshot has passed source/data-quality review.
+    bool evidenceVerified{false};
     std::string sourceReference;
     std::string datasetRevision;
     ResistorTechnology technology{ResistorTechnology::Other};
