@@ -34,6 +34,11 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPaintEvent>
+#include <QFontMetrics>
+#include <QFrame>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QStatusBar>
@@ -53,6 +58,123 @@
 #include <complex>
 #include <optional>
 #include <vector>
+#include <utility>
+#include <limits>
+#include <algorithm>
+
+
+struct PlotCurve {
+    QString name;
+    std::vector<std::pair<double, double>> points;
+};
+
+class PlotWidget final : public QWidget
+{
+public:
+    explicit PlotWidget(QWidget* parent = nullptr) : QWidget(parent)
+    {
+        setMinimumHeight(230);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        setAutoFillBackground(true);
+    }
+
+    void setCurves(std::vector<PlotCurve> curves, QString xLabel, QString yLabel)
+    {
+        curves_ = std::move(curves);
+        xLabel_ = std::move(xLabel);
+        yLabel_ = std::move(yLabel);
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent*) override
+    {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.fillRect(rect(), palette().base());
+        const QRectF area(76.0, 18.0, std::max(80, width() - 112), std::max(80, height() - 68));
+        painter.setPen(palette().color(QPalette::Mid));
+        painter.drawRect(area);
+
+        double minX = std::numeric_limits<double>::max();
+        double maxX = std::numeric_limits<double>::lowest();
+        double minY = 0.0;
+        double maxY = std::numeric_limits<double>::lowest();
+        bool hasPoints = false;
+        for (const auto& curve : curves_) {
+            for (const auto& [x, y] : curve.points) {
+                if (!std::isfinite(x) || !std::isfinite(y) || x <= 0.0) continue;
+                minX = std::min(minX, x);
+                maxX = std::max(maxX, x);
+                maxY = std::max(maxY, y);
+                hasPoints = true;
+            }
+        }
+        if (!hasPoints || !(maxX > minX) || !(maxY > minY)) {
+            painter.setPen(palette().color(QPalette::Text));
+            painter.drawText(area, Qt::AlignCenter, tr("No frequency-response data available"));
+            painter.drawText(QRectF(0, height() - 30, width(), 22), Qt::AlignCenter, xLabel_);
+            return;
+        }
+
+        const double logMin = std::log10(minX);
+        const double logMax = std::log10(maxX);
+        const double yMax = maxY * 1.08;
+        painter.setPen(palette().color(QPalette::Mid));
+        for (int tick = 0; tick <= 4; ++tick) {
+            const double fraction = static_cast<double>(tick) / 4.0;
+            const double y = area.bottom() - fraction * area.height();
+            painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
+            painter.drawText(QRectF(4, y - 9, 64, 18), Qt::AlignRight | Qt::AlignVCenter,
+                QString::number(yMax * fraction, 'g', 4));
+            const double xValue = std::pow(10.0, logMin + (logMax - logMin) * fraction);
+            const double x = area.left() + fraction * area.width();
+            painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
+            painter.drawText(QRectF(x - 42, area.bottom() + 6, 84, 18),
+                Qt::AlignHCenter | Qt::AlignTop, QString::number(xValue, 'g', 3));
+        }
+
+        const std::vector<QColor> colors{QColor(35, 105, 190), QColor(205, 70, 55),
+            QColor(35, 145, 90), QColor(150, 85, 175)};
+        int curveIndex = 0;
+        int legendX = static_cast<int>(area.left()) + 8;
+        for (const auto& curve : curves_) {
+            QPainterPath path;
+            bool started = false;
+            for (const auto& [xValue, yValue] : curve.points) {
+                if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
+                    xValue <= 0.0 || yValue < 0.0) continue;
+                const double x = area.left() +
+                    (std::log10(xValue) - logMin) / (logMax - logMin) * area.width();
+                const double y = area.bottom() - (yValue / yMax) * area.height();
+                if (!started) { path.moveTo(x, y); started = true; }
+                else path.lineTo(x, y);
+            }
+            const QColor color = colors[static_cast<std::size_t>(curveIndex) % colors.size()];
+            painter.setPen(QPen(color, 2.0));
+            painter.drawPath(path);
+            painter.drawLine(legendX, 10, legendX + 18, 10);
+            painter.setPen(palette().color(QPalette::Text));
+            const QString label = curve.name;
+            painter.drawText(legendX + 23, 15, label);
+            legendX += painter.fontMetrics().horizontalAdvance(label) + 42;
+            ++curveIndex;
+        }
+        painter.setPen(palette().color(QPalette::Text));
+        painter.drawText(QRectF(0, height() - 22, width(), 20), Qt::AlignCenter, xLabel_);
+        painter.save();
+        painter.translate(16, area.center().y());
+        painter.rotate(-90);
+        painter.drawText(QRectF(-area.height() / 2, -10, area.height(), 20),
+            Qt::AlignCenter, yLabel_);
+        painter.restore();
+    }
+
+private:
+    std::vector<PlotCurve> curves_;
+    QString xLabel_;
+    QString yLabel_;
+};
 
 
 namespace {
