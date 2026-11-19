@@ -32,6 +32,7 @@ endif()
 add_subdirectory(src/core)
 add_subdirectory(src/circuit)
 add_subdirectory(src/filter)
+add_subdirectory(src/domain)
 
 if(P135_BUILD_TESTS)
     enable_testing()
