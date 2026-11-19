@@ -328,6 +328,11 @@ QWidget* MainWindow::createFilterPage()
     auto* componentForm = new QFormLayout(componentGroup);
     capacitorComponent_ = new QComboBox;
     resistorComponent_ = new QComboBox;
+    ambientTemperature_ = new QDoubleSpinBox;
+    ambientTemperature_->setRange(-50.0, 150.0);
+    ambientTemperature_->setDecimals(2);
+    ambientTemperature_->setValue(25.0);
+    ambientTemperature_->setSuffix(tr(" °C"));
     capacitorThermalResistance_ = new QDoubleSpinBox;
     capacitorThermalResistance_->setRange(0.0, 1000000.0);
     capacitorThermalResistance_->setDecimals(4);
@@ -340,6 +345,7 @@ QWidget* MainWindow::createFilterPage()
     resistorThermalResistance_->setSuffix(tr(" K/W"));
     resistorThermalSource_ = new QLineEdit;
     resistorThermalSource_->setPlaceholderText(tr("Rθ source: mounting/heatsink measurement"));
+    componentForm->addRow(tr("Thermal ambient temperature"), ambientTemperature_);
     componentForm->addRow(tr("Filter capacitor revision"), capacitorComponent_);
     componentForm->addRow(tr("Capacitor-to-ambient Rθ"), capacitorThermalResistance_);
     componentForm->addRow(tr("Capacitor Rθ evidence"), capacitorThermalSource_);
@@ -721,7 +727,8 @@ void MainWindow::calculateFilter()
                                 capacitorThermalSource_->text().trimmed().toStdString();
                         const auto assessment = p135::thermal::analyzeFilterCapacitorThermals(
                             *harmonicResult, {assignment}, catalog,
-                            p135::units::TemperatureKelvin{298.15},
+                            p135::units::TemperatureKelvin{
+                                (ambientTemperature_ ? ambientTemperature_->value() : 25.0) + 273.15},
                             QStringLiteral("desktop-harmonic-study-%1")
                                 .arg(QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs))
                                 .toStdString());
@@ -756,7 +763,8 @@ void MainWindow::calculateFilter()
                                 resistorThermalSource_->text().trimmed().toStdString();
                         const auto assessment = p135::thermal::analyzeDampingResistorThermals(
                             *harmonicResult, {assignment}, catalog,
-                            p135::units::TemperatureKelvin{298.15},
+                            p135::units::TemperatureKelvin{
+                                (ambientTemperature_ ? ambientTemperature_->value() : 25.0) + 273.15},
                             QStringLiteral("desktop-harmonic-study-%1")
                                 .arg(QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs))
                                 .toStdString());
@@ -782,6 +790,13 @@ void MainWindow::calculateFilter()
         resultsTable_->setItem(row, 0, new QTableWidgetItem(name));
         resultsTable_->setItem(row, 1, new QTableWidgetItem(QString::number(value, 'g', 10)));
         resultsTable_->setItem(row, 2, new QTableWidgetItem(unit));
+    };
+    const auto addTextResult = [this](const QString& name, const QString& value) {
+        const int row = resultsTable_->rowCount();
+        resultsTable_->insertRow(row);
+        resultsTable_->setItem(row, 0, new QTableWidgetItem(name));
+        resultsTable_->setItem(row, 1, new QTableWidgetItem(value));
+        resultsTable_->setItem(row, 2, new QTableWidgetItem(QStringLiteral("—")));
     };
 
     addResult(tr("Phase RMS voltage"), branch.phaseVoltage.si(), tr("V"));
@@ -834,17 +849,12 @@ void MainWindow::calculateFilter()
                   assessment.esrLoss ? tr("W") : tr("NOT_VERIFIED"));
         addResult(tr("Capacitor ripple current"),
                   assessment.rippleCurrentRmsA, tr("A RMS"));
-        addResult(tr("Capacitor ripple-current status"),
-                  static_cast<double>(assessment.rippleCurrentStatus == p135::thermal::AssessmentStatus::Pass ? 1 :
-                      assessment.rippleCurrentStatus == p135::thermal::AssessmentStatus::Fail ? -1 : 0),
-                  assessment.rippleCurrentExplanation);
+        addTextResult(tr("Capacitor ripple-current status"),
+            assessment.rippleCurrentExplanation);
         if (assessment.thermal.estimatedTemperature)
             addResult(tr("Capacitor estimated temperature"),
                       assessment.thermal.estimatedTemperature->si() - 273.15, tr("°C"));
-        addResult(tr("Capacitor thermal status"),
-                  static_cast<double>(assessment.thermal.status == p135::thermal::AssessmentStatus::Pass ? 1 :
-                      assessment.thermal.status == p135::thermal::AssessmentStatus::Fail ? -1 : 0),
-                  assessment.thermal.explanation);
+        addTextResult(tr("Capacitor thermal status"), assessment.thermal.explanation);
     }
     if (resistorThermalResult && !resistorThermalResult->nodes.empty()) {
         const auto& assessment = resistorThermalResult->nodes.front();
@@ -854,10 +864,7 @@ void MainWindow::calculateFilter()
         if (assessment.estimatedTemperature)
             addResult(tr("Damping resistor estimated temperature"),
                       assessment.estimatedTemperature->si() - 273.15, tr("°C"));
-        addResult(tr("Damping resistor thermal status"),
-                  static_cast<double>(assessment.status == p135::thermal::AssessmentStatus::Pass ? 1 :
-                      assessment.status == p135::thermal::AssessmentStatus::Fail ? -1 : 0),
-                  assessment.explanation);
+        addTextResult(tr("Damping resistor thermal status"), assessment.explanation);
     }
 
     if (harmonicResult) {
