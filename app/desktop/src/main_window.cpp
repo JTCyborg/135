@@ -1585,6 +1585,31 @@ void MainWindow::calculateFilter()
         calculationSummary += tr(" Calculation snapshot NOT_SAVED: material database is unavailable.");
     }
 
+    // Plotting is independent of persistence: the live result remains visible even
+    // when the material database is unavailable and its snapshot cannot be saved.
+    PlotCurve liveCurrentCurve{tr("Current calculation"), {}};
+    for (const auto& point : sweepResult.value().points) {
+        double currentSquared = 0.0;
+        for (const std::size_t index : {3U, 6U, 9U}) {
+            if (index < point.result.branches.size())
+                currentSquared += std::norm(point.result.branches[index].rmsCurrent);
+        }
+        liveCurrentCurve.points.emplace_back(point.frequency.si(), std::sqrt(currentSquared));
+    }
+    if (resultsBankCurrentPlot_)
+        resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
+            tr("Frequency (Hz, logarithmic)"), tr("Bank current (A)"));
+    PlotCurve liveBusImpedanceCurve{tr("Current calculation"), {}};
+    if (impedanceResult) {
+        for (const auto& point : impedanceResult->points)
+            liveBusImpedanceCurve.points.emplace_back(
+                point.frequency.si(), point.busImpedanceMagnitudeOhm);
+    }
+    if (resultsBusImpedancePlot_)
+        resultsBusImpedancePlot_->setCurves(impedanceResult
+            ? std::vector<PlotCurve>{liveBusImpedanceCurve} : std::vector<PlotCurve>{},
+            tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+
     resultsNote_->setText(calculationSummary);
     status_->setText(tr("Filter synthesized and AC network solved"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
