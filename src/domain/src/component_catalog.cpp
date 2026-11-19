@@ -1,5 +1,6 @@
 #include "p135/domain/component_catalog.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <utility>
 
@@ -80,10 +81,71 @@ Result<void> validate(const CapacitorComponent& capacitor)
         return Result<void>::failure(capacitorError(
             ErrorCode::InvalidInput,
             "Ripple current must be finite and non-negative when supplied.", "rippleCurrent"));
+    double previousEsrFrequency = 0.0;
+    for (const auto& point : capacitor.esrFrequencyCurve) {
+        if (!finitePositive(point.frequency.si()) || !finitePositive(point.esr.si()) ||
+            point.frequency.si() <= previousEsrFrequency)
+            return Result<void>::failure(capacitorError(
+                ErrorCode::InvalidInput,
+                "ESR curve frequencies and resistances must be positive, with strictly increasing frequencies.",
+                "esrFrequencyCurve"));
+        previousEsrFrequency = point.frequency.si();
+    }
     if (capacitor.ratedLife && !finitePositive(capacitor.ratedLife->si()))
         return Result<void>::failure(capacitorError(
             ErrorCode::InvalidInput, "Rated life must be positive when supplied.", "ratedLife"));
     return Result<void>::success();
+}
+
+Result<units::Resistance> interpolateCapacitorEsr(
+    const CapacitorComponent& capacitor, units::Frequency frequency)
+{
+    const double target = frequency.si();
+    if (!finitePositive(target))
+        return Result<units::Resistance>::failure(capacitorError(
+            ErrorCode::InvalidInput, "ESR lookup frequency must be finite and positive.", "frequency"));
+
+    if (!capacitor.esrFrequencyCurve.empty()) {
+        const auto& curve = capacitor.esrFrequencyCurve;
+        if (target < curve.front().frequency.si() ||
+            target > curve.back().frequency.si())
+            return Result<units::Resistance>::failure(capacitorError(
+                ErrorCode::MissingMaterialProperty,
+                "Requested frequency is outside the supplied ESR curve; extrapolation is not permitted.",
+                "esrFrequencyCurve"));
+        const auto upper = std::lower_bound(
+            curve.begin(), curve.end(), target,
+            [](const CapacitorEsrPoint& point, double value) {
+                return point.frequency.si() < value;
+            });
+        if (upper != curve.end() && upper->frequency.si() == target)
+            return Result<units::Resistance>::success(upper->esr);
+        if (upper == curve.begin() || upper == curve.end())
+            return Result<units::Resistance>::failure(capacitorError(
+                ErrorCode::MissingMaterialProperty,
+                "ESR curve does not bracket the requested frequency.", "esrFrequencyCurve"));
+
+        const auto& lower = *(upper - 1);
+        const double x0 = std::log(lower.frequency.si());
+        const double x1 = std::log(upper->frequency.si());
+        const double y0 = std::log(lower.esr.si());
+        const double y1 = std::log(upper->esr.si());
+        const double fraction = (std::log(target) - x0) / (x1 - x0);
+        const double value = std::exp(y0 + fraction * (y1 - y0));
+        if (!finitePositive(value))
+            return Result<units::Resistance>::failure(capacitorError(
+                ErrorCode::InvalidInput, "Interpolated ESR is outside the supported numeric domain.",
+                "esrFrequencyCurve"));
+        return Result<units::Resistance>::success(units::Resistance{value});
+    }
+
+    if (capacitor.esr && finitePositive(capacitor.esr->si()))
+        return Result<units::Resistance>::success(*capacitor.esr);
+
+    return Result<units::Resistance>::failure(capacitorError(
+        ErrorCode::MissingMaterialProperty,
+        "No frequency-dependent ESR curve or explicitly supplied constant ESR is available.",
+        "esr"));
 }
 
 Result<void> CapacitorCatalog::add(CapacitorComponent capacitor)
