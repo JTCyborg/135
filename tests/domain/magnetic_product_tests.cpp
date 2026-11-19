@@ -64,9 +64,12 @@ int main()
             {units::MagneticFieldStrength{100.0}, units::FluxDensity{0.5}},
             {units::MagneticFieldStrength{1000.0}, units::FluxDensity{1.0}}
         };
-        const auto zeroCurrent = analyzeMagneticCircuit(request);
+        auto zeroCurrentRequest = request;
+        zeroCurrentRequest.current = units::Current{0.0};
+        const auto zeroCurrent = analyzeMagneticCircuit(zeroCurrentRequest);
         assert(zeroCurrent);
         assert(std::abs(zeroCurrent.value().fluxDensity.si()) < 1.0e-12);
+        assert(std::abs(zeroCurrent.value().flux.si()) < 1.0e-15);
         assert(zeroCurrent.value().kneeCurrent.has_value());
 
         auto reverseCurrent = request;
