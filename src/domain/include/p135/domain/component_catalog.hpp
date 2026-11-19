@@ -2,6 +2,7 @@
 
 #include "p135/core/result.hpp"
 #include "p135/core/units.hpp"
+#include "p135/domain/magnetic_product.hpp"
 
 #include <cstddef>
 #include <optional>
