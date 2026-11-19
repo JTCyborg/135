@@ -72,9 +72,11 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
     bool hasFundamental = false;
     for (const auto& harmonic : request.sourceVoltageSpectrum) {
         if (harmonic.order == 0 || !harmonicOrders.insert(harmonic.order).second ||
-            !finite(harmonic.phaseVoltageRms))
+            !finite(harmonic.phaseVoltageRms) ||
+            (harmonic.sequence != HarmonicSequence::Positive &&
+             harmonic.sequence != HarmonicSequence::Negative))
             return Result<HarmonicAnalysisResult>::failure(
-                invalid("Harmonic orders must be unique and positive; voltage phasors must be finite."));
+                invalid("Harmonic orders must be unique and positive, sequence must be positive or negative, and voltage phasors must be finite."));
         hasFundamental = hasFundamental || harmonic.order == 1;
     }
     if (!hasFundamental)
