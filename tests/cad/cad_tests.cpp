@@ -53,8 +53,11 @@ int main()
     if (!shape) {
         std::cerr << "CAD build failed: " << shape.error().message << '\\n';
         for (const auto& diagnostic : shape.error().diagnostics) {
-            std::cerr << diagnostic.code << ": " << diagnostic.message
-                      << " [field=" << diagnostic.field << "]\\n";
+            std::cerr << diagnostic.code << ": " << diagnostic.message;
+            if (diagnostic.fieldPath) {
+                std::cerr << " [field=" << *diagnostic.fieldPath << "]";
+            }
+            std::cerr << '\\n';
         }
     }
     assert(shape);
