@@ -23,6 +23,13 @@ ReactorPhysicalGeometry validGeometry()
     g.core.coreOverallHeight = units::Length{0.20};
     g.core.coreOverallWidth = units::Length{0.24};
     g.core.laminationConstruction = "interleaved step-lap packets";
+    for (const auto interface : {
+             CoreJointInterface::TopYokeABToLimbA, CoreJointInterface::TopYokeABToLimbB,
+             CoreJointInterface::TopYokeBCToLimbB, CoreJointInterface::TopYokeBCToLimbC,
+             CoreJointInterface::BottomYokeABToLimbA, CoreJointInterface::BottomYokeABToLimbB,
+             CoreJointInterface::BottomYokeBCToLimbB, CoreJointInterface::BottomYokeBCToLimbC}) {
+        g.core.joints.push_back({interface, CoreJointType::Butt, {}});
+    }
     for (auto& b : g.bobbins) {
         b.innerWidth = units::Length{0.035};
         b.innerHeight = units::Length{0.11};
@@ -58,6 +65,34 @@ int main()
     auto missingSource = valid;
     missingSource.dimensionalSource.clear();
     assert(!validate(missingSource));
+
+    auto missingJoint = valid;
+    missingJoint.core.joints.pop_back();
+    assert(!validate(missingJoint));
+
+    auto duplicateJoint = valid;
+    duplicateJoint.core.joints[1].interface = duplicateJoint.core.joints[0].interface;
+    assert(!validate(duplicateJoint));
+
+    auto stepLap = valid;
+    stepLap.core.joints[0].construction = CoreJointType::StepLap;
+    stepLap.core.joints[0].stepLapPackets = {
+        {units::Length{0.0}, units::Length{0.04}, units::Length{0.02}, units::Length{0.02}},
+        {units::Length{0.04}, units::Length{0.04}, units::Length{0.03}, units::Length{0.03}}
+    };
+    assert(validate(stepLap));
+
+    auto missingStepLapPackets = stepLap;
+    missingStepLapPackets.core.joints[0].stepLapPackets.clear();
+    assert(!validate(missingStepLapPackets));
+
+    auto stepLapDepthGap = stepLap;
+    stepLapDepthGap.core.joints[0].stepLapPackets[1].stackDepthOffset = units::Length{0.045};
+    assert(!validate(stepLapDepthGap));
+
+    auto stepLapOutOfRange = stepLap;
+    stepLapOutOfRange.core.joints[0].stepLapPackets[1].stackDepth = units::Length{0.05};
+    assert(!validate(stepLapOutOfRange));
 
     auto negativeGap = valid;
     negativeGap.core.airGaps.push_back({CoreSegment::LimbA, units::Length{0.02}, units::Length{-0.001}});
