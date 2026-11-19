@@ -329,3 +329,9 @@ Application Layer не зависит от Qt и конкретного хран
 ## 14. Верификация и качество
 
 Unit-тесты формул, матриц, единиц и свойств материалов; integration-тесты цепочек Circuit → Harmonics → Magnetic/Winding → Thermal; physics/regression тесты с аналитически проверяемыми примерами; баланс мощности, размерностный контроль, предельные случаи и сходимость; сравнение FEM с аналитикой. В отчётах показывать исходные данные, допущения, область применимости, версии моделей, предупреждения и статусы нормативных проверок.
+
+## P135.008.1 — Physical reactor geometry contract
+
+Implemented the first CAD-domain contract in `mechanical_geometry.hpp/.cpp`: explicit three-limb core physical dimensions, two clear windows, four independent yoke segments, limb spacing, physical air-gap lengths and locations, bobbin dimensions, winding-pack build, construction descriptions and dimensional provenance. Validation rejects missing, non-finite, negative or internally inconsistent geometry. These dimensions are separate from effective magnetic Ae/Aw/le values. This is a domain contract only: OCCT solids, assembly, viewport and drawings are not yet implemented.
+
+Test target: `Project135MechanicalGeometryTests`.
