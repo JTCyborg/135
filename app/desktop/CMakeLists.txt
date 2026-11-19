@@ -58,4 +58,19 @@ if(WIN32)
         COMMENT "Deploying Qt runtime for Project135"
         VERBATIM
     )
+
+    # SQLite and OpenSSL are non-Qt runtime dependencies of the material database.
+    if(VCPKG_INSTALLED_DIR AND VCPKG_TARGET_TRIPLET)
+        set(P135_VCPKG_TRIPLET_ROOT "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+        add_custom_command(TARGET Project135 POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "$<IF:$<CONFIG:Debug>,${P135_VCPKG_TRIPLET_ROOT}/debug/bin/sqlite3.dll,${P135_VCPKG_TRIPLET_ROOT}/bin/sqlite3.dll>"
+                "$<TARGET_FILE_DIR:Project135>"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "$<IF:$<CONFIG:Debug>,${P135_VCPKG_TRIPLET_ROOT}/debug/bin/libcrypto-3-x64.dll,${P135_VCPKG_TRIPLET_ROOT}/bin/libcrypto-3-x64.dll>"
+                "$<TARGET_FILE_DIR:Project135>"
+            COMMENT "Deploying SQLite and OpenSSL runtime for Project135"
+            VERBATIM
+        )
+    endif()
 endif()
