@@ -44,6 +44,7 @@ public:
                                            const std::string& actor,
                                            const std::string& timestampUtc) override;
     [[nodiscard]] Result<bool> isMaterialInUse(const std::string& materialId) const override;
+    [[nodiscard]] Result<bool> isArchived(const std::string& materialId) const;
     [[nodiscard]] Result<std::vector<application::MaterialRevision>>
     revisionHistory(const std::string& materialId) const;
     /// Search material identities with their latest immutable revision; default hides archived rows.
