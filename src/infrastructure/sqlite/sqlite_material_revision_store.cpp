@@ -282,6 +282,46 @@ SqliteMaterialRevisionStore::revisionHistory(const std::string& materialId) cons
     return Result<std::vector<MaterialRevision>>::success(std::move(revisions));
 }
 
+Result<std::vector<MaterialRevision>>
+SqliteMaterialRevisionStore::searchLatestRevisions(const MaterialCatalogFilter& filter) const
+{
+    if (filter.pageSize == 0 || filter.pageSize > 500 ||
+        filter.pageOffset > static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
+        return Result<std::vector<MaterialRevision>>::failure(storeError(
+            "Catalog page size must be 1..500 and offset must fit SQLite INTEGER.",
+            ErrorCode::InvalidInput));
+
+    Statement query(database_.handle(),
+        "SELECT r.revision_id,r.material_id,r.revision_number,r.parent_revision_id,r.record_type,"
+        "r.payload_json,r.content_hash,r.source_reference,r.dataset_revision,r.author,r.created_at_utc "
+        "FROM materials m JOIN material_revisions r ON r.revision_id=("
+        "SELECT latest.revision_id FROM material_revisions latest "
+        "WHERE latest.material_id=m.material_id ORDER BY latest.revision_number DESC LIMIT 1) "
+        "WHERE (?1='' OR m.record_type=?1) AND (?2=1 OR m.archived=0) "
+        "AND (?3='' OR instr(lower(m.material_id),lower(?3))>0 "
+        "OR instr(lower(m.record_type),lower(?3))>0 "
+        "OR instr(lower(r.payload_json),lower(?3))>0) "
+        "ORDER BY m.record_type,m.material_id LIMIT ?4 OFFSET ?5;");
+    if (!query)
+        return Result<std::vector<MaterialRevision>>::failure(storeError(query.error()));
+    sqlite3_bind_text(query.get(), 1, filter.recordType.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(query.get(), 2, filter.includeArchived ? 1 : 0);
+    sqlite3_bind_text(query.get(), 3, filter.searchText.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(query.get(), 4, static_cast<sqlite3_int64>(filter.pageSize));
+    sqlite3_bind_int64(query.get(), 5, static_cast<sqlite3_int64>(filter.pageOffset));
+
+    std::vector<MaterialRevision> revisions;
+    for (;;) {
+        const int rc = sqlite3_step(query.get());
+        if (rc == SQLITE_DONE) break;
+        if (rc != SQLITE_ROW)
+            return Result<std::vector<MaterialRevision>>::failure(storeError(query.error()));
+        const auto revision = readRevision(query.get());
+        if (revision) revisions.push_back(*revision);
+    }
+    return Result<std::vector<MaterialRevision>>::success(std::move(revisions));
+}
+
 Result<void> SqliteMaterialRevisionStore::recordUsage(const MaterialUsageReference& usage)
 {
     if (usage.usageId.empty() || usage.revisionId.empty() || usage.targetId.empty() ||
