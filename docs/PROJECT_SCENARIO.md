@@ -246,7 +246,7 @@ Application Layer не зависит от Qt и конкретного хран
 - отдельные таблицы аудита и учёта миграций;
 - документация контракта migration runner: транзакционное применение и SHA-256 checksum исходного файла.
 
-Это только SQL-схема. C++ SQLite repository, migration runner, canonical JSON codec, SHA-256 реализация и integration tests ещё не реализованы и не считаются завершёнными.
+Это SQL-схема с Python integration-style tests на SQLite in-memory: проверяются immutable snapshots, последовательность/родитель ревизий и точные usage references. Тест включён в Windows CI. C++ SQLite repository, migration runner, canonical JSON codec и SHA-256 реализация ещё не реализованы и не считаются завершёнными.
 
 ### 12.3 Обновлённая последовательность ближайших работ
 
@@ -281,7 +281,7 @@ Application Layer не зависит от Qt и конкретного хран
 | D16 | Добавить доменную модель и каталог резисторов | **Добавлено**: ResistorComponent и ResistorCatalog; resistance, tolerance, rated power, maximum working voltage, optional TCR/parasitic L/C/pulse energy, temperature range, provenance и validation; реальные каталожные данные не включены |
 | D17 | Исправить обработку необязательных свойств изоляции и знака температурного коэффициента проводника | **Добавлено**: отсутствующие относительная диэлектрическая проницаемость и плотность представлены std::optional; коэффициент температуры проводника проверяется на конечность, допускаются отрицательные и нулевые значения для специальных материалов; добавлены регрессионные тесты |
 | D18 | Создать первый Application Layer для неизменяемых ревизий материалов | **Добавлены контракты и use cases**: MaterialRevisionRepository, MaterialUsageQuery, CreateMaterialRevision и ArchiveMaterial; проверки последовательности/родителя ревизии и запрет архивирования используемого материала; fake repository tests. Production SQLite adapter и атомарность реального хранилища ещё не реализованы |
-| D19 | Спроектировать начальную SQLite-схему для материалов и ревизий | **Добавлена миграция 001**: identities, immutable revisions, parent chain, usage references, audit log, migration ledger и защитные triggers. C++ migration runner и integration tests ещё не реализованы |
+| D19 | Спроектировать начальную SQLite-схему для материалов и ревизий | **Добавлена миграция 001**: identities, immutable revisions, parent chain, usage references, audit log, migration ledger и защитные triggers; добавлены SQLite schema tests и шаг Windows CI. C++ migration runner и repository ещё не реализованы |
 
 | D05 | Проверка B-H кривой на физическую корректность и модель потерь сердечника | **Частично добавлено**: structural validation B-H и проверка размерностей/знаков loss data; интерполяция, экстраполяция, физическая модель потерь и проверка по контрольным данным запланированы |
 | D06 | Полная геометрическая раскладка витков с учётом изоляции и технологических зазоров | Запланировано |
