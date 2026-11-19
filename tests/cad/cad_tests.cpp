@@ -7,6 +7,7 @@
 #include <TopExp_Explorer.hxx>
 
 #include <cassert>
+#include <iostream>
 #include <cmath>
 
 using namespace p135;
@@ -49,6 +50,13 @@ int main()
 {
     const auto geometry = validGeometry();
     const auto shape = p135::cad::buildThreeLimbCoreShape(geometry);
+    if (!shape) {
+        std::cerr << "CAD build failed: " << shape.error().message << '\\n';
+        for (const auto& diagnostic : shape.error().diagnostics) {
+            std::cerr << diagnostic.code << ": " << diagnostic.message
+                      << " [field=" << diagnostic.field << "]\\n";
+        }
+    }
     assert(shape);
     assert(!shape.value().IsNull());
     assert(BRepCheck_Analyzer(shape.value()).IsValid());
