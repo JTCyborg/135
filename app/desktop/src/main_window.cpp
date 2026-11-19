@@ -1331,6 +1331,8 @@ void MainWindow::calculateFilter()
             }
         }
     }
+    if (magneticCircuitBase && !magneticSweepValid)
+        magneticFluxDensityPoints.clear();
 
     std::optional<p135::filter::HarmonicAnalysisResult> harmonicResult;
     std::optional<p135::filter::FrequencyResponseResult> impedanceResult;
@@ -1711,14 +1713,20 @@ void MainWindow::calculateFilter()
     else
         calculationSummary += tr(" Shaded resonance zones show the -3 dB bandwidth around local bus-impedance peaks.");
     if (!saturationPeakReference)
-        calculationSummary += tr(" Inductor saturation comparison NOT_VERIFIED: enter the manufacturer's peak Isat per phase and its evidence reference.");
+        calculationSummary += tr(" Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference.");
     else {
-        calculationSummary += tr(" Red dashed line is the entered Isat reference; calculated phase peak current is sqrt(2) times the AC RMS branch current. This is a rating comparison, not a magnetic saturation model.");
+        calculationSummary += tr(" Red dashed line is the entered manufacturer Isat peak-current reference.");
         if (inductorSaturationSource_ && !inductorSaturationSource_->text().trimmed().isEmpty())
             calculationSummary += tr(" Isat evidence reference recorded but not independently verified.");
         else
             calculationSummary += tr(" Isat evidence reference missing: comparison NOT_VERIFIED.");
     }
+    if (!magneticModelWarning.isEmpty())
+        calculationSummary += QStringLiteral(" ") + magneticModelWarning;
+    else if (magneticCircuitBase && magneticSweepValid && magneticKneeCurrentA)
+        calculationSummary += tr(" Purple dash-dot line is the calculated B-H knee current using the entered core geometry and B-H curve; it is a curve-slope criterion, not the manufacturer's DC-bias Isat rating.");
+    else if (magneticCircuitBase && magneticSweepValid)
+        calculationSummary += tr(" Magnetic operating points were calculated, but no knee segment was identified in the supplied B-H data.");
 
     if (materialStore_) {
         QJsonObject inputSnapshot;
