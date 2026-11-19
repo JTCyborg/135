@@ -63,4 +63,5 @@ private:
     p135::infrastructure::sqlite::SqliteDatabase database_;
     std::unique_ptr<p135::infrastructure::sqlite::SqliteMaterialRevisionStore> materialStore_;
     QString databaseError_;
+    QString projectId_;
 };
