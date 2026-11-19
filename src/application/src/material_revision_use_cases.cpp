@@ -1,6 +1,7 @@
 #include "p135/application/material_revision_use_cases.hpp"
 
 #include <utility>
+#include <limits>
 
 namespace p135::application {
 namespace {
@@ -62,6 +63,59 @@ Result<void> CreateMaterialRevision::execute(const MaterialRevision& revision)
                 "parentRevisionId"));
     }
     return repository_.appendRevision(revision);
+}
+
+Result<MaterialRevisionComparison> CompareMaterialRevisions::execute(
+    const std::string& leftRevisionId, const std::string& rightRevisionId) const
+{
+    if (leftRevisionId.empty() || rightRevisionId.empty())
+        return Result<MaterialRevisionComparison>::failure(failure(
+            ErrorCode::MissingRequiredData, "Both revision IDs are required for comparison.", "revisionIds"));
+    const auto left = repository_.findRevision(leftRevisionId);
+    if (!left) return Result<MaterialRevisionComparison>::failure(left.error());
+    if (!left.value()) return Result<MaterialRevisionComparison>::failure(failure(
+        ErrorCode::MissingRequiredData, "Left revision does not exist.", "leftRevisionId"));
+    const auto right = repository_.findRevision(rightRevisionId);
+    if (!right) return Result<MaterialRevisionComparison>::failure(right.error());
+    if (!right.value()) return Result<MaterialRevisionComparison>::failure(failure(
+        ErrorCode::MissingRequiredData, "Right revision does not exist.", "rightRevisionId"));
+    const auto& a = *left.value();
+    const auto& b = *right.value();
+    return Result<MaterialRevisionComparison>::success(MaterialRevisionComparison{
+        a, b, a.payload == b.payload, a.recordType == b.recordType,
+        a.sourceReference == b.sourceReference && a.datasetRevision == b.datasetRevision});
+}
+
+Result<MaterialRevision> RestoreMaterialRevision::execute(
+    const std::string& sourceRevisionId, const std::string& newRevisionId,
+    const std::string& actor, const std::string& timestampUtc)
+{
+    if (sourceRevisionId.empty() || newRevisionId.empty() || actor.empty() || timestampUtc.empty())
+        return Result<MaterialRevision>::failure(failure(
+            ErrorCode::MissingRequiredData,
+            "Source revision, new revision ID, actor and UTC timestamp are required.", "restore"));
+    const auto source = repository_.findRevision(sourceRevisionId);
+    if (!source) return Result<MaterialRevision>::failure(source.error());
+    if (!source.value()) return Result<MaterialRevision>::failure(failure(
+        ErrorCode::MissingRequiredData, "Source revision does not exist.", "sourceRevisionId"));
+    const auto latest = repository_.latestRevision(source.value()->materialId);
+    if (!latest) return Result<MaterialRevision>::failure(latest.error());
+    if (!latest.value()) return Result<MaterialRevision>::failure(failure(
+        ErrorCode::MissingRequiredData, "Material has no current revision.", "materialId"));
+    if (latest.value()->revisionNumber == std::numeric_limits<std::uint64_t>::max())
+        return Result<MaterialRevision>::failure(failure(
+            ErrorCode::InvalidInput, "Material revision number is exhausted.", "revisionNumber"));
+    MaterialRevision restored = *source.value();
+    restored.revisionId = newRevisionId;
+    restored.revisionNumber = latest.value()->revisionNumber + 1;
+    restored.parentRevisionId = latest.value()->revisionId;
+    restored.sourceReference = "restore:" + sourceRevisionId;
+    restored.author = actor;
+    restored.createdAtUtc = timestampUtc;
+    CreateMaterialRevision create(repository_);
+    const auto created = create.execute(restored);
+    if (!created) return Result<MaterialRevision>::failure(created.error());
+    return Result<MaterialRevision>::success(std::move(restored));
 }
 
 Result<void> ArchiveMaterial::execute(const std::string& materialId,
