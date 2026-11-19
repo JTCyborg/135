@@ -60,16 +60,31 @@ int main()
     assert(!validate(missingSource));
 
     auto negativeGap = valid;
-    negativeGap.core.airGapLengths[0] = units::Length{-0.001};
+    negativeGap.core.airGaps.push_back({CoreSegment::LimbA, units::Length{0.02}, units::Length{-0.001}});
     assert(!validate(negativeGap));
 
-    auto unlocatedGap = valid;
-    unlocatedGap.core.airGapLengths[0] = units::Length{0.001};
-    assert(!validate(unlocatedGap));
+    auto gapAtBoundary = valid;
+    gapAtBoundary.core.airGaps.push_back({CoreSegment::LimbA, units::Length{0.0}, units::Length{0.001}});
+    assert(!validate(gapAtBoundary));
 
-    auto locatedGap = unlocatedGap;
-    locatedGap.core.airGapLocation = AirGapLocation::LimbA;
+    auto gapOutside = valid;
+    gapOutside.core.airGaps.push_back({CoreSegment::LimbA, units::Length{0.10}, units::Length{0.001}});
+    assert(!validate(gapOutside));
+
+    auto locatedGap = valid;
+    locatedGap.core.airGaps = {
+        {CoreSegment::LimbA, units::Length{0.02}, units::Length{0.001}},
+        {CoreSegment::LimbA, units::Length{0.04}, units::Length{0.002}},
+        {CoreSegment::YokeTopAB, units::Length{0.03}, units::Length{0.001}}
+    };
     assert(validate(locatedGap));
+
+    auto overlappingGaps = valid;
+    overlappingGaps.core.airGaps = {
+        {CoreSegment::LimbB, units::Length{0.02}, units::Length{0.01}},
+        {CoreSegment::LimbB, units::Length{0.025}, units::Length{0.01}}
+    };
+    assert(!validate(overlappingGaps));
 
     auto invalidSpacing = valid;
     invalidSpacing.core.limbCenterSpacings[2] = units::Length{0.15};
