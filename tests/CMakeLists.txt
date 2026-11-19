@@ -63,3 +63,14 @@ if(MSVC)
 else()
     target_compile_options(Project135ComponentCatalogTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135ApplicationTests
+    application/material_revision_tests.cpp
+)
+target_link_libraries(Project135ApplicationTests PRIVATE Project135::Application)
+add_test(NAME Project135ApplicationTests COMMAND Project135ApplicationTests)
+if(MSVC)
+    target_compile_options(Project135ApplicationTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ApplicationTests PRIVATE -UNDEBUG)
+endif()
