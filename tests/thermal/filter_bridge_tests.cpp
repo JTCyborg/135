@@ -62,6 +62,20 @@ int main()
     assert(node.loss);
     assert(std::abs(node.loss->si() - 16.0) < 1.0e-9);
 
+    auto userEnteredResistor = resistor;
+    userEnteredResistor.id = "RES-USER-ENTERED";
+    userEnteredResistor.dataSource = domain::MaterialDataSource::UserDefined;
+    domain::ResistorCatalog userEnteredResistorCatalog;
+    assert(userEnteredResistorCatalog.add(userEnteredResistor));
+    auto userEnteredAssignment = assignment;
+    userEnteredAssignment.resistorComponentId = userEnteredResistor.id;
+    const auto userEnteredResistorResult = analyzeDampingResistorThermals(
+        harmonic, {userEnteredAssignment}, userEnteredResistorCatalog,
+        units::TemperatureKelvin{298.15}, "study-user-defined");
+    assert(userEnteredResistorResult);
+    assert(userEnteredResistorResult.value().nodes.front().status ==
+           AssessmentStatus::NotVerified);
+
     assignment.thermalResistanceKPerW.reset();
     const auto incomplete = analyzeDampingResistorThermals(
         harmonic, {assignment}, catalog, units::TemperatureKelvin{298.15}, "study-2026-11-19-r1");
