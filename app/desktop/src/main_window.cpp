@@ -605,7 +605,7 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(componentGroup);
     refreshComponentSelectors();
 
-    auto* note = new QLabel(tr("The target reactive power is the total three-phase fundamental-frequency value for this branch. Synthesis uses ideal C and L and derives a series damping resistor from Q factor. Optional source impedance and harmonic spectrum inputs below enable impedance-scan, THD and branch-stress estimates; component ratings, thermal derating and standards compliance remain outside this calculation."));
+    auto* note = new QLabel(tr("The target reactive power is the total three-phase fundamental-frequency value for this branch. Synthesis uses ideal C and L and derives a series damping resistor from Q factor. Optional source impedance and harmonic spectrum inputs enable impedance-scan, THD and branch-stress estimates. Entering per-phase equivalent core geometry and a sourced B-H curve enables the nonlinear magnetic sweep and B-H knee-current estimate. Component ratings, thermal derating and standards compliance remain separate assessments."));
     note->setWordWrap(true);
     note->setStyleSheet("color: #a66b00;");
     layout->addWidget(note);
