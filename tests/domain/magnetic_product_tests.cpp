@@ -17,7 +17,7 @@ MagneticProduct validProduct()
     product.core.stackingFactor = 0.95;
     product.coreMaterial.id = "MAT-TEST";
     product.coreMaterial.grade = "Test grade";
-    product.coreMaterial.density = units::Mass{7650.0};
+    product.coreMaterial.density = units::Density{7650.0};
     product.coreMaterial.bhCurve = {
         {units::MagneticFieldStrength{0.0}, units::FluxDensity{0.0}},
         {units::MagneticFieldStrength{100.0}, units::FluxDensity{0.8}},
