@@ -86,7 +86,8 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
                     "material.bhCurve");
     const double bMin = bh.front().fluxDensity.si();
     const double bMax = bh.back().fluxDensity.si();
-    if (std::abs(bMin) > 1.0e-12 ||
+    if (!std::isfinite(bMin) || !std::isfinite(bh.front().fieldStrength.si()) ||
+        std::abs(bMin) > 1.0e-12 ||
         std::abs(bh.front().fieldStrength.si()) > 1.0e-9)
         return fail(ErrorCode::MissingMaterialProperty,
                     "B-H curve must include the (H=0, B=0) origin.",
