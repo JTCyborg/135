@@ -6,6 +6,7 @@
 #include <array>
 #include <fstream>
 #include <iomanip>
+#include <optional>
 #include <sstream>
 #include <vector>
 
@@ -83,8 +84,11 @@ Result<void> MigrationRunner::apply(const Migration& migration)
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations';",
         -1, &tableQuery, nullptr) != SQLITE_OK)
         return Result<void>::failure(migrationError(sqlite3_errmsg(database_.handle())));
-    const bool ledgerExists = sqlite3_step(tableQuery) == SQLITE_ROW;
+    const int ledgerResult = sqlite3_step(tableQuery);
+    const bool ledgerExists = ledgerResult == SQLITE_ROW;
     sqlite3_finalize(tableQuery);
+    if (ledgerResult != SQLITE_ROW && ledgerResult != SQLITE_DONE)
+        return Result<void>::failure(migrationError(sqlite3_errmsg(database_.handle())));
 
     if (ledgerExists) {
         sqlite3_stmt* appliedQuery = nullptr;
