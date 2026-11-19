@@ -159,7 +159,7 @@ std::vector<SeedRecord> starterRecords()
         {"dataQuality", {
             {"dielectricStrengthStatus", "TYPICAL_SHORT_TERM_TEST_VALUE"},
             {"continuousStressStatus", "MANUFACTURER_RECOMMENDATION"},
-            {"temperatureStatus", "UL_RT I_ELECTRICAL_220C"},
+            {"temperatureStatus", "UL_RTI_ELECTRICAL_220C"},
             {"designReleaseStatus", "NOT_VERIFIED"},
             {"notes", "The 33 kV/mm value is a typical AC rapid-rise test result, not a continuous design field. DuPont recommends continuous transformer stress not exceeding 1.6 kV/mm to reduce partial-discharge risk. Insulation-system qualification is still required."}
         }}
