@@ -71,6 +71,12 @@ struct PlotCurve {
     std::vector<std::pair<double, double>> points;
 };
 
+struct PlotBand {
+    double startHz{};
+    double stopHz{};
+    QString label;
+};
+
 class PlotWidget final : public QWidget
 {
 public:
@@ -86,6 +92,14 @@ public:
         curves_ = std::move(curves);
         xLabel_ = std::move(xLabel);
         yLabel_ = std::move(yLabel);
+        update();
+    }
+
+    void setEngineeringGuides(std::vector<PlotBand> resonanceBands,
+                              std::optional<double> saturationPeakCurrentA = std::nullopt)
+    {
+        resonanceBands_ = std::move(resonanceBands);
+        saturationPeakCurrentA_ = saturationPeakCurrentA;
         update();
     }
 
@@ -122,7 +136,29 @@ protected:
 
         const double logMin = std::log10(minX);
         const double logMax = std::log10(maxX);
-        const double yMax = maxY * 1.08;
+        const double yMax = std::max(maxY * 1.08,
+            saturationPeakCurrentA_.value_or(0.0) * 1.08);
+        const auto xPixel = [&area, logMin, logMax](double frequency) {
+            return area.left() + (std::log10(frequency) - logMin) /
+                (logMax - logMin) * area.width();
+        };
+        for (const auto& band : resonanceBands_) {
+            if (!std::isfinite(band.startHz) || !std::isfinite(band.stopHz) ||
+                band.startHz <= 0.0 || band.stopHz <= band.startHz ||
+                band.stopHz < minX || band.startHz > maxX) continue;
+            const double left = std::clamp(xPixel(std::max(band.startHz, minX)),
+                area.left(), area.right());
+            const double right = std::clamp(xPixel(std::min(band.stopHz, maxX)),
+                area.left(), area.right());
+            painter.fillRect(QRectF(left, area.top(), right - left, area.height()),
+                QColor(235, 165, 35, 42));
+            painter.setPen(QPen(QColor(190, 125, 20), 1.0, Qt::DashLine));
+            painter.drawLine(QPointF(left, area.top()), QPointF(left, area.bottom()));
+            painter.drawLine(QPointF(right, area.top()), QPointF(right, area.bottom()));
+            painter.setPen(QColor(170, 105, 15));
+            painter.drawText(QRectF(left + 3, area.top() + 3,
+                std::max(0.0, right - left - 6), 18), Qt::AlignLeft | Qt::AlignTop, band.label);
+        }
         painter.setPen(palette().color(QPalette::Mid));
         for (int tick = 0; tick <= 4; ++tick) {
             const double fraction = static_cast<double>(tick) / 4.0;
@@ -135,6 +171,17 @@ protected:
             painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
             painter.drawText(QRectF(x - 42, area.bottom() + 6, 84, 18),
                 Qt::AlignHCenter | Qt::AlignTop, QString::number(xValue, 'g', 3));
+        }
+
+        if (saturationPeakCurrentA_ && std::isfinite(*saturationPeakCurrentA_) &&
+            *saturationPeakCurrentA_ > 0.0) {
+            const double y = area.bottom() - (*saturationPeakCurrentA_ / yMax) * area.height();
+            painter.setPen(QPen(QColor(195, 45, 45), 2.0, Qt::DashLine));
+            painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
+            painter.setPen(QColor(180, 35, 35));
+            painter.drawText(QRectF(area.left() + 5, y - 19, area.width() - 10, 17),
+                Qt::AlignRight | Qt::AlignVCenter,
+                tr("Inductor Isat limit: %1 A peak").arg(*saturationPeakCurrentA_, 0, 'g', 5));
         }
 
         const std::vector<QColor> colors{QColor(35, 105, 190), QColor(205, 70, 55),
@@ -177,6 +224,8 @@ private:
     std::vector<PlotCurve> curves_;
     QString xLabel_;
     QString yLabel_;
+    std::vector<PlotBand> resonanceBands_;
+    std::optional<double> saturationPeakCurrentA_;
 };
 
 
