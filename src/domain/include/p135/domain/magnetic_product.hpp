@@ -10,7 +10,7 @@
 
 namespace p135::domain {
 
-enum class CoreGeometry { ThreeLimb, ThreeSinglePhase, EI, UI, Toroidal, StripWound, Custom };
+enum class CoreGeometryType { ThreeLimb, ThreeSinglePhase, EI, UI, Toroidal, StripWound, Custom };
 enum class CoreMaterialFamily { CRGO, ElectricalSteel, Amorphous, Nanocrystalline, Ferrite, Powder };
 enum class ConductorShape { Round, Rectangular, Foil, Litz, Busbar };
 enum class WindingTechnology { Layer, Sectional, Disc, Foil, Multilayer, Litz };
@@ -19,7 +19,7 @@ enum class InsulationPosition { Turn, Layer, Section, Main, Reinforced };
 enum class CoolingMethod { NaturalAir, ForcedAir, Liquid };
 
 struct CoreGeometry {
-    CoreGeometry type{CoreGeometry::Custom};
+    CoreGeometryType type{CoreGeometryType::Custom};
     units::Area effectiveArea;       // Ae, m^2
     units::Area windowArea;          // Aw, m^2
     units::Length meanMagneticPath;  // le, m
