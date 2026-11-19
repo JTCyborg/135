@@ -28,6 +28,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <cmath>
 #include <string>
 
 MainWindow::MainWindow(QWidget* parent)
