@@ -260,6 +260,78 @@ Result<void> SqliteMaterialRevisionStore::setArchived(const std::string& materia
     return transaction.commit();
 }
 
+Result<std::vector<MaterialRevision>>
+SqliteMaterialRevisionStore::revisionHistory(const std::string& materialId) const
+{
+    Statement query(database_.handle(),
+        "SELECT revision_id,material_id,revision_number,parent_revision_id,record_type,"
+        "payload_json,content_hash,source_reference,dataset_revision,author,created_at_utc "
+        "FROM material_revisions WHERE material_id=?1 ORDER BY revision_number ASC;");
+    if (!query)
+        return Result<std::vector<MaterialRevision>>::failure(storeError(query.error()));
+    sqlite3_bind_text(query.get(), 1, materialId.c_str(), -1, SQLITE_TRANSIENT);
+    std::vector<MaterialRevision> revisions;
+    for (;;) {
+        const int rc = sqlite3_step(query.get());
+        if (rc == SQLITE_DONE) break;
+        if (rc != SQLITE_ROW)
+            return Result<std::vector<MaterialRevision>>::failure(storeError(query.error()));
+        const auto revision = readRevision(query.get());
+        if (revision) revisions.push_back(*revision);
+    }
+    return Result<std::vector<MaterialRevision>>::success(std::move(revisions));
+}
+
+Result<void> SqliteMaterialRevisionStore::recordUsage(const MaterialUsageReference& usage)
+{
+    if (usage.usageId.empty() || usage.revisionId.empty() || usage.targetId.empty() ||
+        usage.createdAtUtc.empty() || usage.actor.empty())
+        return Result<void>::failure(storeError(
+            "Usage ID, revision ID, target ID, actor and timestamp are required.",
+            ErrorCode::MissingRequiredData));
+
+    const char* kind = nullptr;
+    switch (usage.kind) {
+    case MaterialUsageKind::Product: kind = "product"; break;
+    case MaterialUsageKind::Calculation: kind = "calculation"; break;
+    default:
+        return Result<void>::failure(storeError("Unknown material usage kind.", ErrorCode::InvalidInput));
+    }
+
+    Transaction transaction(database_);
+    if (!transaction.active())
+        return Result<void>::failure(storeError("Cannot begin material usage transaction."));
+
+    Statement insert(database_.handle(),
+        "INSERT INTO material_usage(usage_id,revision_id,product_id,calculation_id,usage_kind,created_at_utc) "
+        "VALUES(?1,?2,?3,?4,?5,?6);");
+    if (!insert) return Result<void>::failure(storeError(insert.error()));
+    sqlite3_bind_text(insert.get(), 1, usage.usageId.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(), 2, usage.revisionId.c_str(), -1, SQLITE_TRANSIENT);
+    if (usage.kind == MaterialUsageKind::Product) {
+        sqlite3_bind_text(insert.get(), 3, usage.targetId.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_null(insert.get(), 4);
+    } else {
+        sqlite3_bind_null(insert.get(), 3);
+        sqlite3_bind_text(insert.get(), 4, usage.targetId.c_str(), -1, SQLITE_TRANSIENT);
+    }
+    sqlite3_bind_text(insert.get(), 5, kind, -1, SQLITE_STATIC);
+    sqlite3_bind_text(insert.get(), 6, usage.createdAtUtc.c_str(), -1, SQLITE_TRANSIENT);
+    if (sqlite3_step(insert.get()) != SQLITE_DONE)
+        return Result<void>::failure(storeError(insert.error(), ErrorCode::InvalidInput));
+
+    Statement audit(database_.handle(),
+        "INSERT INTO audit_log(entity_type,entity_id,event_type,actor,occurred_at_utc,details_json) "
+        "VALUES('material_revision',?1,'revision_used',?2,?3,'{}');");
+    if (!audit) return Result<void>::failure(storeError(audit.error()));
+    sqlite3_bind_text(audit.get(), 1, usage.revisionId.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(audit.get(), 2, usage.actor.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(audit.get(), 3, usage.createdAtUtc.c_str(), -1, SQLITE_TRANSIENT);
+    if (sqlite3_step(audit.get()) != SQLITE_DONE)
+        return Result<void>::failure(storeError(audit.error()));
+    return transaction.commit();
+}
+
 Result<bool> SqliteMaterialRevisionStore::isMaterialInUse(const std::string& materialId) const
 {
     Statement query(database_.handle(),
