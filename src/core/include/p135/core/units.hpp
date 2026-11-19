@@ -28,6 +28,7 @@ struct LengthTag {};
 struct AreaTag {};
 struct VolumeTag {};
 struct MassTag {};
+struct DensityTag {};
 struct TemperatureKelvinTag {};
 struct TemperatureDifferenceTag {};
 struct FluxDensityTag {};
@@ -46,6 +47,7 @@ using Length = Quantity<LengthTag>;                           // m
 using Area = Quantity<AreaTag>;                               // m^2
 using Volume = Quantity<VolumeTag>;                            // m^3
 using Mass = Quantity<MassTag>;                               // kg
+using Density = Quantity<DensityTag>;                         // kg/m^3                               // kg
 using TemperatureKelvin = Quantity<TemperatureKelvinTag>;     // K absolute
 using TemperatureDifference = Quantity<TemperatureDifferenceTag>; // K delta
 using FluxDensity = Quantity<FluxDensityTag>;                 // T
