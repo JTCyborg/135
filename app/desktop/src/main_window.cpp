@@ -1348,6 +1348,7 @@ void MainWindow::calculateFilter()
     std::optional<double> magneticKneeFluxDensityT;
     std::vector<std::pair<double, double>> magneticFluxDensityPoints;
     std::vector<std::array<double, 8>> threeLimbFluxDensitySweep;
+    std::vector<std::array<double, 3>> threeLimbSamplingMetadata; // frequency, samples, relative peak change
     bool magneticSweepValid = magneticCircuitBase.has_value();
     bool threeLimbSweepValid = threeLimbMagneticBase.has_value();
     if (magneticCircuitBase) {
@@ -1421,40 +1422,37 @@ void MainWindow::calculateFilter()
                 threeLimbSweepValid = false;
                 threeLimbModelWarning = tr("Coupled magnetic sweep NOT_VERIFIED: phase branch currents are missing from the AC result.");
             } else {
-                std::array<double, 8> peakDensities{};
-                peakDensities[0] = point.frequency.si();
-                constexpr int timeSamples = 72;
-                for (int sample = 0; sample < timeSamples && threeLimbSweepValid; ++sample) {
-                    constexpr double magneticPi = 3.1415926535897932384626433832795;
-                    const double angle = 2.0 * magneticPi * static_cast<double>(sample) /
-                        static_cast<double>(timeSamples);
-                    const auto timeRotation = std::polar(1.0, angle);
-                    auto magneticRequest = *threeLimbMagneticBase;
-                    for (std::size_t phase = 0; phase < 3; ++phase) {
-                        const double instantaneousPeak =
-                            std::sqrt(2.0) * std::real(phasePhasors[phase] * timeRotation);
-                        magneticRequest.phaseCurrents[phase] =
-                            p135::units::Current{instantaneousPeak};
-                    }
-                    const auto magneticPoint =
-                        p135::domain::analyzeThreeLimbMagneticCircuit(magneticRequest);
-                    if (!magneticPoint) {
-                        threeLimbSweepValid = false;
-                        threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz, time sample %2: %3")
-                            .arg(point.frequency.si(), 0, 'g', 6)
-                            .arg(sample)
-                            .arg(QString::fromStdString(magneticPoint.error().message));
-                        break;
-                    }
-                    for (std::size_t phase = 0; phase < 3; ++phase)
-                        peakDensities[phase + 1] = std::max(peakDensities[phase + 1],
-                            std::abs(magneticPoint.value().limbFluxDensity[phase].si()));
-                    for (std::size_t yoke = 0; yoke < 4; ++yoke)
-                        peakDensities[yoke + 4] = std::max(peakDensities[yoke + 4],
-                            std::abs(magneticPoint.value().yokeFluxDensity[yoke].si()));
-                }
-                if (threeLimbSweepValid)
+                p135::domain::ThreeLimbMagneticCycleSamplingRequest samplingRequest;
+                samplingRequest.magnetic = *threeLimbMagneticBase;
+                samplingRequest.phaseRmsPhasors = phasePhasors;
+                samplingRequest.relativePeakTolerance = 1.0e-3;
+                samplingRequest.maximumSamples = 288;
+                const auto sampledCycle =
+                    p135::domain::sampleThreeLimbMagneticCycle(samplingRequest);
+                if (!sampledCycle) {
+                    threeLimbSweepValid = false;
+                    threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz: %2")
+                        .arg(point.frequency.si(), 0, 'g', 6)
+                        .arg(QString::fromStdString(sampledCycle.error().message));
+                } else if (!sampledCycle.value().converged) {
+                    threeLimbSweepValid = false;
+                    threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz: peak |B| did not converge to 0.1%% by %2 samples (last relative change %3%%).")
+                        .arg(point.frequency.si(), 0, 'g', 6)
+                        .arg(static_cast<qulonglong>(sampledCycle.value().samplesUsed))
+                        .arg(sampledCycle.value().relativePeakChange * 100.0, 0, 'g', 5);
+                } else {
+                    std::array<double, 8> peakDensities{};
+                    peakDensities[0] = point.frequency.si();
+                    for (std::size_t branch = 0; branch < 7; ++branch)
+                        peakDensities[branch + 1] =
+                            sampledCycle.value().peakAbsoluteFluxDensity[branch].si();
                     threeLimbFluxDensitySweep.push_back(peakDensities);
+                    threeLimbSamplingMetadata.push_back({
+                        point.frequency.si(),
+                        static_cast<double>(sampledCycle.value().samplesUsed),
+                        sampledCycle.value().relativePeakChange
+                    });
+                }
             }
         }
     }
@@ -2075,6 +2073,17 @@ void MainWindow::calculateFilter()
             }
         }
         resultSnapshot.insert(QStringLiteral("threeLimbMagneticSweep"), threeLimbSweepSnapshot);
+        QJsonArray threeLimbSamplingSnapshot;
+        for (const auto& metadata : threeLimbSamplingMetadata) {
+            QJsonObject sample;
+            sample.insert(QStringLiteral("frequency_Hz"), metadata[0]);
+            sample.insert(QStringLiteral("samplesUsed"), metadata[1]);
+            sample.insert(QStringLiteral("relativePeakChange"), metadata[2]);
+            sample.insert(QStringLiteral("relativeTolerance"), 1.0e-3);
+            sample.insert(QStringLiteral("converged"), true);
+            threeLimbSamplingSnapshot.append(sample);
+        }
+        resultSnapshot.insert(QStringLiteral("threeLimbSampling"), threeLimbSamplingSnapshot);
         resultSnapshot.insert(QStringLiteral("magneticKneeCurrent_A_peak"),
             magneticKneeCurrentA.value_or(0.0));
         resultSnapshot.insert(QStringLiteral("magneticKneeFluxDensity_T"),
@@ -2088,7 +2097,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
         engineVersions.insert(QStringLiteral("magneticSinglePath"), QStringLiteral("nonlinear-magnetic-circuit-v1"));
         engineVersions.insert(QStringLiteral("magneticThreeLimb"), QStringLiteral("three-limb-reluctance-network-v1"));
-        engineVersions.insert(QStringLiteral("magneticTimeSampling"), QStringLiteral("72-uniform-samples-per-cycle-v1"));
+        engineVersions.insert(QStringLiteral("magneticTimeSampling"), QStringLiteral("adaptive-72-144-288-peak-B-1e-3-v2"));
         engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v4-three-limb-magnetic-network-v1"));
 
         const std::string inputJson = QJsonDocument(inputSnapshot)
