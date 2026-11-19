@@ -67,6 +67,13 @@ Result<void> validate(const CapacitorComponent& capacitor)
     if (capacitor.esr && (!std::isfinite(capacitor.esr->si()) || capacitor.esr->si() < 0.0))
         return Result<void>::failure(capacitorError(
             ErrorCode::InvalidInput, "ESR must be finite and non-negative when supplied.", "esr"));
+    if (capacitor.esrConfirmedFrequencyIndependent &&
+        (!capacitor.esr || !finitePositive(capacitor.esr->si()) ||
+         !capacitor.esrFrequencyCurve.empty()))
+        return Result<void>::failure(capacitorError(
+            ErrorCode::InvalidInput,
+            "Frequency-independent ESR confirmation requires a positive scalar ESR and no frequency curve.",
+            "esrConfirmedFrequencyIndependent"));
     if (capacitor.esl && (!std::isfinite(capacitor.esl->si()) || capacitor.esl->si() < 0.0))
         return Result<void>::failure(capacitorError(
             ErrorCode::InvalidInput, "ESL must be finite and non-negative when supplied.", "esl"));
