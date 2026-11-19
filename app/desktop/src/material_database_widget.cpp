@@ -1,12 +1,16 @@
 #include "material_database_widget.hpp"
 
 #include "p135/application/material_revision_use_cases.hpp"
+#include "p135/domain/component_catalog.hpp"
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 
 #include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateTime>
+#include <QDoubleSpinBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -41,9 +45,157 @@ std::string newRevisionId()
     return "REV-" + QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
 }
 
+
 QString errorText(const Error& error)
 {
     return QString::fromStdString(error.message);
+}
+
+QDoubleSpinBox* addNumber(QFormLayout* form, const QString& label,
+                          double value, double minimum, double maximum,
+                          int decimals, const QString& suffix = {})
+{
+    auto* editor = new QDoubleSpinBox(form->parentWidget());
+    editor->setRange(minimum, maximum);
+    editor->setDecimals(decimals);
+    editor->setValue(value);
+    editor->setSuffix(suffix);
+    editor->setMaximumWidth(220);
+    form->addRow(label, editor);
+    return editor;
+}
+
+QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
+{
+    using namespace p135::domain;
+    QDialog dialog(parent);
+    dialog.setWindowTitle(recordType == "capacitor" ?
+        QObject::tr("Typed capacitor editor") : QObject::tr("Typed resistor editor"));
+    dialog.resize(520, 560);
+    auto* form = new QFormLayout(&dialog);
+    auto* id = new QLineEdit(&dialog);
+    auto* manufacturer = new QLineEdit(&dialog);
+    auto* series = new QLineEdit(&dialog);
+    auto* partNumber = new QLineEdit(&dialog);
+    form->addRow(QObject::tr("Database ID"), id);
+    form->addRow(QObject::tr("Manufacturer"), manufacturer);
+    form->addRow(QObject::tr("Series"), series);
+    form->addRow(QObject::tr("Part number"), partNumber);
+
+    QJsonObject component;
+    const bool isCapacitor = recordType == "capacitor";
+    QDoubleSpinBox *value1{}, *value2{}, *value3{}, *value4{}, *minimum{}, *maximum{};
+    if (isCapacitor) {
+        value1 = addNumber(form, QObject::tr("Capacitance"), 10.0, 0.000001, 1.0e9, 6, " µF");
+        value2 = addNumber(form, QObject::tr("Tolerance"), 5.0, 0.0, 99.0, 3, " %");
+        value3 = addNumber(form, QObject::tr("Rated DC voltage"), 1000.0, 0.001, 1.0e9, 3, " V");
+        value4 = addNumber(form, QObject::tr("ESR (optional)"), 0.0, 0.0, 1.0e9, 6, " mΩ");
+        auto* esl = addNumber(form, QObject::tr("ESL (optional)"), 0.0, 0.0, 1.0e9, 6, " nH");
+        auto* ripple = addNumber(form, QObject::tr("Ripple current (optional)"), 0.0, 0.0, 1.0e9, 3, " A");
+        minimum = addNumber(form, QObject::tr("Minimum temperature"), -40.0, -273.14, 1000.0, 2, " °C");
+        maximum = addNumber(form, QObject::tr("Maximum temperature"), 105.0, -272.14, 2000.0, 2, " °C");
+        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+        form->addRow(buttons);
+        QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        if (dialog.exec() != QDialog::Accepted) return {};
+        CapacitorComponent model;
+        model.id = id->text().trimmed().toStdString();
+        model.manufacturer = manufacturer->text().trimmed().toStdString();
+        model.series = series->text().trimmed().toStdString();
+        model.partNumber = partNumber->text().trimmed().toStdString();
+        model.dataSource = MaterialDataSource::ManufacturerDatasheet;
+        model.sourceReference = "manufacturer-datasheet";
+        model.datasetRevision = "user-entered";
+        model.dielectric = CapacitorDielectric::PolypropyleneFilm;
+        model.technology = CapacitorTechnology::MetallizedFilm;
+        model.capacitance = units::Capacitance{value1->value() * 1.0e-6};
+        model.toleranceFraction = value2->value() / 100.0;
+        model.ratedVoltage = units::Voltage{value3->value()};
+        model.esr = value4->value() > 0.0 ?
+            std::optional<units::Resistance>{units::Resistance{value4->value() * 1.0e-3}} : std::nullopt;
+        model.esl = esl->value() > 0.0 ?
+            std::optional<units::Inductance>{units::Inductance{esl->value() * 1.0e-9}} : std::nullopt;
+        model.rippleCurrent = ripple->value() > 0.0 ?
+            std::optional<units::Current>{units::Current{ripple->value()}} : std::nullopt;
+        model.minimumTemperature = units::TemperatureKelvin{minimum->value() + 273.15};
+        model.maximumTemperature = units::TemperatureKelvin{maximum->value() + 273.15};
+        const auto checked = validate(model);
+        if (!checked) {
+            QMessageBox::warning(parent, QObject::tr("Invalid capacitor"), errorText(checked.error()));
+            return {};
+        }
+        component = QJsonObject{
+            {"id", model.id.c_str()}, {"manufacturer", model.manufacturer.c_str()},
+            {"series", model.series.c_str()}, {"partNumber", model.partNumber.c_str()},
+            {"technology", "metallized-polypropylene-film"},
+            {"capacitance_F", model.capacitance.si()},
+            {"tolerance_fraction", model.toleranceFraction},
+            {"ratedVoltageDC_V", model.ratedVoltage.si()},
+            {"minimumTemperature_K", model.minimumTemperature.si()},
+            {"maximumTemperature_K", model.maximumTemperature.si()},
+            {"esr_ohm", model.esr ? model.esr->si() : 0.0},
+            {"esl_H", model.esl ? model.esl->si() : 0.0},
+            {"rippleCurrent_A", model.rippleCurrent ? model.rippleCurrent->si() : 0.0}
+        };
+    } else {
+        value1 = addNumber(form, QObject::tr("Resistance"), 10.0, 0.000001, 1.0e12, 6, " Ω");
+        value2 = addNumber(form, QObject::tr("Tolerance"), 1.0, 0.0, 99.0, 3, " %");
+        value3 = addNumber(form, QObject::tr("Rated power"), 50.0, 0.001, 1.0e9, 3, " W");
+        value4 = addNumber(form, QObject::tr("Maximum working voltage"), 1000.0, 0.001, 1.0e9, 3, " V");
+        auto* tcr = addNumber(form, QObject::tr("TCR (optional)"), 0.0, -1.0e9, 1.0e9, 3, " ppm/K");
+        minimum = addNumber(form, QObject::tr("Minimum temperature"), -55.0, -273.14, 1000.0, 2, " °C");
+        maximum = addNumber(form, QObject::tr("Maximum temperature"), 200.0, -272.14, 2000.0, 2, " °C");
+        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+        form->addRow(buttons);
+        QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        if (dialog.exec() != QDialog::Accepted) return {};
+        ResistorComponent model;
+        model.id = id->text().trimmed().toStdString();
+        model.manufacturer = manufacturer->text().trimmed().toStdString();
+        model.series = series->text().trimmed().toStdString();
+        model.partNumber = partNumber->text().trimmed().toStdString();
+        model.dataSource = MaterialDataSource::ManufacturerDatasheet;
+        model.sourceReference = "manufacturer-datasheet";
+        model.datasetRevision = "user-entered";
+        model.technology = ResistorTechnology::Wirewound;
+        model.resistance = units::Resistance{value1->value()};
+        model.toleranceFraction = value2->value() / 100.0;
+        model.ratedPower = units::Power{value3->value()};
+        model.maximumWorkingVoltage = units::Voltage{value4->value()};
+        if (tcr->value() != 0.0)
+            model.temperatureCoefficient = units::TemperatureCoefficient{tcr->value() * 1.0e-6};
+        model.minimumTemperature = units::TemperatureKelvin{minimum->value() + 273.15};
+        model.maximumTemperature = units::TemperatureKelvin{maximum->value() + 273.15};
+        const auto checked = validate(model);
+        if (!checked) {
+            QMessageBox::warning(parent, QObject::tr("Invalid resistor"), errorText(checked.error()));
+            return {};
+        }
+        component = QJsonObject{
+            {"id", model.id.c_str()}, {"manufacturer", model.manufacturer.c_str()},
+            {"series", model.series.c_str()}, {"partNumber", model.partNumber.c_str()},
+            {"technology", "wirewound"},
+            {"resistance_ohm", model.resistance.si()},
+            {"tolerance_fraction", model.toleranceFraction},
+            {"ratedPower_W", model.ratedPower.si()},
+            {"maximumWorkingVoltage_V", model.maximumWorkingVoltage.si()},
+            {"minimumTemperature_K", model.minimumTemperature.si()},
+            {"maximumTemperature_K", model.maximumTemperature.si()},
+            {"temperatureCoefficient_per_K", model.temperatureCoefficient ?
+                model.temperatureCoefficient->si() : 0.0}
+        };
+    }
+    const QJsonObject snapshot{
+        {"schemaVersion", 1}, {"component", component},
+        {"dataQuality", QJsonObject{
+            {"sourceStatus", "USER_ENTERED_MANUFACTURER_DATA"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "Typed structural validation passed. Verify the entered values against the cited current manufacturer datasheet before design release."}
+        }}
+    };
+    return QString::fromUtf8(QJsonDocument(snapshot).toJson(QJsonDocument::Indented));
 }
 }
 
@@ -220,6 +372,18 @@ void MaterialDatabaseWidget::createOrEditMaterial()
     form->addRow(tr("Dataset revision"), dataset);
     form->addRow(tr("Author"), author);
     form->addRow(tr("Snapshot JSON"), payload);
+    auto* typedEditor = new QPushButton(tr("Open typed capacitor / resistor editor"), &dialog);
+    form->addRow(typedEditor);
+    typedEditor->setEnabled(type->currentData().toString() == "capacitor" ||
+                            type->currentData().toString() == "resistor");
+    connect(type, &QComboBox::currentIndexChanged, &dialog, [type, typedEditor] {
+        const auto selectedType = type->currentData().toString();
+        typedEditor->setEnabled(selectedType == "capacitor" || selectedType == "resistor");
+    });
+    connect(typedEditor, &QPushButton::clicked, &dialog, [type, payload, &dialog] {
+        const auto json = typedComponentSnapshot(type->currentData().toString(), &dialog);
+        if (!json.isEmpty()) payload->setPlainText(json);
+    });
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
     form->addRow(buttons);
     connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
