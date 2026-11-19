@@ -34,6 +34,7 @@ add_subdirectory(src/circuit)
 add_subdirectory(src/filter)
 add_subdirectory(src/domain)
 add_subdirectory(src/application)
+add_subdirectory(src/infrastructure)
 
 if(P135_BUILD_TESTS)
     enable_testing()
