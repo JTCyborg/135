@@ -65,4 +65,36 @@ private:
     const MaterialUsageQuery& usage_;
 };
 
+
+struct MaterialRevisionComparison {
+    MaterialRevision left;
+    MaterialRevision right;
+    bool payloadEqual{};
+    bool recordTypeEqual{};
+    bool provenanceEqual{};
+};
+
+class CompareMaterialRevisions {
+public:
+    explicit CompareMaterialRevisions(const MaterialRevisionRepository& repository)
+        : repository_(repository) {}
+    [[nodiscard]] Result<MaterialRevisionComparison> execute(
+        const std::string& leftRevisionId, const std::string& rightRevisionId) const;
+private:
+    const MaterialRevisionRepository& repository_;
+};
+
+class RestoreMaterialRevision {
+public:
+    explicit RestoreMaterialRevision(MaterialRevisionRepository& repository)
+        : repository_(repository) {}
+    /// Restores a snapshot by appending a new revision; history is never rewritten.
+    [[nodiscard]] Result<MaterialRevision> execute(
+        const std::string& sourceRevisionId, const std::string& newRevisionId,
+        const std::string& actor, const std::string& timestampUtc);
+private:
+    MaterialRevisionRepository& repository_;
+};
+
 } // namespace p135::application
+
