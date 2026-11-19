@@ -335,3 +335,8 @@ Unit-тесты формул, матриц, единиц и свойств ма�
 Implemented the first CAD-domain contract in `mechanical_geometry.hpp/.cpp`: explicit three-limb core physical dimensions, two clear windows, four independent yoke segments, limb spacing, physical air-gap lengths and locations, bobbin dimensions, winding-pack build, construction descriptions and dimensional provenance. Validation rejects missing, non-finite, negative or internally inconsistent geometry. These dimensions are separate from effective magnetic Ae/Aw/le values. This is a domain contract only: OCCT solids, assembly, viewport and drawings are not yet implemented.
 
 Test target: `Project135MechanicalGeometryTests`.
+## P135.008.2 — First OCCT core geometry slice
+
+Added the `Project135Cad` target, isolated from domain and solver APIs, and pinned `opencascade` in the vcpkg manifest. `buildThreeLimbCoreShape` creates a seven-solid OCCT compound (three limb solids and four independent yoke-segment solids) from the physical geometry contract, converts SI metres to millimetres at the CAD boundary, and validates each solid plus the compound with `BRepCheck_Analyzer`. Added `Project135CadTests` to verify seven solids and rejection of invalid core height.
+
+Scope limitation: this is an initial geometric skeleton. Yoke-to-limb joint construction, packet/lamination detail, air-gap cuts, winding solids, bobbins, assembly constraints, Qt viewport and drawing generation are not yet implemented. The current compound preserves overlapping component solids for later assembly semantics; it is not a fused manufacturing solid.
