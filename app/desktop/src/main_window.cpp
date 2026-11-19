@@ -13,6 +13,7 @@
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QDir>
+#include <QDateTime>
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <QFormLayout>
