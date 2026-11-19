@@ -607,7 +607,24 @@ QWidget* MainWindow::createFilterPage()
     sourceInductance_->setSuffix(tr(" mH"));
     sourceForm->addRow(tr("Thevenin source resistance"), sourceResistance_);
     sourceForm->addRow(tr("Thevenin source inductance"), sourceInductance_);
+
+    inductorSaturationCurrent_ = new QDoubleSpinBox;
+    inductorSaturationCurrent_->setRange(0.0, 10000000.0);
+    inductorSaturationCurrent_->setDecimals(3);
+    inductorSaturationCurrent_->setValue(0.0);
+    inductorSaturationCurrent_->setSuffix(tr(" A peak / phase"));
+    inductorSaturationSource_ = new QLineEdit;
+    inductorSaturationSource_->setPlaceholderText(
+        tr("Datasheet / manufacturer part number / test report"));
+    sourceForm->addRow(tr("Inductor saturation-current reference (Isat)"),
+        inductorSaturationCurrent_);
+    sourceForm->addRow(tr("Isat evidence reference"), inductorSaturationSource_);
     advancedLayout->addLayout(sourceForm);
+
+    auto* saturationHelp = new QLabel(tr(
+        "The red line compares the calculated peak phase current (√2 × RMS) with the entered manufacturer Isat reference. Enter a peak-current rating per phase and its source. This is a reference comparison, not a magnetic-core saturation simulation: DC bias, core geometry, B-H curve and inductance roll-off are not modelled."));
+    saturationHelp->setWordWrap(true);
+    advancedLayout->addWidget(saturationHelp);
 
     auto* spectrumHelp = new QLabel(tr("Enter measured/calculated harmonic phase-A RMS voltage magnitudes. The fundamental is derived from nominal line voltage; add only non-fundamental orders here. Use Positive or Negative sequence. Zero sequence is not supported."));
     spectrumHelp->setWordWrap(true);
@@ -976,6 +993,10 @@ void MainWindow::loadCalculationInputs(int row)
     setNumber("qualityFactor", qualityFactor_);
     setNumber("sourceResistance_ohm", sourceResistance_);
     setNumber("sourceInductance_H", sourceInductance_);
+    setNumber("inductorSaturationCurrent_A_peak", inductorSaturationCurrent_);
+    if (inductorSaturationSource_)
+        inductorSaturationSource_->setText(
+            input.value(QStringLiteral("inductorSaturationSource")).toString());
     setNumber("ambientTemperature_C", ambientTemperature_);
     setNumber("capacitorThermalResistance_K_per_W", capacitorThermalResistance_);
     setNumber("resistorThermalResistance_K_per_W", resistorThermalResistance_);
@@ -1483,6 +1504,10 @@ void MainWindow::calculateFilter()
         inputSnapshot.insert(QStringLiteral("connection"), filterConnection_->currentText());
         inputSnapshot.insert(QStringLiteral("sourceResistance_ohm"), sourceResistance);
         inputSnapshot.insert(QStringLiteral("sourceInductance_H"), sourceInductance);
+        inputSnapshot.insert(QStringLiteral("inductorSaturationCurrent_A_peak"),
+            inductorSaturationCurrent_ ? inductorSaturationCurrent_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("inductorSaturationSource"),
+            inductorSaturationSource_ ? inductorSaturationSource_->text() : QString{});
         inputSnapshot.insert(QStringLiteral("ambientTemperature_C"),
             ambientTemperature_ ? ambientTemperature_->value() : 25.0);
         inputSnapshot.insert(QStringLiteral("capacitorThermalResistance_K_per_W"),
