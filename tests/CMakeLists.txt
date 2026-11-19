@@ -18,3 +18,15 @@ else()
     target_compile_options(Project135CoreTests PRIVATE -UNDEBUG)
     target_compile_options(Project135CircuitTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135FilterTests
+    filter/filter_tests.cpp
+)
+target_link_libraries(Project135FilterTests PRIVATE Project135::Filter)
+add_test(NAME Project135FilterTests COMMAND Project135FilterTests)
+
+if(MSVC)
+    target_compile_options(Project135FilterTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135FilterTests PRIVATE -UNDEBUG)
+endif()
