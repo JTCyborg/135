@@ -29,6 +29,9 @@ else()
     target_compile_options(Project135Core INTERFACE -Wall -Wextra -Wpedantic)
 endif()
 
+add_subdirectory(src/core)
+add_subdirectory(src/circuit)
+
 if(P135_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
