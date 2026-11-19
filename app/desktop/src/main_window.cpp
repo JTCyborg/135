@@ -733,6 +733,8 @@ void MainWindow::refreshCalculationHistory()
     if (!historyTable_ || !historyDetails_) return;
     historyTable_->setRowCount(0);
     historyDetails_->clear();
+    if (historyComparisonPlot_)
+        historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Select two calculations"));
     if (!materialStore_) {
         historyDetails_->setPlainText(tr("Calculation history is unavailable: %1").arg(databaseError_));
         return;
@@ -1526,6 +1528,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("circuitSolver"), QStringLiteral("circuit-ac-mna-v1"));
         engineVersions.insert(QStringLiteral("harmonics"), QStringLiteral("harmonics-v1"));
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
+        engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v1"));
 
         const std::string inputJson = QJsonDocument(inputSnapshot)
             .toJson(QJsonDocument::Compact).toStdString();
