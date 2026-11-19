@@ -35,6 +35,7 @@ private:
     QWidget* createHistoryPage();
     void refreshCalculationHistory();
     void showCalculationDetails(int row);
+    void loadCalculationInputs(int row);
     void updateProjectTitle();
     void appendLog(const QString& message);
     void calculateFilter();
