@@ -172,22 +172,44 @@ Result<ThreeLimbMagneticResult>
 analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
 {
     const auto& g = request.geometry;
-    const double limbArea = g.limbEffectiveArea.si();
-    const double limbPath = g.limbMeanPath.si();
-    const double limbGap = g.limbAirGap.si();
-    const double yokeArea = g.yokeEffectiveArea.si();
-    const double yokePath = g.yokeSegmentPath.si();
-    if (!std::isfinite(limbArea) || limbArea <= 0.0 ||
-        !std::isfinite(limbPath) || limbPath <= 0.0 ||
-        !std::isfinite(limbGap) || limbGap < 0.0 ||
-        !std::isfinite(yokeArea) || yokeArea <= 0.0 ||
-        !std::isfinite(yokePath) || yokePath <= 0.0 ||
+    std::array<double, 3> limbAreas{};
+    std::array<double, 3> limbPaths{};
+    std::array<double, 3> limbGaps{};
+    std::array<double, 4> yokeAreas{};
+    std::array<double, 4> yokePaths{};
+    for (std::size_t i = 0; i < limbAreas.size(); ++i) {
+        const double area = g.limbEffectiveAreas[i].si();
+        const double path = g.limbMeanPaths[i].si();
+        const double gap = g.limbAirGaps[i].si();
+        limbAreas[i] = area == 0.0 ? g.limbEffectiveArea.si() : area;
+        limbPaths[i] = path == 0.0 ? g.limbMeanPath.si() : path;
+        limbGaps[i] = gap == 0.0 ? g.limbAirGap.si() : gap;
+    }
+    for (std::size_t i = 0; i < yokeAreas.size(); ++i) {
+        const double area = g.yokeEffectiveAreas[i].si();
+        const double path = g.yokeSegmentPaths[i].si();
+        yokeAreas[i] = area == 0.0 ? g.yokeEffectiveArea.si() : area;
+        yokePaths[i] = path == 0.0 ? g.yokeSegmentPath.si() : path;
+    }
+    const bool validLimbs =
+        std::all_of(limbAreas.begin(), limbAreas.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; }) &&
+        std::all_of(limbPaths.begin(), limbPaths.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; }) &&
+        std::all_of(limbGaps.begin(), limbGaps.end(),
+            [](double value) { return std::isfinite(value) && value >= 0.0; });
+    const bool validYokes =
+        std::all_of(yokeAreas.begin(), yokeAreas.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; }) &&
+        std::all_of(yokePaths.begin(), yokePaths.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; });
+    if (!validLimbs || !validYokes ||
         request.maximumIterations == 0 ||
         !std::isfinite(request.relativeFluxTolerance) ||
         request.relativeFluxTolerance <= 0.0 ||
         request.relativeFluxTolerance >= 1.0)
         return fail(ErrorCode::InvalidInput,
-            "Three-limb geometry and solver tolerances must be finite and physically valid.",
+            "Every limb/yoke branch geometry and solver tolerance must be finite and physically valid.",
             "geometry");
 
     for (const auto turns : request.turns) {
@@ -230,14 +252,14 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
             return fail(ErrorCode::InvalidInput,
                 "Phase currents must be finite.", "phaseCurrents");
         edges[phase] = Edge{
-            3U + phase, phase, limbArea, limbPath, limbGap,
+            3U + phase, phase, limbAreas[phase], limbPaths[phase], limbGaps[phase],
             static_cast<double>(request.turns[phase]) * current
         };
     }
-    edges[3] = Edge{0, 1, yokeArea, yokePath, 0.0, 0.0};
-    edges[4] = Edge{1, 2, yokeArea, yokePath, 0.0, 0.0};
-    edges[5] = Edge{3, 4, yokeArea, yokePath, 0.0, 0.0};
-    edges[6] = Edge{4, 5, yokeArea, yokePath, 0.0, 0.0};
+    edges[3] = Edge{0, 1, yokeAreas[0], yokePaths[0], 0.0, 0.0};
+    edges[4] = Edge{1, 2, yokeAreas[1], yokePaths[1], 0.0, 0.0};
+    edges[5] = Edge{3, 4, yokeAreas[2], yokePaths[2], 0.0, 0.0};
+    edges[6] = Edge{4, 5, yokeAreas[3], yokePaths[3], 0.0, 0.0};
 
     std::array<double, nodeCount> potential{};
     // Seed each top-limb node with its winding MMF. This removes most of the
