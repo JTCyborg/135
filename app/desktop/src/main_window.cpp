@@ -1421,7 +1421,8 @@ void MainWindow::calculateFilter()
                 peakDensities[0] = point.frequency.si();
                 constexpr int timeSamples = 72;
                 for (int sample = 0; sample < timeSamples && threeLimbSweepValid; ++sample) {
-                    const double angle = 2.0 * pi * static_cast<double>(sample) /
+                    constexpr double magneticPi = 3.1415926535897932384626433832795;
+                    const double angle = 2.0 * magneticPi * static_cast<double>(sample) /
                         static_cast<double>(timeSamples);
                     const auto timeRotation = std::polar(1.0, angle);
                     auto magneticRequest = *threeLimbMagneticBase;
@@ -1718,6 +1719,22 @@ void MainWindow::calculateFilter()
         appendLog(magneticModelWarning);
     }
 
+    if (threeLimbMagneticBase && threeLimbSweepValid &&
+        !threeLimbFluxDensitySweep.empty()) {
+        std::array<double, 7> peakCoreDensities{};
+        for (const auto& sample : threeLimbFluxDensitySweep) {
+            for (std::size_t i = 0; i < 7; ++i)
+                peakCoreDensities[i] = std::max(peakCoreDensities[i], sample[i + 1]);
+        }
+        addResult(tr("Three-limb core peak B — limb A"), peakCoreDensities[0], tr("T"));
+        addResult(tr("Three-limb core peak B — limb B"), peakCoreDensities[1], tr("T"));
+        addResult(tr("Three-limb core peak B — limb C"), peakCoreDensities[2], tr("T"));
+        addResult(tr("Three-limb core peak B — maximum yoke segment"),
+            *std::max_element(peakCoreDensities.begin() + 3, peakCoreDensities.end()), tr("T"));
+    } else if (!threeLimbModelWarning.isEmpty()) {
+        appendLog(threeLimbModelWarning);
+    }
+
     if (impedanceResult) {
         addResult(tr("Source/filter impedance scan points"),
                   static_cast<double>(impedanceResult->points.size()), tr("points"));
@@ -1994,6 +2011,24 @@ void MainWindow::calculateFilter()
                 tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
             resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
         }
+        if (resultsCoreFluxPlot_) {
+            std::vector<PlotCurve> coreCurves{
+                PlotCurve{tr("Limb A |B|"), {}},
+                PlotCurve{tr("Limb B |B|"), {}},
+                PlotCurve{tr("Limb C |B|"), {}},
+                PlotCurve{tr("Maximum yoke |B|"), {}}
+            };
+            if (threeLimbMagneticBase && threeLimbSweepValid) {
+                for (const auto& sample : threeLimbFluxDensitySweep) {
+                    for (std::size_t phase = 0; phase < 3; ++phase)
+                        coreCurves[phase].points.emplace_back(sample[0], sample[phase + 1]);
+                    const double maximumYoke = *std::max_element(sample.begin() + 4, sample.end());
+                    coreCurves[3].points.emplace_back(sample[0], maximumYoke);
+                }
+            }
+            resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
+                tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
+        }
 
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
@@ -2010,6 +2045,22 @@ void MainWindow::calculateFilter()
             }
         }
         resultSnapshot.insert(QStringLiteral("magneticSweep"), magneticSweepSnapshot);
+        QJsonArray threeLimbSweepSnapshot;
+        if (threeLimbMagneticBase && threeLimbSweepValid) {
+            for (const auto& sample : threeLimbFluxDensitySweep) {
+                QJsonObject entry;
+                entry.insert(QStringLiteral("frequency_Hz"), sample[0]);
+                entry.insert(QStringLiteral("limbA_peak_B_T"), sample[1]);
+                entry.insert(QStringLiteral("limbB_peak_B_T"), sample[2]);
+                entry.insert(QStringLiteral("limbC_peak_B_T"), sample[3]);
+                entry.insert(QStringLiteral("yokeTopAB_peak_B_T"), sample[4]);
+                entry.insert(QStringLiteral("yokeTopBC_peak_B_T"), sample[5]);
+                entry.insert(QStringLiteral("yokeBottomAB_peak_B_T"), sample[6]);
+                entry.insert(QStringLiteral("yokeBottomBC_peak_B_T"), sample[7]);
+                threeLimbSweepSnapshot.append(entry);
+            }
+        }
+        resultSnapshot.insert(QStringLiteral("threeLimbMagneticSweep"), threeLimbSweepSnapshot);
         resultSnapshot.insert(QStringLiteral("magneticKneeCurrent_A_peak"),
             magneticKneeCurrentA.value_or(0.0));
         resultSnapshot.insert(QStringLiteral("magneticKneeFluxDensity_T"),
@@ -2021,7 +2072,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("circuitSolver"), QStringLiteral("circuit-ac-mna-v1"));
         engineVersions.insert(QStringLiteral("harmonics"), QStringLiteral("harmonics-v1"));
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
-        engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v3-magnetic-circuit-v1"));
+        engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v4-three-limb-magnetic-network-v1"));
 
         const std::string inputJson = QJsonDocument(inputSnapshot)
             .toJson(QJsonDocument::Compact).toStdString();
