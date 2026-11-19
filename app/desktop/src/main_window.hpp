@@ -73,6 +73,7 @@ private:
     std::array<QDoubleSpinBox*, 3> limbGapOverrides_{};
     std::array<QDoubleSpinBox*, 4> yokeAreaOverrides_{};
     std::array<QDoubleSpinBox*, 4> yokePathOverrides_{};
+    std::array<QDoubleSpinBox*, 3> phaseDcBiasCurrentA_{};
     QSpinBox* inductorTurns_{};
     QPlainTextEdit* coreBhCurve_{};
     QLineEdit* coreBhSource_{};
