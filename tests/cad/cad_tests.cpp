@@ -81,6 +81,19 @@ int main()
     invalid.core.coreOverallHeight = units::Length{0.05};
     assert(!p135::cad::buildThreeLimbCoreShape(invalid));
 
+    auto geometryWithGaps = geometry;
+    geometryWithGaps.core.airGaps = {
+        {CoreSegment::LimbA, units::Length{0.02}, units::Length{0.001}},
+        {CoreSegment::LimbA, units::Length{0.04}, units::Length{0.002}},
+        {CoreSegment::YokeTopAB, units::Length{0.03}, units::Length{0.001}}
+    };
+    const auto gappedShape = p135::cad::buildThreeLimbCoreShape(geometryWithGaps);
+    assert(gappedShape);
+    std::size_t gappedSolidCount = 0;
+    for (TopExp_Explorer it(gappedShape.value(), TopAbs_SOLID); it.More(); it.Next()) ++gappedSolidCount;
+    assert(gappedSolidCount == 10);
+    assert(BRepCheck_Analyzer(gappedShape.value()).IsValid());
+
     auto invalidWindowStack = geometry;
     invalidWindowStack.core.windowWidths[0] = units::Length{0.05};
     assert(!p135::cad::buildThreeLimbCoreShape(invalidWindowStack));
