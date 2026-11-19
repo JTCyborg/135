@@ -45,6 +45,7 @@
 #include <QFrame>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScrollArea>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStringList>
@@ -724,7 +725,10 @@ QWidget* MainWindow::createFilterPage()
     });
     layout->addWidget(calculate);
     layout->addStretch();
-    return page;
+    auto* scroll = new QScrollArea;
+    scroll->setWidgetResizable(true);
+    scroll->setWidget(page);
+    return scroll;
 }
 
 QWidget* MainWindow::createResultsPage()
