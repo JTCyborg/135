@@ -684,7 +684,7 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(coreBhCurve_);
 
     auto* saturationHelp = new QLabel(tr(
-        "Red line: entered manufacturer peak-current reference. Purple line: calculated B-H knee current from the entered core geometry and measured B-H curve. The B-H model assumes a uniform single magnetic path and no DC bias, fringing or hysteresis. Datasheet DC-bias Isat defined by a specified inductance drop is not directly interchangeable with the B-H knee current."));
+        "Red line: entered manufacturer peak-current reference. Purple line: single-path B-H knee-current estimate. For the coupled three-limb model, also enter yoke area Ay and yoke segment length ly; the core-flux chart then shows the peak |B| in each limb and yoke over sampled three-phase cycles. The network assumes symmetric geometry and odd-symmetric B-H data; it does not include fringing, joints, hysteresis or DC offset."));
     saturationHelp->setWordWrap(true);
     advancedLayout->addWidget(saturationHelp);
 
@@ -1262,6 +1262,8 @@ void MainWindow::calculateFilter()
         (coreEffectiveAreaMm2_ && coreEffectiveAreaMm2_->value() > 0.0) ||
         (coreMeanPathMm_ && coreMeanPathMm_->value() > 0.0) ||
         (coreAirGapMm_ && coreAirGapMm_->value() > 0.0) ||
+        (coreYokeEffectiveAreaMm2_ && coreYokeEffectiveAreaMm2_->value() > 0.0) ||
+        (coreYokeSegmentPathMm_ && coreYokeSegmentPathMm_->value() > 0.0) ||
         (inductorTurns_ && inductorTurns_->value() > 0) ||
         (coreBhCurve_ && !coreBhCurve_->toPlainText().trimmed().isEmpty()) ||
         (coreBhSource_ && !coreBhSource_->text().trimmed().isEmpty());
@@ -1867,6 +1869,12 @@ void MainWindow::calculateFilter()
         calculationSummary += tr(" No bounded -3 dB parallel-resonance zone was identified within the scanned frequency range.");
     else
         calculationSummary += tr(" Shaded resonance zones show the -3 dB bandwidth around local bus-impedance peaks.");
+    if (threeLimbMagneticBase && threeLimbSweepValid && !threeLimbFluxDensitySweep.empty())
+        calculationSummary += tr(" Coupled three-limb nonlinear magnetic network solved over 72 instantaneous samples per AC sweep frequency; peak limb and yoke flux densities are plotted and stored.");
+    else if (!threeLimbModelWarning.isEmpty())
+        calculationSummary += QStringLiteral(" ") + threeLimbModelWarning;
+    else if (threeLimbMagneticBase && !threeLimbSweepValid)
+        calculationSummary += tr(" Coupled three-limb magnetic sweep NOT_VERIFIED: %1").arg(threeLimbModelWarning);
     if (!saturationPeakReference)
         calculationSummary += tr(" Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference.");
     else {
