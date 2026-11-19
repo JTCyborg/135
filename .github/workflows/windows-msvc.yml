@@ -23,6 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python for SQLite schema tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -45,6 +50,9 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build -C ${{ matrix.configuration }} --output-on-failure
+
+      - name: Verify SQLite persistence schema
+        run: python tests/infrastructure/sqlite_schema_tests.py
 
       - name: Verify desktop executable and Qt deployment
         shell: pwsh
