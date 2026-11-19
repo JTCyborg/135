@@ -446,6 +446,50 @@ SqliteMaterialRevisionStore::findCalculation(const std::string& calculationId) c
     return Result<std::optional<CalculationRecord>>::success(std::move(value));
 }
 
+Result<std::vector<CalculationRecord>>
+SqliteMaterialRevisionStore::listCalculations(
+    const std::string& searchText, std::uint32_t pageSize, std::uint64_t pageOffset) const
+{
+    if (pageSize == 0 || pageSize > 1000 ||
+        pageOffset > static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
+        return Result<std::vector<CalculationRecord>>::failure(storeError(
+            "Calculation history page size or offset is outside the supported range.",
+            ErrorCode::InvalidInput));
+    Statement query(database_.handle(),
+        "SELECT calculation_id,project_id,project_name,product_family,input_json,result_json,"
+        "engine_versions_json,content_hash,author,created_at_utc FROM calculations "
+        "WHERE (?1 = '' OR calculation_id LIKE ?2 OR project_name LIKE ?2 "
+        "OR product_family LIKE ?2 OR author LIKE ?2) "
+        "ORDER BY created_at_utc DESC, calculation_id DESC LIMIT ?3 OFFSET ?4;");
+    if (!query)
+        return Result<std::vector<CalculationRecord>>::failure(storeError(query.error()));
+    const std::string pattern = "%" + searchText + "%";
+    sqlite3_bind_text(query.get(),1,searchText.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(query.get(),2,pattern.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_int64(query.get(),3,static_cast<sqlite3_int64>(pageSize));
+    sqlite3_bind_int64(query.get(),4,static_cast<sqlite3_int64>(pageOffset));
+
+    std::vector<CalculationRecord> records;
+    int rc = SQLITE_ROW;
+    while ((rc = sqlite3_step(query.get())) == SQLITE_ROW) {
+        CalculationRecord value;
+        value.calculationId = columnText(query.get(),0);
+        value.projectId = columnText(query.get(),1);
+        value.projectName = columnText(query.get(),2);
+        value.productFamily = columnText(query.get(),3);
+        value.inputJson = columnText(query.get(),4);
+        value.resultJson = columnText(query.get(),5);
+        value.engineVersionsJson = columnText(query.get(),6);
+        value.contentHash = columnText(query.get(),7);
+        value.author = columnText(query.get(),8);
+        value.createdAtUtc = columnText(query.get(),9);
+        records.push_back(std::move(value));
+    }
+    if (rc != SQLITE_DONE)
+        return Result<std::vector<CalculationRecord>>::failure(storeError(query.error()));
+    return Result<std::vector<CalculationRecord>>::success(std::move(records));
+}
+
 Result<std::vector<CalculationMaterialReference>>
 SqliteMaterialRevisionStore::calculationMaterials(const std::string& calculationId) const
 {
