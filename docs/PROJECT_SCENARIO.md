@@ -344,3 +344,10 @@ Scope limitation: this is an initial geometric skeleton. Yoke-to-limb joint cons
 ## P135.008.2 refinement — Physical window stack-up
 
 The first OCCT generator originally positioned limbs from the overall width and center spacings while ignoring the explicit clear-window widths. The CAD placement now derives the three limb centers from the physical limb widths and the two window widths. Domain validation additionally checks that (1) overall width equals the sum of all limb and clear-window widths, (2) A-B/B-C center spacings agree with adjacent limb half-widths plus the corresponding window, and (3) each clear-window height agrees with overall height minus its adjacent top/bottom yoke thicknesses. Tests include inconsistent horizontal and vertical stack-ups. The OCCT result remains a seven-solid skeleton; air-gap cuts, joint details, winding solids, assembly, viewport and exports remain open.
+
+
+## P135.008.3 — Explicit physical air-gap placement
+
+Replaced the ambiguous per-limb/per-yoke gap-length array and coarse location enum with an explicit list of air-gap records. Each record identifies one of the seven core segments, a gap length and a position measured from the lower end of a limb or the left end of a yoke segment. Multiple gaps on one segment are supported. Domain validation rejects non-finite/zero/negative lengths, boundary/out-of-range placements and overlapping gaps. The OCCT adapter preserves the seven component groups and splits only the affected component into separate solids, leaving true voids at the specified gap locations. Unit tests cover multiple gaps on one limb, a yoke gap, invalid placement and overlap.
+
+Scope limitation: gaps are ideal planar cuts normal to the segment axis. Joint/step-lap geometry, lamination packets, fringing geometry, winding/bobbin solids, assembly constraints, viewport and drawing exports remain unimplemented. This CAD operation does not certify magnetic fringing or manufacturing tolerances.
