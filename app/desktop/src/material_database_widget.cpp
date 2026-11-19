@@ -65,7 +65,8 @@ QDoubleSpinBox* addNumber(QFormLayout* form, const QString& label,
     return editor;
 }
 
-QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
+QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
+                              const QString& defaultId)
 {
     using namespace p135::domain;
     QDialog dialog(parent);
@@ -73,7 +74,8 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent)
         QObject::tr("Typed capacitor editor") : QObject::tr("Typed resistor editor"));
     dialog.resize(520, 560);
     auto* form = new QFormLayout(&dialog);
-    auto* id = new QLineEdit(&dialog);
+    auto* id = new QLineEdit(defaultId, &dialog);
+    if (!defaultId.isEmpty()) id->setReadOnly(true);
     auto* manufacturer = new QLineEdit(&dialog);
     auto* series = new QLineEdit(&dialog);
     auto* partNumber = new QLineEdit(&dialog);
@@ -383,9 +385,15 @@ void MaterialDatabaseWidget::createOrEditMaterial()
         const auto selectedType = type->currentData().toString();
         typedEditor->setEnabled(selectedType == "capacitor" || selectedType == "resistor");
     });
-    connect(typedEditor, &QPushButton::clicked, &dialog, [type, payload, &dialog] {
-        const auto json = typedComponentSnapshot(type->currentData().toString(), &dialog);
-        if (!json.isEmpty()) payload->setPlainText(json);
+    connect(typedEditor, &QPushButton::clicked, &dialog, [type, payload, id, &dialog] {
+        const auto json = typedComponentSnapshot(
+            type->currentData().toString(), &dialog, id->text().trimmed());
+        if (json.isEmpty()) return;
+        const auto document = QJsonDocument::fromJson(json.toUtf8());
+        const auto componentId = document.object().value(QStringLiteral("component"))
+            .toObject().value(QStringLiteral("id")).toString();
+        if (!componentId.isEmpty()) id->setText(componentId);
+        payload->setPlainText(json);
     });
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
     form->addRow(buttons);
