@@ -184,6 +184,18 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
         });
         return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
     }
+    for (const auto& dcCurrent : request.phaseDcCurrents) {
+        if (!std::isfinite(dcCurrent.si())) {
+            Error error;
+            error.code = ErrorCode::InvalidInput;
+            error.message = "Per-phase DC bias currents must be finite.";
+            error.diagnostics.push_back(Diagnostic{
+                Severity::Error, "THREE_LIMB_SAMPLING_INVALID", error.message,
+                "phaseDcCurrents", std::nullopt, std::nullopt
+            });
+            return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
+        }
+    }
     for (const auto& phasor : request.phaseRmsPhasors) {
         if (!std::isfinite(phasor.real()) || !std::isfinite(phasor.imag())) {
             Error error;
@@ -213,7 +225,9 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
             for (std::size_t phase = 0; phase < 3; ++phase) {
                 const double instantaneousPeak =
                     std::sqrt(2.0) * std::real(request.phaseRmsPhasors[phase] * rotation);
-                magneticRequest.phaseCurrents[phase] = units::Current{instantaneousPeak};
+                magneticRequest.phaseCurrents[phase] = units::Current{
+                    request.phaseDcCurrents[phase].si() + instantaneousPeak
+                };
             }
             const auto magneticPoint = analyzeThreeLimbMagneticCircuit(magneticRequest);
             if (!magneticPoint)
@@ -356,8 +370,12 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
         return fail(ErrorCode::ModelOutOfDomain,
             "Zero-state initialization is outside the supplied B-H domain.",
             "material.bhCurve");
+    const double maximumBranchArea = std::max({
+        limbAreas[0], limbAreas[1], limbAreas[2],
+        yokeAreas[0], yokeAreas[1], yokeAreas[2], yokeAreas[3]
+    });
     const double fluxScale = std::max(1.0e-15,
-        std::max({limbArea, yokeArea}) * material.bhCurve.back().fluxDensity.si());
+        maximumBranchArea * material.bhCurve.back().fluxDensity.si());
     const double tolerance = request.relativeFluxTolerance * fluxScale;
 
     std::size_t iterations = 0;
