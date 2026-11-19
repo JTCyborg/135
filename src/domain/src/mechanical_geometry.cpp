@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <array>
-#include <algorithm>
 #include <cmath>
 #include <string>
 #include <utility>
