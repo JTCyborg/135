@@ -1,6 +1,7 @@
 #include "p135/domain/mechanical_geometry.hpp"
 
 #include <algorithm>
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <utility>
@@ -49,9 +50,10 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
     for (std::size_t i = 0; i < g.limbCenterSpacings.size(); ++i) {
         if (!positive(g.limbCenterSpacings[i])) return invalid("Limb center spacings A-B, B-C and A-C are required.", "core.limbCenterSpacings[" + std::to_string(i) + "]");
     }
-    if (g.limbCenterSpacings[2].si() + 1.0e-12 <
-        g.limbCenterSpacings[0].si() + g.limbCenterSpacings[1].si())
-        return invalid("A-C center spacing cannot be smaller than A-B plus B-C.", "core.limbCenterSpacings[2]");
+    const double expectedAc = g.limbCenterSpacings[0].si() + g.limbCenterSpacings[1].si();
+    if (std::abs(g.limbCenterSpacings[2].si() - expectedAc) >
+        std::max(1.0e-9, expectedAc * 1.0e-6))
+        return invalid("A-C center spacing must equal A-B plus B-C within dimensional tolerance.", "core.limbCenterSpacings[2]");
     if (!positive(g.coreOverallHeight) || !positive(g.coreOverallWidth))
         return invalid("Overall core width and height are required.", "core.overallDimensions");
     for (std::size_t i = 0; i < g.airGapLengths.size(); ++i) {
