@@ -236,6 +236,18 @@ Application Layer не зависит от Qt и конкретного хран
 
 Первый Application-срез реализован интерфейсами MaterialRevisionRepository и MaterialUsageQuery, use cases CreateMaterialRevision и ArchiveMaterial и тестовым fake repository. SQLite adapter, канонический codec/SHA-256, реальный audit log, migrations и persisted usage references остаются следующими задачами; тестовый fake не является production persistence.
 
+### 12.2.3 SQLite schema — первый Infrastructure-срез
+
+Добавлена миграция `src/infrastructure/sqlite/migrations/001_initial_schema.sql`:
+- отдельная идентичность материала и неизменяемые snapshots ревизий;
+- уникальность ID и номера ревизии, ссылка на предыдущую ревизию;
+- SQLite triggers запрещают UPDATE/DELETE ревизий и проверяют непрерывную цепочку;
+- usage references связывают изделие/расчёт с конкретной ревизией;
+- отдельные таблицы аудита и учёта миграций;
+- документация контракта migration runner: транзакционное применение и SHA-256 checksum исходного файла.
+
+Это только SQL-схема. C++ SQLite repository, migration runner, canonical JSON codec, SHA-256 реализация и integration tests ещё не реализованы и не считаются завершёнными.
+
 ### 12.3 Обновлённая последовательность ближайших работ
 
 | Приоритет | Задача | Статус |
@@ -269,10 +281,11 @@ Application Layer не зависит от Qt и конкретного хран
 | D16 | Добавить доменную модель и каталог резисторов | **Добавлено**: ResistorComponent и ResistorCatalog; resistance, tolerance, rated power, maximum working voltage, optional TCR/parasitic L/C/pulse energy, temperature range, provenance и validation; реальные каталожные данные не включены |
 | D17 | Исправить обработку необязательных свойств изоляции и знака температурного коэффициента проводника | **Добавлено**: отсутствующие относительная диэлектрическая проницаемость и плотность представлены std::optional; коэффициент температуры проводника проверяется на конечность, допускаются отрицательные и нулевые значения для специальных материалов; добавлены регрессионные тесты |
 | D18 | Создать первый Application Layer для неизменяемых ревизий материалов | **Добавлены контракты и use cases**: MaterialRevisionRepository, MaterialUsageQuery, CreateMaterialRevision и ArchiveMaterial; проверки последовательности/родителя ревизии и запрет архивирования используемого материала; fake repository tests. Production SQLite adapter и атомарность реального хранилища ещё не реализованы |
+| D19 | Спроектировать начальную SQLite-схему для материалов и ревизий | **Добавлена миграция 001**: identities, immutable revisions, parent chain, usage references, audit log, migration ledger и защитные triggers. C++ migration runner и integration tests ещё не реализованы |
 
 | D05 | Проверка B-H кривой на физическую корректность и модель потерь сердечника | **Частично добавлено**: structural validation B-H и проверка размерностей/знаков loss data; интерполяция, экстраполяция, физическая модель потерь и проверка по контрольным данным запланированы |
 | D06 | Полная геометрическая раскладка витков с учётом изоляции и технологических зазоров | Запланировано |
-| D07 | Material repository, источники данных, редакции и persistence | **В работе**: in-memory каталоги магнитных материалов, проводников, изоляции, конденсаторов и резисторов с provenance и datasetRevision; SQLite, миграции, импорт/экспорт, аудит и неизменяемые ревизии расчётов запланированы |
+| D07 | Material repository, источники данных, редакции и persistence | **В работе**: in-memory каталоги магнитных материалов, проводников, изоляции, конденсаторов и резисторов с provenance и datasetRevision; SQL-схема SQLite добавлена; C++ adapter/runner, интеграционные тесты, импорт/экспорт, аудит и неизменяемые ревизии расчётов ещё в работе/запланированы |
 
 ## 13. Первый вертикальный прототип
 
