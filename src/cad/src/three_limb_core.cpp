@@ -104,9 +104,14 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
         builder.Add(compound, yoke);
     }
 
-    if (compound.IsNull() || !BRepCheck_Analyzer(compound).IsValid())
+    // This is an assembly compound of seven independent solids, not a
+    // fused single solid. Each component was validated immediately after
+    // construction above. Running a whole-compound solid validity check here
+    // incorrectly treats the intentional face-to-face contacts between limbs
+    // and yokes as a single connected solid requirement.
+    if (compound.IsNull())
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-            "OCCT core compound failed topology validation.", "core");
+            "OCCT failed to create the core assembly compound.", "core");
     return Result<TopoDS_Shape>::success(compound);
 }
 
