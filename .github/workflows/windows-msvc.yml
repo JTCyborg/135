@@ -53,11 +53,21 @@ jobs:
           if (-not (Test-Path $exe)) {
             throw "Project135.exe was not produced at $exe"
           }
-          if (-not (Test-Path "build/bin/Qt6Widgets.dll")) {
-            throw "Qt6Widgets.dll was not deployed beside Project135.exe"
+
+          # Qt debug builds use the 'd' suffix; Release builds do not.
+          if ("${{ matrix.configuration }}" -eq "Debug") {
+            $widgetsDll = "build/bin/Qt6Widgetsd.dll"
+            $platformPlugin = "build/bin/platforms/qwindowsd.dll"
+          } else {
+            $widgetsDll = "build/bin/Qt6Widgets.dll"
+            $platformPlugin = "build/bin/platforms/qwindows.dll"
           }
-          if (-not (Test-Path "build/bin/platforms/qwindows.dll")) {
-            throw "Qt Windows platform plugin qwindows.dll was not deployed"
+
+          if (-not (Test-Path $widgetsDll)) {
+            throw "Qt Widgets runtime was not deployed: $widgetsDll"
+          }
+          if (-not (Test-Path $platformPlugin)) {
+            throw "Qt Windows platform plugin was not deployed: $platformPlugin"
           }
 
       - name: Upload desktop build
