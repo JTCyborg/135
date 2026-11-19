@@ -10,6 +10,7 @@
 #include <array>
 #include <cmath>
 #include <string>
+#include <vector>
 #include <utility>
 
 namespace p135::cad {
@@ -26,6 +27,44 @@ Result<T> failure(ErrorCode code, std::string message, std::string field)
         std::move(field), std::nullopt, std::nullopt
     });
     return Result<T>::failure(std::move(error));
+}
+
+Result<TopoDS_Compound> makeSegmentedBox(
+    const gp_Pnt& origin, double lengthX, double lengthY, double depth,
+    bool splitAlongX, const std::vector<std::pair<double, double>>& gaps,
+    const std::string& field)
+{
+    constexpr double toMillimetres = 1000.0;
+    BRep_Builder builder;
+    TopoDS_Compound component;
+    builder.MakeCompound(component);
+    double cursor = 0.0;
+    const auto addPiece = [&](double start, double end) -> bool {
+        if (end - start <= 1.0e-12) return false;
+        const gp_Pnt point(
+            (origin.X() + (splitAlongX ? start : 0.0)) * toMillimetres,
+            (origin.Y() + (splitAlongX ? 0.0 : start)) * toMillimetres,
+            origin.Z() * toMillimetres);
+        const auto solid = BRepPrimAPI_MakeBox(
+            point,
+            (splitAlongX ? end - start : lengthX) * toMillimetres,
+            (splitAlongX ? lengthY : end - start) * toMillimetres,
+            depth * toMillimetres).Shape();
+        if (solid.IsNull() || !BRepCheck_Analyzer(solid).IsValid()) return false;
+        builder.Add(component, solid);
+        return true;
+    };
+    for (const auto& gap : gaps) {
+        if (!addPiece(cursor, gap.first))
+            return failure<TopoDS_Compound>(ErrorCode::SolverFailure,
+                "OCCT failed to create a core segment adjacent to an air gap.", field);
+        cursor = gap.second;
+    }
+    const double totalLength = splitAlongX ? lengthX : lengthY;
+    if (!addPiece(cursor, totalLength))
+        return failure<TopoDS_Compound>(ErrorCode::SolverFailure,
+            "OCCT failed to create the final core segment after an air gap.", field);
+    return Result<TopoDS_Compound>::success(component);
 }
 
 } // namespace
@@ -58,38 +97,43 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
         return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
             "Core height does not leave a positive limb height between yokes.", "core.coreOverallHeight");
 
+    constexpr double toMillimetres = 1000.0;
+    const auto gapsFor = [&](domain::CoreSegment segment) {
+        std::vector<std::pair<double, double>> result;
+        for (const auto& gap : g.airGaps) {
+            if (gap.segment == segment) {
+                const double start = gap.positionFromSegmentStart.si();
+                result.push_back({start, start + gap.length.si()});
+            }
+        }
+        std::sort(result.begin(), result.end());
+        return result;
+    };
+
     BRep_Builder builder;
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
 
-    // Coordinates are metres converted to millimetres at the OCCT boundary.
-    constexpr double toMillimetres = 1000.0;
     for (std::size_t i = 0; i < 3; ++i) {
         const double limbWidth = g.limbWidths[i].si();
-        const double x = centers[i] - 0.5 * limbWidth;
+        const double x = std::clamp(centers[i] - 0.5 * limbWidth, 0.0, width - limbWidth);
         const double depth = g.limbDepths[i].si();
-        // The domain stack-up is accepted with a relative dimensional
-        // tolerance. Apply the same tolerance here so harmless floating-point
-        // round-off at the outermost limb does not reject a valid core.
-        const double widthTolerance = std::max(1.0e-9, std::abs(width) * 1.0e-6);
-        if (x < -widthTolerance || x + limbWidth > width + widthTolerance)
-            return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
-                "Limb lies outside the declared overall core width.",
-                "core.limbWidths[" + std::to_string(i) + "]");
-        const double xClamped = std::clamp(x, 0.0, width - limbWidth);
-        const auto limb = BRepPrimAPI_MakeBox(
-            gp_Pnt(xClamped * toMillimetres, limbBottom * toMillimetres, 0.0),
-            limbWidth * toMillimetres, (limbTop - limbBottom) * toMillimetres,
-            depth * toMillimetres).Shape();
-        if (limb.IsNull() || !BRepCheck_Analyzer(limb).IsValid())
-            return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                "OCCT generated an invalid limb solid.", "core.limbs[" + std::to_string(i) + "]");
-        builder.Add(compound, limb);
+        const auto segment = static_cast<domain::CoreSegment>(
+            static_cast<std::size_t>(domain::CoreSegment::LimbA) + i);
+        const auto limb = makeSegmentedBox(
+            gp_Pnt(x, limbBottom, 0.0), limbWidth, limbTop - limbBottom, depth,
+            false, gapsFor(segment), "core.limbs[" + std::to_string(i) + "]");
+        if (!limb) return Result<TopoDS_Shape>::failure(limb.error());
+        builder.Add(compound, limb.value());
     }
 
     // Segment order: top AB, top BC, bottom AB, bottom BC.
     const std::array<std::array<std::size_t, 2>, 4> adjacent{{
         {{0, 1}}, {{1, 2}}, {{0, 1}}, {{1, 2}}
+    }};
+    const std::array<domain::CoreSegment, 4> yokeSegments{{
+        domain::CoreSegment::YokeTopAB, domain::CoreSegment::YokeTopBC,
+        domain::CoreSegment::YokeBottomAB, domain::CoreSegment::YokeBottomBC
     }};
     for (std::size_t i = 0; i < 4; ++i) {
         const auto a = adjacent[i][0];
@@ -99,21 +143,16 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
         const double yokeHeight = g.yokeThicknesses[i].si();
         const double y = i < 2 ? height - yokeHeight : 0.0;
         const double depth = g.yokeDepths[i].si();
-        const auto yoke = BRepPrimAPI_MakeBox(
-            gp_Pnt(x0 * toMillimetres, y * toMillimetres, 0.0),
-            (x1 - x0) * toMillimetres, yokeHeight * toMillimetres,
-            depth * toMillimetres).Shape();
-        if (yoke.IsNull() || !BRepCheck_Analyzer(yoke).IsValid())
-            return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                "OCCT generated an invalid yoke segment.", "core.yokeSegments[" + std::to_string(i) + "]");
-        builder.Add(compound, yoke);
+        const auto yoke = makeSegmentedBox(
+            gp_Pnt(x0, y, 0.0), x1 - x0, yokeHeight, depth,
+            true, gapsFor(yokeSegments[i]), "core.yokeSegments[" + std::to_string(i) + "]");
+        if (!yoke) return Result<TopoDS_Shape>::failure(yoke.error());
+        builder.Add(compound, yoke.value());
     }
 
-    // This is an assembly compound of seven independent solids, not a
-    // fused single solid. Each component was validated immediately after
-    // construction above. Running a whole-compound solid validity check here
-    // incorrectly treats the intentional face-to-face contacts between limbs
-    // and yokes as a single connected solid requirement.
+    // Each of the seven physical components is represented by a sub-compound.
+    // A gap splits only its referenced component; no artificial material is
+    // inserted into the gap and the component grouping remains explicit.
     if (compound.IsNull())
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
             "OCCT failed to create the core assembly compound.", "core");
