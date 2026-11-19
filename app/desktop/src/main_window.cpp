@@ -1379,6 +1379,25 @@ void MainWindow::calculateFilter()
             request.geometry.limbAirGap = magneticCircuitBase->core.airGap;
             request.geometry.yokeEffectiveArea = p135::units::Area{yokeArea};
             request.geometry.yokeSegmentPath = p135::units::Length{yokePath};
+            for (std::size_t i = 0; i < 3; ++i) {
+                if (limbAreaOverrideEnabled_[i] && limbAreaOverrideEnabled_[i]->isChecked())
+                    request.geometry.limbEffectiveAreas[i] =
+                        p135::units::Area{limbAreaOverrides_[i]->value() * 1.0e-6};
+                if (limbPathOverrideEnabled_[i] && limbPathOverrideEnabled_[i]->isChecked())
+                    request.geometry.limbMeanPaths[i] =
+                        p135::units::Length{limbPathOverrides_[i]->value() * 1.0e-3};
+                if (limbGapOverrideEnabled_[i] && limbGapOverrideEnabled_[i]->isChecked())
+                    request.geometry.limbAirGaps[i] =
+                        p135::units::Length{limbGapOverrides_[i]->value() * 1.0e-3};
+            }
+            for (std::size_t i = 0; i < 4; ++i) {
+                if (yokeAreaOverrideEnabled_[i] && yokeAreaOverrideEnabled_[i]->isChecked())
+                    request.geometry.yokeEffectiveAreas[i] =
+                        p135::units::Area{yokeAreaOverrides_[i]->value() * 1.0e-6};
+                if (yokePathOverrideEnabled_[i] && yokePathOverrideEnabled_[i]->isChecked())
+                    request.geometry.yokeSegmentPaths[i] =
+                        p135::units::Length{yokePathOverrides_[i]->value() * 1.0e-3};
+            }
             request.turns = {magneticCircuitBase->turns,
                              magneticCircuitBase->turns,
                              magneticCircuitBase->turns};
