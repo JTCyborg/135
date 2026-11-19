@@ -12,6 +12,36 @@
 
 namespace p135::thermal {
 
+struct FilterCapacitorThermalAssignment {
+    std::uint32_t branchId{};
+    std::string capacitorComponentId;
+    std::optional<double> thermalResistanceKPerW;
+    std::string thermalResistanceSourceReference;
+};
+
+struct CapacitorThermalAssessment {
+    std::uint32_t branchId{};
+    std::string capacitorComponentId;
+    double rippleCurrentRmsA{};
+    std::optional<units::Current> ratedRippleCurrent;
+    AssessmentStatus rippleCurrentStatus{AssessmentStatus::NotVerified};
+    std::string rippleCurrentExplanation;
+    std::optional<units::Power> esrLoss;
+    ThermalNodeResult thermal;
+};
+
+struct CapacitorThermalResult {
+    units::TemperatureKelvin ambientTemperature;
+    std::vector<CapacitorThermalAssessment> capacitors;
+};
+
+[[nodiscard]] Result<CapacitorThermalResult> analyzeFilterCapacitorThermals(
+    const filter::HarmonicAnalysisResult& harmonicResult,
+    const std::vector<FilterCapacitorThermalAssignment>& assignments,
+    const domain::CapacitorCatalog& capacitorCatalog,
+    units::TemperatureKelvin ambientTemperature,
+    const std::string& harmonicStudyRevision);
+
 struct DampingResistorThermalAssignment {
     std::uint32_t branchId{};
     std::string resistorComponentId;
