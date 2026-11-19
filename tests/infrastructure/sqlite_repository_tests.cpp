@@ -69,6 +69,9 @@ int main(int argc, char** argv)
         assert(store.appendRevision(second));
         const auto latestSecond = store.latestRevision("MAT-TEST");
         assert(latestSecond && latestSecond.value() && latestSecond.value()->revisionNumber == 2);
+        const auto history = store.revisionHistory("MAT-TEST");
+        assert(history && history.value().size() == 2);
+        assert(history.value()[0].revisionNumber == 1 && history.value()[1].revisionNumber == 2);
 
         assert(store.setArchived("MAT-TEST", true, "test-author", "2026-01-03T00:00:00Z"));
         assert(!store.appendRevision(MaterialRevision{
@@ -78,9 +81,14 @@ int main(int argc, char** argv)
         }));
         assert(store.setArchived("MAT-TEST", false, "test-author", "2026-01-05T00:00:00Z"));
 
-        assert(database.execute(
-            "INSERT INTO material_usage(usage_id,revision_id,product_id,usage_kind,created_at_utc) "
-            "VALUES('USE-1','REV-1','PRODUCT-1','product','2026-01-06T00:00:00Z');"));
+        assert(store.recordUsage(MaterialUsageReference{
+            "USE-1", "REV-1", MaterialUsageKind::Product, "PRODUCT-1",
+            "2026-01-06T00:00:00Z", "test-author"
+        }));
+        assert(store.recordUsage(MaterialUsageReference{
+            "USE-2", "REV-2", MaterialUsageKind::Calculation, "CALC-1",
+            "2026-01-06T00:00:01Z", "test-author"
+        }));
         const auto inUse = store.isMaterialInUse("MAT-TEST");
         assert(inUse && inUse.value());
         assert(!store.setArchived("MAT-TEST", true, "test-author", "2026-01-07T00:00:00Z"));
