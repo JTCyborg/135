@@ -27,6 +27,12 @@ configure_file(
     COPYONLY
 )
 
+configure_file(
+    "${PROJECT_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql"
+    "${CMAKE_BINARY_DIR}/bin/migrations/002_calculation_snapshots.sql"
+    COPYONLY
+)
+
 if(MSVC)
     target_compile_options(Project135 PRIVATE /W4 /permissive- /Zc:__cplusplus)
 endif()
