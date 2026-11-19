@@ -44,6 +44,9 @@ private:
     QDoubleSpinBox* nominalVoltage_{};
     QDoubleSpinBox* fundamentalFrequency_{};
     QDoubleSpinBox* targetReactivePower_{};
+    QDoubleSpinBox* sourceResistance_{};
+    QDoubleSpinBox* sourceInductance_{};
+    QTableWidget* harmonicSpectrumTable_{};
     QPlainTextEdit* log_{};
     QTableWidget* resultsTable_{};
     QLabel* resultsNote_{};
