@@ -1045,6 +1045,24 @@ void MainWindow::loadCalculationInputs(int row)
     if (inductorSaturationSource_)
         inductorSaturationSource_->setText(
             input.value(QStringLiteral("inductorSaturationSource")).toString());
+    setNumber("coreEffectiveArea_mm2", coreEffectiveAreaMm2_);
+    setNumber("coreMeanPath_mm", coreMeanPathMm_);
+    setNumber("coreAirGap_mm", coreAirGapMm_);
+    if (inductorTurns_ && input.value(QStringLiteral("inductorTurns")).isDouble())
+        inductorTurns_->setValue(input.value(QStringLiteral("inductorTurns")).toInt());
+    if (coreBhSource_)
+        coreBhSource_->setText(input.value(QStringLiteral("coreBhSource")).toString());
+    if (coreBhCurve_) {
+        const auto savedBh = input.value(QStringLiteral("coreBhCurve")).toArray();
+        QStringList lines;
+        for (const auto& entry : savedBh) {
+            const auto point = entry.toObject();
+            lines.push_back(QStringLiteral("%1, %2")
+                .arg(point.value(QStringLiteral("H_A_per_m")).toDouble(), 0, 'g', 12)
+                .arg(point.value(QStringLiteral("B_T")).toDouble(), 0, 'g', 12));
+        }
+        coreBhCurve_->setPlainText(lines.join(QLatin1Char('\n')));
+    }
     setNumber("ambientTemperature_C", ambientTemperature_);
     setNumber("capacitorThermalResistance_K_per_W", capacitorThermalResistance_);
     setNumber("resistorThermalResistance_K_per_W", resistorThermalResistance_);
@@ -1716,6 +1734,36 @@ void MainWindow::calculateFilter()
             inductorSaturationCurrent_ ? inductorSaturationCurrent_->value() : 0.0);
         inputSnapshot.insert(QStringLiteral("inductorSaturationSource"),
             inductorSaturationSource_ ? inductorSaturationSource_->text() : QString{});
+        inputSnapshot.insert(QStringLiteral("coreEffectiveArea_mm2"),
+            coreEffectiveAreaMm2_ ? coreEffectiveAreaMm2_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("coreMeanPath_mm"),
+            coreMeanPathMm_ ? coreMeanPathMm_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("coreAirGap_mm"),
+            coreAirGapMm_ ? coreAirGapMm_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("inductorTurns"),
+            inductorTurns_ ? inductorTurns_->value() : 0);
+        inputSnapshot.insert(QStringLiteral("coreBhSource"),
+            coreBhSource_ ? coreBhSource_->text() : QString{});
+        QJsonArray coreBhSnapshot;
+        if (coreBhCurve_) {
+            const auto lines = coreBhCurve_->toPlainText().split(QRegularExpression("[\\r\\n]+"),
+                Qt::SkipEmptyParts);
+            for (const auto& rawLine : lines) {
+                const QString line = rawLine.trimmed();
+                if (line.startsWith('#')) continue;
+                const auto fields = line.split(QRegularExpression("[,;\\s]+"), Qt::SkipEmptyParts);
+                if (fields.size() != 2) continue;
+                bool hOk = false, bOk = false;
+                const double h = fields[0].toDouble(&hOk);
+                const double b = fields[1].toDouble(&bOk);
+                if (!hOk || !bOk || !std::isfinite(h) || !std::isfinite(b)) continue;
+                QJsonObject point;
+                point.insert(QStringLiteral("H_A_per_m"), h);
+                point.insert(QStringLiteral("B_T"), b);
+                coreBhSnapshot.append(point);
+            }
+        }
+        inputSnapshot.insert(QStringLiteral("coreBhCurve"), coreBhSnapshot);
         inputSnapshot.insert(QStringLiteral("ambientTemperature_C"),
             ambientTemperature_ ? ambientTemperature_->value() : 25.0);
         inputSnapshot.insert(QStringLiteral("capacitorThermalResistance_K_per_W"),
@@ -1794,7 +1842,7 @@ void MainWindow::calculateFilter()
         if (resultsBankCurrentPlot_) {
             resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
                 tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
-            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference);
+            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference, magneticKneeCurrentA);
         }
         if (resultsBusImpedancePlot_) {
             resultsBusImpedancePlot_->setCurves(impedanceResult
@@ -1808,6 +1856,20 @@ void MainWindow::calculateFilter()
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
         resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
         resultSnapshot.insert(QStringLiteral("impedanceScan"), impedanceScanSnapshot);
+        QJsonArray magneticSweepSnapshot;
+        if (magneticCircuitBase && magneticSweepValid) {
+            for (const auto& [frequencyHz, fluxDensityT] : magneticFluxDensityPoints) {
+                QJsonObject sample;
+                sample.insert(QStringLiteral("frequency_Hz"), frequencyHz);
+                sample.insert(QStringLiteral("peakFluxDensity_T"), fluxDensityT);
+                magneticSweepSnapshot.append(sample);
+            }
+        }
+        resultSnapshot.insert(QStringLiteral("magneticSweep"), magneticSweepSnapshot);
+        resultSnapshot.insert(QStringLiteral("magneticKneeCurrent_A_peak"),
+            magneticKneeCurrentA.value_or(0.0));
+        resultSnapshot.insert(QStringLiteral("magneticKneeFluxDensity_T"),
+            magneticKneeFluxDensityT.value_or(0.0));
 
         QJsonObject engineVersions;
         engineVersions.insert(QStringLiteral("application"), QStringLiteral("Project135-0.1.0"));
@@ -1815,7 +1877,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("circuitSolver"), QStringLiteral("circuit-ac-mna-v1"));
         engineVersions.insert(QStringLiteral("harmonics"), QStringLiteral("harmonics-v1"));
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
-        engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v2-resonance-isat-v1"));
+        engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v3-magnetic-circuit-v1"));
 
         const std::string inputJson = QJsonDocument(inputSnapshot)
             .toJson(QJsonDocument::Compact).toStdString();
