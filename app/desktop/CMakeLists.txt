@@ -10,6 +10,7 @@ target_link_libraries(Project135
         Qt6::Widgets
         Project135::Core
         Project135::Circuit
+        Project135::Filter
 )
 
 target_compile_features(Project135 PRIVATE cxx_std_20)
