@@ -587,7 +587,7 @@ void MainWindow::refreshCalculationHistory()
     } else {
         historyDetails_->setPlainText(tr("No saved calculations match this search."));
     }
-    status_->setText(tr("Calculation history: %1 snapshot(s)").arg(records.value().size()));
+    if (status_) status_->setText(tr("Calculation history: %1 snapshot(s)").arg(records.value().size()));
 }
 
 void MainWindow::showCalculationDetails(int row)
