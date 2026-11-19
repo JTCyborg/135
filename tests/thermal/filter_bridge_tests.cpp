@@ -206,6 +206,21 @@ int main()
         assert(constantNotTrusted);
         assert(!constantNotTrusted.value().capacitors.front().esrLoss);
         assert(constantNotTrusted.value().capacitors.front().thermal.status == AssessmentStatus::NotVerified);
+
+        auto userEnteredCap = capacitor;
+        userEnteredCap.id = "CAP-USER-ENTERED";
+        userEnteredCap.dataSource = domain::MaterialDataSource::UserDefined;
+        domain::CapacitorCatalog userEnteredCatalog;
+        assert(userEnteredCatalog.add(userEnteredCap));
+        capAssignment.capacitorComponentId = userEnteredCap.id;
+        const auto userEnteredNotVerified = analyzeFilterCapacitorThermals(
+            harmonicWithCapCurrents, {capAssignment}, userEnteredCatalog,
+            units::TemperatureKelvin{298.15}, "harmonics-cap-test-r6");
+        assert(userEnteredNotVerified);
+        assert(userEnteredNotVerified.value().capacitors.front().rippleCurrentStatus ==
+               AssessmentStatus::NotVerified);
+        assert(userEnteredNotVerified.value().capacitors.front().thermal.status ==
+               AssessmentStatus::NotVerified);
     }
 
     return 0;
