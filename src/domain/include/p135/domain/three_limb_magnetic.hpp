@@ -16,7 +16,7 @@ namespace p135::domain {
 /// contain two inter-limb segments.
 struct ThreeLimbMagneticGeometry {
     // Legacy symmetric defaults. Per-branch values below override these
-    // when non-zero, preserving existing callers and saved inputs.
+    // when set, preserving existing callers and saved inputs.
     units::Area limbEffectiveArea;
     units::Length limbMeanPath;
     units::Length limbAirGap;
