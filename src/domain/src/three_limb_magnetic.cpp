@@ -168,6 +168,88 @@ bool solveLinearSystem(
 
 } // namespace
 
+Result<ThreeLimbMagneticCycleSamplingResult>
+sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& request)
+{
+    if (!std::isfinite(request.relativePeakTolerance) ||
+        request.relativePeakTolerance <= 0.0 ||
+        request.relativePeakTolerance >= 1.0 ||
+        (request.maximumSamples != 144 && request.maximumSamples != 288)) {
+        Error error;
+        error.code = ErrorCode::InvalidInput;
+        error.message = "Adaptive sampling requires tolerance in (0,1) and maximumSamples of 144 or 288.";
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "THREE_LIMB_SAMPLING_INVALID", error.message,
+            "sampling", std::nullopt, std::nullopt
+        });
+        return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
+    }
+    for (const auto& phasor : request.phaseRmsPhasors) {
+        if (!std::isfinite(phasor.real()) || !std::isfinite(phasor.imag())) {
+            Error error;
+            error.code = ErrorCode::InvalidInput;
+            error.message = "Three-phase RMS current phasors must be finite.";
+            error.diagnostics.push_back(Diagnostic{
+                Severity::Error, "THREE_LIMB_SAMPLING_INVALID", error.message,
+                "phaseRmsPhasors", std::nullopt, std::nullopt
+            });
+            return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
+        }
+    }
+
+    ThreeLimbMagneticCycleSamplingResult result;
+    std::array<double, 7> previousPeaks{};
+    bool havePrevious = false;
+    constexpr double pi = 3.1415926535897932384626433832795;
+
+    for (std::size_t sampleCount = 72; sampleCount <= request.maximumSamples;
+         sampleCount *= 2) {
+        std::array<double, 7> peaks{};
+        for (std::size_t sample = 0; sample < sampleCount; ++sample) {
+            const double angle = 2.0 * pi * static_cast<double>(sample) /
+                                 static_cast<double>(sampleCount);
+            const auto rotation = std::polar(1.0, angle);
+            auto magneticRequest = request.magnetic;
+            for (std::size_t phase = 0; phase < 3; ++phase) {
+                const double instantaneousPeak =
+                    std::sqrt(2.0) * std::real(request.phaseRmsPhasors[phase] * rotation);
+                magneticRequest.phaseCurrents[phase] = units::Current{instantaneousPeak};
+            }
+            const auto magneticPoint = analyzeThreeLimbMagneticCircuit(magneticRequest);
+            if (!magneticPoint)
+                return Result<ThreeLimbMagneticCycleSamplingResult>::failure(
+                    magneticPoint.error());
+
+            for (std::size_t phase = 0; phase < 3; ++phase)
+                peaks[phase] = std::max(peaks[phase],
+                    std::abs(magneticPoint.value().limbFluxDensity[phase].si()));
+            for (std::size_t yoke = 0; yoke < 4; ++yoke)
+                peaks[yoke + 3] = std::max(peaks[yoke + 3],
+                    std::abs(magneticPoint.value().yokeFluxDensity[yoke].si()));
+        }
+
+        result.samplesUsed = sampleCount;
+        if (havePrevious) {
+            double maximumRelativeChange = 0.0;
+            for (std::size_t branch = 0; branch < peaks.size(); ++branch) {
+                const double scale = std::max({std::abs(peaks[branch]),
+                    std::abs(previousPeaks[branch]), 1.0e-12});
+                maximumRelativeChange = std::max(maximumRelativeChange,
+                    std::abs(peaks[branch] - previousPeaks[branch]) / scale);
+            }
+            result.relativePeakChange = maximumRelativeChange;
+            result.converged = maximumRelativeChange <= request.relativePeakTolerance;
+        }
+        previousPeaks = peaks;
+        havePrevious = true;
+        if (result.converged) break;
+    }
+
+    for (std::size_t branch = 0; branch < previousPeaks.size(); ++branch)
+        result.peakAbsoluteFluxDensity[branch] = units::FluxDensity{previousPeaks[branch]};
+    return Result<ThreeLimbMagneticCycleSamplingResult>::success(std::move(result));
+}
+
 Result<ThreeLimbMagneticResult>
 analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
 {
