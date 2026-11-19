@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 
 #include <limits>
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -320,6 +321,129 @@ SqliteMaterialRevisionStore::searchLatestRevisions(const MaterialCatalogFilter& 
         if (revision) revisions.push_back(*revision);
     }
     return Result<std::vector<MaterialRevision>>::success(std::move(revisions));
+}
+
+Result<void> SqliteMaterialRevisionStore::recordCalculation(
+    const CalculationRecord& calculation,
+    const std::vector<CalculationMaterialReference>& materials)
+{
+    if (calculation.calculationId.empty() || calculation.projectId.empty() ||
+        calculation.projectName.empty() || calculation.productFamily.empty() ||
+        calculation.author.empty() || calculation.createdAtUtc.empty() || materials.empty())
+        return Result<void>::failure(storeError(
+            "Calculation metadata and at least one exact material revision are required.",
+            ErrorCode::MissingRequiredData));
+
+    const auto input = canonicalizeJson(calculation.inputJson);
+    const auto result = canonicalizeJson(calculation.resultJson);
+    const auto versions = canonicalizeJson(calculation.engineVersionsJson);
+    if (!input) return Result<void>::failure(input.error());
+    if (!result) return Result<void>::failure(result.error());
+    if (!versions) return Result<void>::failure(versions.error());
+    if (input.value() != calculation.inputJson || result.value() != calculation.resultJson ||
+        versions.value() != calculation.engineVersionsJson)
+        return Result<void>::failure(storeError("Calculation JSON fields must be canonical.",
+                                                ErrorCode::InvalidInput));
+
+    const std::string raw = "{\"engineVersions\":" + calculation.engineVersionsJson +
+        ",\"input\":" + calculation.inputJson + ",\"result\":" + calculation.resultJson + "}";
+    const auto canonical = canonicalizeJson(raw);
+    if (!canonical) return Result<void>::failure(canonical.error());
+    const auto hash = sha256Hex(canonical.value());
+    if (!hash) return Result<void>::failure(hash.error());
+    if (hash.value() != calculation.contentHash)
+        return Result<void>::failure(storeError("Calculation content hash mismatch.", ErrorCode::InvalidInput));
+
+    std::vector<std::string> seen;
+    for (const auto& item : materials) {
+        if (item.usageId.empty() || item.revisionId.empty())
+            return Result<void>::failure(storeError("Material usage and revision IDs are required.",
+                                                    ErrorCode::MissingRequiredData));
+        if (std::find(seen.begin(), seen.end(), item.revisionId) != seen.end())
+            return Result<void>::failure(storeError("Duplicate material revision link.", ErrorCode::InvalidInput));
+        seen.push_back(item.revisionId);
+    }
+
+    Transaction transaction(database_);
+    if (!transaction.active())
+        return Result<void>::failure(storeError("Cannot begin calculation transaction."));
+    Statement insert(database_.handle(),
+        "INSERT INTO calculations(calculation_id,project_id,project_name,product_family,input_json,"
+        "result_json,engine_versions_json,content_hash,author,created_at_utc) "
+        "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10);");
+    if (!insert) return Result<void>::failure(storeError(insert.error()));
+    sqlite3_bind_text(insert.get(),1,calculation.calculationId.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),2,calculation.projectId.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),3,calculation.projectName.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),4,calculation.productFamily.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),5,calculation.inputJson.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),6,calculation.resultJson.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),7,calculation.engineVersionsJson.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),8,calculation.contentHash.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),9,calculation.author.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert.get(),10,calculation.createdAtUtc.c_str(),-1,SQLITE_TRANSIENT);
+    if (sqlite3_step(insert.get()) != SQLITE_DONE)
+        return Result<void>::failure(storeError(insert.error(), ErrorCode::InvalidInput));
+
+    for (const auto& item : materials) {
+        Statement exists(database_.handle(), "SELECT 1 FROM material_revisions WHERE revision_id=?1;");
+        if (!exists) return Result<void>::failure(storeError(exists.error()));
+        sqlite3_bind_text(exists.get(),1,item.revisionId.c_str(),-1,SQLITE_TRANSIENT);
+        if (sqlite3_step(exists.get()) != SQLITE_ROW)
+            return Result<void>::failure(storeError("Unknown material revision: " + item.revisionId,
+                                                    ErrorCode::MissingRequiredData));
+        Statement usage(database_.handle(),
+            "INSERT INTO material_usage(usage_id,revision_id,product_id,calculation_id,usage_kind,created_at_utc) "
+            "VALUES(?1,?2,NULL,?3,'calculation',?4);");
+        if (!usage) return Result<void>::failure(storeError(usage.error()));
+        sqlite3_bind_text(usage.get(),1,item.usageId.c_str(),-1,SQLITE_TRANSIENT);
+        sqlite3_bind_text(usage.get(),2,item.revisionId.c_str(),-1,SQLITE_TRANSIENT);
+        sqlite3_bind_text(usage.get(),3,calculation.calculationId.c_str(),-1,SQLITE_TRANSIENT);
+        sqlite3_bind_text(usage.get(),4,calculation.createdAtUtc.c_str(),-1,SQLITE_TRANSIENT);
+        if (sqlite3_step(usage.get()) != SQLITE_DONE)
+            return Result<void>::failure(storeError(usage.error(), ErrorCode::InvalidInput));
+    }
+
+    Statement audit(database_.handle(),
+        "INSERT INTO audit_log(entity_type,entity_id,event_type,actor,occurred_at_utc,details_json) "
+        "VALUES('calculation',?1,'calculation_created',?2,?3,'{}');");
+    if (!audit) return Result<void>::failure(storeError(audit.error()));
+    sqlite3_bind_text(audit.get(),1,calculation.calculationId.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(audit.get(),2,calculation.author.c_str(),-1,SQLITE_TRANSIENT);
+    sqlite3_bind_text(audit.get(),3,calculation.createdAtUtc.c_str(),-1,SQLITE_TRANSIENT);
+    if (sqlite3_step(audit.get()) != SQLITE_DONE)
+        return Result<void>::failure(storeError(audit.error()));
+    return transaction.commit();
+}
+
+Result<std::optional<CalculationRecord>>
+SqliteMaterialRevisionStore::findCalculation(const std::string& calculationId) const
+{
+    if (calculationId.empty())
+        return Result<std::optional<CalculationRecord>>::failure(storeError(
+            "Calculation ID is required.", ErrorCode::MissingRequiredData));
+    Statement query(database_.handle(),
+        "SELECT calculation_id,project_id,project_name,product_family,input_json,result_json,"
+        "engine_versions_json,content_hash,author,created_at_utc FROM calculations WHERE calculation_id=?1;");
+    if (!query) return Result<std::optional<CalculationRecord>>::failure(storeError(query.error()));
+    sqlite3_bind_text(query.get(),1,calculationId.c_str(),-1,SQLITE_TRANSIENT);
+    const int rc = sqlite3_step(query.get());
+    if (rc == SQLITE_DONE)
+        return Result<std::optional<CalculationRecord>>::success(std::nullopt);
+    if (rc != SQLITE_ROW)
+        return Result<std::optional<CalculationRecord>>::failure(storeError(query.error()));
+    CalculationRecord value;
+    value.calculationId = columnText(query.get(),0);
+    value.projectId = columnText(query.get(),1);
+    value.projectName = columnText(query.get(),2);
+    value.productFamily = columnText(query.get(),3);
+    value.inputJson = columnText(query.get(),4);
+    value.resultJson = columnText(query.get(),5);
+    value.engineVersionsJson = columnText(query.get(),6);
+    value.contentHash = columnText(query.get(),7);
+    value.author = columnText(query.get(),8);
+    value.createdAtUtc = columnText(query.get(),9);
+    return Result<std::optional<CalculationRecord>>::success(std::move(value));
 }
 
 Result<void> SqliteMaterialRevisionStore::recordUsage(const MaterialUsageReference& usage)
