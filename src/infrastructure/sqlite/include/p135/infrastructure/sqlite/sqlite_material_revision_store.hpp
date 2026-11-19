@@ -77,6 +77,10 @@ public:
         const std::vector<CalculationMaterialReference>& materials);
     [[nodiscard]] Result<std::optional<CalculationRecord>>
     findCalculation(const std::string& calculationId) const;
+    [[nodiscard]] Result<std::vector<CalculationRecord>>
+    listCalculations(const std::string& searchText = {},
+                     std::uint32_t pageSize = 100,
+                     std::uint64_t pageOffset = 0) const;
     [[nodiscard]] Result<std::vector<CalculationMaterialReference>>
     calculationMaterials(const std::string& calculationId) const;
 
