@@ -42,11 +42,17 @@ with OpenSSL SHA-256. Applied migrations are checked before any DDL is replayed;
 mismatches fail closed.
 
 Build dependencies are supplied through the vcpkg manifest (`sqlite3`, `openssl`, `nlohmann-json`).
-The Visual Studio 2026 Debug and Release configure presets load the vcpkg toolchain
-from the `VCPKG_ROOT` environment variable. Set `VCPKG_ROOT` to the root directory
-of your vcpkg installation in the environment used to launch Visual Studio, then reload
-the CMake project. Manifest mode reads `vcpkg.json` and installs the declared dependencies
-for the selected x64 triplet; no per-project package paths are required.
+Visual Studio may inject its own vcpkg toolchain, as shown in the CMake configure
+output. In that case, install the manifest dependencies explicitly from the repository root
+using the matching vcpkg executable before reconfiguring:
+
+```powershell
+& "C:\Program Files\Microsoft Visual Studio\18\Community\VC\vcpkg\vcpkg.exe" install --triplet x64-windows
+```
+
+If using a standalone vcpkg installation instead, set `VCPKG_ROOT` to that installation's
+root before launching Visual Studio. The project uses the standard CMake `SQLite3` finder
+and `SQLite::SQLite3` target; the vcpkg `sqlite3` port must still be installed.
 
 For a command-line configure using the same preset:
 
