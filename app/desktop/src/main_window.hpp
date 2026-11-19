@@ -32,6 +32,9 @@ private:
     QWidget* createResultsPage();
     QWidget* createCadPage();
     QWidget* createMaterialsPage();
+    QWidget* createHistoryPage();
+    void refreshCalculationHistory();
+    void showCalculationDetails(int row);
     void updateProjectTitle();
     void appendLog(const QString& message);
     void calculateFilter();
@@ -57,6 +60,9 @@ private:
     QLineEdit* resistorThermalSource_{};
     QPlainTextEdit* log_{};
     QTableWidget* resultsTable_{};
+    QTableWidget* historyTable_{};
+    QPlainTextEdit* historyDetails_{};
+    QLineEdit* historySearch_{};
     QLabel* resultsNote_{};
     QLabel* status_{};
     QTabWidget* tabs_{};
