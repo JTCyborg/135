@@ -125,7 +125,7 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
         model.esr = value4->value() > 0.0 ?
             std::optional<units::Resistance>{units::Resistance{value4->value() * 1.0e-3}} : std::nullopt;
         model.esrConfirmedFrequencyIndependent = constantEsr->isChecked();
-        const auto curveLines = esrCurve->toPlainText().split('\\n');
+        const auto curveLines = esrCurve->toPlainText().split('\n');
         for (const auto& rawLine : curveLines) {
             const QString line = rawLine.trimmed();
             if (line.isEmpty() || line.startsWith('#')) continue;
