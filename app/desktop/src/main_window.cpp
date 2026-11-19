@@ -1311,6 +1311,8 @@ void MainWindow::calculateFilter()
     }
     double peakBankCurrent = 0.0;
     double peakBankCurrentFrequency = 0.0;
+    double peakPhasePeakCurrent = 0.0;
+    double peakPhasePeakCurrentFrequency = 0.0;
     for (const auto& point : sweepResult.value().points) {
         double currentSquared = 0.0;
         double maximumPhaseRmsCurrent = 0.0;
@@ -1328,6 +1330,10 @@ void MainWindow::calculateFilter()
         if (bankCurrent > peakBankCurrent) {
             peakBankCurrent = bankCurrent;
             peakBankCurrentFrequency = point.frequency.si();
+        }
+        if (phasePeakCurrent > peakPhasePeakCurrent) {
+            peakPhasePeakCurrent = phasePeakCurrent;
+            peakPhasePeakCurrentFrequency = point.frequency.si();
         }
         if (magneticCircuitBase && magneticSweepValid) {
             auto magneticRequest = *magneticCircuitBase;
@@ -1579,6 +1585,18 @@ void MainWindow::calculateFilter()
     addResult(tr("Peak three-phase bank current in sweep"), peakBankCurrent, tr("A RMS"));
     addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
+    addResult(tr("Maximum phase peak current"), peakPhasePeakCurrent, tr("A peak"));
+    addResult(tr("Frequency at maximum phase peak current"), peakPhasePeakCurrentFrequency, tr("Hz"));
+    if (magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) {
+        const double marginPercent =
+            (*magneticKneeCurrentA - peakPhasePeakCurrent) / *magneticKneeCurrentA * 100.0;
+        addResult(tr("B-H knee current margin"), marginPercent, tr("%"));
+    }
+    if (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0) {
+        const double reference = inductorSaturationCurrent_->value();
+        const double marginPercent = (reference - peakPhasePeakCurrent) / reference * 100.0;
+        addResult(tr("Manufacturer Isat reference margin"), marginPercent, tr("%"));
+    }
     if (magneticCircuitBase && magneticSweepValid && !magneticFluxDensityPoints.empty()) {
         const auto peak = std::max_element(magneticFluxDensityPoints.begin(),
             magneticFluxDensityPoints.end(), [](const auto& a, const auto& b) {
