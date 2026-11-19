@@ -30,3 +30,14 @@ if(MSVC)
 else()
     target_compile_options(Project135FilterTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135FilterNetworkTests
+    filter/network_tests.cpp
+)
+target_link_libraries(Project135FilterNetworkTests PRIVATE Project135::Filter)
+add_test(NAME Project135FilterNetworkTests COMMAND Project135FilterNetworkTests)
+if(MSVC)
+    target_compile_options(Project135FilterNetworkTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135FilterNetworkTests PRIVATE -UNDEBUG)
+endif()
