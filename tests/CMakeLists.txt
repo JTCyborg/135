@@ -137,3 +137,14 @@ if(MSVC)
 else()
     target_compile_options(Project135SqliteInfrastructureTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135MechanicalGeometryTests
+    domain/mechanical_geometry_tests.cpp
+)
+target_link_libraries(Project135MechanicalGeometryTests PRIVATE Project135::Domain)
+add_test(NAME Project135MechanicalGeometryTests COMMAND Project135MechanicalGeometryTests)
+if(MSVC)
+    target_compile_options(Project135MechanicalGeometryTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135MechanicalGeometryTests PRIVATE -UNDEBUG)
+endif()
