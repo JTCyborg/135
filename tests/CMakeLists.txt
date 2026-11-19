@@ -64,16 +64,26 @@ else()
     target_compile_options(Project135FilterHarmonicsTests PRIVATE -UNDEBUG)
 endif()
 
-add_executable(Project135ThermalTests
+add_executable(Project135ThermalSteadyStateTests
     thermal/steady_state_tests.cpp
+)
+target_link_libraries(Project135ThermalSteadyStateTests PRIVATE Project135::Thermal)
+add_test(NAME Project135ThermalSteadyStateTests COMMAND Project135ThermalSteadyStateTests)
+
+add_executable(Project135ThermalFilterBridgeTests
     thermal/filter_bridge_tests.cpp
 )
-target_link_libraries(Project135ThermalTests PRIVATE Project135::Thermal Project135::Filter Project135::Domain)
-add_test(NAME Project135ThermalTests COMMAND Project135ThermalTests)
+target_link_libraries(Project135ThermalFilterBridgeTests PRIVATE
+    Project135::Thermal Project135::Filter Project135::Domain
+)
+add_test(NAME Project135ThermalFilterBridgeTests COMMAND Project135ThermalFilterBridgeTests)
+
 if(MSVC)
-    target_compile_options(Project135ThermalTests PRIVATE /UNDEBUG)
+    target_compile_options(Project135ThermalSteadyStateTests PRIVATE /UNDEBUG)
+    target_compile_options(Project135ThermalFilterBridgeTests PRIVATE /UNDEBUG)
 else()
-    target_compile_options(Project135ThermalTests PRIVATE -UNDEBUG)
+    target_compile_options(Project135ThermalSteadyStateTests PRIVATE -UNDEBUG)
+    target_compile_options(Project135ThermalFilterBridgeTests PRIVATE -UNDEBUG)
 endif()
 
 add_executable(Project135DomainTests
