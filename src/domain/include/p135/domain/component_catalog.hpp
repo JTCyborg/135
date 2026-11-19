@@ -46,7 +46,34 @@ struct CapacitorComponent {
     std::optional<units::Time> ratedLife;
 };
 
+enum class ResistorTechnology {
+    Wirewound, ThickFilm, ThinFilm, MetalFilm, MetalOxide,
+    CarbonFilm, CarbonComposition, Foil, Cement, Other
+};
+
+struct ResistorComponent {
+    std::string id;
+    std::string manufacturer;
+    std::string series;
+    std::string partNumber;
+    MaterialDataSource dataSource{MaterialDataSource::UserDefined};
+    std::string sourceReference;
+    std::string datasetRevision;
+    ResistorTechnology technology{ResistorTechnology::Other};
+    units::Resistance resistance;
+    double toleranceFraction{}; // 0.01 means ±1%
+    units::Power ratedPower;
+    units::Voltage maximumWorkingVoltage;
+    std::optional<units::TemperatureCoefficient> temperatureCoefficient;
+    std::optional<units::Inductance> parasiticInductance;
+    std::optional<units::Capacitance> parasiticCapacitance;
+    std::optional<double> singlePulseEnergyJoules;
+    units::TemperatureKelvin minimumTemperature;
+    units::TemperatureKelvin maximumTemperature;
+};
+
 [[nodiscard]] Result<void> validate(const CapacitorComponent& capacitor);
+[[nodiscard]] Result<void> validate(const ResistorComponent& resistor);
 
 class CapacitorCatalog {
 public:
@@ -55,6 +82,15 @@ public:
     [[nodiscard]] std::size_t size() const noexcept { return capacitors_.size(); }
 private:
     std::unordered_map<std::string, CapacitorComponent> capacitors_;
+};
+
+class ResistorCatalog {
+public:
+    [[nodiscard]] Result<void> add(ResistorComponent resistor);
+    [[nodiscard]] const ResistorComponent* find(const std::string& id) const noexcept;
+    [[nodiscard]] std::size_t size() const noexcept { return resistors_.size(); }
+private:
+    std::unordered_map<std::string, ResistorComponent> resistors_;
 };
 
 } // namespace p135::domain
