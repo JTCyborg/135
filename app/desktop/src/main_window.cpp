@@ -533,6 +533,8 @@ QWidget* MainWindow::createHistoryPage()
     historyTable_->setSelectionMode(QAbstractItemView::SingleSelection);
     historyTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     layout->addWidget(historyTable_, 2);
+    auto* loadInputs = new QPushButton(tr("Load selected inputs into editor"));
+    layout->addWidget(loadInputs);
 
     historyDetails_ = new QPlainTextEdit;
     historyDetails_->setReadOnly(true);
@@ -544,6 +546,9 @@ QWidget* MainWindow::createHistoryPage()
     connect(historySearch_, &QLineEdit::returnPressed, this, [this] { refreshCalculationHistory(); });
     connect(historyTable_, &QTableWidget::currentCellChanged, this,
         [this](int currentRow, int, int, int) { showCalculationDetails(currentRow); });
+    connect(loadInputs, &QPushButton::clicked, this, [this] {
+        if (historyTable_) loadCalculationInputs(historyTable_->currentRow());
+    });
     refreshCalculationHistory();
     return page;
 }
@@ -649,6 +654,103 @@ void MainWindow::showCalculationDetails(int row)
         }
     }
     historyDetails_->setPlainText(details);
+}
+
+void MainWindow::loadCalculationInputs(int row)
+{
+    if (!historyTable_ || !materialStore_ || row < 0 || row >= historyTable_->rowCount())
+        return;
+    const auto* idItem = historyTable_->item(row, 3);
+    if (!idItem) return;
+    const auto record = materialStore_->findCalculation(
+        idItem->data(Qt::UserRole).toString().toStdString());
+    if (!record || !record.value()) {
+        QMessageBox::warning(this, tr("Load calculation inputs"),
+            record ? tr("The selected calculation no longer exists.")
+                   : QString::fromStdString(record.error().message));
+        return;
+    }
+
+    const auto document = QJsonDocument::fromJson(
+        QByteArray::fromStdString(record.value()->inputJson));
+    if (!document.isObject()) {
+        QMessageBox::warning(this, tr("Load calculation inputs"),
+            tr("The saved input snapshot is not a valid JSON object."));
+        return;
+    }
+    const auto input = document.object();
+    const auto setNumber = [&input](const char* key, QDoubleSpinBox* control, double divisor = 1.0) {
+        if (control && input.value(QLatin1String(key)).isDouble())
+            control->setValue(input.value(QLatin1String(key)).toDouble() / divisor);
+    };
+    setNumber("nominalLineVoltage_V", nominalVoltage_);
+    setNumber("fundamentalFrequency_Hz", fundamentalFrequency_);
+    setNumber("targetReactivePower_var", targetReactivePower_, 1000.0);
+    setNumber("qualityFactor", qualityFactor_);
+    setNumber("sourceResistance_ohm", sourceResistance_);
+    setNumber("sourceInductance_H", sourceInductance_);
+    setNumber("ambientTemperature_C", ambientTemperature_);
+    setNumber("capacitorThermalResistance_K_per_W", capacitorThermalResistance_);
+    setNumber("resistorThermalResistance_K_per_W", resistorThermalResistance_);
+    if (tuningHarmonicOrder_ && input.value(QStringLiteral("tuningHarmonicOrder")).isDouble())
+        tuningHarmonicOrder_->setValue(input.value(QStringLiteral("tuningHarmonicOrder")).toInt());
+    if (filterConnection_) {
+        const int index = filterConnection_->findText(input.value(QStringLiteral("connection")).toString());
+        if (index >= 0) filterConnection_->setCurrentIndex(index);
+    }
+    if (productFamily_) {
+        const int index = productFamily_->findText(QString::fromStdString(record.value()->productFamily));
+        if (index >= 0) productFamily_->setCurrentIndex(index);
+    }
+    if (capacitorThermalSource_)
+        capacitorThermalSource_->setText(input.value(QStringLiteral("capacitorThermalSource")).toString());
+    if (resistorThermalSource_)
+        resistorThermalSource_->setText(input.value(QStringLiteral("resistorThermalSource")).toString());
+
+    const auto restoreRevision = [this](QComboBox* selector, const QString& revisionId) {
+        if (!selector || revisionId.isEmpty()) return;
+        int index = selector->findData(revisionId);
+        if (index < 0 && materialStore_) {
+            const auto revision = materialStore_->findRevision(revisionId.toStdString());
+            if (revision && revision.value()) {
+                const QString label = QString::fromStdString(revision.value()->materialId)
+                    + tr(" — r%1 (historical)").arg(revision.value()->revisionNumber);
+                selector->addItem(label, revisionId);
+                index = selector->count() - 1;
+            }
+        }
+        if (index >= 0) selector->setCurrentIndex(index);
+        else appendLog(tr("Saved material revision %1 is unavailable; selection was not substituted.")
+            .arg(revisionId));
+    };
+    restoreRevision(capacitorComponent_,
+        input.value(QStringLiteral("capacitorRevisionId")).toString());
+    restoreRevision(resistorComponent_,
+        input.value(QStringLiteral("resistorRevisionId")).toString());
+
+    if (harmonicSpectrumTable_) {
+        const auto spectrum = input.value(QStringLiteral("harmonicSpectrum")).toArray();
+        harmonicSpectrumTable_->setRowCount(0);
+        for (const auto& entry : spectrum) {
+            const auto point = entry.toObject();
+            const int newRow = harmonicSpectrumTable_->rowCount();
+            harmonicSpectrumTable_->insertRow(newRow);
+            const QStringList values{
+                QString::number(point.value(QStringLiteral("order")).toInt()),
+                point.value(QStringLiteral("sequence")).toString(),
+                QString::number(point.value(QStringLiteral("voltageRms_V")).toDouble(), 'g', 12),
+                QString::number(point.value(QStringLiteral("phase_deg")).toDouble(), 'g', 12)
+            };
+            for (int column = 0; column < values.size(); ++column)
+                harmonicSpectrumTable_->setItem(newRow, column, new QTableWidgetItem(values[column]));
+        }
+    }
+
+    updateProjectTitle();
+    tabs_->setCurrentIndex(1);
+    status_->setText(tr("Historical inputs loaded — review before running a new calculation"));
+    appendLog(tr("Loaded inputs from calculation %1. Exact historical material revision IDs were restored where available.")
+        .arg(QString::fromStdString(record.value()->calculationId)));
 }
 
 QWidget* MainWindow::createCadPage()
