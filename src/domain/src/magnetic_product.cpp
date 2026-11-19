@@ -83,8 +83,8 @@ Result<void> validate(const MagneticProduct& product)
         if (conductor.id.empty() || conductor.material.empty())
             return invalid("Conductor ID and material are required.", prefix + ".conductor");
         if (!positive(conductor.bareCrossSection.si()) ||
-            !positive(conductor.resistivityAt20C) ||
-            !positive(conductor.temperatureCoefficient))
+            !positive(conductor.resistivityAt20C.si()) ||
+            !positive(conductor.temperatureCoefficient.si()))
             return invalid("Conductor area, resistivity and temperature coefficient must be positive.",
                            prefix + ".conductor");
         if (!nonNegative(conductor.insulationBuild.si()))
@@ -104,11 +104,11 @@ Result<void> validate(const MagneticProduct& product)
                 return invalid("Insulation material and positive thickness are required.",
                                prefix + ".insulation[" + std::to_string(j) + "]");
             if (layer.dielectricStrength &&
-                !positive(*layer.dielectricStrength))
+                !positive(layer.dielectricStrength->si()))
                 return invalid("Dielectric strength must be positive when specified.",
                                prefix + ".insulation[" + std::to_string(j) + "].dielectricStrength");
             if (layer.maximumTemperature &&
-                !positive(*layer.maximumTemperature))
+                !positive(layer.maximumTemperature->si()))
                 return invalid("Maximum insulation temperature must be positive when specified.",
                                prefix + ".insulation[" + std::to_string(j) + "].maximumTemperature");
         }
