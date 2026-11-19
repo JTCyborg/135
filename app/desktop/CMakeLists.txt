@@ -13,6 +13,7 @@ target_link_libraries(Project135
         Project135::Core
         Project135::Circuit
         Project135::Filter
+        Project135::Domain
         Project135::InfrastructureSqlite
 )
 
