@@ -57,6 +57,7 @@ int main()
         request.turns = 100;
         request.current = units::Current{1.0};
         request.material = validProduct().coreMaterial;
+        request.material.density = units::Density{}; // Density is not required by the B-H magnetic-circuit equations.
         request.material.bhCurve = {
             {units::MagneticFieldStrength{0.0}, units::FluxDensity{0.0}},
             {units::MagneticFieldStrength{100.0}, units::FluxDensity{0.5}},
@@ -73,6 +74,7 @@ int main()
         assert(operating.value().kneeCurrent.has_value());
         assert(operating.value().kneeUtilization.has_value());
         assert(std::abs(operating.value().kneeFluxDensity->si() - 0.5) < 1.0e-12);
+        assert(operating.value().kneeCurrent->si() > 4.0);
 
         auto atKnee = request;
         atKnee.current = *operating.value().kneeCurrent;
@@ -93,6 +95,12 @@ int main()
         auto invalidTurns = request;
         invalidTurns.turns = 0;
         assert(!analyzeMagneticCircuit(invalidTurns));
+
+        auto missingOrigin = request;
+        missingOrigin.material.bhCurve.front().fluxDensity = units::FluxDensity{0.01};
+        const auto missingOriginResult = analyzeMagneticCircuit(missingOrigin);
+        assert(!missingOriginResult);
+        assert(missingOriginResult.error().code == ErrorCode::MissingMaterialProperty);
     }
 
 
