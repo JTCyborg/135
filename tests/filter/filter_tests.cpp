@@ -37,12 +37,15 @@ int main()
         assert(result.value().branches.size() == 1);
         const auto& branch = result.value().branches.front();
         assert(near(branch.phaseVoltage.si(), 400.0 / std::sqrt(3.0)));
-        const double expectedC = (100000.0 / 3.0) * (1.0 - 1.0 / 25.0) /
-            (2.0 * 3.14159265358979323846 * 50.0 *
-             std::pow(400.0 / std::sqrt(3.0), 2.0));
+        const double omega1 = 2.0 * 3.14159265358979323846 * 50.0;
+        const double omegaTune = 5.0 * omega1;
+        const double reactanceSlope = (omegaTune * omegaTune - omega1 * omega1) / omega1;
+        const double normalizedResistance = omegaTune / 50.0;
+        const double expectedL = std::pow(400.0 / std::sqrt(3.0), 2.0) *
+            reactanceSlope / ((100000.0 / 3.0) *
+            (reactanceSlope * reactanceSlope + normalizedResistance * normalizedResistance));
+        const double expectedC = 1.0 / (omegaTune * omegaTune * expectedL);
         assert(near(branch.capacitance.si(), expectedC));
-        const double expectedL =
-            1.0 / std::pow(2.0 * 3.14159265358979323846 * 250.0, 2.0) / expectedC;
         assert(near(branch.inductance.si(), expectedL));
         assert(near(branch.dampingResistance.si(),
                     2.0 * 3.14159265358979323846 * 250.0 * expectedL / 50.0));
