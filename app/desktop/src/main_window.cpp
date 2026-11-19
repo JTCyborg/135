@@ -120,6 +120,8 @@ MainWindow::MainWindow(QWidget* parent)
     updateProjectTitle();
 }
 
+MainWindow::~MainWindow() = default;
+
 QWidget* MainWindow::createProjectPage()
 {
     auto* page = new QWidget;
