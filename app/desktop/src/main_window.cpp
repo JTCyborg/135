@@ -1072,6 +1072,8 @@ void MainWindow::loadCalculationInputs(int row)
     setNumber("coreEffectiveArea_mm2", coreEffectiveAreaMm2_);
     setNumber("coreMeanPath_mm", coreMeanPathMm_);
     setNumber("coreAirGap_mm", coreAirGapMm_);
+    setNumber("coreYokeEffectiveArea_mm2", coreYokeEffectiveAreaMm2_);
+    setNumber("coreYokeSegmentPath_mm", coreYokeSegmentPathMm_);
     if (inductorTurns_ && input.value(QStringLiteral("inductorTurns")).isDouble())
         inductorTurns_->setValue(input.value(QStringLiteral("inductorTurns")).toInt());
     if (coreBhSource_)
@@ -1901,6 +1903,10 @@ void MainWindow::calculateFilter()
             coreMeanPathMm_ ? coreMeanPathMm_->value() : 0.0);
         inputSnapshot.insert(QStringLiteral("coreAirGap_mm"),
             coreAirGapMm_ ? coreAirGapMm_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("coreYokeEffectiveArea_mm2"),
+            coreYokeEffectiveAreaMm2_ ? coreYokeEffectiveAreaMm2_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("coreYokeSegmentPath_mm"),
+            coreYokeSegmentPathMm_ ? coreYokeSegmentPathMm_->value() : 0.0);
         inputSnapshot.insert(QStringLiteral("inductorTurns"),
             inductorTurns_ ? inductorTurns_->value() : 0);
         inputSnapshot.insert(QStringLiteral("coreBhSource"),
