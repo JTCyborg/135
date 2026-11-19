@@ -283,6 +283,43 @@ void MainWindow::calculateFilter()
         return;
     }
 
+    p135::circuit::FrequencySweep sweepRequest;
+    sweepRequest.study = p135::circuit::Study{
+        circuitResult.value(),
+        p135::circuit::AnalysisKind::AcSteadyState,
+        p135::units::Frequency{fundamentalFrequency_->value()}
+    };
+    sweepRequest.startFrequency = p135::units::Frequency{fundamentalFrequency_->value() * 0.5};
+    sweepRequest.stopFrequency = p135::units::Frequency{fundamentalFrequency_->value() * 15.0};
+    sweepRequest.points = 151;
+    sweepRequest.spacing = p135::circuit::SweepSpacing::Logarithmic;
+    const auto sweepResult = p135::circuit::sweep(sweepRequest);
+    if (!sweepResult) {
+        const QString message = QString::fromStdString(sweepResult.error().message);
+        resultsNote_->setText(tr("Frequency response calculation failed: %1").arg(message));
+        status_->setText(tr("Frequency sweep failed"));
+        appendLog(tr("Frequency sweep failed: %1").arg(message));
+        QMessageBox::warning(this, tr("Frequency sweep failed"), message);
+        return;
+    }
+
+    double peakBankCurrent = 0.0;
+    double peakBankCurrentFrequency = 0.0;
+    for (const auto& point : sweepResult.value().points) {
+        double currentSquared = 0.0;
+        // For the current single-branch Wye/Delta model, the three phase
+        // series-branch currents are the R elements at indices 3, 6 and 9.
+        for (const std::size_t index : {3U, 6U, 9U}) {
+            if (index < point.result.branches.size())
+                currentSquared += std::norm(point.result.branches[index].rmsCurrent);
+        }
+        const double bankCurrent = std::sqrt(currentSquared);
+        if (bankCurrent > peakBankCurrent) {
+            peakBankCurrent = bankCurrent;
+            peakBankCurrentFrequency = point.frequency.si();
+        }
+    }
+
     const auto& branch = result.value().branches.front();
     const auto addResult = [this](const QString& name, double value, const QString& unit) {
         const int row = resultsTable_->rowCount();
@@ -313,8 +350,11 @@ void MainWindow::calculateFilter()
               static_cast<double>(electricalResult.value().solver.matrixOrder), tr("unknowns"));
     addResult(tr("MNA relative residual"),
               electricalResult.value().solver.relativeResidual, tr("—"));
+    addResult(tr("Peak three-phase bank current in sweep"), peakBankCurrent, tr("A RMS"));
+    addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
+    addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
 
-    resultsNote_->setText(tr("LC branch synthesis and balanced three-phase AC MNA verification completed at the fundamental frequency. The MNA circuit currently uses an ideal balanced voltage source and ideal R/L/C components. Capacitor/reactor stress ratings, source impedance, harmonic spectrum, resonance interaction, losses, temperature and standards checks are not yet evaluated."));
+    resultsNote_->setText(tr("LC branch synthesis, balanced three-phase AC MNA verification at the fundamental frequency and a logarithmic 0.5–15× fundamental-frequency current sweep completed. The peak current is the maximum RMS vector sum of the three phase branch currents in the ideal-source model; it is not a harmonic attenuation or compliance result. Source impedance, background harmonic voltage, feeder impedance, capacitor/reactor stress ratings, losses, temperature and standards checks are not yet evaluated."));
     status_->setText(tr("Filter synthesized and AC network solved"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
         .arg(targetReactivePower_->value())
