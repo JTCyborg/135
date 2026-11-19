@@ -136,9 +136,9 @@ int main(int argc, char** argv)
         const auto calculationLinks = store.calculationMaterials("CALC-1");
         assert(calculationLinks && calculationLinks.value().size() == 1);
         assert(calculationLinks.value().front().revisionId == "REV-2");
-        const auto history = store.listCalculations();
-        assert(history && history.value().size() == 1);
-        assert(history.value().front().calculationId == "CALC-1");
+        const auto calculationHistory = store.listCalculations();
+        assert(calculationHistory && calculationHistory.value().size() == 1);
+        assert(calculationHistory.value().front().calculationId == "CALC-1");
         const auto searchedHistory = store.listCalculations("Integration test");
         assert(searchedHistory && searchedHistory.value().size() == 1);
         assert(store.listCalculations("no-match").value().empty());
