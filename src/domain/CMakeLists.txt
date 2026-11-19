@@ -1,6 +1,7 @@
 add_library(Project135Domain
     src/magnetic_product.cpp
     src/material_catalog.cpp
+    src/component_catalog.cpp
 )
 add_library(Project135::Domain ALIAS Project135Domain)
 
