@@ -104,9 +104,9 @@ Result<CapacitorThermalResult> analyzeFilterCapacitorThermals(
             return Result<CapacitorThermalResult>::failure(
                 invalid("Aggregate capacitor RMS current is invalid.", field + ".rippleCurrent"));
 
-        const bool componentEvidenceVerified =
-            capacitor->dataSource == domain::MaterialDataSource::ManufacturerDatasheet ||
-            capacitor->dataSource == domain::MaterialDataSource::Measurement;
+        const bool componentEvidenceVerified = capacitor->evidenceVerified &&
+            (capacitor->dataSource == domain::MaterialDataSource::ManufacturerDatasheet ||
+             capacitor->dataSource == domain::MaterialDataSource::Measurement);
 
         CapacitorThermalAssessment assessment;
         assessment.branchId = assignment.branchId;
@@ -234,7 +234,8 @@ Result<SteadyStateResult> analyzeDampingResistorThermals(
         node.thermalResistanceSourceReference = assignment.thermalResistanceSourceReference;
         node.temperatureLimitSourceReference = resistor->sourceReference +
             " (dataset revision " + resistor->datasetRevision + ")";
-        if (resistor->dataSource == domain::MaterialDataSource::UserDefined)
+        if (!resistor->evidenceVerified ||
+            resistor->dataSource == domain::MaterialDataSource::UserDefined)
             node.temperatureLimitSourceReference.clear();
         thermalRequest.nodes.push_back(std::move(node));
     }
