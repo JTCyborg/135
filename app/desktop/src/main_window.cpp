@@ -1348,7 +1348,7 @@ void MainWindow::calculateFilter()
     std::optional<double> magneticKneeFluxDensityT;
     std::vector<std::pair<double, double>> magneticFluxDensityPoints;
     std::vector<std::array<double, 8>> threeLimbFluxDensitySweep;
-    std::vector<std::array<double, 3>> threeLimbSamplingMetadata; // frequency, samples, relative peak change
+    std::vector<std::array<double, 4>> threeLimbSamplingMetadata; // frequency, samples, relative peak change, converged
     bool magneticSweepValid = magneticCircuitBase.has_value();
     bool threeLimbSweepValid = threeLimbMagneticBase.has_value();
     if (magneticCircuitBase) {
@@ -1435,6 +1435,12 @@ void MainWindow::calculateFilter()
                         .arg(point.frequency.si(), 0, 'g', 6)
                         .arg(QString::fromStdString(sampledCycle.error().message));
                 } else if (!sampledCycle.value().converged) {
+                    threeLimbSamplingMetadata.push_back({
+                        point.frequency.si(),
+                        static_cast<double>(sampledCycle.value().samplesUsed),
+                        sampledCycle.value().relativePeakChange,
+                        0.0
+                    });
                     threeLimbSweepValid = false;
                     threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz: peak |B| did not converge to 0.1%% by %2 samples (last relative change %3%%).")
                         .arg(point.frequency.si(), 0, 'g', 6)
@@ -1450,7 +1456,8 @@ void MainWindow::calculateFilter()
                     threeLimbSamplingMetadata.push_back({
                         point.frequency.si(),
                         static_cast<double>(sampledCycle.value().samplesUsed),
-                        sampledCycle.value().relativePeakChange
+                        sampledCycle.value().relativePeakChange,
+                        1.0
                     });
                 }
             }
@@ -1733,6 +1740,19 @@ void MainWindow::calculateFilter()
         addResult(tr("Three-limb core peak B — limb C"), peakCoreDensities[2], tr("T"));
         addResult(tr("Three-limb core peak B — maximum yoke segment"),
             *std::max_element(peakCoreDensities.begin() + 3, peakCoreDensities.end()), tr("T"));
+        if (!threeLimbSamplingMetadata.empty()) {
+            const auto worst = std::max_element(threeLimbSamplingMetadata.begin(),
+                threeLimbSamplingMetadata.end(), [](const auto& a, const auto& b) {
+                    return a[2] < b[2];
+                });
+            const auto maximumSamples = std::max_element(
+                threeLimbSamplingMetadata.begin(), threeLimbSamplingMetadata.end(),
+                [](const auto& a, const auto& b) { return a[1] < b[1]; });
+            addResult(tr("Three-limb adaptive samples (maximum)"),
+                maximumSamples->at(1), tr("samples"));
+            addResult(tr("Three-limb worst successive peak |B| change"),
+                worst->at(2) * 100.0, tr("%"));
+        }
     } else if (!threeLimbModelWarning.isEmpty()) {
         appendLog(threeLimbModelWarning);
     }
@@ -2080,7 +2100,7 @@ void MainWindow::calculateFilter()
             sample.insert(QStringLiteral("samplesUsed"), metadata[1]);
             sample.insert(QStringLiteral("relativePeakChange"), metadata[2]);
             sample.insert(QStringLiteral("relativeTolerance"), 1.0e-3);
-            sample.insert(QStringLiteral("converged"), true);
+            sample.insert(QStringLiteral("converged"), metadata[3] != 0.0);
             threeLimbSamplingSnapshot.append(sample);
         }
         resultSnapshot.insert(QStringLiteral("threeLimbSampling"), threeLimbSamplingSnapshot);
