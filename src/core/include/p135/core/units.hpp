@@ -29,6 +29,9 @@ struct AreaTag {};
 struct VolumeTag {};
 struct MassTag {};
 struct DensityTag {};
+struct ResistivityTag {};
+struct TemperatureCoefficientTag {};
+struct ElectricFieldStrengthTag {};
 struct TemperatureKelvinTag {};
 struct TemperatureDifferenceTag {};
 struct FluxDensityTag {};
@@ -47,7 +50,10 @@ using Length = Quantity<LengthTag>;                           // m
 using Area = Quantity<AreaTag>;                               // m^2
 using Volume = Quantity<VolumeTag>;                            // m^3
 using Mass = Quantity<MassTag>;                               // kg
-using Density = Quantity<DensityTag>;                         // kg/m^3                               // kg
+using Density = Quantity<DensityTag>;                         // kg/m^3
+using Resistivity = Quantity<ResistivityTag>;                 // ohm*m
+using TemperatureCoefficient = Quantity<TemperatureCoefficientTag>; // 1/K
+using ElectricFieldStrength = Quantity<ElectricFieldStrengthTag>; // V/m                               // kg
 using TemperatureKelvin = Quantity<TemperatureKelvinTag>;     // K absolute
 using TemperatureDifference = Quantity<TemperatureDifferenceTag>; // K delta
 using FluxDensity = Quantity<FluxDensityTag>;                 // T
