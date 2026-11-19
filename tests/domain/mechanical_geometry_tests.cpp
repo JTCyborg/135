@@ -21,7 +21,7 @@ ReactorPhysicalGeometry validGeometry()
     g.core.yokeDepths.fill(units::Length{0.08});
     g.core.limbCenterSpacings = {units::Length{0.10}, units::Length{0.10}, units::Length{0.20}};
     g.core.coreOverallHeight = units::Length{0.20};
-    g.core.coreOverallWidth = units::Length{0.30};
+    g.core.coreOverallWidth = units::Length{0.24};
     g.core.laminationConstruction = "interleaved step-lap packets";
     for (auto& b : g.bobbins) {
         b.innerWidth = units::Length{0.035};
@@ -74,6 +74,18 @@ int main()
     auto invalidSpacing = valid;
     invalidSpacing.core.limbCenterSpacings[2] = units::Length{0.15};
     assert(!validate(invalidSpacing));
+
+    auto inconsistentWindow = valid;
+    inconsistentWindow.core.windowWidths[0] = units::Length{0.05};
+    assert(!validate(inconsistentWindow));
+
+    auto inconsistentOverallWidth = valid;
+    inconsistentOverallWidth.core.coreOverallWidth = units::Length{0.30};
+    assert(!validate(inconsistentOverallWidth));
+
+    auto inconsistentWindowHeight = valid;
+    inconsistentWindowHeight.core.windowHeights[1] = units::Length{0.10};
+    assert(!validate(inconsistentWindowHeight));
 
     auto nonFinite = valid;
     nonFinite.core.coreOverallWidth = units::Length{std::numeric_limits<double>::infinity()};
