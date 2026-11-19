@@ -74,3 +74,18 @@ if(MSVC)
 else()
     target_compile_options(Project135ApplicationTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135SqliteInfrastructureTests
+    infrastructure/sqlite_repository_tests.cpp
+)
+target_link_libraries(Project135SqliteInfrastructureTests PRIVATE Project135::InfrastructureSqlite)
+add_test(
+    NAME Project135SqliteInfrastructureTests
+    COMMAND Project135SqliteInfrastructureTests
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+)
+if(MSVC)
+    target_compile_options(Project135SqliteInfrastructureTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135SqliteInfrastructureTests PRIVATE -UNDEBUG)
+endif()
