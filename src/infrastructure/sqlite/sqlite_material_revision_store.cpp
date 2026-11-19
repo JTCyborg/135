@@ -145,7 +145,7 @@ Result<void> SqliteMaterialRevisionStore::appendRevision(const MaterialRevision&
         revision.revisionNumber == 0 ||
         revision.revisionNumber > static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
         return Result<void>::failure(storeError("Revision metadata is incomplete or revision number exceeds SQLite INTEGER range.",
-                                                ErrorCode::MissingRequiredData));
+                                                ErrorCode::InvalidInput));
     const auto calculatedHash = payloadHash(revision.payload);
     if (!calculatedHash) return Result<void>::failure(calculatedHash.error());
     if (calculatedHash.value() != revision.contentHash)
