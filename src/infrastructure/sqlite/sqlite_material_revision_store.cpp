@@ -329,9 +329,9 @@ Result<void> SqliteMaterialRevisionStore::recordCalculation(
 {
     if (calculation.calculationId.empty() || calculation.projectId.empty() ||
         calculation.projectName.empty() || calculation.productFamily.empty() ||
-        calculation.author.empty() || calculation.createdAtUtc.empty() || materials.empty())
+        calculation.author.empty() || calculation.createdAtUtc.empty())
         return Result<void>::failure(storeError(
-            "Calculation metadata and at least one exact material revision are required.",
+            "Calculation identity, project metadata, author and timestamp are required.",
             ErrorCode::MissingRequiredData));
 
     const auto input = canonicalizeJson(calculation.inputJson);
