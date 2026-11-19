@@ -69,7 +69,7 @@ int main(int argc, char** argv)
             first.contentHash, "test://datasheet", "dataset-3", "test-author",
             "2026-01-05T00:00:00Z"
         }));
-        assert(database.execute("UPDATE material_revisions SET payload_json='changed';") == false);
+        assert(!database.execute("UPDATE material_revisions SET payload_json='changed';"));
     }
 
     {
