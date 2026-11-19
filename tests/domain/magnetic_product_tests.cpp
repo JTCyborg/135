@@ -3,6 +3,7 @@
 #include "p135/domain/material_catalog.hpp"
 
 #include <cassert>
+#include <cmath>
 
 using namespace p135;
 using namespace p135::domain;
