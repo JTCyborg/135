@@ -5,6 +5,8 @@
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
 #include "p135/filter/synthesis.hpp"
+#include "p135/filter/harmonics.hpp"
+#include "p135/filter/analysis.hpp"
 #include "p135/filter/network.hpp"
 #include "p135/circuit/solver.hpp"
 
@@ -17,6 +19,7 @@
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QLabel>
@@ -39,6 +42,8 @@
 #include <cmath>
 #include <string>
 #include <filesystem>
+#include <complex>
+#include <optional>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -215,6 +220,66 @@ QWidget* MainWindow::createFilterPage()
     note->setWordWrap(true);
     note->setStyleSheet("color: #a66b00;");
     layout->addWidget(note);
+
+    auto* advanced = new QGroupBox(tr("Source impedance and harmonic spectrum"));
+    auto* advancedLayout = new QVBoxLayout(advanced);
+    auto* sourceForm = new QFormLayout;
+
+    sourceResistance_ = new QDoubleSpinBox;
+    sourceResistance_->setRange(0.0, 1000000.0);
+    sourceResistance_->setDecimals(6);
+    sourceResistance_->setValue(0.0);
+    sourceResistance_->setSuffix(tr(" Ω"));
+    sourceInductance_ = new QDoubleSpinBox;
+    sourceInductance_->setRange(0.0, 1000000.0);
+    sourceInductance_->setDecimals(6);
+    sourceInductance_->setValue(0.0);
+    sourceInductance_->setSuffix(tr(" mH"));
+    sourceForm->addRow(tr("Thevenin source resistance"), sourceResistance_);
+    sourceForm->addRow(tr("Thevenin source inductance"), sourceInductance_);
+    advancedLayout->addLayout(sourceForm);
+
+    auto* spectrumHelp = new QLabel(tr("Enter measured/calculated harmonic phase-A RMS voltage magnitudes. The fundamental is derived from nominal line voltage; add only non-fundamental orders here. Use Positive or Negative sequence. Zero sequence is not supported."));
+    spectrumHelp->setWordWrap(true);
+    advancedLayout->addWidget(spectrumHelp);
+
+    harmonicSpectrumTable_ = new QTableWidget(0, 4);
+    harmonicSpectrumTable_->setHorizontalHeaderLabels({
+        tr("Order"), tr("Sequence"), tr("RMS voltage (V)"), tr("Phase (°)")
+    });
+    harmonicSpectrumTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    harmonicSpectrumTable_->setMinimumHeight(120);
+    harmonicSpectrumTable_->setEditTriggers(QAbstractItemView::DoubleClicked |
+                                             QAbstractItemView::EditKeyPressed |
+                                             QAbstractItemView::AnyKeyPressed);
+    advancedLayout->addWidget(harmonicSpectrumTable_);
+
+    auto* spectrumButtons = new QHBoxLayout;
+    auto* addHarmonic = new QPushButton(tr("Add harmonic"));
+    auto* removeHarmonic = new QPushButton(tr("Remove selected"));
+    spectrumButtons->addWidget(addHarmonic);
+    spectrumButtons->addWidget(removeHarmonic);
+    spectrumButtons->addStretch();
+    advancedLayout->addLayout(spectrumButtons);
+    connect(addHarmonic, &QPushButton::clicked, this, [this] {
+        const int row = harmonicSpectrumTable_->rowCount();
+        harmonicSpectrumTable_->insertRow(row);
+        harmonicSpectrumTable_->setItem(row, 0, new QTableWidgetItem(QStringLiteral("5")));
+        harmonicSpectrumTable_->setItem(row, 1, new QTableWidgetItem(QStringLiteral("Negative")));
+        harmonicSpectrumTable_->setItem(row, 2, new QTableWidgetItem(QStringLiteral("0")));
+        harmonicSpectrumTable_->setItem(row, 3, new QTableWidgetItem(QStringLiteral("0")));
+    });
+    connect(removeHarmonic, &QPushButton::clicked, this, [this] {
+        const int row = harmonicSpectrumTable_->currentRow();
+        if (row >= 0)
+            harmonicSpectrumTable_->removeRow(row);
+    });
+
+    auto* sourceWarning = new QLabel(tr("Source impedance is deliberately unset by default. Enter values from a short-circuit study or measurement before running resonance and harmonic calculations; zero/zero leaves these analyses NOT_VERIFIED."));
+    sourceWarning->setWordWrap(true);
+    sourceWarning->setStyleSheet("color: #a66b00;");
+    advancedLayout->addWidget(sourceWarning);
+    layout->addWidget(advanced);
 
     auto* calculate = new QPushButton(tr("Synthesize LC branch"));
     connect(calculate, &QPushButton::clicked, this, [this] {
