@@ -114,16 +114,16 @@ int main(int argc, char** argv)
         }));
 
         const std::string calculationPayload =
-            "{\\"engineVersions\\":{\\"filter\\":\\"harmonics-v1\\",\\"thermal\\":\\"thermal-v1\\"},"
-            "\\"input\\":{\\"frequencyHz\\":50,\\"voltageV\\":400},"
-            "\\"result\\":{\\"status\\":\\"NOT_VERIFIED\\"}}";
+            "{\"engineVersions\":{\"filter\":\"harmonics-v1\",\"thermal\":\"thermal-v1\"},"
+            "\"input\":{\"frequencyHz\":50,\"voltageV\":400},"
+            "\"result\":{\"status\":\"NOT_VERIFIED\"}}";
         const auto calculationHash = sha256Hex(calculationPayload);
         assert(calculationHash);
         CalculationRecord calculation{
             "CALC-1", "PROJECT-1", "Integration test project", "shunt-passive-filter",
-            "{\\"frequencyHz\\":50,\\"voltageV\\":400}",
-            "{\\"status\\":\\"NOT_VERIFIED\\"}",
-            "{\\"filter\\":\\"harmonics-v1\\",\\"thermal\\":\\"thermal-v1\\"}",
+            "{\"frequencyHz\":50,\"voltageV\":400}",
+            "{\"status\":\"NOT_VERIFIED\"}",
+            "{\"filter\":\"harmonics-v1\",\"thermal\":\"thermal-v1\"}",
             calculationHash.value(), "test-author", "2026-01-06T00:00:01Z"
         };
         assert(store.recordCalculation(calculation, {
