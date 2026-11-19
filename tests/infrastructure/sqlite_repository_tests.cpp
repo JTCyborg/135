@@ -1,6 +1,7 @@
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
+#include "p135/application/material_revision_use_cases.hpp"
 
 #include <cassert>
 #include <filesystem>
@@ -8,6 +9,8 @@
 
 using namespace p135::infrastructure::sqlite;
 using p135::application::MaterialRevision;
+using p135::application::CompareMaterialRevisions;
+using p135::application::RestoreMaterialRevision;
 
 int main(int argc, char** argv)
 {
