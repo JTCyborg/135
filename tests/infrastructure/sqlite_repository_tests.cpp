@@ -133,6 +133,9 @@ int main(int argc, char** argv)
         assert(savedCalculation && savedCalculation.value());
         assert(savedCalculation.value()->contentHash == calculation.contentHash);
         assert(savedCalculation.value()->inputJson == calculation.inputJson);
+        const auto calculationLinks = store.calculationMaterials("CALC-1");
+        assert(calculationLinks && calculationLinks.value().size() == 1);
+        assert(calculationLinks.value().front().revisionId == "REV-2");
         assert(!store.findCalculation("MISSING-CALC").value());
 
         auto brokenCalculation = calculation;
