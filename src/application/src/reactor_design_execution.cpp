@@ -25,6 +25,12 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
     state.candidate.number = state.accepted.number + 1;
     state.candidate.verified = false;
 
+    // Invalidate every affected artifact up front. If execution stops halfway,
+    // downstream outputs from the accepted revision cannot masquerade as current.
+    for (const auto& stageId : plan.orderedStages) {
+        state.candidate.stages[stageId] = {ReactorStageStatus::NotVerified, {}, {}};
+    }
+
     ReactorDesignExecutionReport report;
     for (const auto& stageId : plan.orderedStages) {
         if (stageId.empty()) {
@@ -38,11 +44,10 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
         report.executedStages.push_back(stageId);
         if (!result) {
             state.failedStage = stageId;
-            state.candidate.stages[stageId] = {
-                ReactorStageStatus::NotVerified, {}, {}
-            };
             state.candidateInProgress = false;
             report.failedStage = stageId;
+            report.failureMessage = result.error().message;
+            report.failureCode = result.error().code;
             report.committed = false;
             return Result<ReactorDesignExecutionReport>::success(std::move(report));
         }
