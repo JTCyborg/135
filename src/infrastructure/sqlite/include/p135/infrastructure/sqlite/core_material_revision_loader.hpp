@@ -6,11 +6,19 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace p135::infrastructure::sqlite {
 
 /// Engineering quality/provenance information that is not part of the solver's
 /// CoreMaterial value object but must travel with the decoded immutable revision.
+struct CoreLossReferencePoint {
+    units::Frequency frequency;
+    units::FluxDensity peakFluxDensity;
+    units::CoreLossDensity specificLoss;
+    std::optional<units::TemperatureKelvin> measurementTemperature;
+};
+
 struct CoreMaterialRevisionSnapshot {
     domain::CoreMaterial material;
     std::string revisionId;
@@ -26,6 +34,14 @@ struct CoreMaterialRevisionSnapshot {
     std::string bhCurveCaptureMethod;
     std::string bhCurveNotes;
     std::string coreLossStatus;
+    std::vector<CoreLossReferencePoint> coreLossReferencePoints;
+    std::string coreLossSourceDocument;
+    std::string coreLossSourcePage;
+    std::string coreLossMeasurementMethod;
+    std::string coreLossSampleDirection;
+    std::string coreLossWaveform;
+    std::string coreLossTemperatureStatus;
+    std::string coreLossNotes;
     std::string designReleaseStatus;
     std::string notes;
     units::Frequency bhCurveFrequency;
