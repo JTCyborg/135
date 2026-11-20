@@ -70,6 +70,12 @@ add_executable(Project135ThermalSteadyStateTests
 target_link_libraries(Project135ThermalSteadyStateTests PRIVATE Project135::Thermal)
 add_test(NAME Project135ThermalSteadyStateTests COMMAND Project135ThermalSteadyStateTests)
 
+add_executable(Project135ThermalNetworkTests
+    thermal/thermal_network_tests.cpp
+)
+target_link_libraries(Project135ThermalNetworkTests PRIVATE Project135::Thermal)
+add_test(NAME Project135ThermalNetworkTests COMMAND Project135ThermalNetworkTests)
+
 add_executable(Project135ThermalFilterBridgeTests
     thermal/filter_bridge_tests.cpp
 )
