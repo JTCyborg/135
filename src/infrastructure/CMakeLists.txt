@@ -3,10 +3,13 @@
 find_package(unofficial-sqlite3 CONFIG QUIET)
 find_package(SQLite3 REQUIRED)
 
-if(TARGET SQLite::SQLite3)
-    set(P135_SQLITE_TARGET SQLite::SQLite3)
-elseif(TARGET unofficial::sqlite3::sqlite3)
+if(TARGET unofficial::sqlite3::sqlite3)
     set(P135_SQLITE_TARGET unofficial::sqlite3::sqlite3)
+elseif(TARGET SQLite3::SQLite3)
+    set(P135_SQLITE_TARGET SQLite3::SQLite3)
+elseif(TARGET SQLite::SQLite3)
+    # Compatibility fallback for older CMake FindSQLite3 modules.
+    set(P135_SQLITE_TARGET SQLite::SQLite3)
 else()
     message(FATAL_ERROR "SQLite3 was found, but no supported SQLite imported target is available")
 endif()
