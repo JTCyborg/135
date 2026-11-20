@@ -696,20 +696,22 @@ std::vector<SeedRecord> starterRecords()
                                       double resistivity, double density, double alpha,
                                       double iacs, const std::string& source,
                                       const std::string& propertyStatus) {
+        json material = {
+            {"id", id}, {"manufacturer", manufacturer}, {"grade", grade},
+            {"family", family}, {"resistivityAt20C_ohm_m", resistivity},
+            {"density_kg_per_m3", density},
+            {"conductivity_percent_IACS", iacs},
+            {"referenceTemperature_K", 293.15}
+        };
+        if (alpha > 0.0)
+            material["temperatureCoefficientAt20C_per_K"] = alpha;
         const json payload = {
-            {"schemaVersion", 1},
-            {"material", {
-                {"id", id}, {"manufacturer", manufacturer}, {"grade", grade},
-                {"family", family}, {"resistivityAt20C_ohm_m", resistivity},
-                {"density_kg_per_m3", density},
-                {"temperatureCoefficientAt20C_per_K", alpha},
-                {"conductivity_percent_IACS", iacs},
-                {"referenceTemperature_K", 293.15}
-            }},
+            {"schemaVersion", 1}, {"material", material},
             {"sourceDocuments", json::array({source})},
             {"dataQuality", {
                 {"sourceStatus", propertyStatus},
                 {"electricalPropertiesStatus", "MANUFACTURER_OR_STANDARD_PUBLISHED_AT_20C"},
+                {"temperatureCoefficientStatus", alpha > 0.0 ? "REFERENCE_VALUE" : "NOT_PUBLISHED_FOR_COMPOSITE"},
                 {"designReleaseStatus", "NOT_VERIFIED"},
                 {"notes", "Reference properties at 20 C. Actual values depend on temper, product form, processing and batch certification. Use exact supplier certificate and applicable product standard for released design."}
             }}
