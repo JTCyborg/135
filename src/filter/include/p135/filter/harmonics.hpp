@@ -4,6 +4,7 @@
 #include "p135/core/units.hpp"
 #include "p135/filter/analysis.hpp"
 
+#include <array>
 #include <complex>
 #include <cstdint>
 #include <string>
@@ -67,6 +68,8 @@ struct BranchHarmonicPoint {
     std::uint32_t order{};
     units::Frequency frequency;
     double capacitorCurrentRmsA{};
+    /// Complex winding-current phasors for phases A/B/C at this harmonic.
+    std::array<std::complex<double>, 3> phaseCurrentRms{};
 };
 
 struct HarmonicAnalysisResult {
