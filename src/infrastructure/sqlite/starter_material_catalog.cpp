@@ -742,7 +742,7 @@ std::vector<SeedRecord> starterRecords()
     records.push_back({"MAT-AL-1350-H0", "SEED-AL-1350-H0-R1", "conductor-material",
         aluminiumSource, "EN AW-1350 / EC grade aluminium H0",
         conductorMaterial("AL-1350-H0", "Inotal Aluminium", "EN AW-1350 H0",
-            "electrical conductor aluminium", 2.725e-8, 2703.0, 0.00403, 63.3,
+            "electrical conductor aluminium", 2.755e-8, 2703.0, 0.00403, 63.3,
             aluminiumSource, "EN_1715_2_TABLE")});
     records.push_back({"MAT-AL-1370-H0", "SEED-AL-1370-H0-R1", "conductor-material",
         aluminiumSource, "EN AW-1370 / EC grade aluminium H0",
