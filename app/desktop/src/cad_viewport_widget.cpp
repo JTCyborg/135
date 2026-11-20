@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QPaintEngine>
+#include <QPainter>
 #include <QPoint>
 #include <QResizeEvent>
 #include <QShowEvent>
@@ -39,10 +40,6 @@ public:
     {
         setMouseTracking(true);
         setFocusPolicy(Qt::StrongFocus);
-        setAttribute(Qt::WA_NativeWindow);
-        setAttribute(Qt::WA_PaintOnScreen);
-        setAttribute(Qt::WA_NoSystemBackground);
-        setAttribute(Qt::WA_OpaquePaintEvent);
         setMinimumSize(480, 320);
     }
 
@@ -52,11 +49,38 @@ public:
             view_->Remove();
     }
 
-    QPaintEngine* paintEngine() const override { return nullptr; }
+    QPaintEngine* paintEngine() const override
+    {
+        // A native paint surface is required only after OCCT has been initialized.
+        // Keep the empty CAD page on Qt's normal paint engine so it cannot expose
+        // pixels belonging to another QTabWidget page.
+        return view_.IsNull() ? QWidget::paintEngine() : nullptr;
+    }
 
+protected:
+    void paintEvent(QPaintEvent* event) override
+    {
+        if (!view_.IsNull())
+            return;
+        QPainter painter(this);
+        painter.fillRect(rect(), palette().brush(QPalette::Base));
+        QWidget::paintEvent(event);
+    }
+
+public:
     void setItems(const std::vector<p135::cad::AssemblyPresentationDisplayItem>& items)
     {
         items_ = items;
+        if (items_.empty())
+        {
+            if (!context_.IsNull())
+            {
+                context_->EraseAll(false);
+                context_->UpdateCurrentViewer();
+            }
+            update();
+            return;
+        }
         if (initialize())
             displayItems();
     }
@@ -218,6 +242,14 @@ private:
 
         try
         {
+            // Promote this widget to a native child only when actual geometry
+            // exists. An empty CAD workspace must remain an ordinary Qt widget.
+            setAttribute(Qt::WA_NativeWindow, true);
+            setAttribute(Qt::WA_PaintOnScreen, true);
+            setAttribute(Qt::WA_NoSystemBackground, true);
+            setAttribute(Qt::WA_OpaquePaintEvent, true);
+            const WId nativeHandle = winId();
+
             displayConnection_ = new Aspect_DisplayConnection();
             graphicDriver_ = new OpenGl_GraphicDriver(displayConnection_);
             viewer_ = new V3d_Viewer(graphicDriver_);
@@ -226,7 +258,7 @@ private:
 
             context_ = new AIS_InteractiveContext(viewer_);
             view_ = viewer_->CreateView();
-            window_ = new WNT_Window(reinterpret_cast<Aspect_Handle>(winId()));
+            window_ = new WNT_Window(reinterpret_cast<Aspect_Handle>(nativeHandle));
             view_->SetWindow(window_);
             if (!window_->IsMapped())
                 window_->Map();
