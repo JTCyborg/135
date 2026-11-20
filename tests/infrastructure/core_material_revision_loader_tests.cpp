@@ -145,6 +145,19 @@ int main(int argc, char** argv)
     assert(baosteel35A300.value().sampleDirection.find("Half horizontal and half vertical") !=
            std::string::npos);
 
+    const auto exactLossAnchor = findExactCoreLossReferencePoint(
+        baosteel35A300.value(), units::Frequency{50.0}, units::FluxDensity{1.0});
+    assert(exactLossAnchor.has_value());
+    assert(exactLossAnchor->specificLoss.si() == 1.14);
+    assert(!exactLossAnchor->measurementTemperature.has_value());
+    // A nearby operating point is deliberately not interpolated.
+    assert(!findExactCoreLossReferencePoint(
+        baosteel35A300.value(), units::Frequency{50.0},
+        units::FluxDensity{1.000001}).has_value());
+    assert(!findExactCoreLossReferencePoint(
+        baosteel35A300.value(), units::Frequency{55.0},
+        units::FluxDensity{1.0}).has_value());
+
     const auto baosteel50A800 = loadCoreLossReferenceDataset(
         store, "SEED-DATASET-BAOSTEEL-B50A800-AC-LOSS-R1");
     assert(baosteel50A800);
