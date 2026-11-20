@@ -22,6 +22,9 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
     if (!executor)
         return Result<ReactorDesignExecutionReport>::failure(
             executionError(ErrorCode::InvalidInput, "A reactor stage executor is required."));
+    if (plan.orderedStages.empty())
+        return Result<ReactorDesignExecutionReport>::failure(
+            executionError(ErrorCode::InvalidInput, "A recalculation plan must contain at least one stage."));
 
     std::vector<domain::DesignDependency> dependencies;
     dependencies.reserve(reactorDesignDependencyPairs().size());
@@ -67,7 +70,19 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
 
     ReactorDesignExecutionReport report;
     for (const auto& stageId : plan.orderedStages) {
-        auto result = executor(stageId);
+        Result<std::string> result = Result<std::string>::failure(
+            executionError(ErrorCode::InternalError, "Stage executor did not return a result."));
+        try {
+            result = executor(stageId);
+        } catch (const std::exception& exception) {
+            result = Result<std::string>::failure(
+                executionError(ErrorCode::InternalError,
+                    std::string("Stage executor threw an exception: ") + exception.what()));
+        } catch (...) {
+            result = Result<std::string>::failure(
+                executionError(ErrorCode::InternalError,
+                    "Stage executor threw a non-standard exception."));
+        }
         report.executedStages.push_back(stageId);
         if (!result) {
             state.failedStage = stageId;
