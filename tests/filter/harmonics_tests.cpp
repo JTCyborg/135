@@ -76,6 +76,29 @@ int main()
     }
     {
         auto request = validRequest();
+        request.loadCurrentInjections = {
+            {"VFD-1", 5, HarmonicSequence::Negative, {18.0, 4.0}},
+            {"VFD-2", 5, HarmonicSequence::Negative, {-3.0, 2.0}},
+            {"VFD-1", 7, HarmonicSequence::Positive, {7.0, -1.0}}
+        };
+        const auto loaded = analyzeHarmonics(request);
+        assert(loaded);
+        const auto baseline = analyzeHarmonics(validRequest());
+        assert(baseline);
+        assert(loaded.value().points[1].loadCurrentMagnitudeA > 0.0);
+        assert(loaded.value().branchStresses.front().totalRmsCurrentA !=
+               baseline.value().branchStresses.front().totalRmsCurrentA);
+        assert(loaded.value().points[0].loadCurrentMagnitudeA == 0.0);
+    }
+    {
+        auto request = validRequest();
+        request.loadCurrentInjections = {
+            {"VFD-1", 11, HarmonicSequence::Negative, {5.0, 0.0}}
+        };
+        assert(!analyzeHarmonics(request));
+    }
+    {
+        auto request = validRequest();
         request.sourceVoltageSpectrum.erase(request.sourceVoltageSpectrum.begin());
         assert(!analyzeHarmonics(request));
     }
