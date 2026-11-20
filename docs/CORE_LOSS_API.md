@@ -82,6 +82,10 @@ The test temperature is not stated. For this reason these values are intentional
 
 The current Baosteel HTML table is the numeric source of record. Its values differ slightly from the typical values printed in Q/BQB 480-2023 Appendix D; the import deliberately records the current official HTML values and does not blend the two tables.
 
+Baosteel also publishes a B35A300 0.35 mm PDF with plotted 50 Hz and 60 Hz loss-versus-induction curves. This is a graphical reference, not a tabulated dataset. It is not digitized into solver inputs: any point extraction would be approximate and would need to carry a separate digitization uncertainty/status. The PDF does not provide the missing temperature axis. No corresponding verified temperature grid for the exact B35A300/B50A800 grades was found in the manufacturer's published material reviewed for this import.
+
+The immutable dataset loader now rejects duplicate frequency/flux coordinates, non-positive explicitly supplied measurement temperatures, invalid specification limits, missing source/dataset revision identifiers, and incomplete quality/test provenance. This prevents ambiguous anchors from entering later calculations while preserving the exact source values.
+
 Sources:
 - Baosteel official product performance table: https://esales.baosteel.com/baosteel_products/eleSteel/en/products/products_04_2.jsp
 - Baosteel Q/BQB 480-2023 (test definitions and sampling): https://pdt.static.globalsources.com/IMAGES/PDT/SPEC/829/K1229503829.pdf
