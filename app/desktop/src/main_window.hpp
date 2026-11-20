@@ -80,6 +80,7 @@ private:
     QPlainTextEdit* coreBhCurve_{};
     QLineEdit* coreBhSource_{};
     QTableWidget* harmonicSpectrumTable_{};
+    QTableWidget* harmonicCurrentTable_{};
     QComboBox* capacitorComponent_{};
     QComboBox* resistorComponent_{};
     QDoubleSpinBox* capacitorThermalResistance_{};
