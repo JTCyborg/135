@@ -1761,7 +1761,7 @@ void MainWindow::calculateFilter()
             if (coreGapEffectiveAreaMm2_ && coreGapEffectiveAreaMm2_->value() > 0.0) {
                 const p135::units::Area commonEffectiveGapArea{
                     coreGapEffectiveAreaMm2_->value() * 1.0e-6};
-                request.geometry.limbGapEffectiveAreas.fill(commonEffectiveGapArea);
+                request.geometry.limbGapEffectiveAreas.fill(std::optional<p135::units::Area>{commonEffectiveGapArea});
             }
             for (std::size_t i = 0; i < 3; ++i) {
                 if (limbAreaOverrideEnabled_[i] && limbAreaOverrideEnabled_[i]->isChecked())
