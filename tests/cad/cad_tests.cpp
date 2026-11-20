@@ -1,4 +1,5 @@
 #include "p135/cad/three_limb_core.hpp"
+#include "p135/cad/assembly_presentation.hpp"
 
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepAlgoAPI_Common.hxx>
@@ -653,6 +654,51 @@ int main()
     assert(domain::validate(windingTooCloseToFlanges));
     assert(!p135::cad::buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
         windingTooCloseToFlanges));
+
+    // The presentation model provides stable semantic IDs over the OCCT
+    // assembly without claiming that envelope solids are detailed windings.
+    const auto presentationResult =
+        p135::cad::buildThreeLimbReactorPresentation(geometry);
+    assert(presentationResult);
+    auto presentation = presentationResult.value();
+    assert(p135::cad::validateAssemblyPresentation(presentation));
+    assert(presentation.id == "reactor");
+    assert(presentation.children.size() == 2);
+    assert(presentation.children[0].id == "core");
+    assert(presentation.children[0].children.size() == 7);
+    assert(presentation.children[1].id == "windings");
+    assert(presentation.children[1].children.size() == 3);
+    assert(presentation.children[1].children[0].children.size() == 2);
+    assert(presentation.children[1].children[0].children[1].representation ==
+           p135::cad::AssemblyGeometryRepresentation::WindingPackEnvelope);
+    assert(presentation.children[0].children[0].id == "core.limb.A");
+    assert(presentation.children[0].children[6].id == "core.yoke.bottom.BC");
+
+    const double originalPresentationVolume = volumeOf(presentation.shape);
+    assert(p135::cad::setAssemblyComponentVisibility(
+        presentation, "winding.L2.envelope", false) == false); // Unknown IDs are rejected.
+    assert(p135::cad::setAssemblyComponentVisibility(
+        presentation, "winding.L2", false) == false); // Phase groups are named phase.L2.
+    assert(p135::cad::setAssemblyComponentVisibility(
+        presentation, "winding.L2.envelope", false) == false);
+    assert(p135::cad::setAssemblyComponentVisibility(
+        presentation, "winding.L2.envelope", true) == false);
+    assert(p135::cad::setAssemblyComponentVisibility(
+        presentation, "bobbin.L2", false) == true);
+    assert(!presentation.children[1].children[1].children[0].visible);
+    assert(p135::cad::setAssemblyComponentTransparency(
+        presentation, "winding.L2.envelope", 0.35));
+    assert(std::abs(presentation.children[1].children[1].children[1].transparency - 0.35) < 1.0e-12);
+    assert(std::abs(volumeOf(presentation.shape) - originalPresentationVolume) < 1.0e-8);
+    assert(!p135::cad::setAssemblyComponentTransparency(
+        presentation, "bobbin.L2", 1.01));
+    assert(!p135::cad::setAssemblyComponentTransparency(
+        presentation, "not.present", 0.5));
+    assert(p135::cad::validateAssemblyPresentation(presentation));
+
+    auto duplicatePresentation = presentation;
+    duplicatePresentation.children[1].children[0].id = "core.limb.A";
+    assert(!p135::cad::validateAssemblyPresentation(duplicatePresentation));
 
     auto invalidBobbin = geometry.bobbins[0];
     invalidBobbin.flangeOuterWidth = units::Length{0.001};
