@@ -9,6 +9,7 @@
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
 #include "p135/application/reactor_design_inputs.hpp"
+#include "p135/application/reactor_design_graph.hpp"
 #include "p135/filter/synthesis.hpp"
 #include "p135/filter/harmonics.hpp"
 #include "p135/filter/analysis.hpp"
@@ -2508,6 +2509,47 @@ void MainWindow::markConstructionInputsChanged()
     if (auto* state = findChild<QLabel*>(QStringLiteral("constructionInputState"))) {
         state->setText(tr("CONSTRUCTION INPUTS CHANGED — previous design-input capture is stale. Run the project calculation to create a new linked snapshot."));
         state->setStyleSheet("color: #a66b00; font-weight: 600;");
+    }
+    const QString objectName = sender() ? sender()->objectName() : QString{};
+    QString stage;
+    if (objectName == QStringLiteral("construction_coreMaterial")) stage = QStringLiteral("core.material");
+    else if (objectName == QStringLiteral("construction_coreGeometry")) stage = QStringLiteral("core.geometry");
+    else if (objectName == QStringLiteral("construction_stackingFactor")) stage = QStringLiteral("core.stacking_factor");
+    else if (objectName == QStringLiteral("construction_conductorMaterial")) stage = QStringLiteral("winding.conductor_material");
+    else if (objectName == QStringLiteral("construction_conductorShape") ||
+             objectName == QStringLiteral("construction_conductorArea") ||
+             objectName == QStringLiteral("construction_conductorWidth") ||
+             objectName == QStringLiteral("construction_conductorThickness"))
+        stage = QStringLiteral("winding.conductor_geometry");
+    else if (objectName == QStringLiteral("construction_turns") ||
+             objectName == QStringLiteral("construction_turnsPerLayer") ||
+             objectName == QStringLiteral("construction_layers"))
+        stage = QStringLiteral("winding.turns");
+    else if (objectName == QStringLiteral("construction_insulationMaterial") ||
+             objectName == QStringLiteral("construction_turnInsulation") ||
+             objectName == QStringLiteral("construction_layerInsulation") ||
+             objectName == QStringLiteral("construction_mainInsulation"))
+        stage = QStringLiteral("winding.insulation");
+    else if (objectName == QStringLiteral("construction_cooling")) stage = QStringLiteral("thermal.cooling");
+    else if (objectName == QStringLiteral("construction_ambient")) stage = QStringLiteral("thermal.ambient");
+    else if (objectName == QStringLiteral("construction_maximumWindingTemperature"))
+        stage = QStringLiteral("design.verification");
+    else if (objectName == QStringLiteral("construction_bobbinMaterial") ||
+             objectName == QStringLiteral("construction_bobbinUsage") ||
+             objectName == QStringLiteral("construction_windingTechnology"))
+        stage = QStringLiteral("winding.geometry");
+    if (!stage.isEmpty()) {
+        const auto plan = p135::application::planReactorRecalculation({stage.toStdString()});
+        if (plan) {
+            QStringList stages;
+            for (const auto& id : plan.value().orderedStages)
+                stages.push_back(QString::fromStdString(id));
+            appendLog(tr("Dependency plan for %1: %2. Execution is not yet connected.")
+                .arg(stage, stages.join(QStringLiteral(" → "))));
+        } else {
+            appendLog(tr("Cannot build dependency plan: %1")
+                .arg(QString::fromStdString(plan.error().message)));
+        }
     }
     appendLog(tr("Construction input changed; previous captured design inputs are stale. Physical sizing has not been recalculated."));
 }
