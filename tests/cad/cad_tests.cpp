@@ -533,6 +533,40 @@ int main()
         40.0 * 110.0 * 115.0;
     assert(std::abs(volumeOf(bobbin.value()) - expectedBobbinVolume) < 1.0e-5);
 
+    // Assemble the seven core components with three physically positioned
+    // bobbins. The core limbs must sit inside the bobbin bores without
+    // volumetric intersection, and all ten solids remain independently addressable.
+    const auto reactorAssembly = p135::cad::buildThreeLimbReactorAssemblyShape(geometry);
+    assert(reactorAssembly);
+    assert(BRepCheck_Analyzer(reactorAssembly.value()).IsValid());
+    std::vector<TopoDS_Shape> assemblySolids;
+    for (TopExp_Explorer it(reactorAssembly.value(), TopAbs_SOLID); it.More(); it.Next())
+        assemblySolids.push_back(it.Current());
+    assert(assemblySolids.size() == 10);
+
+    Bnd_Box assemblyBounds;
+    BRepBndLib::Add(reactorAssembly.value(), assemblyBounds);
+    double rx0 = 0.0, ry0 = 0.0, rz0 = 0.0;
+    double rx1 = 0.0, ry1 = 0.0, rz1 = 0.0;
+    assemblyBounds.Get(rx0, ry0, rz0, rx1, ry1, rz1);
+    assert(std::abs(rx0 - (-5.0)) < 1.0e-6);
+    assert(std::abs(rx1 - 245.0) < 1.0e-6);
+    assert(std::abs(ry0) < 1.0e-6);
+    assert(std::abs(ry1 - 200.0) < 1.0e-6);
+    assert(std::abs(rz0 - (-20.0)) < 1.0e-6);
+    assert(std::abs(rz1 - 100.0) < 1.0e-6);
+
+    for (std::size_t i = 0; i < assemblySolids.size(); ++i) {
+        for (std::size_t j = i + 1; j < assemblySolids.size(); ++j) {
+            BRepAlgoAPI_Common common(assemblySolids[i], assemblySolids[j]);
+            common.Build();
+            assert(common.IsDone());
+            GProp_GProps commonVolume;
+            BRepGProp::VolumeProperties(common.Shape(), commonVolume);
+            assert(std::abs(commonVolume.Mass()) < 1.0e-8);
+        }
+    }
+
     auto invalidBobbin = geometry.bobbins[0];
     invalidBobbin.flangeOuterWidth = units::Length{0.001};
     assert(!p135::cad::buildBobbinShape(invalidBobbin));
