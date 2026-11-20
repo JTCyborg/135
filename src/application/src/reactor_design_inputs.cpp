@@ -51,6 +51,30 @@ Result<void> validate(const ReactorDesignInputs& inputs)
     if (inputs.ambientTemperatureK && inputs.maximumWindingTemperatureK &&
         *inputs.maximumWindingTemperatureK <= *inputs.ambientTemperatureK)
         return invalid("Maximum winding temperature must exceed ambient temperature.");
+
+    const auto validText = [](const auto& value) {
+        return !value || !value->empty();
+    };
+    if (!validText(inputs.coreGeometryFamily) || !validText(inputs.conductorShape) ||
+        !validText(inputs.windingTechnology) || !validText(inputs.coolingMethod) ||
+        !validText(inputs.bobbinMaterialId))
+        return invalid("Specified construction identifiers must not be empty.");
+
+    const auto validCount = [](const auto& value) { return !value || *value > 0; };
+    if (!validCount(inputs.turnsPerPhase) || !validCount(inputs.turnsPerLayer) ||
+        !validCount(inputs.windingLayers) || !validCount(inputs.parallelConductors))
+        return invalid("Specified winding counts must be greater than zero.");
+
+    const auto validPositive = [](const auto& value) {
+        return !value || (std::isfinite(*value) && *value > 0.0);
+    };
+    if (!validPositive(inputs.conductorCrossSectionM2) ||
+        !validPositive(inputs.conductorWidthM) ||
+        !validPositive(inputs.conductorThicknessM) ||
+        !validPositive(inputs.turnInsulationBuildM) ||
+        !validPositive(inputs.layerInsulationBuildM) ||
+        !validPositive(inputs.mainInsulationBuildM))
+        return invalid("Specified conductor and insulation dimensions must be finite and greater than zero.");
     return Result<void>::success();
 }
 
@@ -86,7 +110,23 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            !sameSelection(current.insulationMaterial, accepted.insulationMaterial) ||
            current.stackingFactor != accepted.stackingFactor ||
            current.ambientTemperatureK != accepted.ambientTemperatureK ||
-           current.maximumWindingTemperatureK != accepted.maximumWindingTemperatureK;
+           current.maximumWindingTemperatureK != accepted.maximumWindingTemperatureK ||
+           current.coreGeometryFamily != accepted.coreGeometryFamily ||
+           current.conductorShape != accepted.conductorShape ||
+           current.windingTechnology != accepted.windingTechnology ||
+           current.coolingMethod != accepted.coolingMethod ||
+           current.bobbinUsed != accepted.bobbinUsed ||
+           current.bobbinMaterialId != accepted.bobbinMaterialId ||
+           current.turnsPerPhase != accepted.turnsPerPhase ||
+           current.turnsPerLayer != accepted.turnsPerLayer ||
+           current.windingLayers != accepted.windingLayers ||
+           current.parallelConductors != accepted.parallelConductors ||
+           current.conductorCrossSectionM2 != accepted.conductorCrossSectionM2 ||
+           current.conductorWidthM != accepted.conductorWidthM ||
+           current.conductorThicknessM != accepted.conductorThicknessM ||
+           current.turnInsulationBuildM != accepted.turnInsulationBuildM ||
+           current.layerInsulationBuildM != accepted.layerInsulationBuildM ||
+           current.mainInsulationBuildM != accepted.mainInsulationBuildM;
 }
 
 } // namespace p135::application
