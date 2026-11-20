@@ -67,6 +67,14 @@ std::string requiredString(const json& object, const char* key)
     return result;
 }
 
+std::string provenanceString(const json& object, const char* key)
+{
+    if (!object.is_object() || !object.contains(key) || !object.at(key).is_string())
+        return "NOT_PROVIDED";
+    const auto value = object.at(key).get<std::string>();
+    return value.empty() ? "NOT_PROVIDED" : value;
+}
+
 } // namespace
 
 Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
@@ -168,13 +176,15 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.sourceReference = revision.sourceReference;
         snapshot.datasetRevision = revision.datasetRevision;
         snapshot.bhCurveStatus = requiredString(quality, "bhCurveStatus");
-        const auto& bhProvenance = root.at("bhCurveProvenance");
-        snapshot.bhCurveSourceDocument = requiredString(bhProvenance, "sourceDocument");
-        snapshot.bhCurveSourcePage = requiredString(bhProvenance, "sourcePage");
-        snapshot.bhCurveMeasurementMethod = requiredString(bhProvenance, "measurementMethod");
-        snapshot.bhCurveSampleDirection = requiredString(bhProvenance, "sampleDirection");
-        snapshot.bhCurveCaptureMethod = requiredString(bhProvenance, "captureMethod");
-        snapshot.bhCurveNotes = requiredString(bhProvenance, "notes");
+        const json bhProvenance = root.value("bhCurveProvenance", json::object());
+        // Older immutable revisions predate the provenance object. Keep them
+        // readable while explicitly exposing missing provenance to callers.
+        snapshot.bhCurveSourceDocument = provenanceString(bhProvenance, "sourceDocument");
+        snapshot.bhCurveSourcePage = provenanceString(bhProvenance, "sourcePage");
+        snapshot.bhCurveMeasurementMethod = provenanceString(bhProvenance, "measurementMethod");
+        snapshot.bhCurveSampleDirection = provenanceString(bhProvenance, "sampleDirection");
+        snapshot.bhCurveCaptureMethod = provenanceString(bhProvenance, "captureMethod");
+        snapshot.bhCurveNotes = provenanceString(bhProvenance, "notes");
         snapshot.coreLossStatus = requiredString(quality, "coreLossStatus");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
