@@ -143,10 +143,14 @@ Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
                 *snapshot.effectiveAreaM2 * 0.03)
                 throw std::invalid_argument(
                     "Ae, le and Ve are inconsistent beyond the 3% datasheet-rounding tolerance.");
-            const double factorFromGeometry = *snapshot.coreFactorPerM /
+            if (*snapshot.minimumAreaM2 > *snapshot.effectiveAreaM2)
+                throw std::invalid_argument("Minimum core area cannot exceed effective area.");
+            const double factorFromGeometry = *snapshot.effectivePathLengthM /
                 *snapshot.effectiveAreaM2;
-            if (!std::isfinite(factorFromGeometry) || factorFromGeometry <= 0.0)
-                throw std::invalid_argument("Core factor and effective area are inconsistent.");
+            if (std::abs(factorFromGeometry - *snapshot.coreFactorPerM) >
+                *snapshot.coreFactorPerM * 0.03)
+                throw std::invalid_argument(
+                    "Core factor does not agree with le/Ae beyond the 3% datasheet-rounding tolerance.");
         }
         return Result<CoreComponentGeometrySnapshot>::success(std::move(snapshot));
     } catch (const std::exception& exception) {
