@@ -24,6 +24,13 @@ struct CoreLossSpecificationLimit {
     std::string limitType;
 };
 
+struct CoreLossGraphSource {
+    std::string sourceDocument;
+    std::string sourceReference;
+    std::string graphScope;
+    std::string captureStatus;
+};
+
 struct CoreLossReferenceDataset {
     std::string revisionId;
     std::string materialId;
@@ -36,6 +43,7 @@ struct CoreLossReferenceDataset {
     units::Density density;
     double minimumStackingFactor{};
     std::vector<CoreLossReferencePoint> points;
+    std::vector<CoreLossGraphSource> supplementaryGraphSources;
     std::optional<CoreLossSpecificationLimit> specificationLimit;
     std::string qualityStatus;
     std::string sourceDocument;
