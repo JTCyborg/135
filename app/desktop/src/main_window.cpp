@@ -1476,7 +1476,8 @@ void MainWindow::loadCalculationInputs(int row)
     setNumber("targetReactivePower_var", targetReactivePower_, 1000.0);
     setNumber("qualityFactor", qualityFactor_);
     setNumber("sourceResistance_ohm", sourceResistance_);
-    setNumber("sourceInductance_H", sourceInductance_);
+    // Snapshot stores SI henries; the editor control is displayed in mH.
+    setNumber("sourceInductance_H", sourceInductance_, 0.001);
     setNumber("inductorSaturationCurrent_A_peak", inductorSaturationCurrent_);
     if (inductorSaturationSource_)
         inductorSaturationSource_->setText(
@@ -1590,6 +1591,26 @@ void MainWindow::loadCalculationInputs(int row)
             };
             for (int column = 0; column < values.size(); ++column)
                 harmonicSpectrumTable_->setItem(newRow, column, new QTableWidgetItem(values[column]));
+        }
+    }
+
+    // Restore nonlinear-load current injections independently from the voltage spectrum.
+    if (harmonicCurrentTable_) {
+        const auto injections = input.value(QStringLiteral("harmonicCurrentInjections")).toArray();
+        harmonicCurrentTable_->setRowCount(0);
+        for (const auto& entry : injections) {
+            const auto point = entry.toObject();
+            const int newRow = harmonicCurrentTable_->rowCount();
+            harmonicCurrentTable_->insertRow(newRow);
+            const QStringList values{
+                point.value(QStringLiteral("sourceId")).toString(),
+                QString::number(point.value(QStringLiteral("order")).toInt()),
+                point.value(QStringLiteral("sequence")).toString(),
+                QString::number(point.value(QStringLiteral("currentRms_A")).toDouble(), 'g', 12),
+                QString::number(point.value(QStringLiteral("phase_deg")).toDouble(), 'g', 12)
+            };
+            for (int column = 0; column < values.size(); ++column)
+                harmonicCurrentTable_->setItem(newRow, column, new QTableWidgetItem(values[column]));
         }
     }
 
@@ -2579,6 +2600,27 @@ void MainWindow::calculateFilter()
             }
         }
         inputSnapshot.insert(QStringLiteral("harmonicSpectrum"), spectrumSnapshot);
+
+        QJsonArray currentInjectionSnapshot;
+        if (harmonicCurrentTable_) {
+            for (int row = 0; row < harmonicCurrentTable_->rowCount(); ++row) {
+                const auto* sourceItem = harmonicCurrentTable_->item(row, 0);
+                const auto* orderItem = harmonicCurrentTable_->item(row, 1);
+                const auto* sequenceItem = harmonicCurrentTable_->item(row, 2);
+                const auto* magnitudeItem = harmonicCurrentTable_->item(row, 3);
+                const auto* phaseItem = harmonicCurrentTable_->item(row, 4);
+                if (!sourceItem || !orderItem || !sequenceItem || !magnitudeItem || !phaseItem)
+                    continue;
+                QJsonObject point;
+                point.insert(QStringLiteral("sourceId"), sourceItem->text());
+                point.insert(QStringLiteral("order"), orderItem->text().toUInt());
+                point.insert(QStringLiteral("sequence"), sequenceItem->text());
+                point.insert(QStringLiteral("currentRms_A"), magnitudeItem->text().toDouble());
+                point.insert(QStringLiteral("phase_deg"), phaseItem->text().toDouble());
+                currentInjectionSnapshot.append(point);
+            }
+        }
+        inputSnapshot.insert(QStringLiteral("harmonicCurrentInjections"), currentInjectionSnapshot);
 
         QJsonArray outputSnapshot;
         for (int row = 0; row < resultsTable_->rowCount(); ++row) {
