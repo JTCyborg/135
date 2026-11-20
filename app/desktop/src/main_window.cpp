@@ -1446,7 +1446,9 @@ QWidget* MainWindow::createFilterPage()
         int generatedField = 0;
         for (QWidget* widget : page->findChildren<QWidget*>()) {
             QString key = widget->objectName();
-            if (key.isEmpty() || key.startsWith(QStringLiteral("qt_"))) {
+            // Ignore Qt's private editor children; they are not independent inputs.
+            if (key.startsWith(QStringLiteral("qt_"))) continue;
+            if (key.isEmpty()) {
                 // Preserve every otherwise-unlabelled input in a deterministic traversal order.
                 if (qobject_cast<QDoubleSpinBox*>(widget) || qobject_cast<QSpinBox*>(widget) ||
                     qobject_cast<QComboBox*>(widget) || qobject_cast<QLineEdit*>(widget) ||
