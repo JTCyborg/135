@@ -22,7 +22,8 @@
 #include <QCheckBox>
 #include <QDoubleSpinBox>
 #include <QDir>
-#include <QDateTime>\n#include <QDate>
+#include <QDateTime>
+#include <QDate>
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <QSettings>
@@ -550,10 +551,12 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createCadPage(), tr("3D CAD"));
     tabs_->addTab(createMaterialsPage(), tr("Materials"));
     tabs_->addTab(createHistoryPage(), tr("Calculation history"));
-    if (auto* topology = findChild<ProductTopologyWidget*>(QStringLiteral("productTopologyDiagram"))) {
-        topology->setConnection(filterConnection_->currentText());
-        connect(filterConnection_, &QComboBox::currentTextChanged, topology,
-            [topology](const QString& value) { topology->setConnection(value); });
+    if (auto* topologyContainer = findChild<QWidget*>(QStringLiteral("productTopologyDiagram"))) {
+        if (auto* topology = dynamic_cast<ProductTopologyWidget*>(topologyContainer)) {
+            topology->setConnection(filterConnection_->currentText());
+            connect(filterConnection_, &QComboBox::currentTextChanged, topology,
+                [topology](const QString& value) { topology->setConnection(value); });
+        }
     }
     setCentralWidget(tabs_);
     connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
