@@ -113,85 +113,125 @@ int main()
     assert(std::abs(topAbXMax - 120.0) < 1.0e-6);
     assert(std::abs(topBcXMin - 120.0) < 1.0e-6);
 
-    // Verify the mating Butt-joint faces geometrically. OCCT Boolean Common
-    // on coincident coplanar faces is not a reliable way to obtain their area.
-    // Both faces must be planar, lie on y = 160 mm, and their projected X/Z
-    // overlap must be exactly 40 x 80 mm.
-    TopoDS_Shape limbASolid;
-    TopoDS_Shape topAbYokeSolid;
+    // Verify all eight Butt-joint interfaces geometrically. Each limb end
+    // face must mate with the corresponding yoke face over the full limb
+    // cross-section (limb width x stack depth).
+    const auto findPlanarFace = [](const TopoDS_Shape& solid, double planeY,
+                                   double x0, double x1, double z0, double z1) {
+        TopoDS_Face result;
+        for (TopExp_Explorer it(solid, TopAbs_FACE); it.More(); it.Next()) {
+            const auto face = TopoDS::Face(it.Current());
+            if (BRepAdaptor_Surface(face).GetType() != GeomAbs_Plane) continue;
+            Bnd_Box faceBounds;
+            BRepBndLib::Add(face, faceBounds);
+            double fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
+            double fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
+            faceBounds.Get(fx0, fy0, fz0, fx1, fy1, fz1);
+            constexpr double tolerance = 1.0e-6;
+            if (std::abs(fy0 - planeY) < tolerance &&
+                std::abs(fy1 - planeY) < tolerance &&
+                std::abs(fx0 - x0) < tolerance &&
+                std::abs(fx1 - x1) < tolerance &&
+                std::abs(fz0 - z0) < tolerance &&
+                std::abs(fz1 - z1) < tolerance) {
+                result = face;
+                break;
+            }
+        }
+        return result;
+    };
+
+    std::array<TopoDS_Shape, 3> limbSolids;
+    std::array<TopoDS_Shape, 4> yokeSolids;
     for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next()) {
         const auto& candidate = it.Current();
         Bnd_Box candidateBounds;
         BRepBndLib::Add(candidate, candidateBounds);
-        double cx0 = 0.0, cy0 = 0.0, cz0 = 0.0;
-        double cx1 = 0.0, cy1 = 0.0, cz1 = 0.0;
-        candidateBounds.Get(cx0, cy0, cz0, cx1, cy1, cz1);
-        if (std::abs(cx0 - 0.0) < 1.0e-6 && std::abs(cx1 - 40.0) < 1.0e-6 &&
-            std::abs(cy0 - 40.0) < 1.0e-6 && std::abs(cy1 - 160.0) < 1.0e-6)
-            limbASolid = candidate;
-        if (std::abs(cx0 - 0.0) < 1.0e-6 && std::abs(cx1 - 120.0) < 1.0e-6 &&
-            std::abs(cy0 - 160.0) < 1.0e-6 && std::abs(cy1 - 200.0) < 1.0e-6)
-            topAbYokeSolid = candidate;
+        double x0 = 0.0, y0 = 0.0, z0 = 0.0;
+        double x1 = 0.0, y1 = 0.0, z1 = 0.0;
+        candidateBounds.Get(x0, y0, z0, x1, y1, z1);
+        for (std::size_t limb = 0; limb < 3; ++limb) {
+            const std::array<double, 3> limbX0{0.0, 100.0, 200.0};
+            const std::array<double, 3> limbX1{40.0, 140.0, 240.0};
+            if (std::abs(x0 - limbX0[limb]) < 1.0e-6 &&
+                std::abs(x1 - limbX1[limb]) < 1.0e-6 &&
+                std::abs(y0 - 40.0) < 1.0e-6 &&
+                std::abs(y1 - 160.0) < 1.0e-6)
+                limbSolids[limb] = candidate;
+        }
+        for (std::size_t yoke = 0; yoke < 4; ++yoke) {
+            const bool isAb = (yoke % 2) == 0;
+            const bool isTop = yoke < 2;
+            const double expectedX0 = isAb ? 0.0 : 120.0;
+            const double expectedX1 = isAb ? 120.0 : 240.0;
+            const double expectedY0 = isTop ? 160.0 : 0.0;
+            const double expectedY1 = isTop ? 200.0 : 40.0;
+            if (std::abs(x0 - expectedX0) < 1.0e-6 &&
+                std::abs(x1 - expectedX1) < 1.0e-6 &&
+                std::abs(y0 - expectedY0) < 1.0e-6 &&
+                std::abs(y1 - expectedY1) < 1.0e-6)
+                yokeSolids[yoke] = candidate;
+        }
     }
-    assert(!limbASolid.IsNull());
-    assert(!topAbYokeSolid.IsNull());
+    for (const auto& limb : limbSolids) assert(!limb.IsNull());
+    for (const auto& yoke : yokeSolids) assert(!yoke.IsNull());
 
-    TopoDS_Face limbTopFace;
-    TopoDS_Face yokeBottomFace;
-    for (TopExp_Explorer it(limbASolid, TopAbs_FACE); it.More(); it.Next()) {
-        const auto face = TopoDS::Face(it.Current());
-        const BRepAdaptor_Surface surface(face);
-        if (surface.GetType() != GeomAbs_Plane) continue;
-        Bnd_Box faceBounds;
-        BRepBndLib::Add(face, faceBounds);
-        double fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
-        double fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
-        faceBounds.Get(fx0, fy0, fz0, fx1, fy1, fz1);
-        if (std::abs(fy0 - 160.0) < 1.0e-6 && std::abs(fy1 - 160.0) < 1.0e-6 &&
-            std::abs((fx1 - fx0) - 40.0) < 1.0e-6 &&
-            std::abs((fz1 - fz0) - 80.0) < 1.0e-6)
-            limbTopFace = face;
+    struct JointExpectation {
+        std::size_t limb;
+        std::size_t yoke;
+        double planeY;
+        double limbX0;
+        double limbX1;
+    };
+    const std::array<JointExpectation, 8> joints{{
+        {0, 0, 160.0, 0.0, 40.0},   // top AB -> limb A
+        {1, 0, 160.0, 100.0, 140.0},// top AB -> limb B
+        {1, 1, 160.0, 100.0, 140.0},// top BC -> limb B
+        {2, 1, 160.0, 200.0, 240.0},// top BC -> limb C
+        {0, 2, 40.0, 0.0, 40.0},    // bottom AB -> limb A
+        {1, 2, 40.0, 100.0, 140.0}, // bottom AB -> limb B
+        {1, 3, 40.0, 100.0, 140.0}, // bottom BC -> limb B
+        {2, 3, 40.0, 200.0, 240.0}  // bottom BC -> limb C
+    }};
+    for (const auto& joint : joints) {
+        const auto limbFace = findPlanarFace(
+            limbSolids[joint.limb], joint.planeY,
+            joint.limbX0, joint.limbX1, 0.0, 80.0);
+        const bool topYoke = joint.planeY > 100.0;
+        const double yokeX0 = (joint.yoke % 2) == 0 ? 0.0 : 120.0;
+        const double yokeX1 = (joint.yoke % 2) == 0 ? 120.0 : 240.0;
+        const auto yokeFace = findPlanarFace(
+            yokeSolids[joint.yoke], joint.planeY,
+            yokeX0, yokeX1, 0.0, 80.0);
+        assert(!limbFace.IsNull());
+        assert(!yokeFace.IsNull());
+
+        GProp_GProps limbFaceProperties;
+        GProp_GProps yokeFaceProperties;
+        BRepGProp::SurfaceProperties(limbFace, limbFaceProperties);
+        BRepGProp::SurfaceProperties(yokeFace, yokeFaceProperties);
+        assert(std::abs(limbFaceProperties.Mass() - 3200.0) < 1.0e-6);
+        const double expectedYokeArea = (yokeX1 - yokeX0) * 80.0;
+        assert(std::abs(yokeFaceProperties.Mass() - expectedYokeArea) < 1.0e-6);
+
+        Bnd_Box limbFaceBounds;
+        Bnd_Box yokeFaceBounds;
+        BRepBndLib::Add(limbFace, limbFaceBounds);
+        BRepBndLib::Add(yokeFace, yokeFaceBounds);
+        double lx0 = 0.0, ly0 = 0.0, lz0 = 0.0;
+        double lx1 = 0.0, ly1 = 0.0, lz1 = 0.0;
+        double yx0 = 0.0, yy0 = 0.0, yz0 = 0.0;
+        double yx1 = 0.0, yy1 = 0.0, yz1 = 0.0;
+        limbFaceBounds.Get(lx0, ly0, lz0, lx1, ly1, lz1);
+        yokeFaceBounds.Get(yx0, yy0, yz0, yx1, yy1, yz1);
+        assert(std::abs(ly0 - yy0) < 1.0e-6);
+        assert(std::abs(ly1 - yy1) < 1.0e-6);
+        const double overlapX = std::min(lx1, yx1) - std::max(lx0, yx0);
+        const double overlapZ = std::min(lz1, yz1) - std::max(lz0, yz0);
+        assert(std::abs(overlapX - 40.0) < 1.0e-6);
+        assert(std::abs(overlapZ - 80.0) < 1.0e-6);
+        (void)topYoke;
     }
-    for (TopExp_Explorer it(topAbYokeSolid, TopAbs_FACE); it.More(); it.Next()) {
-        const auto face = TopoDS::Face(it.Current());
-        const BRepAdaptor_Surface surface(face);
-        if (surface.GetType() != GeomAbs_Plane) continue;
-        Bnd_Box faceBounds;
-        BRepBndLib::Add(face, faceBounds);
-        double fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
-        double fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
-        faceBounds.Get(fx0, fy0, fz0, fx1, fy1, fz1);
-        if (std::abs(fy0 - 160.0) < 1.0e-6 && std::abs(fy1 - 160.0) < 1.0e-6 &&
-            std::abs(fx0 - 0.0) < 1.0e-6 && std::abs(fx1 - 120.0) < 1.0e-6 &&
-            std::abs((fz1 - fz0) - 80.0) < 1.0e-6)
-            yokeBottomFace = face;
-    }
-    assert(!limbTopFace.IsNull());
-    assert(!yokeBottomFace.IsNull());
-
-    GProp_GProps limbFaceProperties;
-    GProp_GProps yokeFaceProperties;
-    BRepGProp::SurfaceProperties(limbTopFace, limbFaceProperties);
-    BRepGProp::SurfaceProperties(yokeBottomFace, yokeFaceProperties);
-    assert(std::abs(limbFaceProperties.Mass() - 3200.0) < 1.0e-6);
-    assert(std::abs(yokeFaceProperties.Mass() - 9600.0) < 1.0e-6);
-
-    Bnd_Box limbFaceBounds;
-    Bnd_Box yokeFaceBounds;
-    BRepBndLib::Add(limbTopFace, limbFaceBounds);
-    BRepBndLib::Add(yokeBottomFace, yokeFaceBounds);
-    double lx0 = 0.0, ly0 = 0.0, lz0 = 0.0;
-    double lx1 = 0.0, ly1 = 0.0, lz1 = 0.0;
-    double yx0 = 0.0, yy0 = 0.0, yz0 = 0.0;
-    double yx1 = 0.0, yy1 = 0.0, yz1 = 0.0;
-    limbFaceBounds.Get(lx0, ly0, lz0, lx1, ly1, lz1);
-    yokeFaceBounds.Get(yx0, yy0, yz0, yx1, yy1, yz1);
-    assert(std::abs(ly0 - yy0) < 1.0e-6);
-    assert(std::abs(ly1 - yy1) < 1.0e-6);
-    const double overlapX = std::min(lx1, yx1) - std::max(lx0, yx0);
-    const double overlapZ = std::min(lz1, yz1) - std::max(lz0, yz0);
-    assert(std::abs(overlapX - 40.0) < 1.0e-6);
-    assert(std::abs(overlapZ - 80.0) < 1.0e-6);
 
     auto stepLapGeometry = geometry;
     stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
