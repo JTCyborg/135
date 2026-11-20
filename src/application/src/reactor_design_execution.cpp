@@ -41,10 +41,11 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
     bool firstStage = true;
     for (const auto& stageId : plan.orderedStages) {
         const auto it = std::find(graphOrder.value().begin(), graphOrder.value().end(), stageId);
-        if (stageId.empty() || it == graphOrder.value().end() || !seen.insert(stageId).second)
+        if (stageId.empty() || stageId.starts_with("input.") ||
+            it == graphOrder.value().end() || !seen.insert(stageId).second)
             return Result<ReactorDesignExecutionReport>::failure(
                 executionError(ErrorCode::InvalidInput,
-                    "Recalculation plan contains an empty, unknown or duplicate stage ID."));
+                    "Recalculation plan contains an input node, empty, unknown or duplicate stage ID."));
         const auto position = static_cast<std::size_t>(
             std::distance(graphOrder.value().begin(), it));
         if (!firstStage && position <= previousPosition)
@@ -61,21 +62,11 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
     state.candidate.number = state.accepted.number + 1;
     state.candidate.verified = false;
 
-    // Invalidate every affected artifact up front. If execution stops halfway,
-    // downstream outputs from the accepted revision cannot masquerade as current.
-    for (const auto& stageId : plan.orderedStages) {
+    for (const auto& stageId : plan.orderedStages)
         state.candidate.stages[stageId] = {ReactorStageStatus::NotVerified, {}, {}};
-    }
 
     ReactorDesignExecutionReport report;
     for (const auto& stageId : plan.orderedStages) {
-        if (stageId.empty()) {
-            state.candidateInProgress = false;
-            state.failedStage = stageId;
-            return Result<ReactorDesignExecutionReport>::failure(
-                executionError(ErrorCode::InvalidInput, "A recalculation stage ID is empty."));
-        }
-
         auto result = executor(stageId);
         report.executedStages.push_back(stageId);
         if (!result) {
@@ -95,8 +86,6 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
         };
     }
 
-    // No physical certification is inferred from adapter success. Until a
-    // dedicated verification model is connected, the revision stays unverified.
     state.candidate.verified = false;
     state.accepted = state.candidate;
     state.candidateInProgress = false;
