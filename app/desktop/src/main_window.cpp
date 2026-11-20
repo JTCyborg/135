@@ -1554,7 +1554,9 @@ QWidget* MainWindow::createResultsPage()
         tr("Yoke thickness top / bottom"),
         tr("Air gap per limb"),
         tr("Turns per phase"),
-        tr("Winding conductor cross-section")
+        tr("Winding conductor cross-section"),
+        tr("Minimum gross area product Ae×Aw"),
+        tr("Equivalent square area scale")
     };
     for (const auto& parameter : designParameters) {
         const int row = designTable->rowCount();
@@ -2727,6 +2729,21 @@ void MainWindow::calculateFilter()
                 });
                 if (estimate) {
                     const auto& value = estimate.value();
+                    if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
+                        for (int row = 0; row < table->rowCount(); ++row) {
+                            const auto* parameter = table->item(row, 0);
+                            if (!parameter) continue;
+                            if (parameter->text() == tr("Minimum gross area product Ae×Aw")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.minimumGrossAreaProductM4 * 1.0e12, 'g', 6)));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEAL LOWER BOUND")));
+                            } else if (parameter->text() == tr("Equivalent square area scale")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.equivalentSquareSideM * 1.0e3, 'g', 6) + tr(" mm")));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("REFERENCE ONLY")));
+                            }
+                        }
+                    }
                     output->setText(tr(
                         "IDEAL LOWER BOUND (fundamental current only)\n"
                         "Gross Ae×Aw ≥ %1 mm⁴\n"
