@@ -405,3 +405,15 @@ if(MSVC)
 else()
     target_compile_options(Project135RevisionBoundWindingElectrothermalTests PRIVATE -UNDEBUG)
 endif()
+
+
+add_executable(Project135ThreeLimbCoreLossTests
+    domain/three_limb_core_loss_tests.cpp
+)
+target_link_libraries(Project135ThreeLimbCoreLossTests PRIVATE Project135::Domain)
+add_test(NAME Project135ThreeLimbCoreLossTests COMMAND Project135ThreeLimbCoreLossTests)
+if(MSVC)
+    target_compile_options(Project135ThreeLimbCoreLossTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ThreeLimbCoreLossTests PRIVATE -UNDEBUG)
+endif()
