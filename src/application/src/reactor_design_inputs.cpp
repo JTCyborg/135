@@ -34,6 +34,10 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         !validSelection(inputs.insulationMaterial))
         return invalid("Selected material revision IDs must not be empty.");
 
+    if (inputs.coreYokeThicknessM &&
+        (!std::isfinite(*inputs.coreYokeThicknessM) || *inputs.coreYokeThicknessM <= 0.0))
+        return invalid("Core yoke thickness must be finite and greater than zero.");
+
     if (inputs.coreStackDepthM &&
         (!std::isfinite(*inputs.coreStackDepthM) || *inputs.coreStackDepthM <= 0.0))
         return invalid("Core stack depth must be finite and greater than zero.");
@@ -114,6 +118,7 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            !sameSelection(current.insulationMaterial, accepted.insulationMaterial) ||
            current.stackingFactor != accepted.stackingFactor ||
            current.coreStackDepthM != accepted.coreStackDepthM ||
+           current.coreYokeThicknessM != accepted.coreYokeThicknessM ||
            current.ambientTemperatureK != accepted.ambientTemperatureK ||
            current.maximumWindingTemperatureK != accepted.maximumWindingTemperatureK ||
            current.coreGeometryFamily != accepted.coreGeometryFamily ||
