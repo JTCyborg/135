@@ -51,6 +51,13 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
     for (std::size_t i = 0; i < g.limbCenterSpacings.size(); ++i) {
         if (!positive(g.limbCenterSpacings[i])) return invalid("Limb center spacings A-B, B-C and A-C are required.", "core.limbCenterSpacings[" + std::to_string(i) + "]");
     }
+    const auto dimensionsMatch = [](double actual, double expected) {
+        return std::abs(actual - expected) <= std::max(1.0e-9, std::abs(expected) * 1.0e-6);
+    };
+    if (!dimensionsMatch(g.yokeThicknesses[0].si(), g.yokeThicknesses[1].si()) ||
+        !dimensionsMatch(g.yokeThicknesses[2].si(), g.yokeThicknesses[3].si()))
+        return invalid("The two yoke halves on each horizontal level must have matching thickness for a planar middle-limb butt interface.",
+            "core.yokeThicknesses");
     const double expectedAc = g.limbCenterSpacings[0].si() + g.limbCenterSpacings[1].si();
     if (std::abs(g.limbCenterSpacings[2].si() - expectedAc) >
         std::max(1.0e-9, expectedAc * 1.0e-6))
@@ -62,9 +69,6 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
     // and center spacings must agree with those explicit dimensions.
     const double expectedWidth = g.limbWidths[0].si() + g.windowWidths[0].si() +
         g.limbWidths[1].si() + g.windowWidths[1].si() + g.limbWidths[2].si();
-    const auto dimensionsMatch = [](double actual, double expected) {
-        return std::abs(actual - expected) <= std::max(1.0e-9, std::abs(expected) * 1.0e-6);
-    };
     if (!dimensionsMatch(g.coreOverallWidth.si(), expectedWidth))
         return invalid("Overall core width must equal the three limb widths plus both clear window widths.", "core.coreOverallWidth");
 
