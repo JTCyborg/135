@@ -258,6 +258,27 @@ Result<void> validate(const ReactorPhysicalGeometry& g)
         if (!bobbin) return bobbin;
         const auto winding = validate(g.windingPacks[i]);
         if (!winding) return winding;
+
+        const auto& bobbinGeometry = g.bobbins[i];
+        const auto& windingGeometry = g.windingPacks[i];
+        if (bobbinGeometry.innerWidth.si() < g.core.limbWidths[i].si())
+            return invalid("Bobbin X opening must not be narrower than its core limb.", "bobbins[" + std::to_string(i) + "].innerWidth");
+        if (bobbinGeometry.innerHeight.si() < g.core.limbDepths[i].si())
+            return invalid("Bobbin Z opening must not be shallower than its core limb stack depth.", "bobbins[" + std::to_string(i) + "].innerHeight");
+
+        const std::size_t windowIndex = (i == 0) ? 0 : ((i == 2) ? 1 : 0);
+        const double availableAxialWindow = g.core.windowHeights[windowIndex].si();
+        if (bobbinGeometry.axialLength.si() > availableAxialWindow +
+            std::max(1.0e-9, availableAxialWindow * 1.0e-6))
+            return invalid("Bobbin axial length along Y must fit inside the corresponding core window height.",
+                "bobbins[" + std::to_string(i) + "].axialLength");
+
+        const double requiredWindingLength = windingGeometry.axialHeight.si() +
+            2.0 * windingGeometry.endClearance.si();
+        if (requiredWindingLength > bobbinGeometry.axialLength.si() +
+            std::max(1.0e-9, bobbinGeometry.axialLength.si() * 1.0e-6))
+            return invalid("Winding axial height plus both end clearances must fit inside the bobbin axial length.",
+                "windingPacks[" + std::to_string(i) + "].axialHeight");
     }
     return Result<void>::success();
 }
