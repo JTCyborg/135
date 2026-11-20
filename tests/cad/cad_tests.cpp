@@ -1,6 +1,9 @@
 #include "p135/cad/three_limb_core.hpp"
 
+#include <BRepAlgoAPI_Common.hxx>
 #include <BRepCheck_Analyzer.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
 #include <TopAbs_ShapeEnum.hxx>
@@ -105,6 +108,34 @@ int main()
     componentBounds[4].Get(topBcXMin, topBcYMin, topBcZMin, topBcXMax, topBcYMax, topBcZMax);
     assert(std::abs(topAbXMax - 120.0) < 1.0e-6);
     assert(std::abs(topBcXMin - 120.0) < 1.0e-6);
+
+    // Butt interfaces must share the complete limb end face, not overlap
+    // volumetrically or leave a gap. The top A interface is 40 x 80 mm.
+    TopoDS_Shape limbASolid;
+    TopoDS_Shape topAbYokeSolid;
+    for (TopExp_Explorer it(componentBounds[0].IsVoid() ? shape.value() : shape.value(), TopAbs_SOLID);
+         it.More(); it.Next()) {
+        const auto& candidate = it.Current();
+        Bnd_Box candidateBounds;
+        BRepBndLib::Add(candidate, candidateBounds);
+        Standard_Real cx0 = 0.0, cy0 = 0.0, cz0 = 0.0;
+        Standard_Real cx1 = 0.0, cy1 = 0.0, cz1 = 0.0;
+        candidateBounds.Get(cx0, cy0, cz0, cx1, cy1, cz1);
+        if (std::abs(cx0 - 0.0) < 1.0e-6 && std::abs(cx1 - 40.0) < 1.0e-6 &&
+            std::abs(cy0 - 40.0) < 1.0e-6 && std::abs(cy1 - 160.0) < 1.0e-6)
+            limbASolid = candidate;
+        if (std::abs(cx0 - 0.0) < 1.0e-6 && std::abs(cx1 - 120.0) < 1.0e-6 &&
+            std::abs(cy0 - 160.0) < 1.0e-6 && std::abs(cy1 - 200.0) < 1.0e-6)
+            topAbYokeSolid = candidate;
+    }
+    assert(!limbASolid.IsNull());
+    assert(!topAbYokeSolid.IsNull());
+    BRepAlgoAPI_Common buttContact(limbASolid, topAbYokeSolid);
+    buttContact.Build();
+    assert(buttContact.IsDone());
+    GProp_GProps contactProperties;
+    BRepGProp::SurfaceProperties(buttContact.Shape(), contactProperties);
+    assert(std::abs(contactProperties.Mass() - 3200.0) < 1.0e-6);
 
     auto stepLapGeometry = geometry;
     stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
