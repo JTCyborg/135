@@ -523,9 +523,9 @@ int main()
     assert(std::abs((by1 - by0) - 115.0) < 1.0e-6);
     assert(std::abs((bz1 - bz0) - 120.0) < 1.0e-6);
     const double expectedBobbinVolume =
-        50.0 * 115.0 * 120.0 +
+        42.0 * 115.0 * 112.0 +
         2.0 * (50.0 * 120.0 - 42.0 * 112.0) * 2.0 -
-        42.0 * 112.0 * 115.0;
+        40.0 * 110.0 * 115.0;
     assert(std::abs(volumeOf(bobbin.value()) - expectedBobbinVolume) < 1.0e-5);
 
     auto invalidBobbin = geometry.bobbins[0];
