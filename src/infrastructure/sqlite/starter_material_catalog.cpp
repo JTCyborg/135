@@ -271,7 +271,7 @@ std::vector<SeedRecord> starterRecords()
         {"material", {
             {"id", "TK-POWERCORE-M235-35A"}, {"manufacturer", "thyssenkrupp Electrical Steel"},
             {"grade", "powercore M235-35A"}, {"family", "non-grain-oriented electrical steel"},
-            {"standard", "DIN EN 10106"}, {"laminationThickness_m", 0.00035},
+            {"standard", grade == "940-100A" ? "Special mill grade" : "DIN EN 10106"}, {"laminationThickness_m", 0.00035},
             {"density_kg_per_m3", 7600.0},
             {"maximumSpecificCoreLoss_W_per_kg", {
                 {"50Hz_1p0T", 0.95}, {"50Hz_1p5T", 2.35}
