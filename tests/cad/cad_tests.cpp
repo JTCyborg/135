@@ -505,5 +505,31 @@ int main()
     auto invalidWindowStack = geometry;
     invalidWindowStack.core.windowWidths[0] = units::Length{0.05};
     assert(!p135::cad::buildThreeLimbCoreShape(invalidWindowStack));
+    // Build a measured hollow bobbin: tube plus two explicit end flanges.
+    const auto bobbin = p135::cad::buildBobbinShape(geometry.bobbins[0]);
+    assert(bobbin);
+    assert(!bobbin.value().IsNull());
+    assert(BRepCheck_Analyzer(bobbin.value()).IsValid());
+    std::size_t bobbinSolidCount = 0;
+    for (TopExp_Explorer it(bobbin.value(), TopAbs_SOLID); it.More(); it.Next())
+        ++bobbinSolidCount;
+    assert(bobbinSolidCount == 1);
+    Bnd_Box bobbinBounds;
+    BRepBndLib::Add(bobbin.value(), bobbinBounds);
+    double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+    double bx1 = 0.0, by1 = 0.0, bz1 = 0.0;
+    bobbinBounds.Get(bx0, by0, bz0, bx1, by1, bz1);
+    assert(std::abs((bx1 - bx0) - 50.0) < 1.0e-6);
+    assert(std::abs((by1 - by0) - 115.0) < 1.0e-6);
+    assert(std::abs((bz1 - bz0) - 120.0) < 1.0e-6);
+    const double expectedBobbinVolume =
+        50.0 * 115.0 * 120.0 +
+        2.0 * (50.0 * 120.0 - 42.0 * 112.0) * 2.0 -
+        42.0 * 112.0 * 115.0;
+    assert(std::abs(volumeOf(bobbin.value()) - expectedBobbinVolume) < 1.0e-5);
+
+    auto invalidBobbin = geometry.bobbins[0];
+    invalidBobbin.flangeOuterWidth = units::Length{0.001};
+    assert(!p135::cad::buildBobbinShape(invalidBobbin));
     return 0;
 }
