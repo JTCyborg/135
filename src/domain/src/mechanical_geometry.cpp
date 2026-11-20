@@ -266,8 +266,10 @@ Result<void> validate(const ReactorPhysicalGeometry& g)
         if (bobbinGeometry.innerHeight.si() < g.core.limbDepths[i].si())
             return invalid("Bobbin Z opening must not be shallower than its core limb stack depth.", "bobbins[" + std::to_string(i) + "].innerHeight");
 
-        const std::size_t windowIndex = (i == 0) ? 0 : ((i == 2) ? 1 : 0);
-        const double availableAxialWindow = g.core.windowHeights[windowIndex].si();
+        const double availableAxialWindow = (i == 0)
+            ? g.core.windowHeights[0].si()
+            : ((i == 2) ? g.core.windowHeights[1].si()
+                        : std::min(g.core.windowHeights[0].si(), g.core.windowHeights[1].si()));
         if (bobbinGeometry.axialLength.si() > availableAxialWindow +
             std::max(1.0e-9, availableAxialWindow * 1.0e-6))
             return invalid("Bobbin axial length along Y must fit inside the corresponding core window height.",
