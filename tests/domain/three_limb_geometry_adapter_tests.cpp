@@ -15,7 +15,7 @@ ThreeLimbCorePhysicalGeometry validCore()
     g.limbWidths = {units::Length{0.04}, units::Length{0.04}, units::Length{0.04}};
     g.limbDepths = {units::Length{0.08}, units::Length{0.08}, units::Length{0.08}};
     g.windowWidths = {units::Length{0.06}, units::Length{0.06}};
-    g.windowHeights = {units::Length{0.12}, units::Length{0.12}};
+    g.windowHeights = {units::Length{0.13}, units::Length{0.13}};
     g.yokeThicknesses = {
         units::Length{0.03}, units::Length{0.03},
         units::Length{0.04}, units::Length{0.04}
