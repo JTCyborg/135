@@ -956,6 +956,12 @@ QWidget* MainWindow::createProjectPage()
         snapshot.insert(QStringLiteral("fields"), fields);
         snapshot.insert(QStringLiteral("fieldLabels"), fieldLabels);
         snapshot.insert(QStringLiteral("fieldUnits"), fieldUnits);
+        QJsonObject inputAvailability;
+        inputAvailability.insert(QStringLiteral("voltageHarmonicSpectrum"),
+            harmonicSpectrumTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
+        inputAvailability.insert(QStringLiteral("loadCurrentHarmonicSpectrum"),
+            harmonicCurrentTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
+        snapshot.insert(QStringLiteral("inputAvailability"), inputAvailability);
         snapshot.insert(QStringLiteral("topologyPreview"),
             tr("Three-phase shunt branch: series-tuned R-L-C, termination Wye (Y)"));
 
@@ -1425,40 +1431,115 @@ QWidget* MainWindow::createFilterPage()
         QJsonObject fields;
         QJsonObject fieldLabels;
         QJsonObject fieldUnits;
-        const QHash<QString, QString> labels{
+        QHash<QString, QString> labels{
             {QStringLiteral("filterNominalVoltageV"), tr("Nominal line voltage")},
             {QStringLiteral("filterFundamentalFrequencyHz"), tr("Fundamental frequency")},
             {QStringLiteral("filterConnection"), tr("Branch connection")},
             {QStringLiteral("filterTargetReactivePowerKvar"), tr("Target reactive power")},
             {QStringLiteral("filterTuningHarmonicOrder"), tr("Tuning harmonic order")},
             {QStringLiteral("filterQualityFactor"), tr("Series-branch quality factor")},
+            {QStringLiteral("filterThermalAmbientTemperatureC"), tr("Thermal ambient temperature")},
+            {QStringLiteral("filterCapacitorRevision"), tr("Filter capacitor revision")},
+            {QStringLiteral("filterCapacitorToAmbientThermalResistanceKPerW"), tr("Capacitor-to-ambient thermal resistance")},
+            {QStringLiteral("filterCapacitorThermalEvidence"), tr("Capacitor thermal-resistance evidence")},
+            {QStringLiteral("filterDampingResistorRevision"), tr("Damping resistor revision")},
+            {QStringLiteral("filterResistorToAmbientThermalResistanceKPerW"), tr("Resistor-to-ambient thermal resistance")},
+            {QStringLiteral("filterResistorThermalEvidence"), tr("Resistor thermal-resistance evidence")},
+            {QStringLiteral("filterSourceTheveninResistanceOhm"), tr("Thevenin source resistance")},
+            {QStringLiteral("filterSourceTheveninInductanceMh"), tr("Thevenin source inductance")},
+            {QStringLiteral("filterInductorSaturationCurrentAPeak"), tr("Inductor saturation-current reference")},
+            {QStringLiteral("filterInductorSaturationEvidence"), tr("Inductor saturation-current evidence")},
+            {QStringLiteral("coreEffectiveAreaMm2"), tr("Core effective area Ae")},
+            {QStringLiteral("coreMeanMagneticPathMm"), tr("Mean magnetic path le")},
+            {QStringLiteral("coreTotalAirGapPerLimbMm"), tr("Total air gap per limb")},
+            {QStringLiteral("coreEffectiveGapAreaMm2"), tr("Effective gap area Ag,eff")},
+            {QStringLiteral("coreYokeEffectiveAreaMm2"), tr("Yoke effective area Ay")},
+            {QStringLiteral("coreYokeSegmentPathMm"), tr("Yoke segment path ly")},
+            {QStringLiteral("filterInductorTurnsPerPhase"), tr("Inductor turns per phase")},
+            {QStringLiteral("coreBhCurveEvidence"), tr("B-H curve source/evidence")},
+            {QStringLiteral("coreBhCurvePoints"), tr("Core material B-H curve points")},
             {QStringLiteral("filterVoltageHarmonics"), tr("Voltage-source harmonic spectrum")},
             {QStringLiteral("filterLoadCurrentHarmonics"), tr("Load-current harmonic injections")}
         };
-        const QHash<QString, QString> units{
+        QHash<QString, QString> units{
             {QStringLiteral("filterNominalVoltageV"), QStringLiteral("V line-to-line")},
             {QStringLiteral("filterFundamentalFrequencyHz"), QStringLiteral("Hz")},
             {QStringLiteral("filterTargetReactivePowerKvar"), QStringLiteral("kvar total")},
-            {QStringLiteral("filterTuningHarmonicOrder"), QStringLiteral("order")},
-            {QStringLiteral("filterQualityFactor"), QStringLiteral("dimensionless")}
+            {QStringLiteral("filterTuningHarmonicOrder"), QStringLiteral("harmonic order")},
+            {QStringLiteral("filterQualityFactor"), QStringLiteral("dimensionless")},
+            {QStringLiteral("filterThermalAmbientTemperatureC"), QStringLiteral("°C")},
+            {QStringLiteral("filterCapacitorToAmbientThermalResistanceKPerW"), QStringLiteral("K/W")},
+            {QStringLiteral("filterResistorToAmbientThermalResistanceKPerW"), QStringLiteral("K/W")},
+            {QStringLiteral("filterSourceTheveninResistanceOhm"), QStringLiteral("Ω")},
+            {QStringLiteral("filterSourceTheveninInductanceMh"), QStringLiteral("mH")},
+            {QStringLiteral("filterInductorSaturationCurrentAPeak"), QStringLiteral("A peak per phase")},
+            {QStringLiteral("coreEffectiveAreaMm2"), QStringLiteral("mm²")},
+            {QStringLiteral("coreMeanMagneticPathMm"), QStringLiteral("mm")},
+            {QStringLiteral("coreTotalAirGapPerLimbMm"), QStringLiteral("mm")},
+            {QStringLiteral("coreEffectiveGapAreaMm2"), QStringLiteral("mm²")},
+            {QStringLiteral("coreYokeEffectiveAreaMm2"), QStringLiteral("mm²")},
+            {QStringLiteral("coreYokeSegmentPathMm"), QStringLiteral("mm")},
+            {QStringLiteral("filterInductorTurnsPerPhase"), QStringLiteral("turns")},
+            {QStringLiteral("corePhaseADcBiasCurrentA"), QStringLiteral("A DC")},
+            {QStringLiteral("corePhaseBDcBiasCurrentA"), QStringLiteral("A DC")},
+            {QStringLiteral("corePhaseCDcBiasCurrentA"), QStringLiteral("A DC")},
+            {QStringLiteral("coreBhCurvePoints"), QStringLiteral("H: A/m; B: T")},
+            {QStringLiteral("filterVoltageHarmonics"), QStringLiteral("order; sequence; V RMS; degrees")},
+            {QStringLiteral("filterLoadCurrentHarmonics"), QStringLiteral("source ID; order; sequence; A RMS; degrees")}
         };
-        int generatedField = 0;
+        const auto addOverrideMetadata = [&labels, &units](const QString& key,
+                                                            const QString& label,
+                                                            const QString& unit) {
+            labels.insert(key + QStringLiteral("OverrideEnabled"), tr("%1 — override enabled").arg(label));
+            labels.insert(key + QStringLiteral("OverrideValue"), tr("%1 — override value").arg(label));
+            units.insert(key + QStringLiteral("OverrideEnabled"), QStringLiteral("boolean"));
+            units.insert(key + QStringLiteral("OverrideValue"), unit);
+        };
+        const std::array<QString, 3> limbMetadataNames{QStringLiteral("A"), QStringLiteral("B"), QStringLiteral("C")};
+        for (const auto& phase : limbMetadataNames) {
+            const QString prefix = QStringLiteral("coreLimb%1").arg(phase);
+            addOverrideMetadata(prefix + QStringLiteral("EffectiveAreaMm2"), tr("Limb %1 effective area").arg(phase), QStringLiteral("mm²"));
+            addOverrideMetadata(prefix + QStringLiteral("MeanPathMm"), tr("Limb %1 mean magnetic path").arg(phase), QStringLiteral("mm"));
+            addOverrideMetadata(prefix + QStringLiteral("AirGapMm"), tr("Limb %1 air gap").arg(phase), QStringLiteral("mm"));
+            addOverrideMetadata(prefix + QStringLiteral("EffectiveGapAreaMm2"), tr("Limb %1 effective gap area").arg(phase), QStringLiteral("mm²"));
+        }
+        const std::array<QString, 4> yokeMetadataNames{QStringLiteral("TopAB"), QStringLiteral("TopBC"), QStringLiteral("BottomAB"), QStringLiteral("BottomBC")};
+        for (const auto& segment : yokeMetadataNames) {
+            const QString prefix = QStringLiteral("coreYoke%1").arg(segment);
+            addOverrideMetadata(prefix + QStringLiteral("EffectiveAreaMm2"), tr("Yoke %1 effective area").arg(segment), QStringLiteral("mm²"));
+            addOverrideMetadata(prefix + QStringLiteral("SegmentPathMm"), tr("Yoke %1 segment path").arg(segment), QStringLiteral("mm"));
+        }
+        for (const auto& phase : limbMetadataNames)
+            labels.insert(QStringLiteral("corePhase%1DcBiasCurrentA").arg(phase),
+                tr("Phase %1 DC bias current").arg(phase));
+        for (const QString& key : {QStringLiteral("filterConnection"),
+                                   QStringLiteral("filterCapacitorRevision"),
+                                   QStringLiteral("filterDampingResistorRevision"),
+                                   QStringLiteral("coreBhCurveEvidence"),
+                                   QStringLiteral("filterInductorSaturationEvidence")})
+            units.insert(key, QStringLiteral("text / selection"));
+        int unnamedInputCount = 0;
+        QStringList unnamedInputTypes;
+        for (QWidget* widget : page->findChildren<QWidget*>()) {
+            const bool isInput = qobject_cast<QDoubleSpinBox*>(widget) ||
+                qobject_cast<QSpinBox*>(widget) || qobject_cast<QComboBox*>(widget) ||
+                qobject_cast<QLineEdit*>(widget) || qobject_cast<QCheckBox*>(widget) ||
+                qobject_cast<QPlainTextEdit*>(widget) || qobject_cast<QTableWidget*>(widget);
+            if (isInput && widget->objectName().isEmpty()) {
+                ++unnamedInputCount;
+                unnamedInputTypes.push_back(QString::fromLatin1(widget->metaObject()->className()));
+            }
+        }
+        if (unnamedInputCount != 0) {
+            QMessageBox::critical(this, tr("Filter fields are not identified"),
+                tr("%1 input controls have no stable field identifier. Confirmation was stopped to avoid losing or mislabelling data. Types: %2")
+                    .arg(unnamedInputCount).arg(unnamedInputTypes.join(QStringLiteral(", "))));
+            return;
+        }
         for (QWidget* widget : page->findChildren<QWidget*>()) {
             QString key = widget->objectName();
             // Ignore Qt's private editor children; they are not independent inputs.
             if (key.startsWith(QStringLiteral("qt_"))) continue;
-            if (key.isEmpty()) {
-                // Preserve every otherwise-unlabelled input in a deterministic traversal order.
-                if (qobject_cast<QDoubleSpinBox*>(widget) || qobject_cast<QSpinBox*>(widget) ||
-                    qobject_cast<QComboBox*>(widget) || qobject_cast<QLineEdit*>(widget) ||
-                    qobject_cast<QCheckBox*>(widget) || qobject_cast<QPlainTextEdit*>(widget) ||
-                    qobject_cast<QTableWidget*>(widget)) {
-                    key = QStringLiteral("filterAdditionalField_%1")
-                        .arg(++generatedField, 3, 10, QLatin1Char('0'));
-                } else {
-                    continue;
-                }
-            }
             bool captured = false;
             if (const auto* line = qobject_cast<const QLineEdit*>(widget)) {
                 fields.insert(key, line->text());
@@ -1495,8 +1576,16 @@ QWidget* MainWindow::createFilterPage()
                 fields.insert(key, rows);
                 captured = true;
             }
-            if (captured && labels.contains(key)) fieldLabels.insert(key, labels.value(key));
-            if (captured && units.contains(key)) fieldUnits.insert(key, units.value(key));
+            if (captured) {
+                if (!labels.contains(key) || !units.contains(key)) {
+                    QMessageBox::critical(this, tr("Filter field metadata is incomplete"),
+                        tr("The field '%1' has no engineering label or unit metadata. Confirmation was stopped.")
+                            .arg(key));
+                    return;
+                }
+                fieldLabels.insert(key, labels.value(key));
+                fieldUnits.insert(key, units.value(key));
+            }
         }
 
         QJsonObject snapshot;
