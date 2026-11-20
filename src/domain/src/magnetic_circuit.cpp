@@ -58,10 +58,12 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
     const double path = core.meanMagneticPath.si();
     const double gap = core.airGap.si();
     const double current = std::abs(request.current.si());
+    const double gapArea = request.gapEffectiveArea ? request.gapEffectiveArea->si() : area;
     if (request.turns == 0 || !std::isfinite(current) ||
         !std::isfinite(area) || area <= 0.0 ||
         !std::isfinite(path) || path <= 0.0 ||
-        !std::isfinite(gap) || gap < 0.0)
+        !std::isfinite(gap) || gap < 0.0 ||
+        !std::isfinite(gapArea) || gapArea < area)
         return fail(ErrorCode::InvalidInput,
                     "Turns, current and core geometry must be finite and physically valid.",
                     "request");
@@ -106,7 +108,7 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
     const auto requiredMmf = [&](double b) -> double {
         const auto point = interpolateBh(request.material, b);
         if (!point) return std::numeric_limits<double>::quiet_NaN();
-        return point->h * path + b * gap / vacuumPermeability;
+        return point->h * path + b * area * gap / (vacuumPermeability * gapArea);
     };
     const double maximumMmf = requiredMmf(bMax);
     if (!std::isfinite(maximumMmf) || mmf > maximumMmf)
@@ -137,10 +139,13 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
     result.coreFieldStrength = units::MagneticFieldStrength{operating->h};
     result.gapFieldStrength = units::MagneticFieldStrength{b / vacuumPermeability};
     result.flux = units::MagneticFlux{b * area};
+    result.physicalGapArea = units::Area{area};
+    result.effectiveGapArea = units::Area{gapArea};
+    result.gapFringingFactor = gapArea / area;
     result.withinBhCurveRange = true;
 
     const double reluctanceDifferential =
-        path * operating->slopeHPerT / area + gap / (vacuumPermeability * area);
+        path * operating->slopeHPerT / area + gap / (vacuumPermeability * gapArea);
     if (current > 0.0) {
         result.secantInductance = units::Inductance{
             static_cast<double>(request.turns) * b * area / current};
@@ -159,7 +164,7 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
         if (segmentSlope >= initialSlope / request.kneeSlopeRatio) {
             const double kneeB = bh[i - 1].fluxDensity.si();
             const double kneeH = bh[i - 1].fieldStrength.si();
-            const double kneeMmf = kneeH * path + kneeB * gap / vacuumPermeability;
+            const double kneeMmf = kneeH * path + kneeB * area * gap / (vacuumPermeability * gapArea);
             result.kneeFluxDensity = units::FluxDensity{kneeB};
             result.kneeCurrent = units::Current{
                 kneeMmf / static_cast<double>(request.turns)};
