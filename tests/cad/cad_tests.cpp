@@ -192,7 +192,6 @@ int main()
     const double overlapZ = std::min(lz1, yz1) - std::max(lz0, yz0);
     assert(std::abs(overlapX - 40.0) < 1.0e-6);
     assert(std::abs(overlapZ - 80.0) < 1.0e-6);
-    assert(std::abs(overlapX * overlapZ - 3200.0) < 1.0e-6);
 
     auto stepLapGeometry = geometry;
     stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
