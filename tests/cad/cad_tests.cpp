@@ -597,6 +597,10 @@ int main()
     invalidWindingEnvelope.radialBuild = units::Length{0.0};
     assert(!p135::cad::buildWindingPackEnvelopeShape(
         geometry.bobbins[0], invalidWindingEnvelope));
+    auto overlongWindingEnvelope = geometry.windingPacks[0];
+    overlongWindingEnvelope.axialHeight = units::Length{0.11};
+    assert(!p135::cad::buildWindingPackEnvelopeShape(
+        geometry.bobbins[0], overlongWindingEnvelope));
 
     auto invalidBobbin = geometry.bobbins[0];
     invalidBobbin.flangeOuterWidth = units::Length{0.001};
