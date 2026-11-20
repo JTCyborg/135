@@ -67,8 +67,10 @@ int main(int argc, char** argv)
     // They must not be silently converted into solver-ready core materials.
     const auto incompleteSteel =
         loadCoreMaterialRevision(store, "SEED-TK-M235-35A-R1");
-    assert(!incompleteSteel);
-    assert(incompleteSteel.error().code == ErrorCode::InvalidInput);
+    assert(incompleteSteel);
+    assert(incompleteSteel.value().material.bhCurve.empty());
+    assert(incompleteSteel.value().bhCurveStatus == "NOT_PUBLISHED_IN_IMPORTED_DATASET");
+    assert(incompleteSteel.value().designReleaseStatus == "NOT_VERIFIED");
 
     // The Kobe Steel table contains measured DC initial-magnetization data,
     // not an AC B-H loop or core-loss model. Preserve exactly that distinction.
