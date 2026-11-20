@@ -4,8 +4,8 @@
 
 namespace p135::application {
 
-/// Explicit assumptions for a first-pass, idealized reactor area-product bound.
-/// All quantities use SI units. This is not a geometry or thermal solver.
+/// Explicit assumptions for a first-pass idealized reactor sizing model.
+/// SI units throughout. This does not select a catalog core or verify thermal design.
 struct IdealReactorSizingRequest {
     double inductanceH{};
     double peakCurrentA{};
@@ -14,6 +14,8 @@ struct IdealReactorSizingRequest {
     double allowableCurrentDensityApm2{};
     double windowUtilization{};
     double stackingFactor{};
+    /// Chosen gross window area / gross core cross-section ratio Aw/Ae.
+    double windowToCoreAreaRatio{};
 };
 
 struct IdealReactorSizingResult {
@@ -25,11 +27,18 @@ struct IdealReactorSizingResult {
     double assumedAllowableCurrentDensityApm2{};
     double assumedWindowUtilization{};
     double assumedStackingFactor{};
+    double assumedWindowToCoreAreaRatio{};
+    double estimatedGrossCoreAreaM2{};
+    double estimatedEffectiveCoreAreaM2{};
+    double estimatedWindowAreaM2{};
+    std::uint64_t idealMinimumTurns{};
+    double idealTotalAirGapM{};
 };
 
-/// Computes Ae*Aw >= L*Ipeak*Irms/(Bpeak*J*Ku), corrected for stacking factor.
-/// The result is only a lower bound: it does not select a core, turns, gap,
-/// winding layout, losses, insulation, temperature rise, or standards compliance.
+/// Computes an ideal area-product bound, splits Ae/Aw using the explicit Aw/Ae
+/// ratio, then estimates N >= L*Ipk/(Bmax*Aecore) and g = mu0*N^2*Aecore/L.
+/// The gap estimate assumes all reluctance is in one ideal gap; it excludes
+/// core reluctance, fringing, leakage, winding build, losses and standards checks.
 [[nodiscard]] Result<IdealReactorSizingResult> calculateIdealReactorAreaProduct(
     const IdealReactorSizingRequest& request);
 
