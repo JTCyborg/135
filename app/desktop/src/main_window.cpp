@@ -2519,7 +2519,8 @@ void MainWindow::markConstructionInputsChanged()
     else if (objectName == QStringLiteral("construction_conductorShape") ||
              objectName == QStringLiteral("construction_conductorArea") ||
              objectName == QStringLiteral("construction_conductorWidth") ||
-             objectName == QStringLiteral("construction_conductorThickness"))
+             objectName == QStringLiteral("construction_conductorThickness") ||
+             objectName == QStringLiteral("construction_parallelConductors"))
         stage = QStringLiteral("input.winding.conductor_geometry");
     else if (objectName == QStringLiteral("construction_turns") ||
              objectName == QStringLiteral("construction_turnsPerLayer") ||
@@ -2534,9 +2535,10 @@ void MainWindow::markConstructionInputsChanged()
     else if (objectName == QStringLiteral("construction_ambient")) stage = QStringLiteral("input.thermal.ambient");
     else if (objectName == QStringLiteral("construction_maximumWindingTemperature"))
         stage = QStringLiteral("input.thermal.maximum_winding_temperature");
+    else if (objectName == QStringLiteral("construction_windingTechnology"))
+        stage = QStringLiteral("input.winding.technology");
     else if (objectName == QStringLiteral("construction_bobbinMaterial") ||
-             objectName == QStringLiteral("construction_bobbinUsage") ||
-             objectName == QStringLiteral("construction_windingTechnology"))
+             objectName == QStringLiteral("construction_bobbinUsage"))
         stage = QStringLiteral("input.winding.bobbin");
     if (!stage.isEmpty()) {
         const auto plan = p135::application::planReactorRecalculation({stage.toStdString()});
