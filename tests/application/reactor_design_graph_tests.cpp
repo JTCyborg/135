@@ -9,7 +9,7 @@ using namespace p135::application;
 
 int main()
 {
-    const auto corePlan = planReactorRecalculation({"core.material"});
+    const auto corePlan = planReactorRecalculation({"input.core.material"});
     assert(corePlan);
     const auto& core = corePlan.value().orderedStages;
     const auto position = [&core](const std::string& id) {
@@ -24,7 +24,7 @@ int main()
     assert(position("thermal.steady_state") < position("design.verification"));
     assert(std::find(core.begin(), core.end(), "winding.resistance") == core.end());
 
-    const auto windingPlan = planReactorRecalculation({"winding.conductor_material"});
+    const auto windingPlan = planReactorRecalculation({"input.winding.conductor_material"});
     assert(windingPlan);
     const auto& winding = windingPlan.value().orderedStages;
     assert(std::find(winding.begin(), winding.end(), "winding.resistance") != winding.end());
@@ -32,7 +32,7 @@ int main()
     assert(std::find(winding.begin(), winding.end(), "thermal.steady_state") != winding.end());
     assert(std::find(winding.begin(), winding.end(), "core.magnetic_properties") == winding.end());
 
-    const auto thermalPlan = planReactorRecalculation({"thermal.ambient"});
+    const auto thermalPlan = planReactorRecalculation({"input.thermal.ambient"});
     assert(thermalPlan);
     assert(thermalPlan.value().orderedStages.size() == 1);
     assert(thermalPlan.value().orderedStages[0] == "thermal.steady_state");
