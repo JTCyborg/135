@@ -4,6 +4,7 @@
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepCheck_Analyzer.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
 #include <BRepGProp.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <TopoDS_Compound.hxx>
@@ -253,6 +254,73 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
             "OCCT failed to create a topologically valid core assembly compound.", "core");
     return Result<TopoDS_Shape>::success(compound);
+}
+
+
+Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
+    const domain::ReactorPhysicalGeometry& geometry)
+{
+    const auto validation = domain::validate(geometry);
+    if (!validation) return Result<TopoDS_Shape>::failure(validation.error());
+
+    const auto core = buildThreeLimbCoreShape(geometry);
+    if (!core) return Result<TopoDS_Shape>::failure(core.error());
+
+    const auto& g = geometry.core;
+    const double limbA = g.limbWidths[0].si();
+    const double limbB = g.limbWidths[1].si();
+    const double windowAB = g.windowWidths[0].si();
+    const double windowBC = g.windowWidths[1].si();
+    const double centerA = 0.5 * limbA;
+    const double centerB = centerA + 0.5 * limbA + windowAB + 0.5 * limbB;
+    const double centerC = centerB + 0.5 * limbB + windowBC + 0.5 * g.limbWidths[2].si();
+    const std::array<double, 3> limbCentersX{centerA, centerB, centerC};
+
+    const double bottomYoke = 0.5 *
+        (g.yokeThicknesses[2].si() + g.yokeThicknesses[3].si());
+    const std::array<double, 3> windowHeights{
+        g.windowHeights[0].si(),
+        std::min(g.windowHeights[0].si(), g.windowHeights[1].si()),
+        g.windowHeights[1].si()
+    };
+
+    BRep_Builder builder;
+    TopoDS_Compound assembly;
+    builder.MakeCompound(assembly);
+    builder.Add(assembly, core.value());
+
+    for (std::size_t i = 0; i < geometry.bobbins.size(); ++i) {
+        const auto bobbin = buildBobbinShape(geometry.bobbins[i]);
+        if (!bobbin) return Result<TopoDS_Shape>::failure(bobbin.error());
+
+        const double bobbinLength = geometry.bobbins[i].axialLength.si();
+        const double y = bottomYoke + 0.5 * (windowHeights[i] - bobbinLength);
+        const double z = 0.5 * g.limbDepths[i].si();
+
+        gp_Trsf placement;
+        placement.SetTranslation(gp_Vec(
+            limbCentersX[i] * 1000.0,
+            y * 1000.0,
+            z * 1000.0));
+        BRepBuilderAPI_Transform located(bobbin.value(), placement, true);
+        if (!located.IsDone() || located.Shape().IsNull())
+            return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                "OCCT failed to position a bobbin on its core limb.",
+                "bobbins[" + std::to_string(i) + "].placement");
+        builder.Add(assembly, located.Shape());
+    }
+
+    if (assembly.IsNull() || !BRepCheck_Analyzer(assembly).IsValid())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to create a valid core-and-bobbin reactor assembly.",
+            "assembly");
+    std::size_t solids = 0;
+    for (TopExp_Explorer it(assembly, TopAbs_SOLID); it.More(); it.Next()) ++solids;
+    if (solids != 10)
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "The reactor assembly must retain seven core components and three bobbin solids.",
+            "assembly");
+    return Result<TopoDS_Shape>::success(assembly);
 }
 
 } // namespace p135::cad
