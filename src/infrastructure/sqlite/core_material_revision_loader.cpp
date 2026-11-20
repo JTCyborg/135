@@ -113,9 +113,12 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
 
         const auto& sourceMaterial = root.at("material");
         domain::CoreMaterial material;
-        material.id = requiredString(sourceMaterial, "id");
-        if (material.id != revision.materialId)
-            throw std::invalid_argument("Payload material ID does not match revision identity.");
+        const std::string sourceMaterialId = requiredString(sourceMaterial, "id");
+        // The catalogue's stable identity (MAT-...) is intentionally distinct
+        // from the manufacturer's grade/product identifier stored in payload.
+        // Use the immutable revision identity in the domain model and preserve
+        // the source identifier separately for traceability.
+        material.id = revision.materialId;
         material.manufacturer = requiredString(sourceMaterial, "manufacturer");
         material.grade = requiredString(sourceMaterial, "grade");
         material.family = parseFamily(requiredString(sourceMaterial, "family"));
@@ -160,6 +163,7 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         CoreMaterialRevisionSnapshot snapshot;
         snapshot.material = std::move(material);
         snapshot.revisionId = revision.revisionId;
+        snapshot.sourceMaterialId = sourceMaterialId;
         snapshot.contentHash = revision.contentHash;
         snapshot.sourceReference = revision.sourceReference;
         snapshot.datasetRevision = revision.datasetRevision;
