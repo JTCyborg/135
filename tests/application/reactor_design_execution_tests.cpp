@@ -39,7 +39,10 @@ int main()
     assert(!state.candidate.verified);
     assert(state.candidate.stages.at("core.magnetic_properties").status ==
            ReactorStageStatus::NotVerified);
-    assert(!state.candidate.stages.contains("magnetic.operating_point"));
+    assert(state.candidate.stages.at("magnetic.operating_point").status ==
+           ReactorStageStatus::NotVerified);
+    assert(failed.value().failureCode == ErrorCode::NonConvergence);
+    assert(failed.value().failureMessage == "magnetic solver did not converge");
     assert(!state.candidateInProgress);
 
     const auto success = executeReactorDesignPlan(
