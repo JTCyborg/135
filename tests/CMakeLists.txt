@@ -301,3 +301,21 @@ if(MSVC)
 else()
     target_compile_options(Project135CoreMaterialRevisionLoaderTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135RevisionBoundPhysicalFilterMagneticTests
+    infrastructure/revision_bound_physical_filter_magnetic_tests.cpp
+)
+target_link_libraries(Project135RevisionBoundPhysicalFilterMagneticTests PRIVATE
+    Project135::InfrastructureSqlite
+)
+add_test(
+    NAME Project135RevisionBoundPhysicalFilterMagneticTests
+    COMMAND Project135RevisionBoundPhysicalFilterMagneticTests
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql
+)
+if(MSVC)
+    target_compile_options(Project135RevisionBoundPhysicalFilterMagneticTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135RevisionBoundPhysicalFilterMagneticTests PRIVATE -UNDEBUG)
+endif()
