@@ -13,6 +13,7 @@
 
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_Shape.hxx>
+#include <AIS_SelectionScheme.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_Handle.hxx>
 #include <Graphic3d_GraphicDriver.hxx>
@@ -66,9 +67,9 @@ public:
         const auto found = presentations_.find(id);
         if (found == presentations_.end()) return false;
         if (visible)
-            context_->Display(found->second, Standard_False);
+            context_->Display(found->second, false);
         else
-            context_->Erase(found->second, Standard_False);
+            context_->Erase(found->second, false);
         context_->UpdateCurrentViewer();
         return true;
     }
@@ -80,7 +81,7 @@ public:
         const auto found = presentations_.find(id);
         if (found == presentations_.end()) return false;
         found->second->SetTransparency(transparency);
-        context_->Redisplay(found->second, Standard_False);
+        context_->Redisplay(found->second, false);
         context_->UpdateCurrentViewer();
         return true;
     }
@@ -88,7 +89,7 @@ public:
     void fitAll()
     {
         if (view_.IsNull() || items_.empty()) return;
-        view_->FitAll(0.01, Standard_True);
+        view_->FitAll(0.01, true);
         view_->ZFitAll();
         view_->Redraw();
     }
@@ -116,7 +117,7 @@ protected:
         if (event->button() == Qt::MiddleButton && !items_.empty())
         {
             panStartPosition_ = lastMousePosition_;
-            view_->Pan(0, 0, 1.0, Standard_True);
+            view_->Pan(0, 0, 1.0, true);
             panning_ = true;
             event->accept();
             return;
@@ -142,13 +143,13 @@ protected:
         if (panning_ && (event->buttons() & Qt::MiddleButton))
         {
             view_->Pan(position.x() - panStartPosition_.x(),
-                       panStartPosition_.y() - position.y(), 1.0, Standard_False);
+                       panStartPosition_.y() - position.y(), 1.0, false);
             event->accept();
             return;
         }
         if (!context_.IsNull())
         {
-            context_->MoveTo(position.x(), height() - position.y(), view_, Standard_True);
+            context_->MoveTo(position.x(), height() - position.y(), view_, true);
             event->accept();
             return;
         }
@@ -163,8 +164,8 @@ protected:
             if (!moved_ && !context_.IsNull())
             {
                 const QPoint position = event->position().toPoint();
-                context_->MoveTo(position.x(), height() - position.y(), view_, Standard_True);
-                context_->Select(Standard_True);
+                context_->MoveTo(position.x(), height() - position.y(), view_, true);
+                context_->SelectDetected(AIS_SelectionScheme_Replace);
             }
             event->accept();
             return;
@@ -186,7 +187,7 @@ protected:
             return;
         }
         const double factor = event->angleDelta().y() >= 0 ? 1.12 : 1.0 / 1.12;
-        view_->SetZoom(factor, Standard_True);
+        view_->SetZoom(factor, true);
         view_->Redraw();
         event->accept();
     }
@@ -225,7 +226,7 @@ private:
 
             context_ = new AIS_InteractiveContext(viewer_);
             view_ = viewer_->CreateView();
-            window_ = new WNT_Window(static_cast<Aspect_Handle>(winId()));
+            window_ = new WNT_Window(reinterpret_cast<Aspect_Handle>(winId()));
             view_->SetWindow(window_);
             if (!window_->IsMapped())
                 window_->Map();
@@ -252,7 +253,7 @@ private:
     {
         if (context_.IsNull() || view_.IsNull()) return;
 
-        context_->EraseAll(Standard_False);
+        context_->EraseAll(false);
         presentations_.clear();
         for (const auto& item : items_)
         {
@@ -260,7 +261,7 @@ private:
             Handle(AIS_Shape) presentation = new AIS_Shape(item.shape);
             if (item.transparency > 0.0)
                 presentation->SetTransparency(item.transparency);
-            context_->Display(presentation, Standard_False);
+            context_->Display(presentation, false);
             presentations_.emplace(item.id, presentation);
         }
         context_->UpdateCurrentViewer();
