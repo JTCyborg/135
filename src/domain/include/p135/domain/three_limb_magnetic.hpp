@@ -84,6 +84,7 @@ struct ThreeLimbMagneticCycleSamplingResult {
     std::size_t samplesUsed{};
     double relativePeakChange{};
     bool converged{false};
+    bool withinBhCurveRange{true};
 };
 
 /// Samples one fundamental cycle with all supplied harmonics superposed in time
