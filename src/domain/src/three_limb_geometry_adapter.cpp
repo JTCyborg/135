@@ -22,6 +22,26 @@ Result<ThreeLimbMagneticGeometry> invalid(std::string message, std::string field
 
 } // namespace
 
+Result<units::Area> calculateLaminatedLimbEffectiveArea(
+    units::Length limbWidth, units::Length stackDepth, double stackingFactor)
+{
+    if (!std::isfinite(limbWidth.si()) || limbWidth.si() <= 0.0)
+        return Result<units::Area>::failure(invalid(
+            "Limb width must be finite and greater than zero.", "limbWidth").error());
+    if (!std::isfinite(stackDepth.si()) || stackDepth.si() <= 0.0)
+        return Result<units::Area>::failure(invalid(
+            "Core stack depth must be finite and greater than zero.", "stackDepth").error());
+    if (!std::isfinite(stackingFactor) || stackingFactor <= 0.0 || stackingFactor > 1.0)
+        return Result<units::Area>::failure(invalid(
+            "Stacking factor must be finite and in the interval (0, 1].", "stackingFactor").error());
+
+    const double effectiveArea = limbWidth.si() * stackDepth.si() * stackingFactor;
+    if (!std::isfinite(effectiveArea) || effectiveArea <= 0.0)
+        return Result<units::Area>::failure(invalid(
+            "Calculated laminated limb area is not finite and positive.", "effectiveArea").error());
+    return Result<units::Area>::success(units::Area{effectiveArea});
+}
+
 Result<ThreeLimbMagneticGeometry> buildThreeLimbMagneticGeometry(
     const ThreeLimbCorePhysicalGeometry& physical,
     double stackingFactor)
