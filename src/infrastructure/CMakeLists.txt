@@ -24,6 +24,7 @@ add_library(Project135InfrastructureSqlite
     sqlite/core_material_revision_loader.cpp
     sqlite/conductor_material_revision_loader.cpp
     sqlite/revision_bound_winding_copper_loss.cpp
+    sqlite/revision_bound_winding_electrothermal.cpp
     sqlite/revision_bound_physical_filter_magnetic.cpp
     sqlite/starter_material_catalog.cpp
 )
@@ -34,7 +35,7 @@ target_include_directories(Project135InfrastructureSqlite
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sqlite/include>
 )
 target_link_libraries(Project135InfrastructureSqlite
-    PUBLIC Project135::Core Project135::Application ${P135_SQLITE_TARGET}
+    PUBLIC Project135::Core Project135::Application Project135::Thermal ${P135_SQLITE_TARGET}
     PRIVATE OpenSSL::Crypto nlohmann_json::nlohmann_json
 )
 target_compile_features(Project135InfrastructureSqlite PUBLIC cxx_std_20)
