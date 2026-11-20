@@ -601,7 +601,7 @@ std::vector<SeedRecord> starterRecords()
                 {"id", id}, {"manufacturer", "TDK Electronics"},
                 {"orderingCode", orderingCode}, {"coreShape", shape},
                 {"ferriteMaterial", material}, {"coreType", "PQ ferrite core"},
-                {"inductanceFactor_AL_nH_per_turn_squared", alValue * 1.0e-9},
+                {"inductanceFactor_AL_nH_per_turn_squared", alValue},
                 {"AL_tolerance_fraction", { -0.20, 0.30 }},
                 {"airGap", "ungapped"},
                 {"turnsSquaredForInductance", "L = AL * N^2"},
