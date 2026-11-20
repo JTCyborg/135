@@ -82,6 +82,19 @@ int main()
     };
     assert(validate(stepLap));
 
+    auto unorderedStepLap = stepLap;
+    std::swap(unorderedStepLap.core.joints[0].stepLapPackets[0],
+              unorderedStepLap.core.joints[0].stepLapPackets[1]);
+    assert(!validate(unorderedStepLap));
+
+    auto mismatchedStepLapDepth = stepLap;
+    mismatchedStepLapDepth.core.yokeDepths[0] = units::Length{0.07};
+    assert(!validate(mismatchedStepLapDepth));
+
+    auto excessiveStepLapOverlap = stepLap;
+    excessiveStepLapOverlap.core.joints[0].stepLapPackets[0].overlapIntoLimb = units::Length{0.13};
+    assert(!validate(excessiveStepLapOverlap));
+
     auto nonAlternatingStepLap = stepLap;
     nonAlternatingStepLap.core.joints[0].stepLapPackets[1].direction = StepLapPacketDirection::LimbIntoYoke;
     assert(!validate(nonAlternatingStepLap));
