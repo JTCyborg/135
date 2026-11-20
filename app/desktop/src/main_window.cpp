@@ -2709,6 +2709,17 @@ void MainWindow::calculateFilter()
     // copper loss, core loss, geometry, insulation and temperature remain outside
     // this lower-bound estimate and are never represented as verified.
     if (auto* output = findChild<QLabel*>(QStringLiteral("idealSizingResult"))) {
+        if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
+            for (int row = 0; row < table->rowCount(); ++row) {
+                const auto* parameter = table->item(row, 0);
+                if (!parameter) continue;
+                if (parameter->text() == tr("Minimum gross area product Ae×Aw") ||
+                    parameter->text() == tr("Equivalent square area scale")) {
+                    table->setItem(row, 1, new QTableWidgetItem(tr("NOT CALCULATED")));
+                    table->setItem(row, 3, new QTableWidgetItem(tr("NOT_VERIFIED")));
+                }
+            }
+        }
         auto* bmax = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Bmax"));
         auto* density = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_J"));
         auto* utilization = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ku"));
