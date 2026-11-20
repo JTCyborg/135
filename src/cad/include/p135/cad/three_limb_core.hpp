@@ -12,6 +12,12 @@ namespace p135::cad {
 [[nodiscard]] Result<TopoDS_Shape> buildBobbinShape(
     const domain::BobbinPhysicalGeometry& geometry);
 
+// Builds a reactor assembly compound containing the seven core components
+// and three positioned bobbin solids. Bobbins are centred on their limbs in X/Z
+// and centred within the corresponding clear window along Y.
+[[nodiscard]] Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
+    const domain::ReactorPhysicalGeometry& geometry);
+
 // Builds a seven-component B-Rep compound (three limbs and four yoke segments)
 // from explicit physical dimensions. The returned shape is not a fused single
 // solid; assembly identity is retained for the later BOM/assembly stage.
