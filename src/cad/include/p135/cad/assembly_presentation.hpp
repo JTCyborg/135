@@ -1,0 +1,58 @@
+#pragma once
+
+#include "p135/cad/three_limb_core.hpp"
+
+#include <TopoDS_Shape.hxx>
+
+#include <string>
+#include <vector>
+
+namespace p135::cad {
+
+// Geometry detail is explicit so the UI cannot present envelopes or simplified
+// segments as detailed, manufacturing-ready laminations/conductors.
+enum class AssemblyGeometryRepresentation {
+    PhysicalSolid,
+    SimplifiedCoreSegment,
+    WindingPackEnvelope
+};
+
+enum class AssemblyComponentKind {
+    Assembly,
+    CoreGroup,
+    CoreSegment,
+    WindingGroup,
+    PhaseGroup,
+    Bobbin,
+    WindingEnvelope
+};
+
+struct AssemblyPresentationNode {
+    std::string id;                 // Stable machine identity; never translated.
+    std::string displayName;        // Localizable UI label.
+    AssemblyComponentKind kind{AssemblyComponentKind::Assembly};
+    AssemblyGeometryRepresentation representation{AssemblyGeometryRepresentation::PhysicalSolid};
+    TopoDS_Shape shape;             // Null for logical grouping nodes.
+    bool visible{true};
+    double transparency{0.0};      // 0 = opaque, 1 = fully transparent.
+    std::vector<AssemblyPresentationNode> children;
+};
+
+// Creates a semantic tree over the existing OCCT assembly builder output.
+// The current core segments and winding envelopes are deliberately marked as
+// simplified/envelope geometry, not as detailed lamination or conductor solids.
+[[nodiscard]] Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
+    const domain::ReactorPhysicalGeometry& geometry);
+
+[[nodiscard]] Result<void> validateAssemblyPresentation(
+    const AssemblyPresentationNode& root);
+
+// Returns false when the stable component ID is not present.
+[[nodiscard]] bool setAssemblyComponentVisibility(
+    AssemblyPresentationNode& root, const std::string& componentId, bool visible);
+
+// Transparency is a presentation-only value in [0, 1]; it never modifies B-Rep.
+[[nodiscard]] Result<void> setAssemblyComponentTransparency(
+    AssemblyPresentationNode& root, const std::string& componentId, double transparency);
+
+} // namespace p135::cad
