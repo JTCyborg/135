@@ -129,7 +129,7 @@ std::vector<SeedRecord> starterRecords()
             {"coreLossStatus", "MANUFACTURER_TYPICAL_VALUES"},
             {"designReleaseStatus", "NOT_VERIFIED"},
             {"notes", "Use the loss points only at their stated frequency, peak flux density and temperature. Do not extrapolate them as a validated loss model."}
-        }}
+        }},
         {"bhCurveProvenance", {
             {"sourceDocument", "TDK FAL0619-M"},
             {"sourcePage", "NOT_STATED_IN_IMPORTED_REFERENCE"},
