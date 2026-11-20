@@ -33,7 +33,7 @@ struct CoreLossEquation {
 };
 
 /// Evaluates only inside the published equation domain. No extrapolation.
-[[nodiscard]] Result<units::CoreLossDensity> evaluateCoreLossEquation(
+[[nodiscard]] Result<units::VolumetricCoreLossDensity> evaluateCoreLossEquation(
     const CoreLossEquation& equation,
     units::Frequency frequency,
     units::FluxDensity peakFluxDensity);
