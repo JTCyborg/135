@@ -7,6 +7,11 @@
 
 namespace p135::cad {
 
+// Builds one hollow bobbin solid with two explicitly dimensioned end flanges.
+// The local datum is centred in X/Z; the axial interval is Y=[0, axialLength].
+[[nodiscard]] Result<TopoDS_Shape> buildBobbinShape(
+    const domain::BobbinPhysicalGeometry& geometry);
+
 // Builds a seven-component B-Rep compound (three limbs and four yoke segments)
 // from explicit physical dimensions. The returned shape is not a fused single
 // solid; assembly identity is retained for the later BOM/assembly stage.
