@@ -10,6 +10,13 @@
 
 namespace p135::infrastructure::sqlite {
 
+struct CoreLossReferencePoint {
+    units::Frequency frequency;
+    units::FluxDensity peakFluxDensity;
+    units::CoreLossDensity specificLoss;
+    std::optional<units::TemperatureKelvin> measurementTemperature;
+};
+
 struct CoreLossSpecificationLimit {
     units::Frequency frequency;
     units::FluxDensity peakFluxDensity;
@@ -42,13 +49,6 @@ struct CoreLossReferenceDataset {
 
 /// Engineering quality/provenance information that is not part of the solver's
 /// CoreMaterial value object but must travel with the decoded immutable revision.
-struct CoreLossReferencePoint {
-    units::Frequency frequency;
-    units::FluxDensity peakFluxDensity;
-    units::CoreLossDensity specificLoss;
-    std::optional<units::TemperatureKelvin> measurementTemperature;
-};
-
 struct CoreMaterialRevisionSnapshot {
     domain::CoreMaterial material;
     std::string revisionId;
