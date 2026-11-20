@@ -396,6 +396,14 @@ std::vector<SeedRecord> starterRecords()
     };
 
     return {
+        {"MAT-DUPONT-KAPTON-HN-25UM", "SEED-DUPONT-KAPTON-HN25-R1", "insulation-material",
+         "https://www.dupont.com/content/dam/dupont/amer/us/en/ei-transformation/public/documents/en/EI-10206-Kapton-HN-Data-Sheet.pdf",
+         "DuPont Kapton HN datasheet EI-10206 (7/24); nominal 25 µm film",
+         kaptonHn25},
+        {"COMP-3M-SCOTCH-27", "SEED-3M-SCOTCH27-R1", "insulation-material",
+         "https://multimedia.3m.com/mws/media/1117261O/3m-scotch-27-glass-cloth-electrical-tape-data-sheet.pdf",
+         "3M Scotch 27 manufacturer datasheet; 7 mil glass cloth electrical tape",
+         tape3m27},
         {"MAT-TDK-N87", "SEED-TDK-N87-R1", "core-material",
          "https://www.tdk-electronics.tdk.com/download/187238/990c299b916e9f3eb7e44ad563b7f0b9/pdf-n87.pdf",
          "TDK N87 datasheet 2023-02; dynamic curve FAL0599-4 digitized approximately", n87},
