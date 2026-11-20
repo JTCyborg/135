@@ -1328,6 +1328,106 @@ std::vector<SeedRecord> starterRecords()
         });
     }
 
+
+    // Three-phase EI laminated core stock. Dimensions are transcribed from
+    // Bright Steels' manufacturer/stockist 3PH EI schedules. Stack depth is
+    // intentionally not fixed: Ae is therefore not fabricated from a nominal
+    // package. The supplier lists 0.50 mm 50C400 non-oriented and 0.35 mm M6
+    // grain-oriented options; exact mill certificates remain order-specific.
+    const std::string threePhaseEiSource =
+        "https://www.brightsteel.com.au/files/2b%29%203Ph%20EI%20%20Lamination%2011-4-18.pdf";
+    const std::string threePhaseEiShortSource =
+        "https://www.brightsteel.com.au/files/2e%29%203Ph%20EI%20Metric%20Short%20Lamination%2011-4-18.pdf";
+    const std::string threePhaseEiLongSource =
+        "https://www.brightsteel.com.au/files/2d%29%203Ph%20EI%20LENGTHENED%20Lamination%2011-4-18.pdf";
+    struct ThreePhaseEiSize {
+        const char* code;
+        double columnMm;
+        double overallHeightMm;
+        double overallWidthMm;
+        double windowHeightMm;
+        double windowWidthMm;
+        double holePitchMm;
+        double holeDiameterMm;
+        int holeCount;
+        double hMm;
+        double nMm;
+        double weightGramsPer10mm;
+        const char* family;
+        const char* source;
+    };
+    const std::vector<ThreePhaseEiSize> threePhaseEiSizes{
+        {"EI-80-80",16,80,80,16,48,64,4.5,4,16,16,450,"standard",threePhaseEiSource.c_str()},
+        {"EI-100-100",20,100,100,20,60,80,5.5,4,20,20,580,"standard",threePhaseEiSource.c_str()},
+        {"EI-125-125",25,125,125,25,75,100,5.5,6,25,25,905,"standard",threePhaseEiSource.c_str()},
+        {"EI-150-150",30,150,150,30,60,120,8.5,6,30,30,1300,"standard",threePhaseEiSource.c_str()},
+        {"EI-200-200",40,200,200,40,120,160,11,6,40,40,2450,"standard",threePhaseEiSource.c_str()},
+        {"EI-250-250",50,250,250,50,150,200,11.5,6,50,50,3800,"standard",threePhaseEiSource.c_str()},
+        {"EI-300-300",60,300,300,60,180,240,13,6,60,60,5450,"standard",threePhaseEiSource.c_str()},
+        {"EI-350-350",70,350,350,70,210,280,14,6,70,70,7400,"standard",threePhaseEiSource.c_str()},
+        {"EI-400-400",80,400,400,80,240,320,14.5,6,80,80,9660,"standard",threePhaseEiSource.c_str()},
+        {"EI-500-500",100,500,500,100,300,400,16,6,100,100,14714,"standard",threePhaseEiSource.c_str()},
+        {"EI-200-180",40,200,180,40,100,160,10,6,40,40,2130,"metric-short",threePhaseEiShortSource.c_str()},
+        {"EI-250-225",50,250,225,50,125,200,10,6,50,50,3325,"metric-short",threePhaseEiShortSource.c_str()},
+        {"EI-300-270",60,300,270,60,150,240,12,6,60,60,4790,"metric-short",threePhaseEiShortSource.c_str()},
+        {"EI-350-315",70,350,315,70,175,280,13,6,70,70,6520,"metric-short",threePhaseEiShortSource.c_str()},
+        {"EI-400-360",80,400,360,80,200,320,13,6,80,80,8520,"metric-short",threePhaseEiShortSource.c_str()},
+        {"EI-450-405",90,450,405,90,225,360,15,6,90,90,10780,"metric-short",threePhaseEiShortSource.c_str()},
+        {"EI-500-450",100,500,450,100,250,400,17,6,100,100,13310,"metric-short",threePhaseEiShortSource.c_str()},
+        {"EI-250-350",50,250,350,50,250,200,10,6,50,50,4750,"metric-lengthened",threePhaseEiLongSource.c_str()},
+        {"EI-300-420",60,300,420,60,300,240,12,6,60,60,6840,"metric-lengthened",threePhaseEiLongSource.c_str()},
+        {"EI-350-490",70,350,490,70,350,280,13,6,70,70,9320,"metric-lengthened",threePhaseEiLongSource.c_str()}
+    };
+    for (const auto& size : threePhaseEiSizes) {
+        const std::string id = std::string("CORE-BRIGHTSTEEL-3PH-") + size.code;
+        const json payload = {
+            {"schemaVersion", 1},
+            {"component", {
+                {"id", id}, {"manufacturer", "Bright Steels Pty Ltd (stockist)"},
+                {"orderingCode", size.code}, {"coreShape", "3PH EI laminated core"},
+                {"magneticMaterial", "50C400 (non-oriented) or M6 (grain-oriented), supplier-listed options"},
+                {"magneticMaterialFamily", "electrical-steel-lamination"},
+                {"coreType", "three-phase three-limb EI lamination package"},
+                {"legCount", 3}, {"yokeCount", 2},
+                {"laminationThicknessOptions_m", json::array({0.00050, 0.00035})},
+                {"materialOptions", json::array({
+                    {{"grade", "50C400"}, {"family", "non-oriented"}, {"thickness_m", 0.00050}},
+                    {{"grade", "M6"}, {"family", "grain-oriented"}, {"thickness_m", 0.00035}}
+                })},
+                {"stackDepth_m", nullptr},
+                {"stackDepthStatus", "VARIABLE_ORDER_OR_ASSEMBLY_PARAMETER"},
+                {"dimensionsAreManufacturerListed", true}
+            }},
+            {"magneticGeometry", {
+                {"columnWidth_m", size.columnMm * 1.0e-3},
+                {"overallHeight_m", size.overallHeightMm * 1.0e-3},
+                {"overallWidth_m", size.overallWidthMm * 1.0e-3},
+                {"windowHeight_m", size.windowHeightMm * 1.0e-3},
+                {"windowWidth_m", size.windowWidthMm * 1.0e-3},
+                {"holePitch_m", size.holePitchMm * 1.0e-3},
+                {"holeDiameter_m", size.holeDiameterMm * 1.0e-3},
+                {"holeCount", size.holeCount},
+                {"dimension_h_m", size.hMm * 1.0e-3},
+                {"dimension_n_m", size.nMm * 1.0e-3},
+                {"sourceWeight_g_per_10mm_stack", size.weightGramsPer10mm}
+            }},
+            {"sourceDocuments", json::array({size.source})},
+            {"dataQuality", {
+                {"sourceStatus", "SUPPLIER_STOCK_DIMENSION_SCHEDULE"},
+                {"geometryStatus", "THREE_PHASE_EI_OUTLINE_DIMENSIONS_IMPORTED_STACK_DEPTH_VARIABLE"},
+                {"cadGeometryStatus", "PARTIAL_OUTLINE_NO_COMPLETE_PARAMETRIC_LAMINATION_PROFILE"},
+                {"magneticAreaStatus", "NOT_CALCULATED_STACK_DEPTH_AND_STACKING_FACTOR_REQUIRED"},
+                {"materialCertificateStatus", "MILL_CERTIFICATE_REQUIRED_PER_ORDER"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Published outline dimensions and supplier-listed material/thickness options are imported. Stack depth, interlaminar coating, stacking factor, actual steel grade certificate, full lamination contour/tolerances and assembled joint construction are not specified sufficiently for Ae, losses, B-H interpolation or production CAD. Do not infer these values."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "core-component", size.source,
+            std::string("Bright Steels 3PH EI lamination schedule; ") + size.code, payload
+        });
+    }
+
     return records;
 }
 
