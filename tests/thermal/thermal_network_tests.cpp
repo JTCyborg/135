@@ -89,6 +89,17 @@ int main()
     }
     {
         ThermalNetworkRequest request;
+        auto input = node("A", 1.0, 330.0);
+        input.temperatureLimitSourceReference.clear();
+        request.nodes = {input};
+        request.ambientLinks.push_back({"A", 1.0, "cooling-model:rev-1"});
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        assert(!result.value().modelProvenanceComplete);
+        assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
+    }
+    {
+        ThermalNetworkRequest request;
         request.nodes = {node("A", 1.0, 330.0)};
         request.ambientLinks.push_back({"UNKNOWN", 1.0, "cooling-model:rev-1"});
         assert(!analyzeThermalNetwork(request));
