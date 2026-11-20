@@ -1452,7 +1452,7 @@ QWidget* MainWindow::createConstructionPage()
                     [this](double) { saveProjectSettings(); markConstructionInputsChanged(); });
         } else if (auto* integer = qobject_cast<QSpinBox*>(widget)) {
             connect(integer, qOverload<int>(&QSpinBox::valueChanged), this,
-                    [this](int) { saveProjectSettings(); });
+                    [this](int) { saveProjectSettings(); markConstructionInputsChanged(); });
         } else if (auto* line = qobject_cast<QLineEdit*>(widget)) {
             connect(line, &QLineEdit::textChanged, this,
                     [this](const QString&) { saveProjectSettings(); markConstructionInputsChanged(); });
