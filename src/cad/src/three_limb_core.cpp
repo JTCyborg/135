@@ -11,6 +11,7 @@
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
 #include <gp_Pnt.hxx>
+#include <gp_Vec.hxx>
 #include <GProp_GProps.hxx>
 
 #include <algorithm>
