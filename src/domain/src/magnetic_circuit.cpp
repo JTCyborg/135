@@ -137,9 +137,9 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
     result.current = units::Current{current};
     result.fluxDensity = units::FluxDensity{b};
     result.coreFieldStrength = units::MagneticFieldStrength{operating->h};
-    result.gapFieldStrength = units::MagneticFieldStrength{b / vacuumPermeability};
+    result.gapFieldStrength = units::MagneticFieldStrength{b * area / (gapArea * vacuumPermeability)};
     result.flux = units::MagneticFlux{b * area};
-    result.physicalGapArea = units::Area{area};
+    result.coreAreaAtGap = units::Area{area};
     result.effectiveGapArea = units::Area{gapArea};
     result.gapFringingFactor = gapArea / area;
     result.withinBhCurveRange = true;
