@@ -97,6 +97,22 @@ else()
     target_compile_options(Project135DomainTests PRIVATE -UNDEBUG)
 endif()
 
+# Focused reproducer for the archived TEST-01 three-limb magnetic case.
+# This target links only the domain library; the desktop application is not started.
+add_executable(Project135ThreeLimbTest01Regression
+    domain/three_limb_test01_regression.cpp
+)
+target_link_libraries(Project135ThreeLimbTest01Regression PRIVATE Project135::Domain)
+add_test(
+    NAME Project135ThreeLimbTest01Regression
+    COMMAND Project135ThreeLimbTest01Regression
+)
+if(MSVC)
+    target_compile_options(Project135ThreeLimbTest01Regression PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ThreeLimbTest01Regression PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135ComponentCatalogTests
     domain/component_catalog_tests.cpp
 )
