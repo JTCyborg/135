@@ -2718,84 +2718,6 @@ void MainWindow::calculateFilter()
         }
     }
 
-    // First-pass ideal area-product bound. Inputs are explicit user criteria;
-    // this intentionally uses the fundamental branch current only. Harmonic
-    // copper loss, core loss, geometry, insulation and temperature remain outside
-    // this lower-bound estimate and are never represented as verified.
-    if (auto* output = findChild<QLabel*>(QStringLiteral("idealSizingResult"))) {
-        if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
-            for (int row = 0; row < table->rowCount(); ++row) {
-                const auto* parameter = table->item(row, 0);
-                if (!parameter) continue;
-                if (parameter->text() == tr("Minimum gross area product Ae×Aw") ||
-                    parameter->text() == tr("Equivalent square area scale")) {
-                    table->setItem(row, 1, new QTableWidgetItem(tr("NOT CALCULATED")));
-                    table->setItem(row, 3, new QTableWidgetItem(tr("NOT_VERIFIED")));
-                }
-            }
-        }
-        auto* bmax = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Bmax"));
-        auto* density = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_J"));
-        auto* utilization = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ku"));
-        auto* stacking = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ks"));
-        if (bmax && density && utilization && stacking && !result.value().branches.empty() &&
-            bmax->value() > 0.0 && density->value() > 0.0 &&
-            utilization->value() > 0.0 && stacking->value() > 0.0) {
-            const auto& branch = result.value().branches.front();
-            const double phaseVoltage = branch.phaseVoltage.si();
-            const double inductance = branch.inductance.si();
-            const double branchPower = branch.targetReactivePower.si();
-            if (phaseVoltage > 0.0 && inductance > 0.0 && branchPower > 0.0) {
-                const double rmsCurrent = branchPower / (3.0 * phaseVoltage);
-                const auto estimate = p135::application::calculateIdealReactorAreaProduct({
-                    inductance, std::sqrt(2.0) * rmsCurrent, rmsCurrent,
-                    bmax->value(), density->value() * 1.0e6,
-                    utilization->value() / 100.0, stacking->value() / 100.0
-                });
-                if (estimate) {
-                    const auto& value = estimate.value();
-                    if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
-                        for (int row = 0; row < table->rowCount(); ++row) {
-                            const auto* parameter = table->item(row, 0);
-                            if (!parameter) continue;
-                            if (parameter->text() == tr("Minimum gross area product Ae×Aw")) {
-                                table->setItem(row, 1, new QTableWidgetItem(
-                                    QString::number(value.minimumGrossAreaProductM4 * 1.0e12, 'g', 6)));
-                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEAL LOWER BOUND")));
-                            } else if (parameter->text() == tr("Equivalent square area scale")) {
-                                table->setItem(row, 1, new QTableWidgetItem(
-                                    QString::number(value.equivalentSquareSideM * 1.0e3, 'g', 6) + tr(" mm")));
-                                table->setItem(row, 3, new QTableWidgetItem(tr("REFERENCE ONLY")));
-                            }
-                        }
-                    }
-                    output->setText(tr(
-                        "IDEAL LOWER BOUND (fundamental current only)\n"
-                        "Gross Ae×Aw ≥ %1 mm⁴\n"
-                        "Equivalent square side ≥ %2 mm\n"
-                        "Stored peak energy = %3 J\n"
-                        "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\n"
-                        "NOT a selected core or winding design. Harmonics, losses, gap geometry, "
-                        "insulation, cooling and temperature rise are not included.")
-                        .arg(value.minimumGrossAreaProductM4 * 1.0e12, 0, 'g', 6)
-                        .arg(value.equivalentSquareSideM * 1.0e3, 0, 'g', 6)
-                        .arg(value.storedPeakEnergyJ, 0, 'g', 6)
-                        .arg(value.assumedAllowablePeakFluxDensityT, 0, 'g', 5)
-                        .arg(value.assumedAllowableCurrentDensityApm2 / 1.0e6, 0, 'g', 5)
-                        .arg(value.assumedWindowUtilization * 100.0, 0, 'g', 5)
-                        .arg(value.assumedStackingFactor * 100.0, 0, 'g', 5));
-                } else {
-                    output->setText(tr("Ideal area-product estimate failed: %1")
-                        .arg(QString::fromStdString(estimate.error().message)));
-                }
-            } else {
-                output->setText(tr("Ideal area-product estimate unavailable: synthesized branch data is incomplete."));
-            }
-        } else {
-            output->setText(tr("Ideal area-product estimate: NOT CALCULATED — enter all four criteria and recalculate."));
-        }
-    }
-
     const double sourceResistanceOhm = sourceResistance_ ? sourceResistance_->value() : 0.0;
     const double sourceInductanceH = sourceInductance_ ? sourceInductance_->value() * 1.0e-3 : 0.0;
     const auto circuitResult = p135::filter::buildCircuit(result.value(),
@@ -3334,6 +3256,116 @@ void MainWindow::calculateFilter()
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: invalid input spectrum.");
     } else if (suppliedHarmonics == 0 && !hasLoadCurrentInjection && advancedWarning.isEmpty()) {
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
+    }
+
+    // First-pass ideal area-product bound. Inputs are explicit user criteria;
+    // this intentionally uses the fundamental branch current only. Harmonic
+    // copper loss, core loss, geometry, insulation and temperature remain outside
+    // this lower-bound estimate and are never represented as verified.
+    if (auto* output = findChild<QLabel*>(QStringLiteral("idealSizingResult"))) {
+        if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
+            for (int row = 0; row < table->rowCount(); ++row) {
+                const auto* parameter = table->item(row, 0);
+                if (!parameter) continue;
+                if (parameter->text() == tr("Minimum gross area product Ae×Aw") ||
+                    parameter->text() == tr("Equivalent square area scale")) {
+                    table->setItem(row, 1, new QTableWidgetItem(tr("NOT CALCULATED")));
+                    table->setItem(row, 3, new QTableWidgetItem(tr("NOT_VERIFIED")));
+                }
+            }
+        }
+        auto* bmax = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Bmax"));
+        auto* density = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_J"));
+        auto* utilization = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ku"));
+        auto* stacking = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ks"));
+        if (bmax && density && utilization && stacking && !result.value().branches.empty() &&
+            bmax->value() > 0.0 && density->value() > 0.0 &&
+            utilization->value() > 0.0 && stacking->value() > 0.0) {
+            const auto branchIt = std::find_if(result.value().branches.begin(),
+                result.value().branches.end(), [this](const auto& branch) {
+                    return branch.id == latestFilterBranchId_;
+                });
+            const auto& branch = branchIt != result.value().branches.end()
+                ? *branchIt : result.value().branches.front();
+            const double phaseVoltage = branch.phaseVoltage.si();
+            const double inductance = branch.inductance.si();
+            const double branchPower = branch.targetReactivePower.si();
+            if (phaseVoltage > 0.0 && inductance > 0.0 && branchPower > 0.0) {
+                const double fundamentalRmsCurrent = branchPower / (3.0 * phaseVoltage);
+                double rmsCurrent = fundamentalRmsCurrent;
+                double peakCurrentBound = std::sqrt(2.0) * fundamentalRmsCurrent;
+                bool harmonicSpectrumUsed = false;
+                if (harmonicResult) {
+                    std::array<double, 3> phaseRmsSquared{};
+                    std::array<double, 3> phasePeakEnvelope{};
+                    for (const auto& point : harmonicResult->branchPoints) {
+                        if (point.branchId != branch.id) continue;
+                        for (std::size_t phase = 0; phase < 3; ++phase) {
+                            const double magnitude = std::abs(point.phaseCurrentRms[phase]);
+                            phaseRmsSquared[phase] += magnitude * magnitude;
+                            phasePeakEnvelope[phase] += std::sqrt(2.0) * magnitude;
+                        }
+                    }
+                    const double spectrumRms = std::sqrt(*std::max_element(
+                        phaseRmsSquared.begin(), phaseRmsSquared.end()));
+                    const double spectrumPeakBound = *std::max_element(
+                        phasePeakEnvelope.begin(), phasePeakEnvelope.end());
+                    if (spectrumRms > 0.0 && spectrumPeakBound > 0.0) {
+                        rmsCurrent = spectrumRms;
+                        peakCurrentBound = spectrumPeakBound;
+                        harmonicSpectrumUsed = true;
+                    }
+                }
+                const auto estimate = p135::application::calculateIdealReactorAreaProduct({
+                    inductance, peakCurrentBound, rmsCurrent,
+                    bmax->value(), density->value() * 1.0e6,
+                    utilization->value() / 100.0, stacking->value() / 100.0
+                });
+                if (estimate) {
+                    const auto& value = estimate.value();
+                    if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
+                        for (int row = 0; row < table->rowCount(); ++row) {
+                            const auto* parameter = table->item(row, 0);
+                            if (!parameter) continue;
+                            if (parameter->text() == tr("Minimum gross area product Ae×Aw")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.minimumGrossAreaProductM4 * 1.0e12, 'g', 6)));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEAL LOWER BOUND")));
+                            } else if (parameter->text() == tr("Equivalent square area scale")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.equivalentSquareSideM * 1.0e3, 'g', 6) + tr(" mm")));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("REFERENCE ONLY")));
+                            }
+                        }
+                    }
+                    output->setText(tr(
+                        harmonicSpectrumUsed
+                            ? "IDEAL LOWER BOUND (harmonic RMS + conservative peak envelope)\n"
+                            : "IDEAL LOWER BOUND (fundamental current only; harmonic spectrum unavailable)\n"
+                        "Gross Ae×Aw ≥ %1 mm⁴\n"
+                        "Equivalent square side ≥ %2 mm\n"
+                        "Stored peak energy = %3 J\n"
+                        "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\n"
+                        "Peak current uses the sum of harmonic magnitudes (conservative envelope). "
+                        "This is NOT a selected core or winding design; core loss, gap geometry, "
+                        "insulation, cooling and temperature rise are not included.")
+                        .arg(value.minimumGrossAreaProductM4 * 1.0e12, 0, 'g', 6)
+                        .arg(value.equivalentSquareSideM * 1.0e3, 0, 'g', 6)
+                        .arg(value.storedPeakEnergyJ, 0, 'g', 6)
+                        .arg(value.assumedAllowablePeakFluxDensityT, 0, 'g', 5)
+                        .arg(value.assumedAllowableCurrentDensityApm2 / 1.0e6, 0, 'g', 5)
+                        .arg(value.assumedWindowUtilization * 100.0, 0, 'g', 5)
+                        .arg(value.assumedStackingFactor * 100.0, 0, 'g', 5));
+                } else {
+                    output->setText(tr("Ideal area-product estimate failed: %1")
+                        .arg(QString::fromStdString(estimate.error().message)));
+                }
+            } else {
+                output->setText(tr("Ideal area-product estimate unavailable: synthesized branch data is incomplete."));
+            }
+        } else {
+            output->setText(tr("Ideal area-product estimate: NOT CALCULATED — enter all four criteria and recalculate."));
+        }
     }
 
     std::optional<p135::domain::ThreeLimbMagneticCycleSamplingResult> threeLimbOperatingPoint;
