@@ -85,14 +85,6 @@ std::vector<SeedRecord> starterRecords()
             {"captureMethod", "APPROXIMATE_DIGITIZATION_FROM_MANUFACTURER_GRAPH"},
             {"notes", "Typical dynamic magnetization graph digitized approximately; source does not provide raw tabular B-H measurements. Curve is exploratory only."}
         }},
-        {"bhCurveProvenance", {
-            {"sourceDocument", "TDK FAL0619-M"},
-            {"sourcePage", "NOT_STATED_IN_IMPORTED_REFERENCE"},
-            {"measurementMethod", "NOT_STATED_IN_IMPORTED_REFERENCE"},
-            {"sampleDirection", "NOT_STATED_IN_IMPORTED_REFERENCE"},
-            {"captureMethod", "APPROXIMATE_DIGITIZATION_FROM_MANUFACTURER_GRAPH"},
-            {"notes", "Typical dynamic magnetization graph digitized approximately; source does not provide raw tabular B-H measurements. Curve is exploratory only."}
-        }},
         {"dataQuality", {
             {"bhCurveStatus", "APPROXIMATE_DIGITIZATION"},
             {"coreLossStatus", "MANUFACTURER_TYPICAL_VALUES"},
@@ -138,6 +130,14 @@ std::vector<SeedRecord> starterRecords()
             {"designReleaseStatus", "NOT_VERIFIED"},
             {"notes", "Use the loss points only at their stated frequency, peak flux density and temperature. Do not extrapolate them as a validated loss model."}
         }}
+        {"bhCurveProvenance", {
+            {"sourceDocument", "TDK FAL0619-M"},
+            {"sourcePage", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"measurementMethod", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"sampleDirection", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"captureMethod", "APPROXIMATE_DIGITIZATION_FROM_MANUFACTURER_GRAPH"},
+            {"notes", "Typical dynamic magnetization graph digitized approximately; source does not provide raw tabular B-H measurements. Curve is exploratory only."}
+        }},
     };
 
     const json copper = {
