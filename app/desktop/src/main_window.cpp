@@ -674,18 +674,39 @@ void MainWindow::loadProjectSettings()
     settings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/construction"));
     for (auto* widget : findChildren<QWidget*>()) {
         const QString key = widget->objectName();
-        if (!key.startsWith(QStringLiteral("construction_")) || !settings.contains(key)) continue;
+        if (!key.startsWith(QStringLiteral("construction_"))) continue;
         if (auto* combo = qobject_cast<QComboBox*>(widget)) {
-            const int index = combo->findData(settings.value(key));
+            if (!settings.contains(key)) {
+                combo->setCurrentIndex(0);
+                continue;
+            }
+            const QVariant stored = settings.value(key);
+            int index = combo->findData(stored);
+            // Keep an exact historical material revision selectable even if a newer revision
+            // exists or the material identity has since been archived.
+            if (index < 0 && materialStore_ &&
+                (key == QStringLiteral("construction_coreMaterial") ||
+                 key == QStringLiteral("construction_conductorMaterial") ||
+                 key == QStringLiteral("construction_insulationMaterial"))) {
+                const auto revision = materialStore_->findRevision(stored.toString().toStdString());
+                if (revision && revision.value()) {
+                    const auto& item = *revision.value();
+                    combo->addItem(QString::fromStdString(item.materialId) +
+                        QStringLiteral(" — r%1 (pinned revision)").arg(item.revisionNumber),
+                        QString::fromStdString(item.revisionId));
+                    index = combo->count() - 1;
+                }
+            }
             if (index >= 0) combo->setCurrentIndex(index);
         } else if (auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
-            number->setValue(settings.value(key).toDouble());
+            number->setValue(settings.contains(key) ? settings.value(key).toDouble() : number->minimum());
         } else if (auto* integer = qobject_cast<QSpinBox*>(widget)) {
-            integer->setValue(settings.value(key).toInt());
+            integer->setValue(settings.contains(key) ? settings.value(key).toInt() : integer->minimum());
         } else if (auto* line = qobject_cast<QLineEdit*>(widget)) {
             line->setText(settings.value(key).toString());
         } else if (auto* check = qobject_cast<QCheckBox*>(widget)) {
-            check->setChecked(settings.value(key).toBool());
+            check->setChecked(settings.contains(key) ? settings.value(key).toBool()
+                : key == QStringLiteral("construction_bobbinEnabled"));
         }
     }
     settings.endGroup();
