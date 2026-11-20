@@ -1,6 +1,7 @@
 add_library(Project135Thermal
     src/steady_state.cpp
     src/filter_bridge.cpp
+    src/winding_electrothermal.cpp
 )
 add_library(Project135::Thermal ALIAS Project135Thermal)
 
