@@ -67,6 +67,8 @@ Result<ReactorThermalNetworkResult> analyzeReactorThermalNetwork(
         node.maximumTemperature = request.coreMaximumTemperatures[i];
         node.lossSourceReference = "lossData=" + region.lossDataReference +
             ";mass=" + region.coreMassSourceReference;
+        if (!request.coreMaterialRevisionReference.empty())
+            node.lossSourceReference += ";material=" + request.coreMaterialRevisionReference;
         node.temperatureLimitSourceReference =
             request.coreTemperatureLimitSourceReferences[i];
         networkRequest.nodes.push_back(std::move(node));
@@ -107,6 +109,8 @@ Result<ReactorThermalNetworkResult> analyzeReactorThermalNetwork(
         node.loss = result.phaseWindingLosses[phase];
         node.maximumTemperature = request.windingMaximumTemperatures[phase];
         node.lossSourceReference = request.windingLossSourceReference;
+        if (!request.conductorMaterialRevisionReference.empty())
+            node.lossSourceReference += ";material=" + request.conductorMaterialRevisionReference;
         node.temperatureLimitSourceReference =
             request.windingTemperatureLimitSourceReferences[phase];
         networkRequest.nodes.push_back(std::move(node));
@@ -123,11 +127,14 @@ Result<ReactorThermalNetworkResult> analyzeReactorThermalNetwork(
     if (!materialsReleased) {
         result.network.modelProvenanceComplete = false;
         for (auto& node : result.network.nodes) {
-            if (node.status == AssessmentStatus::Pass) {
-                node.status = AssessmentStatus::NotVerified;
-                node.explanation +=
-                    " Material dataset design-release status is not VERIFIED.";
-            }
+            const auto calculatedStatus = node.status;
+            node.status = AssessmentStatus::NotVerified;
+            node.explanation =
+                "NOT_VERIFIED: material dataset design-release status is not VERIFIED; " +
+                node.explanation + " (preliminary thermal comparison status=" +
+                (calculatedStatus == AssessmentStatus::Pass ? "PASS" :
+                 calculatedStatus == AssessmentStatus::Fail ? "FAIL" : "NOT_VERIFIED") +
+                ").";
         }
     }
 
