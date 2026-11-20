@@ -35,6 +35,7 @@ domain::CoreMaterialFamily parseFamily(const std::string& family)
     if (family == "CRGO" || family == "grain-oriented electrical steel")
         return domain::CoreMaterialFamily::CRGO;
     if (family == "electrical steel" ||
+        family == "non-grain-oriented electrical steel" ||
         family == "fully finished non-grain-oriented electrical steel")
         return domain::CoreMaterialFamily::ElectricalSteel;
     if (family == "amorphous Fe-based ribbon")
