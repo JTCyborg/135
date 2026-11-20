@@ -790,7 +790,7 @@ std::vector<SeedRecord> starterRecords()
         conductorMaterial("CU-C10200", "UNS C10200", "C10200 OF copper",
             "oxygen-free copper", 1.72e-8, 8940.0, 0.00397, 100.0,
             copperOfhcSource, "MANUFACTURER_DATASHEET")});
-    records.push_back({"MAT-CU-C11000", "SEED-CU-C11000-R1", "conductor-material",
+    records.push_back({"MAT-CU-C11000", "SEED-CU-C11000-ETP-R1", "conductor-material",
         copperSource, "Copper C11000 ETP copper reference",
         conductorMaterial("CU-C11000", "UNS C11000", "C11000 ETP copper",
             "electrolytic tough pitch copper", 1.724e-8, 8910.0, 0.00393, 100.0,
