@@ -137,20 +137,14 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
                 field + ".stackDepth");
         const double availableDepth = limbDepth;
         const double limbHeight = g.coreOverallHeight.si() -
-            g.yokeThicknesses[interfaceIndex < 4 ? 0 : 2].si() -
-            g.yokeThicknesses[interfaceIndex < 4 ? 2 : 0].si();
+            g.yokeThicknesses[0].si() - g.yokeThicknesses[2].si();
         const std::size_t yokeIndex = interfaceIndex < 2 ? 0 :
             (interfaceIndex < 4 ? 1 : (interfaceIndex < 6 ? 2 : 3));
-        const std::size_t limbIndex = interfaceIndex == 0 || interfaceIndex == 4 ? 0 :
-            (interfaceIndex == 3 || interfaceIndex == 7 ? 2 : 1);
-        const double yokeLength = g.limbWidths[limbIndex].si() +
-            (limbIndex == 0 ? g.windowWidths[0].si() :
-             (limbIndex == 2 ? g.windowWidths[1].si() :
-              (interfaceIndex == 1 || interfaceIndex == 5
-                   ? g.windowWidths[0].si() : g.windowWidths[1].si()))) +
-            (limbIndex == 1 ? 0.5 * g.limbWidths[1].si() :
-             (limbIndex == 0 ? 0.5 * g.limbWidths[1].si() : 0.5 * g.limbWidths[1].si()));
-        (void)yokeIndex;
+        const double yokeLength = (yokeIndex % 2 == 0)
+            ? g.limbWidths[0].si() + g.windowWidths[0].si() +
+                0.5 * g.limbWidths[1].si()
+            : 0.5 * g.limbWidths[1].si() + g.windowWidths[1].si() +
+                g.limbWidths[2].si();
         const double tolerance = std::max(1.0e-9, availableDepth * 1.0e-6);
         double previousEnd = 0.0;
         StepLapPacketDirection previousDirection = StepLapPacketDirection::LimbIntoYoke;
