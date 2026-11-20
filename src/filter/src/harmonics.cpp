@@ -1,5 +1,6 @@
 #include "p135/filter/harmonics.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <limits>
@@ -83,14 +84,17 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
         return Result<HarmonicAnalysisResult>::failure(
             invalid("Source voltage spectrum must contain the fundamental (order 1)."));
 
-    std::unordered_set<std::string> loadSourceIds;
+    std::unordered_set<std::string> loadInjectionKeys;
     for (const auto& injection : request.loadCurrentInjections) {
-        if (injection.sourceId.empty() || !loadSourceIds.insert(injection.sourceId).second ||
+        const std::string injectionKey = injection.sourceId + ":" +
+            std::to_string(injection.order) + ":" +
+            std::to_string(static_cast<int>(injection.sequence));
+        if (injection.sourceId.empty() || !loadInjectionKeys.insert(injectionKey).second ||
             injection.order == 0 || !finite(injection.phaseCurrentRms) ||
             (injection.sequence != HarmonicSequence::Positive &&
              injection.sequence != HarmonicSequence::Negative))
             return Result<HarmonicAnalysisResult>::failure(
-                invalid("Load-current injections require unique non-empty source IDs, positive orders, valid sequences and finite phasors."));
+                invalid("Load-current injections require a non-empty source ID, unique source/order/sequence combinations, positive orders, valid sequences and finite phasors."));
         const bool matchingVoltageOrder = std::any_of(
             request.sourceVoltageSpectrum.begin(), request.sourceVoltageSpectrum.end(),
             [&injection](const auto& voltage) {
