@@ -21,6 +21,7 @@ add_library(Project135InfrastructureSqlite
     sqlite/sqlite_database.cpp
     sqlite/migration_runner.cpp
     sqlite/sqlite_material_revision_store.cpp
+    sqlite/core_material_revision_loader.cpp
     sqlite/starter_material_catalog.cpp
 )
 add_library(Project135::InfrastructureSqlite ALIAS Project135InfrastructureSqlite)
