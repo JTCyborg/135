@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <complex>
 #include <optional>
+#include <vector>
 
 namespace p135::domain {
 
@@ -56,9 +57,20 @@ struct ThreeLimbMagneticResult {
     bool withinBhCurveRange{false};
 };
 
+struct ThreeLimbMagneticHarmonicExcitation {
+    std::uint32_t order{1};
+    /// Per-phase RMS current phasors for this harmonic; phase sequence is
+    /// already represented by the A/B/C phasor angles.
+    std::array<std::complex<double>, 3> phaseRmsPhasors{};
+};
+
 struct ThreeLimbMagneticCycleSamplingRequest {
     ThreeLimbMagneticRequest magnetic;
+    /// Legacy single-frequency excitation. Used when harmonicExcitations is empty.
     std::array<std::complex<double>, 3> phaseRmsPhasors{};
+    /// All harmonic excitations are summed in the time domain over one
+    /// fundamental cycle; order is the integer multiple of the fundamental.
+    std::vector<ThreeLimbMagneticHarmonicExcitation> harmonicExcitations;
     // Per-phase DC current bias, added to the instantaneous AC waveform.
     std::array<units::Current, 3> phaseDcCurrents{};
     double relativePeakTolerance{1.0e-3};
@@ -74,7 +86,8 @@ struct ThreeLimbMagneticCycleSamplingResult {
     bool converged{false};
 };
 
-/// Samples one electrical cycle on nested 72/144/288 grids. Convergence is
+/// Samples one fundamental cycle with all supplied harmonics superposed in time
+/// on nested 72/144/288 grids. Convergence is
 /// based on the maximum relative change across all seven branch peak |B| values.
 /// Reaching maximumSamples without meeting tolerance returns a successful
 /// diagnostic result with converged=false (NOT_VERIFIED), not a solver failure.
