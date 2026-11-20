@@ -75,6 +75,12 @@ int main(int argc, char** argv)
     assert(std::abs(ei200.value().laminationThicknessOptionsM[1] - 0.00035) < 1.0e-12);
     assert(ei200.value().holeCount == 6);
     assert(!ei200.value().hasMagneticGeometry());
+    const auto eiArea = calculateThreePhaseEiEffectiveLimbAreaM2(ei200.value(), 0.12, 0.95);
+    assert(eiArea);
+    assert(std::abs(eiArea.value() - 0.040 * 0.12 * 0.95) < 1.0e-12);
+    assert(!calculateThreePhaseEiEffectiveLimbAreaM2(ei200.value(), 0.0, 0.95));
+    assert(!calculateThreePhaseEiEffectiveLimbAreaM2(ei200.value(), 0.12, 1.01));
+    assert(!calculateThreePhaseEiEffectiveLimbAreaM2(pq32.value(), 0.12, 0.95));
     assert(!ei200.value().hasCompleteCadGeometry());
 
     const auto ei300Short = loadCoreComponentGeometryRevision(
