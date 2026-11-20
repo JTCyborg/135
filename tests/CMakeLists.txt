@@ -87,9 +87,11 @@ add_test(NAME Project135ThermalFilterBridgeTests COMMAND Project135ThermalFilter
 if(MSVC)
     target_compile_options(Project135ThermalSteadyStateTests PRIVATE /UNDEBUG)
     target_compile_options(Project135ThermalFilterBridgeTests PRIVATE /UNDEBUG)
+    target_compile_options(Project135ThermalNetworkTests PRIVATE /UNDEBUG)
 else()
     target_compile_options(Project135ThermalSteadyStateTests PRIVATE -UNDEBUG)
     target_compile_options(Project135ThermalFilterBridgeTests PRIVATE -UNDEBUG)
+    target_compile_options(Project135ThermalNetworkTests PRIVATE -UNDEBUG)
 endif()
 
 add_executable(Project135DesignParameterTests
