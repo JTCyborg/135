@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include <cmath>
+#include <set>
 #include <string>
 #include <stdexcept>
 #include <exception>
@@ -268,6 +269,8 @@ Result<CoreLossReferenceDataset> loadCoreLossReferenceDataset(
         dataset.sourceReference = revision.sourceReference;
         dataset.datasetRevision = revision.datasetRevision;
         dataset.contentHash = revision.contentHash;
+        if (dataset.sourceReference.empty() || dataset.datasetRevision.empty())
+            throw std::invalid_argument("Core-loss reference dataset provenance must include sourceReference and datasetRevision.");
         dataset.laminationThickness = units::Length{requiredNumber(material, "laminationThickness_m")};
         dataset.density = units::Density{requiredNumber(material, "density_kg_per_m3")};
         dataset.minimumStackingFactor = requiredNumber(material, "minimumLaminationFactor");
@@ -280,18 +283,26 @@ Result<CoreLossReferenceDataset> loadCoreLossReferenceDataset(
         const auto& points = root.at("coreLossReferencePoints");
         if (!points.is_array() || points.empty())
             throw std::invalid_argument("At least one AC core-loss reference point is required.");
+        std::set<std::pair<double, double>> coordinates;
         for (const auto& point : points) {
             const double frequency = requiredNumber(point, "frequency_Hz");
             const double flux = requiredNumber(point, "peakFluxDensity_T");
             const double loss = requiredNumber(point, "specificLoss_W_per_kg");
-            const double temperature = point.value("temperature_K", 0.0);
-            if (frequency <= 0.0 || flux <= 0.0 || loss < 0.0 || temperature < 0.0)
+            const bool hasTemperature = point.contains("temperature_K");
+            const double temperature = hasTemperature
+                ? requiredNumber(point, "temperature_K")
+                : 0.0;
+            if (frequency <= 0.0 || flux <= 0.0 || loss < 0.0 ||
+                (hasTemperature && temperature <= 0.0))
                 throw std::invalid_argument("AC core-loss reference point contains an invalid value.");
+            if (!coordinates.emplace(frequency, flux).second)
+                throw std::invalid_argument(
+                    "AC core-loss reference dataset contains duplicate frequency/flux coordinates.");
             dataset.points.push_back(CoreLossReferencePoint{
                 units::Frequency{frequency},
                 units::FluxDensity{flux},
                 units::CoreLossDensity{loss},
-                temperature > 0.0
+                hasTemperature
                     ? std::optional<units::TemperatureKelvin>{units::TemperatureKelvin{temperature}}
                     : std::nullopt
             });
@@ -300,10 +311,15 @@ Result<CoreLossReferenceDataset> loadCoreLossReferenceDataset(
         const json limits = root.value("coreLossSpecificationLimits", json::object());
         if (limits.contains("maximumSpecificLoss_W_per_kg")) {
             const auto& limit = limits.at("maximumSpecificLoss_W_per_kg");
+            const double frequency = requiredNumber(limit, "frequency_Hz");
+            const double flux = requiredNumber(limit, "peakFluxDensity_T");
+            const double value = requiredNumber(limit, "value");
+            if (frequency <= 0.0 || flux <= 0.0 || value < 0.0)
+                throw std::invalid_argument("Core-loss specification limit contains an invalid value.");
             dataset.specificationLimit = CoreLossSpecificationLimit{
-                units::Frequency{requiredNumber(limit, "frequency_Hz")},
-                units::FluxDensity{requiredNumber(limit, "peakFluxDensity_T")},
-                units::CoreLossDensity{requiredNumber(limit, "value")},
+                units::Frequency{frequency},
+                units::FluxDensity{flux},
+                units::CoreLossDensity{value},
                 requiredString(limit, "limitType")
             };
         }
@@ -318,6 +334,13 @@ Result<CoreLossReferenceDataset> loadCoreLossReferenceDataset(
         dataset.waveform = provenanceString(provenance, "waveform");
         dataset.temperatureStatus = provenanceString(provenance, "temperatureStatus");
         dataset.notes = provenanceString(provenance, "notes");
+        if (dataset.qualityStatus == "NOT_PROVIDED" ||
+            dataset.sourceDocument == "NOT_PROVIDED" ||
+            dataset.measurementMethod == "NOT_PROVIDED" ||
+            dataset.waveform == "NOT_PROVIDED" ||
+            dataset.temperatureStatus == "NOT_PROVIDED")
+            throw std::invalid_argument(
+                "Core-loss reference dataset is missing required quality or measurement provenance.");
         return Result<CoreLossReferenceDataset>::success(std::move(dataset));
     } catch (const std::exception& exception) {
         return Result<CoreLossReferenceDataset>::failure(loaderError(
