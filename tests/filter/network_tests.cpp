@@ -143,6 +143,23 @@ void testTheveninSourceImpedanceIsPerPhaseSeriesRL()
     assert(std::abs(busVoltage(1) - idealBusVoltage(1)) > 1.0e-5);
 }
 
+void testTheveninSourceRAndLCanBeSpecifiedIndependently()
+{
+    const auto design = makeDesign(Connection::Wye);
+    const auto resistanceOnly = buildCircuit(
+        design, units::Resistance{0.002}, units::Inductance{0.0});
+    const auto inductanceOnly = buildCircuit(
+        design, units::Resistance{0.0}, units::Inductance{40.0e-6});
+    assert(resistanceOnly);
+    assert(inductanceOnly);
+    assert(resistanceOnly.value().nodes.size() == 13);
+    assert(inductanceOnly.value().nodes.size() == 13);
+    assert(resistanceOnly.value().elements.size() == 15);
+    assert(inductanceOnly.value().elements.size() == 15);
+    assert(!buildCircuit(design, units::Resistance{-0.001}, units::Inductance{0.0}));
+    assert(!buildCircuit(design, units::Resistance{0.0}, units::Inductance{-1.0e-6}));
+}
+
 void testBuilderRejectsEmptyDesign()
 {
     FilterDesign design;
@@ -159,6 +176,7 @@ int main()
     testWyeCircuitAtTuningFrequency();
     testDeltaCircuitTopologyAndFundamentalPower();
     testTheveninSourceImpedanceIsPerPhaseSeriesRL();
+    testTheveninSourceRAndLCanBeSpecifiedIndependently();
     testBuilderRejectsEmptyDesign();
     return 0;
 }
