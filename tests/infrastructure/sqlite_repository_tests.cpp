@@ -292,9 +292,15 @@ int main(int argc, char** argv)
         const auto nomex380 = store.latestRevision("MAT-DUPONT-NOMEX-410-380UM");
         assert(nomex380 && nomex380.value());
         assert(nomex380.value()->payload.find("33000000") != std::string::npos);
+        const auto nomex130 = store.latestRevision("MAT-DUPONT-NOMEX-410-130UM");
+        assert(nomex130 && nomex130.value());
+        assert(nomex130.value()->payload.find("28000000") != std::string::npos);
         const auto kapton125 = store.latestRevision("MAT-DUPONT-KAPTON-HN-125UM");
         assert(kapton125 && kapton125.value());
         assert(kapton125.value()->payload.find("315000000") != std::string::npos);
+        const auto kapton50 = store.latestRevision("MAT-DUPONT-KAPTON-HN-50UM");
+        assert(kapton50 && kapton50.value());
+        assert(kapton50.value()->payload.find("240000000") != std::string::npos);
         const auto isomid = store.latestRevision("MAT-ALLEIMA-ISOMID");
         assert(isomid && isomid.value());
         assert(isomid.value()->payload.find("200") != std::string::npos);
