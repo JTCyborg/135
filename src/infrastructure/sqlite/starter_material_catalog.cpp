@@ -332,6 +332,69 @@ std::vector<SeedRecord> starterRecords()
         }}
     };
 
+    const json kaptonHn25 = {
+        {"schemaVersion", 1},
+        {"material", {
+            {"id", "DUPONT-KAPTON-HN-25UM"}, {"manufacturer", "DuPont"},
+            {"grade", "Kapton HN, nominal 25 µm"},
+            {"family", "polyimide film insulation"},
+            {"referenceThickness_m", 25.0e-6},
+            {"density_kg_per_m3", 1420.0},
+            {"thermalConductivity_W_per_mK", 0.20},
+            {"specificHeat_J_per_kgK", 1090.0},
+            {"thermalExpansionCoefficient_per_K", 20.0e-6},
+            {"dielectricStrength_V_per_m", 303.0e6},
+            {"relativePermittivity_1kHz", 3.4},
+            {"dissipationFactor_1kHz", 0.0018},
+            {"volumeResistivity_ohm_m", 1.5e15},
+            {"typicalTensileStrengthAt23C_Pa", 231.0e6}
+        }},
+        {"sourceDocuments", json::array({
+            "https://www.dupont.com/content/dam/dupont/amer/us/en/ei-transformation/public/documents/en/EI-10206-Kapton-HN-Data-Sheet.pdf"
+        })},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_DATASHEET_TYPICAL_VALUES"},
+            {"dielectricStrengthStatus", "TYPICAL_60HZ_25UM_FILM"},
+            {"thermalPropertiesStatus", "TYPICAL_AT_23C"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "The 303 kV/mm dielectric strength is a typical short-term test value for 25 µm film, not an allowable continuous design field. DuPont reports broad application temperature capability; this is not a continuous-use rating for a finished insulation system. Volume resistivity converted from 1.5e17 ohm-cm."}
+        }}
+    };
+
+    const json tape3m27 = {
+        {"schemaVersion", 1},
+        {"component", {
+            {"id", "3M-SCOTCH-27-GLASS-CLOTH-TAPE"},
+            {"manufacturer", "3M"},
+            {"grade", "Scotch 27 Glass Cloth Electrical Tape"},
+            {"family", "glass cloth electrical insulation tape"},
+            {"backingMaterial", "woven glass cloth"},
+            {"adhesive", "pressure-sensitive thermosetting rubber"},
+            {"backingThickness_m", 0.125e-3},
+            {"totalThickness_m", 0.177e-3},
+            {"maximumOperatingTemperature_K", 423.15},
+            {"typicalDielectricBreakdown_V", 3000.0},
+            {"typicalTensileStrength_N_per_m", 25200.0},
+            {"typicalElongation_fraction", 0.05},
+            {"typicalAdhesionToSteel_N_per_m", 330.0},
+            {"ulRecognized", true},
+            {"ulTemperature_C", 150.0},
+            {"standardWidth_m", 19.0e-3},
+            {"standardLength_m", 54.864}
+        }},
+        {"sourceDocuments", json::array({
+            "https://multimedia.3m.com/mws/media/1117261O/3m-scotch-27-glass-cloth-electrical-tape-data-sheet.pdf",
+            "https://www.3m.co.uk/3M/en_GB/p/dc/v000532235/"
+        })},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_DATASHEET_TYPICAL_VALUES"},
+            {"electricalStrengthStatus", "DIELECTRIC_BREAKDOWN_TYPICAL_3000V"},
+            {"mechanicalStatus", "TYPICAL_AT_23C"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "3M states typical values are not specification limits. 3000 V is dielectric breakdown voltage for the tape specimen, not a field strength; do not divide by total thickness and treat it as a guaranteed design rating. UL Recognized component listing is stated for 150 °C."}
+        }}
+    };
+
     return {
         {"MAT-TDK-N87", "SEED-TDK-N87-R1", "core-material",
          "https://www.tdk-electronics.tdk.com/download/187238/990c299b916e9f3eb7e44ad563b7f0b9/pdf-n87.pdf",
