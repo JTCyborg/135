@@ -48,7 +48,8 @@ int main(int argc, char** argv)
     assert(n87.value().bhCurveNotes.find("raw tabular B-H") != std::string::npos);
     assert(n87.value().designReleaseStatus == "NOT_VERIFIED");
     assert(n87.value().bhCurveFrequency.si() == 10000.0);
-    assert(n87.value().bhCurveTemperature.si() == 298.15);
+    assert(n87.value().bhCurveTemperature.has_value());
+    assert(n87.value().bhCurveTemperature->si() == 298.15);
     assert(n87.value().material.lossData.front().specificLoss.si() > 0.0);
     assert(n87.value().material.lossData.front().specificLoss.si() == 57000.0 / 4850.0);
 
@@ -64,6 +65,40 @@ int main(int argc, char** argv)
         loadCoreMaterialRevision(store, "SEED-TK-M235-35A-R1");
     assert(!incompleteSteel);
     assert(incompleteSteel.error().code == ErrorCode::InvalidInput);
+
+    // The Kobe Steel table contains measured DC initial-magnetization data,
+    // not an AC B-H loop or core-loss model. Preserve exactly that distinction.
+    const auto steel35A300 =
+        loadCoreMaterialRevision(store, "SEED-MAT-RESEARCH-35A300-DC-R1");
+    assert(steel35A300);
+    assert(steel35A300.value().material.dataSource == domain::MaterialDataSource::Measurement);
+    assert(steel35A300.value().material.grade == "35A300 non-oriented electrical steel");
+    assert(steel35A300.value().bhCurveStatus == "MEASURED_TABULAR");
+    assert(steel35A300.value().material.bhCurve.size() == 8);
+    assert(steel35A300.value().material.bhCurve.front().fieldStrength.si() == 100.0);
+    assert(steel35A300.value().material.bhCurve.front().fluxDensity.si() == 1.20);
+    assert(steel35A300.value().material.bhCurve.back().fieldStrength.si() == 20000.0);
+    assert(steel35A300.value().material.bhCurve.back().fluxDensity.si() == 1.93);
+    assert(steel35A300.value().bhCurveFrequency.si() == 0.0);
+    assert(!steel35A300.value().bhCurveTemperature.has_value());
+    assert(steel35A300.value().material.lossData.empty());
+    assert(steel35A300.value().coreLossStatus == "NOT_PUBLISHED");
+    assert(steel35A300.value().bhCurveSourceDocument ==
+           "Kobe Steel Engineering Reports, Vol. 71 No. 2, July 2022");
+    assert(steel35A300.value().bhCurveSourcePage == "19, Table 2");
+    assert(steel35A300.value().bhCurveSampleDirection == "NOT_STATED_IN_PUBLICATION");
+    assert(steel35A300.value().bhCurveCaptureMethod ==
+           "MEASURED_TABULAR_VALUES_TRANSCRIBED_FROM_TABLE_2");
+    assert(steel35A300.value().designReleaseStatus == "NOT_VERIFIED");
+
+    const auto steel50A800 =
+        loadCoreMaterialRevision(store, "SEED-MAT-RESEARCH-50A800-DC-R1");
+    assert(steel50A800);
+    assert(steel50A800.value().material.bhCurve.size() == 8);
+    assert(steel50A800.value().material.bhCurve.front().fluxDensity.si() == 0.22);
+    assert(steel50A800.value().material.bhCurve.back().fluxDensity.si() == 1.97);
+    assert(steel50A800.value().material.lossData.empty());
+    assert(steel50A800.value().coreLossStatus == "NOT_PUBLISHED");
 
     const auto missing = loadCoreMaterialRevision(store, "DOES-NOT-EXIST");
     assert(!missing);
