@@ -747,13 +747,13 @@ std::vector<SeedRecord> starterRecords()
                 }}
             }},
             {"coreLossProvenance", {
-                {"sourceDocument", "Baosteel Q/BQB 480-2023, Appendix D, Table D.1"},
-                {"sourcePage", "16 (Appendix D, Table D.1); 10 (Table 8 sampling)"},
+                {"sourceDocument", "Baosteel official product overview, Typical electromagnetic performance, Series A"},
+                {"sourcePage", "Official Baosteel HTML table; Q/BQB 480-2023 Table 8 sampling reference"},
                 {"measurementMethod", "GB/T 3655 Epstein square-frame method"},
                 {"sampleDirection", "Half horizontal and half vertical specimens per Table 8; Table D.1 gives aggregate typical values"},
                 {"waveform", "Sinusoidal magnetic-polarization waveform, as defined in Q/BQB 480-2023 clause 3.1"},
                 {"temperatureStatus", "NOT_STATED_IN_SOURCE"},
-                {"notes", "Appendix D values are manufacturer-typical laboratory values, explicitly not guaranteed delivery values. Test temperature is not stated. Use only as reference anchors at the exact frequency and peak flux density; no interpolation, extrapolation, or temperature correction is authorized by this dataset."}
+                {"notes", "Official Baosteel Typical electromagnetic performance values; not guaranteed delivery values. The separate maximum P15/50 limits are from the manufacturer's product specification table. Test temperature is not stated. Use only as reference anchors at the exact frequency and peak flux density; no interpolation, extrapolation, or temperature correction is authorized by this dataset."}
             }},
             {"dataQuality", {
                 {"sourceStatus", "MANUFACTURER_PUBLISHED_TYPICAL_VALUES"},
@@ -766,14 +766,14 @@ std::vector<SeedRecord> starterRecords()
         records.push_back(SeedRecord{
             id, "SEED-" + id + "-R1", "core-loss-reference",
             baosteelLossSource,
-            "Baosteel Q/BQB 480-2023 Table D.1; standard: " + baosteelStandardSource,
+            "Baosteel official product performance page; test standard reference: " + baosteelStandardSource,
             payload
         });
     };
     addBaosteelLossDataset("B35A300", 0.35, 7650.0, 0.95,
-                           1.10, 2.55, 1.40, 3.18, 3.00);
+                           1.14, 2.53, 1.42, 3.13, 3.00);
     addBaosteelLossDataset("B50A800", 0.50, 7800.0, 0.96,
-                           2.42, 5.20, 3.01, 6.47, 8.00);
+                           2.67, 5.70, 3.34, 7.11, 8.00);
 
     // Measured DC initial-magnetization points published in Kobe Steel
     // Engineering Reports, Vol. 71 No. 2 (July 2022), Table 2, p. 19.
