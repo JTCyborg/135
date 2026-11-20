@@ -915,6 +915,11 @@ QWidget* MainWindow::createFilterPage()
     coreAirGapMm_->setRange(0.0, 1000000.0);
     coreAirGapMm_->setDecimals(3);
     coreAirGapMm_->setSuffix(tr(" mm"));
+    coreGapEffectiveAreaMm2_ = new QDoubleSpinBox;
+    coreGapEffectiveAreaMm2_->setRange(0.0, 10000000.0);
+    coreGapEffectiveAreaMm2_->setDecimals(3);
+    coreGapEffectiveAreaMm2_->setSuffix(tr(" mm²"));
+    coreGapEffectiveAreaMm2_->setSpecialValueText(tr("Not set — no fringing correction"));
     coreYokeEffectiveAreaMm2_ = new QDoubleSpinBox;
     coreYokeEffectiveAreaMm2_->setRange(0.0, 10000000.0);
     coreYokeEffectiveAreaMm2_->setDecimals(3);
@@ -930,6 +935,7 @@ QWidget* MainWindow::createFilterPage()
     sourceForm->addRow(tr("Core effective area Ae"), coreEffectiveAreaMm2_);
     sourceForm->addRow(tr("Mean magnetic path le"), coreMeanPathMm_);
     sourceForm->addRow(tr("Total air gap per limb"), coreAirGapMm_);
+    sourceForm->addRow(tr("Effective gap area Ag,eff (optional)"), coreGapEffectiveAreaMm2_);
     sourceForm->addRow(tr("Yoke effective area Ay"), coreYokeEffectiveAreaMm2_);
     sourceForm->addRow(tr("Yoke segment path ly"), coreYokeSegmentPathMm_);
     sourceForm->addRow(tr("Inductor turns per phase N"), inductorTurns_);
@@ -965,6 +971,8 @@ QWidget* MainWindow::createFilterPage()
             limbPathOverrideEnabled_[i], limbPathOverrides_[i], tr(" mm"), 2, 10000000.0);
         addGeometryOverride(limbNames[i] + tr(" — air gap"),
             limbGapOverrideEnabled_[i], limbGapOverrides_[i], tr(" mm"), 3, 1000000.0);
+        addGeometryOverride(limbNames[i] + tr(" — effective gap area"),
+            limbGapAreaOverrideEnabled_[i], limbGapAreaOverrides_[i], tr(" mm²"), 3, 10000000.0);
     }
     const std::array<QString, 4> yokeNames{
         tr("Top A-B"), tr("Top B-C"), tr("Bottom A-B"), tr("Bottom B-C")
@@ -1009,7 +1017,7 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(coreBhCurve_);
 
     auto* saturationHelp = new QLabel(tr(
-        "Red line: entered manufacturer peak-current reference. Purple line: single-path B-H knee-current estimate. For the coupled three-limb model, enter yoke area Ay and yoke segment length ly. Optional branch overrides let you specify independent A/B/C limb areas, paths and air gaps, plus each of the four yoke segment areas and paths; unchecked overrides inherit the common values. The model still uses one shared B-H curve and does not include fringing, joints, hysteresis or DC offset."));
+        "Red line: entered manufacturer peak-current reference. Purple line: single-path B-H knee-current estimate. For the coupled three-limb model, enter yoke area Ay and yoke segment length ly. Optional branch overrides let you specify independent A/B/C limb areas, paths and air gaps, plus each of the four yoke segment areas and paths; unchecked overrides inherit the common values. Optional effective gap areas provide a user-supplied analytical fringing approximation; no geometry-derived correction or FEM field solution is implied. Joints and hysteresis are not modelled."));
     saturationHelp->setWordWrap(true);
     advancedLayout->addWidget(saturationHelp);
 
@@ -1689,6 +1697,8 @@ void MainWindow::calculateFilter()
             coreMeanPathMm_ ? coreMeanPathMm_->value() * 1.0e-3 : 0.0};
         request.core.airGap = p135::units::Length{
             coreAirGapMm_ ? coreAirGapMm_->value() * 1.0e-3 : 0.0};
+        if (coreGapEffectiveAreaMm2_ && coreGapEffectiveAreaMm2_->value() > 0.0)
+            request.gapEffectiveArea = p135::units::Area{coreGapEffectiveAreaMm2_->value() * 1.0e-6};
         request.turns = inductorTurns_ ? static_cast<std::uint32_t>(inductorTurns_->value()) : 0U;
         request.material.id = "USER_BH_CURVE";
         request.material.grade = "User-entered B-H curve";
@@ -1758,6 +1768,9 @@ void MainWindow::calculateFilter()
                 if (limbGapOverrideEnabled_[i] && limbGapOverrideEnabled_[i]->isChecked())
                     request.geometry.limbAirGaps[i] =
                         p135::units::Length{limbGapOverrides_[i]->value() * 1.0e-3};
+                if (limbGapAreaOverrideEnabled_[i] && limbGapAreaOverrideEnabled_[i]->isChecked())
+                    request.geometry.limbGapEffectiveAreas[i] =
+                        p135::units::Area{limbGapAreaOverrides_[i]->value() * 1.0e-6};
             }
             for (std::size_t i = 0; i < 4; ++i) {
                 if (yokeAreaOverrideEnabled_[i] && yokeAreaOverrideEnabled_[i]->isChecked())
