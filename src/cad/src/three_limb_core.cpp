@@ -285,6 +285,10 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
         g.windowHeights[1].si()
     };
 
+    std::size_t expectedCoreSolids = 0;
+    for (TopExp_Explorer it(core.value(), TopAbs_SOLID); it.More(); it.Next())
+        ++expectedCoreSolids;
+
     BRep_Builder builder;
     TopoDS_Compound assembly;
     builder.MakeCompound(assembly);
@@ -317,9 +321,9 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
             "assembly");
     std::size_t solids = 0;
     for (TopExp_Explorer it(assembly, TopAbs_SOLID); it.More(); it.Next()) ++solids;
-    if (solids != 10)
+    if (solids != expectedCoreSolids + geometry.bobbins.size())
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-            "The reactor assembly must retain seven core components and three bobbin solids.",
+            "The reactor assembly must retain every core solid and all three bobbin solids.",
             "assembly");
     return Result<TopoDS_Shape>::success(assembly);
 }
