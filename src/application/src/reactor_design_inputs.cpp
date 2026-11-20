@@ -65,7 +65,7 @@ Result<void> validate(const MaterialRecommendationSet& recommendations)
     for (const auto& candidate : recommendations.candidates) {
         if (candidate.materialRevisionId.empty() || candidate.materialRole.empty())
             return invalid("Each recommendation requires a material revision ID and role.");
-        const auto key = candidate.materialRole + "\\n" + candidate.materialRevisionId;
+        const auto key = candidate.materialRole + "\n" + candidate.materialRevisionId;
         if (!candidateKeys.insert(key).second)
             return invalid("Duplicate material recommendation for the same role and revision.");
     }
