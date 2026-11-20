@@ -1127,14 +1127,25 @@ QWidget* MainWindow::createResultsPage()
 {
     auto* page = new QWidget;
     auto* layout = new QVBoxLayout(page);
+    layout->setSpacing(10);
     auto* heading = new QLabel(tr("Filter synthesis results"));
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
+
+    resultsNote_ = new QLabel(tr("No synthesis has been performed."));
+    resultsNote_->setWordWrap(true);
+    resultsNote_->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    resultsNote_->setMinimumHeight(48);
+    resultsNote_->setStyleSheet("QLabel { background: #fff4d6; color: #704b00; border: 1px solid #d6a43a; border-radius: 4px; padding: 8px; }");
+    layout->addWidget(resultsNote_);
 
     resultsTable_ = new QTableWidget(0, 3);
     resultsTable_->setHorizontalHeaderLabels({tr("Parameter"), tr("Value"), tr("Unit")});
     resultsTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     resultsTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    resultsTable_->verticalHeader()->setDefaultSectionSize(27);
+    resultsTable_->setMinimumHeight(290);
+    resultsTable_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsTable_);
 
     auto* currentPlotTitle = new QLabel(tr("Inductor phase peak current — frequency sweep"));
@@ -1142,6 +1153,8 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
     resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
+    resultsBankCurrentPlot_->setMinimumHeight(250);
+    resultsBankCurrentPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBankCurrentPlot_);
 
     auto* coreFluxPlotTitle = new QLabel(tr("Three-limb core peak flux density — frequency sweep"));
@@ -1149,6 +1162,8 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(coreFluxPlotTitle);
     resultsCoreFluxPlot_ = new PlotWidget;
     resultsCoreFluxPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
+    resultsCoreFluxPlot_->setMinimumHeight(250);
+    resultsCoreFluxPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsCoreFluxPlot_);
 
     auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
@@ -1156,18 +1171,28 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(impedancePlotTitle);
     resultsBusImpedancePlot_ = new PlotWidget;
     resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+    resultsBusImpedancePlot_->setMinimumHeight(250);
+    resultsBusImpedancePlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBusImpedancePlot_);
 
-    resultsNote_ = new QLabel(tr("No synthesis has been performed."));
-    resultsNote_->setWordWrap(true);
-    layout->addWidget(resultsNote_);
-
+    auto* logHeading = new QLabel(tr("Calculation log"));
+    logHeading->setStyleSheet("font-weight: 600;");
+    layout->addWidget(logHeading);
     log_ = new QPlainTextEdit;
     log_->setReadOnly(true);
     log_->setMaximumBlockCount(500);
     log_->setPlaceholderText(tr("Application and engineering activity log"));
+    log_->setMinimumHeight(150);
     layout->addWidget(log_);
-    return page;
+
+    auto* scroll = new QScrollArea;
+    scroll->setObjectName(QStringLiteral("calculationScrollArea"));
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setWidget(page);
+    return scroll;
 }
 
 QWidget* MainWindow::createMaterialsPage()
@@ -2191,7 +2216,9 @@ void MainWindow::calculateFilter()
         const int row = resultsTable_->rowCount();
         resultsTable_->insertRow(row);
         resultsTable_->setItem(row, 0, new QTableWidgetItem(name));
-        resultsTable_->setItem(row, 1, new QTableWidgetItem(QString::number(value, 'g', 10)));
+        auto* valueItem = new QTableWidgetItem(QString::number(value, 'g', 4));
+        valueItem->setToolTip(tr("Full precision: %1").arg(QString::number(value, 'g', 15)));
+        resultsTable_->setItem(row, 1, valueItem);
         resultsTable_->setItem(row, 2, new QTableWidgetItem(unit));
     };
     const auto addTextResult = [this](const QString& name, const QString& value) {
@@ -2587,7 +2614,8 @@ void MainWindow::calculateFilter()
         }
 
         if (resultsBankCurrentPlot_) {
-            resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
+            resultsBankCurrentPlot_->setCurves(hasSourceImpedance
+                ? std::vector<PlotCurve>{bankCurrentCurve} : std::vector<PlotCurve>{},
                 tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
             resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference, magneticKneeCurrentA);
         }
@@ -2750,7 +2778,8 @@ void MainWindow::calculateFilter()
             std::sqrt(2.0) * maximumPhaseRmsCurrent);
     }
     if (resultsBankCurrentPlot_) {
-        resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
+        resultsBankCurrentPlot_->setCurves(hasSourceImpedance
+            ? std::vector<PlotCurve>{liveCurrentCurve} : std::vector<PlotCurve>{},
             tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
         resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference);
     }
@@ -2767,8 +2796,30 @@ void MainWindow::calculateFilter()
         resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
     }
 
-    resultsNote_->setText(calculationSummary);
-    status_->setText(tr("Filter synthesized and AC network solved"));
+    QStringList visibleWarnings;
+    if (!hasSourceImpedance)
+        visibleWarnings.push_back(tr("Source impedance R/L is zero or unset. Resonance, bus-impedance scan and source-limited current response are NOT_VERIFIED; the ideal-source current sweep is intentionally hidden."));
+    if (!magneticCircuitBase && !threeLimbMagneticBase)
+        visibleWarnings.push_back(tr("Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED."));
+    if (!harmonicResult)
+        visibleWarnings.push_back(tr("No non-fundamental voltage harmonics were supplied. Harmonic distortion and harmonic component stress are NOT_VERIFIED."));
+    if (!advancedWarning.isEmpty())
+        visibleWarnings.push_back(advancedWarning);
+    if (!componentAssessmentWarning.isEmpty())
+        visibleWarnings.push_back(componentAssessmentWarning);
+    if (visibleWarnings.isEmpty()) {
+        resultsNote_->setText(tr("Calculation completed. Review the model assumptions and scope limitations below."));
+        resultsNote_->setStyleSheet("QLabel { background: #e8f4ea; color: #205b2d; border: 1px solid #77ad80; border-radius: 4px; padding: 8px; }");
+    } else {
+        resultsNote_->setText(tr("⚠ INPUT / MODEL LIMITATIONS — results are preliminary and must not be treated as verified design data.\n\n%1\n\n%2")
+            .arg(visibleWarnings.join(QStringLiteral("\n")))
+            .arg(calculationSummary));
+        resultsNote_->setStyleSheet("QLabel { background: #fff0d8; color: #704000; border: 1px solid #d18b25; border-radius: 4px; padding: 8px; }");
+    }
+    resultsNote_->setToolTip(calculationSummary);
+    status_->setText(visibleWarnings.isEmpty()
+        ? tr("Filter synthesized and AC network solved")
+        : tr("Calculation completed with NOT_VERIFIED inputs — review warnings"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
         .arg(targetReactivePower_->value())
         .arg(tuningHarmonicOrder_->value())
