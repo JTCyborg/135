@@ -664,7 +664,7 @@ int main()
     assert(p135::cad::validateAssemblyPresentation(presentation));
     assert(presentation.id == "reactor");
     assert(presentation.children.size() == 2);
-    assert(presentation.children[0].id == "core");
+    assert(presentation.children[0].id == "core.laminations");
     assert(presentation.children[0].children.size() == 7);
     assert(presentation.children[1].id == "windings");
     assert(presentation.children[1].children.size() == 3);
