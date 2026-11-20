@@ -60,4 +60,100 @@ Result<void> validate(const DesignParameter& parameter)
     return Result<void>::success();
 }
 
+Result<DesignParameter> editDesignParameter(
+    const DesignParameter& current,
+    DesignControlMode mode,
+    std::optional<double> fixedValue,
+    std::optional<double> minimumLimit,
+    std::optional<double> maximumLimit)
+{
+    DesignParameter edited = current;
+    edited.mode = mode;
+    edited.minimumLimit = minimumLimit;
+    edited.maximumLimit = maximumLimit;
+    edited.status = DesignParameterStatus::InputChanged;
+
+    switch (mode) {
+    case DesignControlMode::Auto:
+        edited.acceptedValue.reset();
+        edited.minimumLimit.reset();
+        edited.maximumLimit.reset();
+        break;
+    case DesignControlMode::Fixed:
+        edited.acceptedValue = fixedValue;
+        break;
+    case DesignControlMode::Limit:
+        edited.acceptedValue.reset();
+        break;
+    }
+
+    const auto valid = validate(edited);
+    if (!valid)
+        return Result<DesignParameter>::failure(valid.error());
+    return Result<DesignParameter>::success(std::move(edited));
+}
+
+Result<DesignParameter> applyDesignParameterCalculation(
+    const DesignParameter& parameter,
+    double calculatedCandidate)
+{
+    if (!std::isfinite(calculatedCandidate))
+        return Result<DesignParameter>::failure(
+            {ErrorCode::InvalidInput, "Solver candidate must be finite.", {}});
+
+    DesignParameter updated = parameter;
+    updated.calculatedValue = calculatedCandidate;
+    switch (updated.mode) {
+    case DesignControlMode::Auto:
+        updated.acceptedValue = calculatedCandidate;
+        break;
+    case DesignControlMode::Fixed:
+        if (!updated.acceptedValue)
+            return Result<DesignParameter>::failure(
+                {ErrorCode::InvalidInput, "FIXED parameter has no user-supplied value.", {}});
+        break;
+    case DesignControlMode::Limit:
+        if (!updated.minimumLimit && !updated.maximumLimit)
+            return Result<DesignParameter>::failure(
+                {ErrorCode::InvalidInput, "LIMIT parameter has no search bounds.", {}});
+        if ((updated.minimumLimit && calculatedCandidate < *updated.minimumLimit) ||
+            (updated.maximumLimit && calculatedCandidate > *updated.maximumLimit))
+            return Result<DesignParameter>::failure(
+                {ErrorCode::InvalidInput,
+                 "Solver candidate is outside the user-specified LIMIT bounds.", {}});
+        updated.acceptedValue = calculatedCandidate;
+        break;
+    }
+
+    updated.status = DesignParameterStatus::Calculated;
+    const auto valid = validate(updated);
+    if (!valid)
+        return Result<DesignParameter>::failure(valid.error());
+    return Result<DesignParameter>::success(std::move(updated));
+}
+
+Result<double> resolvedDesignParameterValue(const DesignParameter& parameter)
+{
+    const auto valid = validate(parameter);
+    if (!valid)
+        return Result<double>::failure(valid.error());
+
+    switch (parameter.mode) {
+    case DesignControlMode::Auto:
+        if (!parameter.calculatedValue)
+            return Result<double>::failure(
+                {ErrorCode::InvalidInput, "AUTO parameter has not been calculated.", {}});
+        return Result<double>::success(*parameter.calculatedValue);
+    case DesignControlMode::Fixed:
+        return Result<double>::success(*parameter.acceptedValue);
+    case DesignControlMode::Limit:
+        if (!parameter.acceptedValue)
+            return Result<double>::failure(
+                {ErrorCode::InvalidInput, "LIMIT parameter has no feasible calculated value.", {}});
+        return Result<double>::success(*parameter.acceptedValue);
+    }
+    return Result<double>::failure(
+        {ErrorCode::InternalError, "Unknown design parameter control mode.", {}});
+}
+
 } // namespace p135::domain
