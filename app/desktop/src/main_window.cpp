@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 #include "material_database_widget.hpp"
+#include "cad_viewport_widget.hpp"
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
@@ -1940,13 +1941,16 @@ QWidget* MainWindow::createCadPage()
     auto* heading = new QLabel(tr("3D CAD workspace"));
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
-    auto* placeholder = new QLabel(tr("OCCT viewport is not connected yet. The future 3D model will be generated from the engineering domain model; CAD geometry will not be used as the source of electrical parameters."));
-    placeholder->setAlignment(Qt::AlignCenter);
-    placeholder->setWordWrap(true);
-    placeholder->setMinimumHeight(320);
-    placeholder->setStyleSheet("border: 1px dashed palette(mid); padding: 24px;");
-    layout->addWidget(placeholder);
-    layout->addStretch();
+
+    auto* viewport = new CadViewportWidget(page);
+    layout->addWidget(viewport, 1);
+
+    auto* geometryNote = new QLabel(tr(
+        "The current engineering inputs contain magnetic effective dimensions, not the complete physical core, bobbin and winding geometry. "
+        "No physical dimensions are inferred from Ae, le or other magnetic values; the viewport will remain empty until verified mechanical geometry is supplied."));
+    geometryNote->setWordWrap(true);
+    geometryNote->setStyleSheet("color: palette(mid);");
+    layout->addWidget(geometryNote);
     return page;
 }
 
