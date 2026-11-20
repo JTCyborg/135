@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <string>
+#include <utility>
 
 using namespace p135;
 using namespace p135::thermal;
@@ -39,8 +41,8 @@ int main()
         assert(result.value().solved);
         assert(result.value().modelProvenanceComplete);
         assert(result.value().nodes.size() == 2);
-        assert(std::abs(result.value().nodes[0].estimatedTemperature.si() - 303.15) < 1.0e-9);
-        assert(std::abs(result.value().nodes[1].estimatedTemperature.si() - 298.15) < 1.0e-9);
+        assert(std::abs(result.value().nodes[0].estimatedTemperature.si() - (293.15 + 20.0 / 3.0)) < 1.0e-9);
+        assert(std::abs(result.value().nodes[1].estimatedTemperature.si() - (293.15 + 10.0 / 3.0)) < 1.0e-9);
         assert(result.value().nodes[0].status == AssessmentStatus::Pass);
         assert(result.value().nodes[1].status == AssessmentStatus::Pass);
     }
