@@ -1476,10 +1476,10 @@ void MainWindow::loadCalculationInputs(int row)
         return;
     }
     const auto input = document.object();
+    projectId_ = QString::fromStdString(record.value()->projectId);
     if (projectName_) projectName_->setText(
         input.value(QStringLiteral("projectName")).toString(
             QString::fromStdString(record.value()->projectName)));
-    projectId_ = QString::fromStdString(record.value()->projectId);
 
     // Restore Project page fields when present. Missing keys are expected in older snapshots.
     const auto restoreProjectLine = [this, &input](const char* objectName, const char* key) {
