@@ -1,5 +1,6 @@
 #include "p135/domain/magnetic_product.hpp"
 #include "p135/domain/core_loss.hpp"
+#include "p135/domain/initial_magnetization.hpp"
 #include "p135/domain/magnetic_circuit.hpp"
 #include "p135/domain/three_limb_magnetic.hpp"
 #include "p135/domain/material_catalog.hpp"
@@ -328,6 +329,56 @@ int main()
         invalidTerm.denominatorTerms.front().coefficient = -1.0;
         assert(!evaluateCoreLossEquation(
             invalidTerm, units::Frequency{100000.0}, units::FluxDensity{0.014}));
+    }
+
+
+    {
+        // Micrometals Mix-2 initial magnetization equation: Oe -> A/m, gauss -> tesla.
+        InitialMagnetizationEquation equation;
+        equation.initialPermeability = 10.0;
+        equation.coefficientA = 1.50e-3;
+        equation.exponentB = 1.96;
+        equation.coefficientC = 1.97e4;
+        equation.exponentD = 9.18e-4;
+        equation.coefficientE = 1.48e3;
+        equation.minimumField_Oe = 0.0;
+        equation.maximumField_Oe = 4000.0;
+        equation.sourceReference =
+            "https://datasheets.micrometals.com/D101-1002-DataSheet.pdf";
+        equation.datasetRevision = "2023-12-15";
+
+        const auto atZero = evaluateInitialMagnetization(
+            equation, units::MagneticFieldStrength{0.0});
+        assert(atZero && std::abs(atZero.value().si()) < 1.0e-15);
+        const auto at100Oe = evaluateInitialMagnetization(
+            equation, units::MagneticFieldStrength{100.0 * 1000.0 /
+                (4.0 * 3.14159265358979323846)});
+        assert(at100Oe);
+        assert(at100Oe.value().si() > 0.103 && at100Oe.value().si() < 0.105);
+
+        const auto curve = sampleInitialMagnetizationCurve(equation, 129);
+        assert(curve);
+        assert(curve.value().size() == 129);
+        assert(std::abs(curve.value().front().fluxDensity.si()) < 1.0e-15);
+        assert(curve.value().back().fluxDensity.si() > 1.29);
+        assert(curve.value().back().fluxDensity.si() < 1.30);
+        for (std::size_t i = 1; i < curve.value().size(); ++i) {
+            assert(curve.value()[i].fieldStrength.si() >
+                   curve.value()[i - 1].fieldStrength.si());
+            assert(curve.value()[i].fluxDensity.si() >
+                   curve.value()[i - 1].fluxDensity.si());
+        }
+
+        const auto outside = evaluateInitialMagnetization(
+            equation, units::MagneticFieldStrength{4000.1 * 1000.0 /
+                (4.0 * 3.14159265358979323846)});
+        assert(!outside);
+        assert(outside.error().code == ErrorCode::ModelOutOfDomain);
+        assert(!sampleInitialMagnetizationCurve(equation, 1));
+        auto noSource = equation;
+        noSource.sourceReference.clear();
+        assert(!evaluateInitialMagnetization(
+            noSource, units::MagneticFieldStrength{100.0}));
     }
 
     CoreMaterialCatalog catalog;
