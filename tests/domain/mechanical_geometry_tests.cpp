@@ -215,7 +215,9 @@ int main()
     assert(!validate(bobbinTooLongForWindow));
 
     auto middleBobbinMustFitBothWindows = valid;
-    middleBobbinMustFitBothWindows.core.windowHeights[1] = units::Length{0.10};
+    middleBobbinMustFitBothWindows.core.windowHeights = {
+        units::Length{0.10}, units::Length{0.10}
+    };
     middleBobbinMustFitBothWindows.core.coreOverallHeight = units::Length{0.18};
     middleBobbinMustFitBothWindows.bobbins[1].axialLength = units::Length{0.105};
     assert(!validate(middleBobbinMustFitBothWindows));
