@@ -113,6 +113,12 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
         if (joint.construction == CoreJointType::Butt) {
             if (!joint.stepLapPackets.empty())
                 return invalid("Butt joints must not contain Step-Lap packet geometry.", field + ".stepLapPackets");
+            const double depthTolerance = std::max(1.0e-9,
+                std::max(jointDepths[interfaceIndex].limb, jointDepths[interfaceIndex].yoke) * 1.0e-6);
+            if (std::abs(jointDepths[interfaceIndex].limb -
+                         jointDepths[interfaceIndex].yoke) > depthTolerance)
+                return invalid("Butt joint members must have matching physical stack depth for full-face contact.",
+                    field + ".stackDepth");
             continue;
         }
         if (joint.construction != CoreJointType::StepLap)
@@ -152,9 +158,12 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
     // Yoke CAD solids extend from the outside face of the first limb to
     // the outside face of the second limb. Air-gap coordinates use that same
     // physical segment datum, including the portions spanning both limbs.
+    // The two yoke halves meet at the centre plane of the middle limb.
+    // AB starts at the outside face of A and ends at the centre of B;
+    // BC starts at the centre of B and ends at the outside face of C.
     const double yokeABLength = g.limbWidths[0].si() + g.windowWidths[0].si() +
-        g.limbWidths[1].si();
-    const double yokeBCLength = g.limbWidths[1].si() + g.windowWidths[1].si() +
+        0.5 * g.limbWidths[1].si();
+    const double yokeBCLength = 0.5 * g.limbWidths[1].si() + g.windowWidths[1].si() +
         g.limbWidths[2].si();
     const std::array<double, 7> segmentLengths{{
         limbLength, limbLength, limbLength,
