@@ -97,6 +97,34 @@ Result<double> calculateThreePhaseEiEffectiveLimbAreaM2(
     return Result<double>::success(area);
 }
 
+Result<double> calculateThreePhaseEiEffectiveLimbAreaM2(
+    const CoreComponentGeometrySnapshot& geometry,
+    const application::ReactorDesignInputs& inputs)
+{
+    if (!inputs.coreStackDepthM || !inputs.stackingFactor) {
+        Error error;
+        error.code = ErrorCode::MissingRequiredData;
+        error.message = "EI limb area requires explicit core stack depth and stacking factor in reactor design inputs.";
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "THREE_PHASE_EI_AREA_INPUTS_MISSING", error.message,
+            "coreStackDepthM/stackingFactor", std::nullopt, std::nullopt
+        });
+        return Result<double>::failure(std::move(error));
+    }
+    if (inputs.coreGeometryFamily && *inputs.coreGeometryFamily != "three-limb") {
+        Error error;
+        error.code = ErrorCode::UnsupportedConfiguration;
+        error.message = "Selected EI component requires the three-limb core geometry family.";
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "THREE_PHASE_EI_GEOMETRY_FAMILY_MISMATCH", error.message,
+            "coreGeometryFamily", std::nullopt, std::nullopt
+        });
+        return Result<double>::failure(std::move(error));
+    }
+    return calculateThreePhaseEiEffectiveLimbAreaM2(
+        geometry, *inputs.coreStackDepthM, *inputs.stackingFactor);
+}
+
 Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
     const SqliteMaterialRevisionStore& store,
     const std::string& revisionId)
