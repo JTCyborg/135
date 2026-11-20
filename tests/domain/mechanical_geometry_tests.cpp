@@ -83,6 +83,19 @@ int main()
     };
     assert(validate(stepLap));
 
+    // The same packet-depth contract must validate at each of the eight
+    // physical limb/yoke interfaces, not only the first AB/top interface.
+    auto stepLapAtEveryInterface = valid;
+    for (auto& joint : stepLapAtEveryInterface.core.joints) {
+        joint.construction = CoreJointType::StepLap;
+        joint.stepLapPackets = stepLap.core.joints[0].stepLapPackets;
+    }
+    assert(validate(stepLapAtEveryInterface));
+
+    auto excessiveYokeOverlap = stepLap;
+    excessiveYokeOverlap.core.joints[0].stepLapPackets[0].overlapIntoYoke = units::Length{0.13};
+    assert(!validate(excessiveYokeOverlap));
+
     auto unorderedStepLap = stepLap;
     std::swap(unorderedStepLap.core.joints[0].stepLapPackets[0],
               unorderedStepLap.core.joints[0].stepLapPackets[1]);
