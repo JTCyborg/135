@@ -431,3 +431,22 @@ if(MSVC)
 else()
     target_compile_options(Project135ReactorThermalNetworkTests PRIVATE -UNDEBUG)
 endif()
+
+
+add_executable(Project135RevisionBoundReactorThermalNetworkTests
+    infrastructure/revision_bound_reactor_thermal_network_tests.cpp
+)
+target_link_libraries(Project135RevisionBoundReactorThermalNetworkTests PRIVATE
+    Project135::InfrastructureSqlite Project135::Thermal Project135::Domain
+)
+add_test(
+    NAME Project135RevisionBoundReactorThermalNetworkTests
+    COMMAND Project135RevisionBoundReactorThermalNetworkTests
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql
+)
+if(MSVC)
+    target_compile_options(Project135RevisionBoundReactorThermalNetworkTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135RevisionBoundReactorThermalNetworkTests PRIVATE -UNDEBUG)
+endif()
