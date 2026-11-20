@@ -84,6 +84,7 @@ protected:
         }
         if (event->button() == Qt::MiddleButton && !items_.empty())
         {
+            panStartPosition_ = lastMousePosition_;
             view_->Pan(0, 0, 1.0, Standard_True);
             panning_ = true;
             event->accept();
@@ -109,9 +110,8 @@ protected:
         }
         if (panning_ && (event->buttons() & Qt::MiddleButton))
         {
-            view_->Pan(position.x() - lastMousePosition_.x(),
-                       lastMousePosition_.y() - position.y(), 1.0, Standard_False);
-            lastMousePosition_ = position;
+            view_->Pan(position.x() - panStartPosition_.x(),
+                       panStartPosition_.y() - position.y(), 1.0, Standard_False);
             event->accept();
             return;
         }
@@ -236,6 +236,7 @@ private:
 
     std::vector<p135::cad::AssemblyPresentationDisplayItem> items_;
     QPoint lastMousePosition_;
+    QPoint panStartPosition_;
     bool rotating_{false};
     bool panning_{false};
     bool moved_{false};
