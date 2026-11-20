@@ -369,6 +369,19 @@ int main()
                    curve.value()[i - 1].fluxDensity.si());
         }
 
+        // Feed the equation-derived curve into the existing nonlinear solver.
+        auto equationMaterial = validProduct().coreMaterial;
+        equationMaterial.bhCurve = curve.value();
+        MagneticCircuitRequest magneticRequest;
+        magneticRequest.core = validProduct().core;
+        magneticRequest.material = equationMaterial;
+        magneticRequest.turns = 100;
+        magneticRequest.current = units::Current{1.0};
+        const auto solvedFromEquation = analyzeMagneticCircuit(magneticRequest);
+        assert(solvedFromEquation);
+        assert(solvedFromEquation.value().withinBhCurveRange);
+        assert(solvedFromEquation.value().fluxDensity.si() > 0.0);
+
         const auto outside = evaluateInitialMagnetization(
             equation, units::MagneticFieldStrength{4000.1 * 1000.0 /
                 (4.0 * 3.14159265358979323846)});
