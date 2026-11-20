@@ -83,4 +83,12 @@ struct CoreMaterialRevisionSnapshot {
     const SqliteMaterialRevisionStore& store,
     const std::string& revisionId);
 
+/// Returns a manufacturer reference value only when both coordinates match
+/// an imported anchor exactly. No interpolation, extrapolation, or temperature
+/// inference is performed; dataset quality/provenance remains caller-visible.
+[[nodiscard]] std::optional<CoreLossReferencePoint> findExactCoreLossReferencePoint(
+    const CoreLossReferenceDataset& dataset,
+    units::Frequency frequency,
+    units::FluxDensity peakFluxDensity);
+
 } // namespace p135::infrastructure::sqlite
