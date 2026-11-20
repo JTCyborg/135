@@ -136,15 +136,13 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
             return invalid("Step-Lap members must share the same physical stack depth; independent depth offsets are not defined by this contract.",
                 field + ".stackDepth");
         const double availableDepth = limbDepth;
-        const double limbHeight = g.coreOverallHeight.si() -
-            g.yokeThicknesses[0].si() - g.yokeThicknesses[2].si();
         const std::size_t yokeIndex = interfaceIndex < 2 ? 0 :
             (interfaceIndex < 4 ? 1 : (interfaceIndex < 6 ? 2 : 3));
-        const double yokeLength = (yokeIndex % 2 == 0)
-            ? g.limbWidths[0].si() + g.windowWidths[0].si() +
-                0.5 * g.limbWidths[1].si()
-            : 0.5 * g.limbWidths[1].si() + g.windowWidths[1].si() +
-                g.limbWidths[2].si();
+        const std::size_t windowIndex = (interfaceIndex % 4) < 2 ? 0 : 1;
+        // The overlap dimensions are measured normal to the butt plane:
+        // into the clear limb window and into the corresponding yoke thickness.
+        const double limbExtent = g.windowHeights[windowIndex].si();
+        const double yokeExtent = g.yokeThicknesses[yokeIndex].si();
         const double tolerance = std::max(1.0e-9, availableDepth * 1.0e-6);
         double previousEnd = 0.0;
         StepLapPacketDirection previousDirection = StepLapPacketDirection::LimbIntoYoke;
@@ -158,9 +156,9 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
             const double end = start + packet.stackDepth.si();
             if (!std::isfinite(end) || end > availableDepth + tolerance)
                 return invalid("Step-Lap packet exceeds the shared physical stack depth.", packetField);
-            if (packet.overlapIntoLimb.si() > limbHeight + tolerance ||
-                packet.overlapIntoYoke.si() > yokeLength + tolerance)
-                return invalid("Step-Lap overlaps must fit inside the physical limb and yoke extents.", packetField);
+            if (packet.overlapIntoLimb.si() > limbExtent + tolerance ||
+                packet.overlapIntoYoke.si() > yokeExtent + tolerance)
+                return invalid("Step-Lap overlaps must fit inside the clear limb-window height and the corresponding yoke thickness.", packetField);
             if (packet.direction != StepLapPacketDirection::LimbIntoYoke &&
                 packet.direction != StepLapPacketDirection::YokeIntoLimb)
                 return invalid("Step-Lap packet direction is not supported.", packetField + ".direction");
