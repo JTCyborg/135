@@ -1,4 +1,14 @@
 find_package(SQLite3 REQUIRED)
+
+# vcpkg's sqlite3 port exports unofficial::sqlite3::sqlite3, while CMake's
+# FindSQLite3 module exports SQLite3::SQLite3. Support both package providers.
+if(TARGET SQLite3::SQLite3)
+    set(P135_SQLITE_TARGET SQLite3::SQLite3)
+elseif(TARGET unofficial::sqlite3::sqlite3)
+    set(P135_SQLITE_TARGET unofficial::sqlite3::sqlite3)
+else()
+    message(FATAL_ERROR "SQLite3 was found, but no supported SQLite imported target is available")
+endif()
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 find_package(nlohmann_json CONFIG REQUIRED)
 
@@ -16,7 +26,7 @@ target_include_directories(Project135InfrastructureSqlite
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sqlite/include>
 )
 target_link_libraries(Project135InfrastructureSqlite
-    PUBLIC Project135::Core Project135::Application SQLite3::SQLite3
+    PUBLIC Project135::Core Project135::Application ${P135_SQLITE_TARGET}
     PRIVATE OpenSSL::Crypto nlohmann_json::nlohmann_json
 )
 target_compile_features(Project135InfrastructureSqlite PUBLIC cxx_std_20)
