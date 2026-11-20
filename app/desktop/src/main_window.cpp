@@ -1534,7 +1534,7 @@ QWidget* MainWindow::createResultsPage()
         addIdealCriterion(QStringLiteral("idealSizing_AwAe"), 1000.0, 4, QString{}));
     designLayout->addWidget(idealCriteria);
 
-    auto* idealSizingResult = new QLabel(tr("Ideal area-product estimate: NOT CALCULATED — enter all four criteria and recalculate."));
+    auto* idealSizingResult = new QLabel(tr("Ideal area-product estimate: NOT CALCULATED — enter all five criteria and recalculate."));
     idealSizingResult->setObjectName(QStringLiteral("idealSizingResult"));
     idealSizingResult->setWordWrap(true);
     idealSizingResult->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -3275,7 +3275,12 @@ void MainWindow::calculateFilter()
                 const auto* parameter = table->item(row, 0);
                 if (!parameter) continue;
                 if (parameter->text() == tr("Minimum gross area product Ae×Aw") ||
-                    parameter->text() == tr("Equivalent square area scale")) {
+                    parameter->text() == tr("Equivalent square area scale") ||
+                    parameter->text() == tr("Estimated gross core area Ae") ||
+                    parameter->text() == tr("Estimated effective core area") ||
+                    parameter->text() == tr("Estimated window area Aw") ||
+                    parameter->text() == tr("Ideal minimum turns per reactor") ||
+                    parameter->text() == tr("Ideal total equivalent air gap")) {
                     table->setItem(row, 1, new QTableWidgetItem(tr("NOT CALCULATED")));
                     table->setItem(row, 3, new QTableWidgetItem(tr("NOT_VERIFIED")));
                 }
@@ -3405,7 +3410,7 @@ void MainWindow::calculateFilter()
                 output->setText(tr("Ideal area-product estimate unavailable: synthesized branch data is incomplete."));
             }
         } else {
-            output->setText(tr("Ideal area-product estimate: NOT CALCULATED — enter all four criteria and recalculate."));
+            output->setText(tr("Ideal area-product estimate: NOT CALCULATED — enter all five criteria and recalculate."));
         }
     }
 
