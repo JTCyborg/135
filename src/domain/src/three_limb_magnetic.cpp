@@ -210,17 +210,37 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
             return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
         }
     }
-    for (const auto& phasor : request.phaseRmsPhasors) {
-        if (!std::isfinite(phasor.real()) || !std::isfinite(phasor.imag())) {
-            Error error;
-            error.code = ErrorCode::InvalidInput;
-            error.message = "Three-phase RMS current phasors must be finite.";
-            error.diagnostics.push_back(Diagnostic{
-                Severity::Error, "THREE_LIMB_SAMPLING_INVALID", error.message,
-                "phaseRmsPhasors", std::nullopt, std::nullopt
-            });
-            return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
+    const auto validatePhasors = [](const auto& phasors) {
+        return std::all_of(phasors.begin(), phasors.end(), [](const auto& phasor) {
+            return std::isfinite(phasor.real()) && std::isfinite(phasor.imag());
+        });
+    };
+    if (!request.harmonicExcitations.empty()) {
+        std::vector<std::uint32_t> orders;
+        orders.reserve(request.harmonicExcitations.size());
+        for (const auto& harmonic : request.harmonicExcitations) {
+            if (harmonic.order == 0 || !validatePhasors(harmonic.phaseRmsPhasors) ||
+                std::find(orders.begin(), orders.end(), harmonic.order) != orders.end()) {
+                Error error;
+                error.code = ErrorCode::InvalidInput;
+                error.message = "Harmonic excitations require unique positive orders and finite three-phase RMS phasors.";
+                error.diagnostics.push_back(Diagnostic{
+                    Severity::Error, "THREE_LIMB_SAMPLING_INVALID", error.message,
+                    "harmonicExcitations", std::nullopt, std::nullopt
+                });
+                return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
+            }
+            orders.push_back(harmonic.order);
         }
+    } else if (!validatePhasors(request.phaseRmsPhasors)) {
+        Error error;
+        error.code = ErrorCode::InvalidInput;
+        error.message = "Three-phase RMS current phasors must be finite.";
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "THREE_LIMB_SAMPLING_INVALID", error.message,
+            "phaseRmsPhasors", std::nullopt, std::nullopt
+        });
+        return Result<ThreeLimbMagneticCycleSamplingResult>::failure(std::move(error));
     }
 
     ThreeLimbMagneticCycleSamplingResult result;
@@ -234,11 +254,21 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
         for (std::size_t sample = 0; sample < sampleCount; ++sample) {
             const double angle = 2.0 * pi * static_cast<double>(sample) /
                                  static_cast<double>(sampleCount);
-            const auto rotation = std::polar(1.0, angle);
             auto magneticRequest = request.magnetic;
             for (std::size_t phase = 0; phase < 3; ++phase) {
-                const double instantaneousPeak =
-                    std::sqrt(2.0) * std::real(request.phaseRmsPhasors[phase] * rotation);
+                double instantaneousPeak = 0.0;
+                if (request.harmonicExcitations.empty()) {
+                    instantaneousPeak = std::sqrt(2.0) * std::real(
+                        request.phaseRmsPhasors[phase] * std::polar(1.0, angle));
+                } else {
+                    for (const auto& harmonic : request.harmonicExcitations) {
+                        const double harmonicAngle = angle *
+                            static_cast<double>(harmonic.order);
+                        instantaneousPeak += std::sqrt(2.0) * std::real(
+                            harmonic.phaseRmsPhasors[phase] *
+                            std::polar(1.0, harmonicAngle));
+                    }
+                }
                 magneticRequest.phaseCurrents[phase] = units::Current{
                     request.phaseDcCurrents[phase].si() + instantaneousPeak
                 };
