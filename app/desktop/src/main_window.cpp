@@ -1,4 +1,6 @@
 #include "main_window.hpp"
+
+#include <nlohmann/json.hpp>
 #include "material_database_widget.hpp"
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
@@ -1416,8 +1418,17 @@ void MainWindow::importCalculationHistory()
         QMessageBox::critical(this, tr("Import history"), file.errorString());
         return;
     }
+    const QByteArray archiveBytes = file.readAll();
     QJsonParseError parseError;
-    const auto document = QJsonDocument::fromJson(file.readAll(), &parseError);
+    const auto document = QJsonDocument::fromJson(archiveBytes, &parseError);
+    nlohmann::json archiveJson;
+    try {
+        archiveJson = nlohmann::json::parse(archiveBytes.constData(),
+                                            archiveBytes.constData() + archiveBytes.size());
+    } catch (const nlohmann::json::exception&) {
+        QMessageBox::warning(this, tr("Import history"), tr("Invalid JSON archive."));
+        return;
+    }
     if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
         QMessageBox::warning(this, tr("Import history"), tr("Invalid JSON archive: %1").arg(parseError.errorString()));
         return;
@@ -1431,7 +1442,9 @@ void MainWindow::importCalculationHistory()
     }
 
     int imported = 0, duplicates = 0;
+    std::size_t calculationIndex = 0;
     for (const auto& value : archive.value("calculations").toArray()) {
+        const auto itemJson = archiveJson.at("calculations").at(calculationIndex++);
         if (!value.isObject()) {
             QMessageBox::warning(this, tr("Import history"), tr("Archive contains a malformed calculation entry."));
             return;
@@ -1450,9 +1463,14 @@ void MainWindow::importCalculationHistory()
             QMessageBox::warning(this, tr("Import history"), tr("Calculation metadata or JSON payload is incomplete."));
             return;
         }
-        const std::string inputJson = QJsonDocument(input).toJson(QJsonDocument::Compact).toStdString();
-        const std::string resultJson = QJsonDocument(result).toJson(QJsonDocument::Compact).toStdString();
-        const std::string versionsJson = QJsonDocument(versions).toJson(QJsonDocument::Compact).toStdString();
+        // Preserve the archive's numeric JSON values for deterministic hashing.
+        // QJsonDocument can reformat floating-point numbers during serialization.
+        const auto& inputValue = itemJson.at("input");
+        const auto& resultValue = itemJson.at("result");
+        const auto& versionsValue = itemJson.at("engineVersions");
+        const std::string inputJson = inputValue.dump();
+        const std::string resultJson = resultValue.dump();
+        const std::string versionsJson = versionsValue.dump();
         const std::string envelope = "{\"engineVersions\":" + versionsJson +
             ",\"input\":" + inputJson + ",\"result\":" + resultJson + "}";
         const auto canonical = p135::infrastructure::sqlite::canonicalizeJson(envelope);
