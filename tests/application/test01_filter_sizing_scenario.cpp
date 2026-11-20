@@ -1,6 +1,7 @@
 #include "p135/application/ideal_reactor_sizing.hpp"
 #include "p135/filter/synthesis.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <numbers>
