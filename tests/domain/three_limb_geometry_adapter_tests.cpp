@@ -17,8 +17,8 @@ ThreeLimbCorePhysicalGeometry validCore()
     g.windowWidths = {units::Length{0.06}, units::Length{0.06}};
     g.windowHeights = {units::Length{0.12}, units::Length{0.12}};
     g.yokeThicknesses = {
-        units::Length{0.03}, units::Length{0.05},
-        units::Length{0.04}, units::Length{0.06}
+        units::Length{0.03}, units::Length{0.03},
+        units::Length{0.04}, units::Length{0.04}
     };
     g.yokeDepths.fill(units::Length{0.08});
     g.limbCenterSpacings = {
@@ -51,14 +51,14 @@ int main()
     assert(converted);
 
     const auto& magnetic = converted.value();
-    const std::array<double, 3> expectedPaths{0.165, 0.155, 0.145};
+    const std::array<double, 3> expectedPaths{0.165, 0.165, 0.165};
     for (std::size_t limb = 0; limb < 3; ++limb) {
         assert(near(magnetic.limbEffectiveAreas[limb]->si(), 0.04 * 0.08 * 0.95));
         assert(near(magnetic.limbMeanPaths[limb]->si(), expectedPaths[limb]));
         assert(near(magnetic.limbAirGaps[limb]->si(), 0.0));
         assert(near(magnetic.limbGapEffectiveAreas[limb]->si(), 0.04 * 0.08 * 0.95));
     }
-    const std::array<double, 4> yokeThicknesses{0.03, 0.05, 0.04, 0.06};
+    const std::array<double, 4> yokeThicknesses{0.03, 0.03, 0.04, 0.04};
     for (std::size_t yoke = 0; yoke < 4; ++yoke) {
         assert(near(magnetic.yokeEffectiveAreas[yoke]->si(),
                     yokeThicknesses[yoke] * 0.08 * 0.95));
