@@ -4,6 +4,8 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <sstream>
+#include <iomanip>
 #include <string>
 #include <utility>
 
@@ -476,15 +478,32 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
             }
             damping *= 0.5;
         }
-        if (!accepted)
-            return fail(ErrorCode::NonConvergence,
-                "Three-limb magnetic network Newton iteration could not find an in-domain descent step.",
-                "solver.iteration");
+        if (!accepted) {
+            std::ostringstream message;
+            message << std::scientific << std::setprecision(8)
+                    << "Three-limb magnetic network Newton iteration could not find an "
+                       "in-domain descent step (iteration=" << iterations
+                    << ", residual_Wb=" << state->norm
+                    << ", target_tolerance_Wb=" << tolerance
+                    << ", normalized_residual=" << state->norm / fluxScale
+                    << ", relative_tolerance=" << request.relativeFluxTolerance
+                    << ").";
+            return fail(ErrorCode::NonConvergence, message.str(), "solver.iteration");
+        }
     }
-    if (state->norm > tolerance)
-        return fail(ErrorCode::NonConvergence,
-            "Three-limb magnetic network did not converge within the iteration limit.",
-            "solver.iteration");
+    if (state->norm > tolerance) {
+        std::ostringstream message;
+        message << std::scientific << std::setprecision(8)
+                << "Three-limb magnetic network did not converge within the iteration "
+                   "limit (iterations=" << iterations
+                << ", maximum_iterations=" << request.maximumIterations
+                << ", residual_Wb=" << state->norm
+                << ", target_tolerance_Wb=" << tolerance
+                << ", normalized_residual=" << state->norm / fluxScale
+                << ", relative_tolerance=" << request.relativeFluxTolerance
+                << ").";
+        return fail(ErrorCode::NonConvergence, message.str(), "solver.iteration");
+    }
 
     ThreeLimbMagneticResult result;
     for (std::size_t i = 0; i < 3; ++i) {
