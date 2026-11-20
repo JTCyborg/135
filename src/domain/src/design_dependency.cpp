@@ -31,7 +31,11 @@ Result<std::vector<std::string>> designDependencyOrder(
     }
 
     std::unordered_map<std::string, std::vector<std::string>> dependents;
+    std::unordered_map<std::string, std::size_t> dependencyCount;
     std::unordered_set<std::string> edges;
+    for (const auto& id : parameterIds)
+        dependencyCount.emplace(id, 0U);
+
     for (const auto& edge : dependencies) {
         if (edge.parameterId.empty() || edge.dependencyId.empty())
             return failure("Design dependency identifiers must not be empty.");
@@ -43,6 +47,7 @@ Result<std::vector<std::string>> designDependencyOrder(
         if (!edges.insert(key).second)
             return failure("Duplicate design dependency edge.");
         dependents[edge.dependencyId].push_back(edge.parameterId);
+        ++dependencyCount[edge.parameterId];
     }
 
     for (auto& [id, values] : dependents) {
@@ -50,37 +55,33 @@ Result<std::vector<std::string>> designDependencyOrder(
         std::sort(values.begin(), values.end());
     }
 
-    enum class Visit { Unseen, Active, Complete };
-    std::unordered_map<std::string, Visit> visits;
+    std::vector<std::string> ready;
+    for (const auto& [id, count] : dependencyCount) {
+        if (count == 0)
+            ready.push_back(id);
+    }
+    std::sort(ready.begin(), ready.end());
+
     std::vector<std::string> order;
     order.reserve(parameterIds.size());
-
-    std::function<bool(const std::string&)> visit = [&](const std::string& id) {
-        const auto state = visits.contains(id) ? visits.at(id) : Visit::Unseen;
-        if (state == Visit::Active)
-            return false;
-        if (state == Visit::Complete)
-            return true;
-        visits[id] = Visit::Active;
+    while (!ready.empty()) {
+        const auto id = ready.front();
+        ready.erase(ready.begin());
         order.push_back(id);
-        auto children = dependents.find(id);
-        if (children != dependents.end()) {
-            for (const auto& child : children->second) {
-                if (!visit(child))
-                    return false;
+        const auto it = dependents.find(id);
+        if (it == dependents.end())
+            continue;
+        for (const auto& dependent : it->second) {
+            auto& count = dependencyCount[dependent];
+            if (--count == 0) {
+                const auto position = std::lower_bound(ready.begin(), ready.end(), dependent);
+                ready.insert(position, dependent);
             }
         }
-        visits[id] = Visit::Complete;
-        return true;
-    };
-
-    // Visit roots in sorted order so the result is stable across platforms.
-    auto roots = parameterIds;
-    std::sort(roots.begin(), roots.end());
-    for (const auto& id : roots) {
-        if (!visit(id))
-            return failure("Design dependency graph contains a cycle.");
     }
+
+    if (order.size() != parameterIds.size())
+        return failure("Design dependency graph contains a cycle.");
     return Result<std::vector<std::string>>::success(std::move(order));
 }
 
