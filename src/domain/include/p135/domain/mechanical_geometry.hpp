@@ -11,6 +11,7 @@
 namespace p135::domain {
 
 enum class CoreJointType { Butt, StepLap };
+enum class StepLapPacketDirection { LimbIntoYoke, YokeIntoLimb };
 enum class CoreJointInterface {
     TopYokeABToLimbA,
     TopYokeABToLimbB,
@@ -31,6 +32,7 @@ struct StepLapPacketPhysicalGeometry {
     units::Length stackDepth;
     units::Length overlapIntoLimb;
     units::Length overlapIntoYoke;
+    StepLapPacketDirection direction{StepLapPacketDirection::LimbIntoYoke};
 };
 
 struct CoreJointPhysicalGeometry {
