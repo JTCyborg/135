@@ -313,7 +313,7 @@ protected:
                 p.drawLine(x - 9, y + h / 2 + 4, x - 4, y + h / 2);
             }
             const QRect box(x, y, boxWidth, h);
-            p.setPen(QPen(palette().color(QPalette::mid), 1.2));
+            p.setPen(QPen(palette().color(QPalette::Mid), 1.2));
             p.setBrush(palette().base());
             p.drawRoundedRect(box, 5, 5);
             p.setPen(palette().color(QPalette::Text));
@@ -549,6 +549,11 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createCadPage(), tr("3D CAD"));
     tabs_->addTab(createMaterialsPage(), tr("Materials"));
     tabs_->addTab(createHistoryPage(), tr("Calculation history"));
+    if (auto* topology = findChild<ProductTopologyWidget*>(QStringLiteral("productTopologyDiagram"))) {
+        topology->setConnection(filterConnection_->currentText());
+        connect(filterConnection_, &QComboBox::currentTextChanged, topology,
+            [topology](const QString& value) { topology->setConnection(value); });
+    }
     setCentralWidget(tabs_);
     connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
         if (index == 5) refreshCalculationHistory();
@@ -648,6 +653,7 @@ QWidget* MainWindow::createProjectPage()
     auto* topology = new QGroupBox(tr("Selected product topology"));
     auto* topologyLayout = new QVBoxLayout(topology);
     auto* topologyDiagram = new ProductTopologyWidget;
+    topologyDiagram->setObjectName(QStringLiteral("productTopologyDiagram"));
     topologyDiagram->setProductFamily(productFamily_->currentText());
     topologyDiagram->setMinimumWidth(720);
     topologyLayout->addWidget(topologyDiagram);
