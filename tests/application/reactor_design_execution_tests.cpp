@@ -1,6 +1,7 @@
 #include "p135/application/reactor_design_execution.hpp"
 
 #include <cassert>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
