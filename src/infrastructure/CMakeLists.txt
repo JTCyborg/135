@@ -1,5 +1,5 @@
-# vcpkg exports an unofficial config package; CMake's FindSQLite3 module
-# uses the canonical SQLite::SQLite3 imported target.
+# Prefer the vcpkg target, then the modern FindSQLite3 target.
+# Keep the legacy target only as a compatibility fallback.
 find_package(unofficial-sqlite3 CONFIG QUIET)
 find_package(SQLite3 REQUIRED)
 
