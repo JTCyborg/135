@@ -2301,21 +2301,20 @@ void MainWindow::calculateFilter()
                         .arg(point.frequency.si(), 0, 'g', 6)
                         .arg(static_cast<qulonglong>(sampledCycle.value().samplesUsed))
                         .arg(sampledCycle.value().relativePeakChange * 100.0, 0, 'g', 5);
-                } else {
-                    std::array<double, 8> peakDensities{};
-                    peakDensities[0] = point.frequency.si();
-                    for (std::size_t branch = 0; branch < 7; ++branch)
-                        peakDensities[branch + 1] =
-                            sampledCycle.value().peakAbsoluteFluxDensity[branch].si();
-                    threeLimbFluxDensitySweep.push_back(peakDensities);
-                    threeLimbSamplingMetadata.push_back({
-                        point.frequency.si(),
-                        static_cast<double>(sampledCycle.value().samplesUsed),
-                        sampledCycle.value().relativePeakChange,
-                        1.0,
-                        sampledCycle.value().withinBhCurveRange ? 1.0 : 0.0
-                    });
-                }
+            } else {
+                std::array<double, 8> peakDensities{};
+                peakDensities[0] = point.frequency.si();
+                for (std::size_t branch = 0; branch < 7; ++branch)
+                    peakDensities[branch + 1] =
+                        sampledCycle.value().peakAbsoluteFluxDensity[branch].si();
+                threeLimbFluxDensitySweep.push_back(peakDensities);
+                threeLimbSamplingMetadata.push_back({
+                    point.frequency.si(),
+                    static_cast<double>(sampledCycle.value().samplesUsed),
+                    sampledCycle.value().relativePeakChange,
+                    1.0,
+                    sampledCycle.value().withinBhCurveRange ? 1.0 : 0.0
+                });
             }
         }
     }
