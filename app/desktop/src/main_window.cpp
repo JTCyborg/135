@@ -16,6 +16,9 @@
 #include "p135/domain/component_catalog.hpp"
 #include "p135/domain/magnetic_circuit.hpp"
 #include "p135/domain/three_limb_magnetic.hpp"
+#include "p135/cad/three_limb_core.hpp"
+
+#include <TopoDS_Iterator.hxx>
 #include "p135/thermal/filter_bridge.hpp"
 
 #include <QAbstractItemView>
@@ -1947,6 +1950,34 @@ QWidget* MainWindow::createCadPage()
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
 
+    auto* dimensionsBox = new QGroupBox(tr("Physical core dimensions — enter values from a drawing or measurement"), page);
+    auto* dimensionsForm = new QFormLayout(dimensionsBox);
+    const auto makeDimension = [dimensionsBox](const QString& name) {
+        auto* input = new QDoubleSpinBox(dimensionsBox);
+        input->setObjectName(name);
+        input->setDecimals(3);
+        input->setRange(0.0, 5000.0);
+        input->setSingleStep(1.0);
+        input->setSuffix(QStringLiteral(" mm"));
+        input->setSpecialValueText(QObject::tr("Not provided"));
+        input->setValue(0.0);
+        return input;
+    };
+    auto* limbWidth = makeDimension(QStringLiteral("cadLimbWidth"));
+    auto* limbDepth = makeDimension(QStringLiteral("cadLimbDepth"));
+    auto* windowWidth = makeDimension(QStringLiteral("cadWindowWidth"));
+    auto* overallHeight = makeDimension(QStringLiteral("cadOverallHeight"));
+    auto* yokeThickness = makeDimension(QStringLiteral("cadYokeThickness"));
+    dimensionsForm->addRow(tr("All three limb widths"), limbWidth);
+    dimensionsForm->addRow(tr("Common core stack depth"), limbDepth);
+    dimensionsForm->addRow(tr("Both clear window widths"), windowWidth);
+    dimensionsForm->addRow(tr("Overall core height"), overallHeight);
+    dimensionsForm->addRow(tr("Top and bottom yoke thickness"), yokeThickness);
+
+    auto* generateButton = new QPushButton(tr("Generate core 3D model"), dimensionsBox);
+    dimensionsForm->addRow(generateButton);
+    layout->addWidget(dimensionsBox);
+
     auto* workspace = new QSplitter(Qt::Horizontal, page);
     workspace->setChildrenCollapsible(false);
 
@@ -1955,7 +1986,6 @@ QWidget* MainWindow::createCadPage()
     structurePanel->setMaximumWidth(360);
     auto* structureLayout = new QVBoxLayout(structurePanel);
     structureLayout->setContentsMargins(0, 0, 8, 0);
-
     auto* structureTitle = new QLabel(tr("Assembly structure"), structurePanel);
     structureTitle->setStyleSheet("font-weight: 600;");
     structureLayout->addWidget(structureTitle);
@@ -1968,60 +1998,15 @@ QWidget* MainWindow::createCadPage()
     tree->setMinimumHeight(240);
     structureLayout->addWidget(tree, 1);
 
-    const auto addGroup = [tree](const QString& name,
-                                 const QStringList& children) {
-        auto* group = new QTreeWidgetItem(tree, {name, QStringLiteral("NOT_PROVIDED")});
-        group->setToolTip(1, QObject::tr(
-            "This assembly group is defined by the CAD workspace specification; physical geometry has not yet been supplied."));
-        group->setExpanded(true);
-        for (const auto& childName : children) {
-            auto* child = new QTreeWidgetItem(group, {childName, QStringLiteral("NOT_GENERATED")});
-            child->setToolTip(1, QObject::tr(
-                "No verified mechanical dimensions or B-Rep shape are available for this component."));
-            child->setFlags(child->flags() & ~Qt::ItemIsUserCheckable);
-        }
-        return group;
-    };
-
-    addGroup(tr("Core laminations"), {
-        tr("Limb A"), tr("Limb B"), tr("Limb C"),
-        tr("Top yoke A-B"), tr("Top yoke B-C"),
-        tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
-    });
-    addGroup(tr("Non-magnetic gaps / spacers"), {
-        tr("Gap and spacer geometry not supplied")
-    });
-    addGroup(tr("Bobbin / insulation"), {
-        tr("Bobbin L1"), tr("Bobbin L2"), tr("Bobbin L3")
-    });
-    addGroup(tr("Windings"), {
-        tr("Winding L1"), tr("Winding L2"), tr("Winding L3")
-    });
-    addGroup(tr("Clamping brackets & terminals"), {
-        tr("Mechanical details not supplied")
-    });
-    tree->expandAll();
-
     auto* propertiesTitle = new QLabel(tr("Component properties"), structurePanel);
     propertiesTitle->setStyleSheet("font-weight: 600;");
     structureLayout->addWidget(propertiesTitle);
-    auto* properties = new QLabel(tr(
-        "Select a component to inspect its model status. Visibility, transparency and dimensions become editable when verified geometry is connected."));
+    auto* properties = new QLabel(tr("Enter verified physical dimensions and generate the core model."), structurePanel);
     properties->setWordWrap(true);
     properties->setMinimumHeight(64);
     properties->setFrameShape(QFrame::StyledPanel);
     properties->setMargin(8);
     structureLayout->addWidget(properties);
-
-    connect(tree, &QTreeWidget::currentItemChanged, page,
-        [properties](QTreeWidgetItem* current, QTreeWidgetItem*) {
-            if (!current) {
-                properties->setText(QObject::tr("Select a component."));
-                return;
-            }
-            properties->setText(QObject::tr("%1\nStatus: %2\nPhysical geometry: NOT_PROVIDED")
-                .arg(current->text(0), current->text(1)));
-        });
 
     auto* viewportPanel = new QWidget(workspace);
     auto* viewportLayout = new QVBoxLayout(viewportPanel);
@@ -2037,11 +2022,120 @@ QWidget* MainWindow::createCadPage()
     layout->addWidget(workspace, 1);
 
     auto* geometryNote = new QLabel(tr(
-        "CAD geometry is intentionally not fabricated: magnetic effective dimensions (Ae, le) do not define the mechanical core, bobbins or winding build. "
-        "The viewport remains empty until verified physical dimensions and material data are provided."));
+        "This first CAD generation step creates the seven-segment magnetic core only (three limbs and four yoke halves). "
+        "Dimensions are explicit user inputs; window heights, center spacings and overall width are calculated from the entered stack-up. "
+        "Bobbin, winding, insulation, clamps and terminals remain NOT_PROVIDED and are not fabricated."));
     geometryNote->setWordWrap(true);
     geometryNote->setStyleSheet("color: palette(mid);");
     layout->addWidget(geometryNote);
+
+    connect(tree, &QTreeWidget::currentItemChanged, page,
+        [properties](QTreeWidgetItem* current, QTreeWidgetItem*) {
+            if (!current) {
+                properties->setText(QObject::tr("Select a component."));
+                return;
+            }
+            properties->setText(QObject::tr("%1\nStatus: %2\nRepresentation: simplified physical core solid")
+                .arg(current->text(0), current->text(1)));
+        });
+
+    connect(generateButton, &QPushButton::clicked, page,
+        [=]() {
+            const double w = limbWidth->value() / 1000.0;
+            const double d = limbDepth->value() / 1000.0;
+            const double window = windowWidth->value() / 1000.0;
+            const double height = overallHeight->value() / 1000.0;
+            const double yoke = yokeThickness->value() / 1000.0;
+            if (w <= 0.0 || d <= 0.0 || window <= 0.0 || height <= 0.0 || yoke <= 0.0) {
+                QMessageBox::warning(page, tr("Missing dimensions"),
+                    tr("Enter all five positive physical dimensions before generating the model."));
+                return;
+            }
+            if (height <= 2.0 * yoke) {
+                QMessageBox::warning(page, tr("Invalid dimensions"),
+                    tr("Overall height must be greater than the combined top and bottom yoke thickness."));
+                return;
+            }
+
+            p135::domain::ReactorPhysicalGeometry geometry;
+            geometry.productId = "Project135-Core-Preview";
+            geometry.dimensionalSource = "User-entered physical dimensions";
+            geometry.dimensionalRevision = "Current CAD workspace input";
+            auto& core = geometry.core;
+            core.limbWidths.fill(p135::units::Length{w});
+            core.limbDepths.fill(p135::units::Length{d});
+            core.windowWidths.fill(p135::units::Length{window});
+            core.windowHeights.fill(p135::units::Length{height - 2.0 * yoke});
+            core.yokeThicknesses.fill(p135::units::Length{yoke});
+            core.yokeDepths.fill(p135::units::Length{d});
+            core.limbCenterSpacings = {
+                p135::units::Length{w + window},
+                p135::units::Length{w + window},
+                p135::units::Length{2.0 * (w + window)}
+            };
+            core.coreOverallWidth = p135::units::Length{3.0 * w + 2.0 * window};
+            core.coreOverallHeight = p135::units::Length{height};
+            core.laminationConstruction = "Butt-jointed core; packet/layer detail not modelled";
+            constexpr std::array<p135::domain::CoreJointInterface, 8> interfaces{
+                p135::domain::CoreJointInterface::TopYokeABToLimbA,
+                p135::domain::CoreJointInterface::TopYokeABToLimbB,
+                p135::domain::CoreJointInterface::TopYokeBCToLimbB,
+                p135::domain::CoreJointInterface::TopYokeBCToLimbC,
+                p135::domain::CoreJointInterface::BottomYokeABToLimbA,
+                p135::domain::CoreJointInterface::BottomYokeABToLimbB,
+                p135::domain::CoreJointInterface::BottomYokeBCToLimbB,
+                p135::domain::CoreJointInterface::BottomYokeBCToLimbC
+            };
+            for (const auto interface : interfaces)
+                core.joints.push_back({interface, p135::domain::CoreJointType::Butt, {}});
+
+            const auto built = p135::cad::buildThreeLimbCoreShape(geometry);
+            if (!built) {
+                QString message = QString::fromStdString(built.error().message);
+                for (const auto& diagnostic : built.error().diagnostics)
+                    message += QStringLiteral("\n%1: %2")
+                        .arg(QString::fromStdString(diagnostic.code),
+                             QString::fromStdString(diagnostic.message));
+                QMessageBox::critical(page, tr("CAD generation failed"), message);
+                return;
+            }
+
+            std::vector<p135::cad::AssemblyPresentationDisplayItem> displayItems;
+            constexpr std::array<const char*, 7> ids{
+                "core.limb.A", "core.limb.B", "core.limb.C",
+                "core.yoke.top.AB", "core.yoke.top.BC",
+                "core.yoke.bottom.AB", "core.yoke.bottom.BC"
+            };
+            for (TopoDS_Iterator it(built.value()); it.More(); it.Next()) {
+                const std::size_t index = displayItems.size();
+                if (index >= ids.size()) break;
+                displayItems.push_back({ids[index], it.Value(), 0.0});
+            }
+            if (displayItems.size() != ids.size()) {
+                QMessageBox::critical(page, tr("CAD generation failed"),
+                    tr("The core generator did not return the expected three limbs and four yoke segments."));
+                return;
+            }
+
+            viewport->setDisplayItems(displayItems);
+            tree->clear();
+            auto* root = new QTreeWidgetItem(tree, {tr("Three-limb magnetic core"), QStringLiteral("VALID")});
+            root->setExpanded(true);
+            const QStringList names{
+                tr("Limb A"), tr("Limb B"), tr("Limb C"),
+                tr("Top yoke A-B"), tr("Top yoke B-C"),
+                tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
+            };
+            for (int i = 0; i < names.size(); ++i) {
+                auto* item = new QTreeWidgetItem(root, {names[i], QStringLiteral("VALID")});
+                item->setToolTip(1, tr("Valid OCCT B-Rep solid; simplified physical segment, not detailed lamination geometry."));
+            }
+            root->setExpanded(true);
+            properties->setText(tr("Core geometry generated successfully.\n7 B-Rep components\nUnits: mm\nStatus: VALID (geometry only; not manufacturing or standards approval)"));
+            geometryNote->setText(tr(
+                "Generated model: three limbs and four yoke halves. This is a simplified solid representation of the entered physical envelope. "
+                "Lamination packet detail, joints beyond butt interfaces, bobbins, windings, insulation, clamps and terminals are not modelled."));
+        });
     return page;
 }
 
