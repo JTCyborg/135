@@ -38,4 +38,14 @@ struct CoreLossEquation {
     units::Frequency frequency,
     units::FluxDensity peakFluxDensity);
 
+
+/// Trilinearly interpolates manufacturer/measured specific core-loss data
+/// (W/kg) on the supplied frequency, peak-flux-density and temperature grid.
+/// Every required grid corner must exist; extrapolation is never performed.
+[[nodiscard]] Result<units::CoreLossDensity> evaluateCoreLossData(
+    const CoreMaterial& material,
+    units::Frequency frequency,
+    units::FluxDensity peakFluxDensity,
+    units::TemperatureKelvin temperature);
+
 } // namespace p135::domain
