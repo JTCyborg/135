@@ -572,6 +572,15 @@ int main()
     // explicit windingClearance and its radial build is applied on X/Z.
     const auto windingEnvelope = p135::cad::buildWindingPackEnvelopeShape(
         geometry.bobbins[0], geometry.windingPacks[0]);
+    if (!windingEnvelope) {
+        std::cerr << "Winding envelope build failed: "
+                  << windingEnvelope.error().message << '\n';
+        for (const auto& diagnostic : windingEnvelope.error().diagnostics) {
+            std::cerr << "  [" << diagnostic.code << "] "
+                      << diagnostic.message << " (field: "
+                      << diagnostic.field << ")\n";
+        }
+    }
     assert(windingEnvelope);
     assert(BRepCheck_Analyzer(windingEnvelope.value()).IsValid());
     std::size_t windingEnvelopeSolids = 0;
