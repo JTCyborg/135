@@ -8,6 +8,7 @@
 #include <vector>
 
 class QLabel;
+class QPushButton;
 
 class CadViewportWidget final : public QWidget
 {
@@ -24,4 +25,6 @@ private:
     class NativeView;
     std::unique_ptr<NativeView> view_;
     QLabel* emptyState_{};
+    QPushButton* fitButton_{};
+    std::vector<QPushButton*> cameraButtons_;
 };
