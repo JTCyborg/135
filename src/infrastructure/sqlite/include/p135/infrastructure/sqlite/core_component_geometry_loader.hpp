@@ -1,6 +1,7 @@
 #pragma once
 
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
+#include "p135/application/reactor_design_inputs.hpp"
 
 #include <optional>
 #include <string>
