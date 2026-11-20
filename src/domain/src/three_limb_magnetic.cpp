@@ -277,6 +277,8 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
             if (!magneticPoint)
                 return Result<ThreeLimbMagneticCycleSamplingResult>::failure(
                     magneticPoint.error());
+            result.withinBhCurveRange = result.withinBhCurveRange &&
+                magneticPoint.value().withinBhCurveRange;
 
             for (std::size_t phase = 0; phase < 3; ++phase)
                 peaks[phase] = std::max(peaks[phase],
