@@ -1214,7 +1214,6 @@ QWidget* MainWindow::createConstructionPage()
     auto* coreForm = new QFormLayout(coreGroup);
     auto* coreMaterial = new QComboBox;
     coreMaterial->setObjectName(QStringLiteral("construction_coreMaterial"));
-    coreMaterial->setObjectName(QStringLiteral("constructionCoreMaterial"));
     auto* coreGeometry = new QComboBox;
     coreGeometry->setObjectName(QStringLiteral("construction_coreGeometry"));
     coreGeometry->addItem(tr("— NOT_PROVIDED —"), QString{});
@@ -1240,7 +1239,6 @@ QWidget* MainWindow::createConstructionPage()
     auto* windingForm = new QFormLayout(windingGroup);
     auto* conductorMaterial = new QComboBox;
     conductorMaterial->setObjectName(QStringLiteral("construction_conductorMaterial"));
-    conductorMaterial->setObjectName(QStringLiteral("constructionConductorMaterial"));
     auto* conductorShape = new QComboBox;
     conductorShape->setObjectName(QStringLiteral("construction_conductorShape"));
     conductorShape->addItem(tr("— NOT_PROVIDED —"), QString{});
@@ -1315,7 +1313,6 @@ QWidget* MainWindow::createConstructionPage()
     auto* insulationForm = new QFormLayout(insulationGroup);
     auto* insulationMaterial = new QComboBox;
     insulationMaterial->setObjectName(QStringLiteral("construction_insulationMaterial"));
-    insulationMaterial->setObjectName(QStringLiteral("constructionInsulationMaterial"));
     auto* bobbinMaterial = new QLineEdit;
     bobbinMaterial->setObjectName(QStringLiteral("construction_bobbinMaterial"));
     bobbinMaterial->setPlaceholderText(tr("Material ID / grade — NOT_PROVIDED until selected"));
