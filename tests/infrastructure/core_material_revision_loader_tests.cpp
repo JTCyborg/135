@@ -11,7 +11,7 @@ using namespace p135::infrastructure::sqlite;
 
 int main(int argc, char** argv)
 {
-    assert(argc >= 2);
+    assert(argc == 3);
     const auto databasePath =
         (std::filesystem::temp_directory_path() / "project135_core_material_loader_test.sqlite").string();
     std::filesystem::remove(databasePath);
@@ -19,7 +19,12 @@ int main(int argc, char** argv)
     SqliteDatabase database;
     assert(database.open(databasePath));
     MigrationRunner migrations(database);
-    assert(migrations.apply(argv[1]));
+    assert(database.execute(
+        "CREATE TABLE schema_migrations ("
+        "version INTEGER PRIMARY KEY, name TEXT NOT NULL, "
+        "checksum_sha256 TEXT NOT NULL, applied_at_utc TEXT NOT NULL);"));
+    assert(migrations.apply(Migration{1, "initial_material_revision_store", argv[1]}));
+    assert(migrations.apply(Migration{2, "calculation_snapshots", argv[2]}));
 
     SqliteMaterialRevisionStore store(database);
     const auto seeded = seedStarterMaterialCatalog(store, "loader-test", "2026-11-20T00:00:00Z");
