@@ -292,9 +292,14 @@ Result<TopoDS_Shape> buildWindingPackEnvelopeShape(
     BRepPrimAPI_MakeBox outerMaker(
         gp_Pnt(xOuter, 0.0, zOuter),
         outerWidth * toMm, axialHeight * toMm, outerDepth * toMm);
+    // Extend the cutter slightly beyond both axial end faces. A cutter
+    // exactly coplanar with the outer box end faces makes the Boolean
+    // subtraction fragile in OCCT and can leave invalid/open topology.
+    constexpr double cutOverrunMm = 1.0e-3;
     BRepPrimAPI_MakeBox innerMaker(
-        gp_Pnt(xInner, 0.0, zInner),
-        innerWidth * toMm, axialHeight * toMm, innerDepth * toMm);
+        gp_Pnt(xInner, -cutOverrunMm, zInner),
+        innerWidth * toMm, axialHeight * toMm + 2.0 * cutOverrunMm,
+        innerDepth * toMm);
     if (!outerMaker.IsDone() || !innerMaker.IsDone())
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
             "OCCT failed to create the winding-pack envelope primitives.",
