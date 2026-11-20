@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QPaintEngine>
+#include <QPoint>
 #include <QResizeEvent>
 #include <QShowEvent>
 #include <QVBoxLayout>
@@ -18,6 +19,7 @@
 #include <OpenGl_GraphicDriver.hxx>
 #include <Standard_Failure.hxx>
 #include <V3d_View.hxx>
+#include <V3d_TypeOfOrientation.hxx>
 #include <V3d_Viewer.hxx>
 
 #ifdef _WIN32
@@ -32,6 +34,8 @@ public:
     explicit NativeView(QWidget* parent = nullptr)
         : QWidget(parent)
     {
+        setMouseTracking(true);
+        setFocusPolicy(Qt::StrongFocus);
         setAttribute(Qt::WA_NativeWindow);
         setAttribute(Qt::WA_PaintOnScreen);
         setAttribute(Qt::WA_NoSystemBackground);
