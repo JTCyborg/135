@@ -1268,7 +1268,18 @@ QWidget* MainWindow::createHistoryPage()
     connect(historyTable_, &QTableWidget::currentCellChanged, this,
         [this](int currentRow, int, int, int) { showCalculationDetails(currentRow); });
     connect(loadInputs, &QPushButton::clicked, this, [this] {
-        if (historyTable_) loadCalculationInputs(historyTable_->currentRow());
+        if (!historyTable_) return;
+        int row = historyTable_->currentRow();
+        if (row < 0) {
+            const auto selected = historyTable_->selectionModel()->selectedRows();
+            if (!selected.isEmpty()) row = selected.front().row();
+        }
+        if (row < 0) {
+            QMessageBox::information(this, tr("Load calculation inputs"),
+                tr("Select one calculation-history row first."));
+            return;
+        }
+        loadCalculationInputs(row);
     });
     connect(compareGraphs, &QPushButton::clicked, this,
         [this] { compareSelectedCalculationGraphs(); });
