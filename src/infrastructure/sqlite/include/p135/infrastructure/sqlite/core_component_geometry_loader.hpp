@@ -15,6 +15,10 @@ struct CoreComponentGeometrySnapshot {
     std::string orderingCode;
     std::string manufacturer;
     std::string coreShape;
+    /// Generic material designation; supports ferrites and electrical steels.
+    std::string magneticMaterial;
+    std::string magneticMaterialFamily;
+    /// Legacy compatibility field for existing TDK ferrite component records.
     std::string ferriteMaterial;
     std::string sourceReference;
     std::string datasetRevision;
