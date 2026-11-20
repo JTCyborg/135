@@ -3258,10 +3258,10 @@ void MainWindow::calculateFilter()
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
     }
 
-    // First-pass ideal area-product bound. Inputs are explicit user criteria;
-    // this intentionally uses the fundamental branch current only. Harmonic
-    // copper loss, core loss, geometry, insulation and temperature remain outside
-    // this lower-bound estimate and are never represented as verified.
+    // First-pass ideal area-product bound. Inputs are explicit user criteria.
+    // When available, branch harmonic RMS currents are combined by RSS and a
+    // triangle-inequality peak envelope is used; otherwise the fundamental-only
+    // estimate is explicitly labelled. This is not a thermal or geometry solver.
     if (auto* output = findChild<QLabel*>(QStringLiteral("idealSizingResult"))) {
         if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
             for (int row = 0; row < table->rowCount(); ++row) {
@@ -3345,6 +3345,7 @@ void MainWindow::calculateFilter()
                         "Gross Ae×Aw ≥ %1 mm⁴\n"
                         "Equivalent square side ≥ %2 mm\n"
                         "Stored peak energy = %3 J\n"
+                        "Design current: Irms=%8 A; Ipeak bound=%9 A\n"
                         "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\n"
                         "Peak current uses the sum of harmonic magnitudes (conservative envelope). "
                         "This is NOT a selected core or winding design; core loss, gap geometry, "
@@ -3355,7 +3356,9 @@ void MainWindow::calculateFilter()
                         .arg(value.assumedAllowablePeakFluxDensityT, 0, 'g', 5)
                         .arg(value.assumedAllowableCurrentDensityApm2 / 1.0e6, 0, 'g', 5)
                         .arg(value.assumedWindowUtilization * 100.0, 0, 'g', 5)
-                        .arg(value.assumedStackingFactor * 100.0, 0, 'g', 5));
+                        .arg(value.assumedStackingFactor * 100.0, 0, 'g', 5)
+                        .arg(rmsCurrent, 0, 'g', 6)
+                        .arg(peakCurrentBound, 0, 'g', 6));
                 } else {
                     output->setText(tr("Ideal area-product estimate failed: %1")
                         .arg(QString::fromStdString(estimate.error().message)));
