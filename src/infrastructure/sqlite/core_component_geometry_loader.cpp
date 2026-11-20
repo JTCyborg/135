@@ -109,7 +109,23 @@ Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
         snapshot.orderingCode = requiredString(component, "orderingCode");
         snapshot.manufacturer = requiredString(component, "manufacturer");
         snapshot.coreShape = requiredString(component, "coreShape");
-        snapshot.ferriteMaterial = requiredString(component, "ferriteMaterial");
+        const auto materialIt = component.find("magneticMaterial");
+        if (materialIt != component.end() && materialIt->is_string() &&
+            !materialIt->get<std::string>().empty()) {
+            snapshot.magneticMaterial = materialIt->get<std::string>();
+        } else {
+            // Backward compatibility with the original ferrite-only component schema.
+            snapshot.magneticMaterial = requiredString(component, "ferriteMaterial");
+        }
+        const auto familyIt = component.find("magneticMaterialFamily");
+        if (familyIt != component.end() && familyIt->is_string()) {
+            snapshot.magneticMaterialFamily = familyIt->get<std::string>();
+        } else if (component.contains("ferriteMaterial")) {
+            snapshot.magneticMaterialFamily = "ferrite";
+        }
+        const auto legacyFerriteIt = component.find("ferriteMaterial");
+        if (legacyFerriteIt != component.end() && legacyFerriteIt->is_string())
+            snapshot.ferriteMaterial = legacyFerriteIt->get<std::string>();
         snapshot.sourceReference = revision.sourceReference;
         snapshot.datasetRevision = revision.datasetRevision;
 
