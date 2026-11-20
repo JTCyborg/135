@@ -467,7 +467,10 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
         result.nodeMagneticPotential[i] = units::MagneticPotential{potential[i]};
     result.iterations = iterations;
     result.maximumFluxResidual_Wb = state->norm;
-    result.withinBhCurveRange = true;
+    const double measuredMaximumB = material.bhCurve.back().fluxDensity.si();
+    result.withinBhCurveRange = std::all_of(
+        state->fluxDensity.begin(), state->fluxDensity.end(),
+        [measuredMaximumB](double value) { return std::abs(value) <= measuredMaximumB; });
     return Result<ThreeLimbMagneticResult>::success(std::move(result));
 }
 
