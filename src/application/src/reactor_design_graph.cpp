@@ -2,6 +2,8 @@
 
 #include "p135/domain/design_dependency.hpp"
 
+#include <algorithm>
+
 namespace p135::application {
 
 const std::vector<std::string>& reactorDesignParameterIds()
@@ -106,7 +108,12 @@ Result<ReactorRecalculationPlan> planReactorRecalculation(
         reactorDesignParameterIds(), edges, changedInputIds);
     if (!affected)
         return Result<ReactorRecalculationPlan>::failure(affected.error());
-    return Result<ReactorRecalculationPlan>::success({std::move(affected.value())});
+
+    // Input nodes seed invalidation but are not executable calculation stages.
+    auto stages = std::move(affected.value());
+    stages.erase(std::remove_if(stages.begin(), stages.end(),
+        [](const std::string& id) { return id.starts_with("input."); }), stages.end());
+    return Result<ReactorRecalculationPlan>::success({std::move(stages)});
 }
 
 } // namespace p135::application
