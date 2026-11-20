@@ -8,7 +8,11 @@ target_include_directories(Project135Application
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-target_link_libraries(Project135Application PUBLIC Project135::Core)
+target_link_libraries(Project135Application PUBLIC
+    Project135::Core
+    Project135::Domain
+    Project135::Filter
+)
 target_compile_features(Project135Application PUBLIC cxx_std_20)
 
 if(MSVC)
