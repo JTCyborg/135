@@ -77,10 +77,14 @@ int main()
     auto stepLap = valid;
     stepLap.core.joints[0].construction = CoreJointType::StepLap;
     stepLap.core.joints[0].stepLapPackets = {
-        {units::Length{0.0}, units::Length{0.04}, units::Length{0.02}, units::Length{0.02}},
-        {units::Length{0.04}, units::Length{0.04}, units::Length{0.03}, units::Length{0.03}}
+        {units::Length{0.0}, units::Length{0.04}, units::Length{0.02}, units::Length{0.02}, StepLapPacketDirection::LimbIntoYoke},
+        {units::Length{0.04}, units::Length{0.04}, units::Length{0.03}, units::Length{0.03}, StepLapPacketDirection::YokeIntoLimb}
     };
     assert(validate(stepLap));
+
+    auto nonAlternatingStepLap = stepLap;
+    nonAlternatingStepLap.core.joints[0].stepLapPackets[1].direction = StepLapPacketDirection::LimbIntoYoke;
+    assert(!validate(nonAlternatingStepLap));
 
     auto missingStepLapPackets = stepLap;
     missingStepLapPackets.core.joints[0].stepLapPackets.clear();
