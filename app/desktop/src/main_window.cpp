@@ -1380,40 +1380,39 @@ QWidget* MainWindow::createFilterPage()
     layout->addLayout(confirmationRow);
 
     connect(confirmFilter, &QPushButton::clicked, this,
-        [this, page, confirmationStatus, nominalVoltage, fundamentalFrequency,
-         targetReactivePower, tuningHarmonicOrder, qualityFactor] {
+        [this, page, confirmationStatus] {
         const auto validPositive = [](double value) {
             return std::isfinite(value) && value > 0.0;
         };
-        if (!validPositive(nominalVoltage->value())) {
+        if (!validPositive(nominalVoltage_->value())) {
             QMessageBox::warning(this, tr("Invalid nominal voltage"),
                 tr("Enter a nominal line-to-line voltage greater than zero."));
-            nominalVoltage->setFocus();
+            nominalVoltage_->setFocus();
             return;
         }
-        if (!validPositive(fundamentalFrequency->value())) {
+        if (!validPositive(fundamentalFrequency_->value())) {
             QMessageBox::warning(this, tr("Invalid fundamental frequency"),
                 tr("Enter a fundamental frequency greater than zero."));
-            fundamentalFrequency->setFocus();
+            fundamentalFrequency_->setFocus();
             return;
         }
-        if (!validPositive(targetReactivePower->value())) {
+        if (!validPositive(targetReactivePower_->value())) {
             QMessageBox::warning(this, tr("Invalid target reactive power"),
                 tr("Enter a target reactive power greater than zero."));
-            targetReactivePower->setFocus();
+            targetReactivePower_->setFocus();
             return;
         }
-        if (!validPositive(tuningHarmonicOrder->value()) ||
-            tuningHarmonicOrder->value() < 2.0) {
+        if (!validPositive(tuningHarmonicOrder_->value()) ||
+            tuningHarmonicOrder_->value() < 2.0) {
             QMessageBox::warning(this, tr("Invalid tuning order"),
                 tr("Enter a tuning harmonic order of at least 2."));
-            tuningHarmonicOrder->setFocus();
+            tuningHarmonicOrder_->setFocus();
             return;
         }
-        if (!validPositive(qualityFactor->value())) {
+        if (!validPositive(qualityFactor_->value())) {
             QMessageBox::warning(this, tr("Invalid quality factor"),
                 tr("Enter a series-branch quality factor greater than zero."));
-            qualityFactor->setFocus();
+            qualityFactor_->setFocus();
             return;
         }
         if (filterConnection_->currentIndex() < 0) {
