@@ -20,7 +20,7 @@ struct NetworkDefinition {
 struct SingleTunedBranchSpecification {
     std::uint32_t id{};
     std::string name;
-    std::uint32_t tuningHarmonicOrder{};
+    double tuningHarmonicOrder{};
     units::Power targetReactivePower;
     double qualityFactor{};
 };
@@ -33,7 +33,7 @@ struct FilterSpecification {
 struct SingleTunedBranchDesign {
     std::uint32_t id{};
     std::string name;
-    std::uint32_t tuningHarmonicOrder{};
+    double tuningHarmonicOrder{};
     units::Voltage phaseVoltage;
     units::Capacitance capacitance;
     units::Inductance inductance;
