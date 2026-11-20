@@ -2,6 +2,7 @@
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
+#include <array>
 #include <cassert>
 #include <filesystem>
 #include <string>
@@ -74,11 +75,17 @@ int main(int argc, char** argv)
     assert(steel35A300.value().material.dataSource == domain::MaterialDataSource::Measurement);
     assert(steel35A300.value().material.grade == "35A300 non-oriented electrical steel");
     assert(steel35A300.value().bhCurveStatus == "MEASURED_TABULAR");
-    assert(steel35A300.value().material.bhCurve.size() == 8);
-    assert(steel35A300.value().material.bhCurve.front().fieldStrength.si() == 100.0);
-    assert(steel35A300.value().material.bhCurve.front().fluxDensity.si() == 1.20);
-    assert(steel35A300.value().material.bhCurve.back().fieldStrength.si() == 20000.0);
-    assert(steel35A300.value().material.bhCurve.back().fluxDensity.si() == 1.93);
+    const std::array<double, 8> expectedH{
+        100.0, 200.0, 300.0, 500.0, 1000.0, 2000.0, 5000.0, 20000.0
+    };
+    const std::array<double, 8> expected35A300B{
+        1.20, 1.36, 1.42, 1.47, 1.53, 1.59, 1.70, 1.93
+    };
+    assert(steel35A300.value().material.bhCurve.size() == expectedH.size());
+    for (std::size_t i = 0; i < expectedH.size(); ++i) {
+        assert(steel35A300.value().material.bhCurve[i].fieldStrength.si() == expectedH[i]);
+        assert(steel35A300.value().material.bhCurve[i].fluxDensity.si() == expected35A300B[i]);
+    }
     assert(steel35A300.value().bhCurveFrequency.si() == 0.0);
     assert(!steel35A300.value().bhCurveTemperature.has_value());
     assert(steel35A300.value().material.lossData.empty());
@@ -94,9 +101,14 @@ int main(int argc, char** argv)
     const auto steel50A800 =
         loadCoreMaterialRevision(store, "SEED-MAT-RESEARCH-50A800-DC-R1");
     assert(steel50A800);
-    assert(steel50A800.value().material.bhCurve.size() == 8);
-    assert(steel50A800.value().material.bhCurve.front().fluxDensity.si() == 0.22);
-    assert(steel50A800.value().material.bhCurve.back().fluxDensity.si() == 1.97);
+    const std::array<double, 8> expected50A800B{
+        0.22, 0.99, 1.28, 1.45, 1.56, 1.63, 1.74, 1.97
+    };
+    assert(steel50A800.value().material.bhCurve.size() == expectedH.size());
+    for (std::size_t i = 0; i < expectedH.size(); ++i) {
+        assert(steel50A800.value().material.bhCurve[i].fieldStrength.si() == expectedH[i]);
+        assert(steel50A800.value().material.bhCurve[i].fluxDensity.si() == expected50A800B[i]);
+    }
     assert(steel50A800.value().material.lossData.empty());
     assert(steel50A800.value().coreLossStatus == "NOT_PUBLISHED");
 
