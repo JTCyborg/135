@@ -14,7 +14,7 @@ int main()
 
     request.harmonicAnalysis.branchPoints.push_back(filter::BranchHarmonicPoint{
         8, 1, units::Frequency{50.0}, 1.0,
-        {{{1.0, 0.0}, {-0.5, -0.8660254037844386}, {-0.5, 0.8660254037844386}}}
+        std::array<std::complex<double>, 3>{ {1.0, 0.0}, {-0.5, -0.8660254037844386}, {-0.5, 0.8660254037844386} }
     });
     auto wrongBranch = application::analyzeFilterReactorMagneticCycle(request);
     assert(!wrongBranch);
@@ -25,7 +25,7 @@ int main()
     });
     request.harmonicAnalysis.branchPoints.push_back(filter::BranchHarmonicPoint{
         7, 5, units::Frequency{250.0}, 0.1,
-        {{{0.1, 0.0}, {-0.05, 0.08660254037844386}, {-0.05, -0.08660254037844386}}}
+        std::array<std::complex<double>, 3>{ {0.1, 0.0}, {-0.05, 0.08660254037844386}, {-0.05, -0.08660254037844386} }
     });
     request.magnetic.geometry.limbEffectiveArea = units::Area{1.0e-3};
     request.magnetic.geometry.limbMeanPath = units::Length{0.2};
