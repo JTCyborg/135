@@ -228,6 +228,14 @@ Result<void> validate(const BobbinPhysicalGeometry& g)
         return invalid("Bobbin inner width, inner height, axial length and wall thickness are required.", "bobbin.dimensions");
     if (!nonNegative(g.flangeThickness) || !nonNegative(g.windingClearance))
         return invalid("Bobbin flange thickness and winding clearance must be non-negative.", "bobbin.clearances");
+    if (g.flangeThickness.si() > 0.0) {
+        if (!positive(g.flangeOuterWidth) || !positive(g.flangeOuterHeight))
+            return invalid("A bobbin with physical flanges requires explicit positive outer width and height.", "bobbin.flangeOuterDimensions");
+        const double bodyWidth = g.innerWidth.si() + 2.0 * g.wallThickness.si();
+        const double bodyHeight = g.innerHeight.si() + 2.0 * g.wallThickness.si();
+        if (g.flangeOuterWidth.si() < bodyWidth || g.flangeOuterHeight.si() < bodyHeight)
+            return invalid("Bobbin flange outer dimensions must enclose the tube outer dimensions.", "bobbin.flangeOuterDimensions");
+    }
     if (g.material.empty()) return invalid("Bobbin material is required.", "bobbin.material");
     return Result<void>::success();
 }
