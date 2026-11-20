@@ -300,12 +300,28 @@ Result<TopoDS_Shape> buildWindingPackEnvelopeShape(
         gp_Pnt(xInner, -cutOverrunMm, zInner),
         innerWidth * toMm, axialHeight * toMm + 2.0 * cutOverrunMm,
         innerDepth * toMm);
-    if (!outerMaker.IsDone() || !innerMaker.IsDone())
+
+    // Explicitly build both primitives before querying IsDone()/Shape().
+    // This keeps the builder state deterministic across OCCT versions.
+    outerMaker.Build();
+    innerMaker.Build();
+    if (!outerMaker.IsDone())
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-            "OCCT failed to create the winding-pack envelope primitives.",
+            "OCCT failed to build the outer winding-pack envelope box.",
+            "windingPack.envelope.outer");
+    if (!innerMaker.IsDone())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to build the inner winding-pack cutter box.",
+            "windingPack.envelope.inner");
+
+    const TopoDS_Shape outerShape = outerMaker.Shape();
+    const TopoDS_Shape innerShape = innerMaker.Shape();
+    if (outerShape.IsNull() || innerShape.IsNull())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT returned a null winding-pack envelope primitive.",
             "windingPack.envelope");
 
-    BRepAlgoAPI_Cut cut(outerMaker.Shape(), innerMaker.Shape());
+    BRepAlgoAPI_Cut cut(outerShape, innerShape);
     cut.Build();
     if (!cut.IsDone() || cut.Shape().IsNull() ||
         !BRepCheck_Analyzer(cut.Shape()).IsValid())
