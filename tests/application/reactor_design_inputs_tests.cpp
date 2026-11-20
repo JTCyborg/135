@@ -18,6 +18,7 @@ int main()
     inputs.conductorMaterial = MaterialRevisionSelection{"cu-rev-2", DesignInputOrigin::Recommended};
     inputs.insulationMaterial = MaterialRevisionSelection{"ins-rev-5", DesignInputOrigin::Recommended};
     inputs.stackingFactor = 0.95;
+    inputs.coreStackDepthM = 0.12;
     inputs.ambientTemperatureK = 298.15;
     inputs.maximumWindingTemperatureK = 393.15;
     inputs.coreGeometryFamily = "three-limb";
@@ -40,6 +41,10 @@ int main()
     const auto accepted = inputs;
     assert(!requiresRecalculation(inputs, accepted));
 
+    inputs.coreStackDepthM = 0.125;
+    assert(requiresRecalculation(inputs, accepted));
+    inputs.coreStackDepthM = 0.12;
+
     inputs.turnsPerPhase = 121;
     assert(requiresRecalculation(inputs, accepted));
     inputs.turnsPerPhase = 120;
@@ -51,6 +56,9 @@ int main()
     assert(requiresRecalculation(inputs, accepted));
     assert(validate(inputs));
 
+    inputs.coreStackDepthM = 0.0;
+    assert(!validate(inputs));
+    inputs.coreStackDepthM = 0.12;
     inputs.stackingFactor = 1.2;
     assert(!validate(inputs));
     inputs.stackingFactor = 0.95;
