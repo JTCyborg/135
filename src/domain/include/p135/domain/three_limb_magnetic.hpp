@@ -74,7 +74,7 @@ struct ThreeLimbMagneticCycleSamplingRequest {
     // Per-phase DC current bias, added to the instantaneous AC waveform.
     std::array<units::Current, 3> phaseDcCurrents{};
     double relativePeakTolerance{1.0e-3};
-    std::size_t maximumSamples{288}; // supported caps: 144 or 288; first pass is 72
+    std::size_t maximumSamples{576}; // supported caps: 144, 288 or 576; first pass is 72
 };
 
 struct ThreeLimbMagneticCycleSamplingResult {
@@ -88,7 +88,7 @@ struct ThreeLimbMagneticCycleSamplingResult {
 };
 
 /// Samples one fundamental cycle with all supplied harmonics superposed in time
-/// on nested 72/144/288 grids. Convergence is
+/// on nested 72/144/288/576 grids. Convergence is
 /// based on the maximum relative change across all seven branch peak |B| values.
 /// Reaching maximumSamples without meeting tolerance returns a successful
 /// diagnostic result with converged=false (NOT_VERIFIED), not a solver failure.
