@@ -23,6 +23,9 @@
 #include <QDoubleSpinBox>
 #include <QDir>
 #include <QDateTime>
+#include <QFile>
+#include <QFileDialog>
+#include <QSaveFile>
 #include <QDate>
 #include <QCoreApplication>
 #include <QStandardPaths>
@@ -1227,8 +1230,14 @@ QWidget* MainWindow::createHistoryPage()
     historySearch_ = new QLineEdit;
     historySearch_->setPlaceholderText(tr("Search by calculation ID, project, product family or author"));
     auto* refresh = new QPushButton(tr("Refresh"));
+    auto* exportSelected = new QPushButton(tr("Export Selected"));
+    auto* exportAll = new QPushButton(tr("Export All"));
+    auto* importFile = new QPushButton(tr("Import File"));
     searchRow->addWidget(historySearch_, 1);
     searchRow->addWidget(refresh);
+    searchRow->addWidget(exportSelected);
+    searchRow->addWidget(exportAll);
+    searchRow->addWidget(importFile);
     layout->addLayout(searchRow);
 
     historyTable_ = new QTableWidget(0, 5);
@@ -1264,6 +1273,12 @@ QWidget* MainWindow::createHistoryPage()
     layout->addWidget(historyDetails_, 3);
 
     connect(refresh, &QPushButton::clicked, this, [this] { refreshCalculationHistory(); });
+    connect(exportSelected, &QPushButton::clicked, this,
+        [this] { exportCalculationHistory(true); });
+    connect(exportAll, &QPushButton::clicked, this,
+        [this] { exportCalculationHistory(false); });
+    connect(importFile, &QPushButton::clicked, this,
+        [this] { importCalculationHistory(); });
     connect(historySearch_, &QLineEdit::returnPressed, this, [this] { refreshCalculationHistory(); });
     connect(historyTable_, &QTableWidget::currentCellChanged, this,
         [this](int currentRow, int, int, int) { showCalculationDetails(currentRow); });
@@ -1287,6 +1302,205 @@ QWidget* MainWindow::createHistoryPage()
         [this](int) { compareSelectedCalculationGraphs(); });
     refreshCalculationHistory();
     return page;
+}
+
+void MainWindow::exportCalculationHistory(bool selectedOnly)
+{
+    if (!materialStore_ || !historyTable_) return;
+    std::vector<std::string> ids;
+    if (selectedOnly) {
+        const auto rows = historyTable_->selectionModel()->selectedRows();
+        for (const auto& row : rows) {
+            const auto* item = historyTable_->item(row.row(), 3);
+            if (item) ids.push_back(item->data(Qt::UserRole).toString().toStdString());
+        }
+        if (ids.empty() && historyTable_->currentRow() >= 0) {
+            const auto* item = historyTable_->item(historyTable_->currentRow(), 3);
+            if (item) ids.push_back(item->data(Qt::UserRole).toString().toStdString());
+        }
+        if (ids.empty()) {
+            QMessageBox::information(this, tr("Export history"), tr("Select at least one calculation."));
+            return;
+        }
+    } else {
+        for (std::uint64_t offset = 0;; offset += 500) {
+            const auto page = materialStore_->listCalculations({}, 500, offset);
+            if (!page) {
+                QMessageBox::warning(this, tr("Export history"),
+                    QString::fromStdString(page.error().message));
+                return;
+            }
+            for (const auto& record : page.value()) ids.push_back(record.calculationId);
+            if (page.value().size() < 500) break;
+        }
+    }
+
+    QJsonArray records;
+    for (const auto& id : ids) {
+        const auto found = materialStore_->findCalculation(id);
+        if (!found || !found.value()) {
+            QMessageBox::warning(this, tr("Export history"),
+                found ? tr("Calculation %1 was not found.").arg(QString::fromStdString(id))
+                      : QString::fromStdString(found.error().message));
+            return;
+        }
+        const auto& r = *found.value();
+        QJsonObject item;
+        item.insert("calculationId", QString::fromStdString(r.calculationId));
+        item.insert("projectId", QString::fromStdString(r.projectId));
+        item.insert("projectName", QString::fromStdString(r.projectName));
+        item.insert("productFamily", QString::fromStdString(r.productFamily));
+        item.insert("input", QJsonDocument::fromJson(QByteArray::fromStdString(r.inputJson)).object());
+        item.insert("result", QJsonDocument::fromJson(QByteArray::fromStdString(r.resultJson)).object());
+        item.insert("engineVersions", QJsonDocument::fromJson(QByteArray::fromStdString(r.engineVersionsJson)).object());
+        item.insert("contentHash", QString::fromStdString(r.contentHash));
+        item.insert("author", QString::fromStdString(r.author));
+        item.insert("createdAtUtc", QString::fromStdString(r.createdAtUtc));
+        QJsonArray links;
+        const auto materialLinks = materialStore_->calculationMaterials(r.calculationId);
+        if (!materialLinks) {
+            QMessageBox::warning(this, tr("Export history"),
+                QString::fromStdString(materialLinks.error().message));
+            return;
+        }
+        for (const auto& link : materialLinks.value()) {
+            const auto revision = materialStore_->findRevision(link.revisionId);
+            if (!revision || !revision.value()) {
+                QMessageBox::warning(this, tr("Export history"),
+                    tr("Exact material revision %1 is unavailable; export was cancelled.")
+                        .arg(QString::fromStdString(link.revisionId)));
+                return;
+            }
+            QJsonObject ref;
+            ref.insert("usageId", QString::fromStdString(link.usageId));
+            ref.insert("revisionId", QString::fromStdString(link.revisionId));
+            links.append(ref);
+        }
+        item.insert("materialLinks", links);
+        records.append(item);
+    }
+
+    QJsonObject archive;
+    archive.insert("format", "Project135.CalculationHistory");
+    archive.insert("formatVersion", 1);
+    archive.insert("exportedAtUtc", QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+    archive.insert("calculations", records);
+    const QString path = QFileDialog::getSaveFileName(this, tr("Export calculation history"),
+        selectedOnly ? QStringLiteral("calculation-history.p135history")
+                     : QStringLiteral("calculation-history-all.p135history"),
+        tr("Project135 history (*.p135history);;JSON (*.json)"));
+    if (path.isEmpty()) return;
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly) ||
+        file.write(QJsonDocument(archive).toJson(QJsonDocument::Indented)) < 0 ||
+        !file.commit()) {
+        QMessageBox::critical(this, tr("Export history"),
+            tr("Cannot write history archive: %1").arg(file.errorString()));
+        return;
+    }
+    QMessageBox::information(this, tr("Export history"),
+        tr("Exported %1 calculation(s).").arg(records.size()));
+}
+
+void MainWindow::importCalculationHistory()
+{
+    if (!materialStore_) {
+        QMessageBox::warning(this, tr("Import history"), tr("SQLite database is unavailable."));
+        return;
+    }
+    const QString path = QFileDialog::getOpenFileName(this, tr("Import calculation history"),
+        {}, tr("Project135 history (*.p135history *.json);;All files (*.*)"));
+    if (path.isEmpty()) return;
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, tr("Import history"), file.errorString());
+        return;
+    }
+    QJsonParseError parseError;
+    const auto document = QJsonDocument::fromJson(file.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        QMessageBox::warning(this, tr("Import history"), tr("Invalid JSON archive: %1").arg(parseError.errorString()));
+        return;
+    }
+    const auto archive = document.object();
+    if (archive.value("format").toString() != QStringLiteral("Project135.CalculationHistory") ||
+        archive.value("formatVersion").toInt() != 1 ||
+        !archive.value("calculations").isArray()) {
+        QMessageBox::warning(this, tr("Import history"), tr("Unsupported history archive format or version."));
+        return;
+    }
+
+    int imported = 0, duplicates = 0;
+    for (const auto& value : archive.value("calculations").toArray()) {
+        if (!value.isObject()) {
+            QMessageBox::warning(this, tr("Import history"), tr("Archive contains a malformed calculation entry."));
+            return;
+        }
+        const auto item = value.toObject();
+        const auto requiredString = [&item](const char* key) { return item.value(QLatin1String(key)).toString(); };
+        const QString id = requiredString("calculationId");
+        const QString projectId = requiredString("projectId");
+        const QString projectName = requiredString("projectName");
+        const QString family = requiredString("productFamily");
+        const auto input = item.value("input").toObject();
+        const auto result = item.value("result").toObject();
+        const auto versions = item.value("engineVersions").toObject();
+        if (id.isEmpty() || projectId.isEmpty() || projectName.isEmpty() || family.isEmpty() ||
+            input.isEmpty() || result.isEmpty() || versions.isEmpty()) {
+            QMessageBox::warning(this, tr("Import history"), tr("Calculation metadata or JSON payload is incomplete."));
+            return;
+        }
+        const std::string inputJson = QJsonDocument(input).toJson(QJsonDocument::Compact).toStdString();
+        const std::string resultJson = QJsonDocument(result).toJson(QJsonDocument::Compact).toStdString();
+        const std::string versionsJson = QJsonDocument(versions).toJson(QJsonDocument::Compact).toStdString();
+        const std::string envelope = "{\"engineVersions\":" + versionsJson +
+            ",\"input\":" + inputJson + ",\"result\":" + resultJson + "}";
+        const auto canonical = p135::infrastructure::sqlite::canonicalizeJson(envelope);
+        const auto hash = canonical ? p135::infrastructure::sqlite::sha256Hex(canonical.value())
+                                   : p135::Result<std::string>::failure(canonical.error());
+        if (!hash || hash.value() != requiredString("contentHash").toStdString()) {
+            QMessageBox::warning(this, tr("Import history"),
+                tr("SHA-256 validation failed for calculation %1.").arg(id));
+            return;
+        }
+        const auto existing = materialStore_->findCalculation(id.toStdString());
+        if (!existing) {
+            QMessageBox::warning(this, tr("Import history"), QString::fromStdString(existing.error().message));
+            return;
+        }
+        if (existing.value()) { ++duplicates; continue; }
+
+        std::vector<p135::infrastructure::sqlite::CalculationMaterialReference> refs;
+        for (const auto& linkValue : item.value("materialLinks").toArray()) {
+            const auto link = linkValue.toObject();
+            const QString revisionId = link.value("revisionId").toString();
+            const QString usageId = link.value("usageId").toString();
+            const auto revision = materialStore_->findRevision(revisionId.toStdString());
+            if (revisionId.isEmpty() || usageId.isEmpty() || !revision || !revision.value()) {
+                QMessageBox::warning(this, tr("Import history"),
+                    tr("Calculation %1 requires exact material revision %2, which is not present in this database. Import stopped; no substitute was selected.")
+                        .arg(id, revisionId));
+                return;
+            }
+            refs.push_back({usageId.toStdString(), revisionId.toStdString()});
+        }
+        p135::infrastructure::sqlite::CalculationRecord record{
+            id.toStdString(), projectId.toStdString(), projectName.toStdString(), family.toStdString(),
+            inputJson, resultJson, versionsJson, hash.value(),
+            requiredString("author").toStdString(), requiredString("createdAtUtc").toStdString()
+        };
+        const auto saved = materialStore_->recordCalculation(record, refs);
+        if (!saved) {
+            QMessageBox::warning(this, tr("Import history"),
+                tr("Import stopped at %1: %2").arg(id, QString::fromStdString(saved.error().message)));
+            refreshCalculationHistory();
+            return;
+        }
+        ++imported;
+    }
+    refreshCalculationHistory();
+    QMessageBox::information(this, tr("Import history"),
+        tr("Imported %1 calculation(s); skipped %2 duplicate(s).").arg(imported).arg(duplicates));
 }
 
 void MainWindow::refreshCalculationHistory()
