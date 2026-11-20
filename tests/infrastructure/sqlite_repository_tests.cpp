@@ -175,7 +175,7 @@ int main(int argc, char** argv)
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
         const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
-        assert(seeded && seeded.value() == 16);
+        assert(seeded && seeded.value() == 18);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
         MaterialCatalogFilter coreMaterials;
@@ -203,6 +203,18 @@ int main(int argc, char** argv)
         assert(steel && steel.value());
         assert(steel.value()->payload.find("2.35") != std::string::npos);
         assert(steel.value()->payload.find("NOT_PUBLISHED_IN_IMPORTED_DATASET") != std::string::npos);
+        const auto kapton = store.latestRevision("MAT-DUPONT-KAPTON-HN-25UM");
+        assert(kapton && kapton.value());
+        assert(kapton.value()->payload.find("303000000") != std::string::npos);
+        assert(kapton.value()->payload.find("0.000025") != std::string::npos);
+        const auto glassTape = store.latestRevision("COMP-3M-SCOTCH-27");
+        assert(glassTape && glassTape.value());
+        assert(glassTape.value()->payload.find("0.000177") != std::string::npos);
+        assert(glassTape.value()->payload.find("3000") != std::string::npos);
+        MaterialCatalogFilter insulation;
+        insulation.recordType = "insulation-material";
+        const auto insulationCatalog = store.searchLatestRevisions(insulation);
+        assert(insulationCatalog && insulationCatalog.value().size() == 3);
         MaterialCatalogFilter conductors;
         conductors.recordType = "conductor-material";
         const auto conductorCatalog = store.searchLatestRevisions(conductors);
