@@ -27,6 +27,8 @@
 #endif
 
 #include <utility>
+#include <cmath>
+#include <unordered_map>
 
 class CadViewportWidget::NativeView final : public QWidget
 {
@@ -56,6 +58,31 @@ public:
         items_ = items;
         if (initialize())
             displayItems();
+    }
+
+    bool setComponentVisibility(const std::string& id, bool visible)
+    {
+        if (context_.IsNull()) return false;
+        const auto found = presentations_.find(id);
+        if (found == presentations_.end()) return false;
+        if (visible)
+            context_->Display(found->second, Standard_False);
+        else
+            context_->Erase(found->second, Standard_False);
+        context_->UpdateCurrentViewer();
+        return true;
+    }
+
+    bool setComponentTransparency(const std::string& id, double transparency)
+    {
+        if (context_.IsNull() || !std::isfinite(transparency) ||
+            transparency < 0.0 || transparency > 1.0) return false;
+        const auto found = presentations_.find(id);
+        if (found == presentations_.end()) return false;
+        found->second->SetTransparency(transparency);
+        context_->Redisplay(found->second, Standard_False);
+        context_->UpdateCurrentViewer();
+        return true;
     }
 
     void fitAll()
@@ -226,6 +253,7 @@ private:
         if (context_.IsNull() || view_.IsNull()) return;
 
         context_->EraseAll(Standard_False);
+        presentations_.clear();
         for (const auto& item : items_)
         {
             if (item.shape.IsNull()) continue;
@@ -233,12 +261,14 @@ private:
             if (item.transparency > 0.0)
                 presentation->SetTransparency(item.transparency);
             context_->Display(presentation, Standard_False);
+            presentations_.emplace(item.id, presentation);
         }
         context_->UpdateCurrentViewer();
         fitAll();
     }
 
     std::vector<p135::cad::AssemblyPresentationDisplayItem> items_;
+    std::unordered_map<std::string, Handle(AIS_Shape)> presentations_;
     QPoint lastMousePosition_;
     QPoint panStartPosition_;
     bool rotating_{false};
@@ -298,6 +328,17 @@ CadViewportWidget::CadViewportWidget(QWidget* parent)
 }
 
 CadViewportWidget::~CadViewportWidget() = default;
+
+bool CadViewportWidget::setComponentVisibility(const std::string& componentId, bool visible)
+{
+    return view_->setComponentVisibility(componentId, visible);
+}
+
+bool CadViewportWidget::setComponentTransparency(
+    const std::string& componentId, double transparency)
+{
+    return view_->setComponentTransparency(componentId, transparency);
+}
 
 void CadViewportWidget::setDisplayItems(
     const std::vector<p135::cad::AssemblyPresentationDisplayItem>& items)
