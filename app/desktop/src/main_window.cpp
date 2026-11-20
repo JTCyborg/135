@@ -2154,7 +2154,7 @@ void MainWindow::calculateFilter()
     std::optional<double> magneticKneeFluxDensityT;
     std::vector<std::pair<double, double>> magneticFluxDensityPoints;
     std::vector<std::array<double, 8>> threeLimbFluxDensitySweep;
-    std::vector<std::array<double, 4>> threeLimbSamplingMetadata; // frequency, samples, relative peak change, converged
+    std::vector<std::array<double, 5>> threeLimbSamplingMetadata; // frequency, samples, relative change, converged, within measured B-H range
     bool magneticSweepValid = magneticCircuitBase.has_value();
     bool threeLimbSweepValid = threeLimbMagneticBase.has_value();
     if (magneticCircuitBase) {
@@ -2250,7 +2250,8 @@ void MainWindow::calculateFilter()
                         point.frequency.si(),
                         static_cast<double>(sampledCycle.value().samplesUsed),
                         sampledCycle.value().relativePeakChange,
-                        0.0
+                        0.0,
+                        sampledCycle.value().withinBhCurveRange ? 1.0 : 0.0
                     });
                     threeLimbSweepValid = false;
                     threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz: peak |B| did not converge to 0.1%% by %2 samples (last relative change %3%%).")
@@ -2268,7 +2269,8 @@ void MainWindow::calculateFilter()
                         point.frequency.si(),
                         static_cast<double>(sampledCycle.value().samplesUsed),
                         sampledCycle.value().relativePeakChange,
-                        1.0
+                        1.0,
+                        sampledCycle.value().withinBhCurveRange ? 1.0 : 0.0
                     });
                 }
             }
@@ -2512,6 +2514,10 @@ void MainWindow::calculateFilter()
                         .arg(operating.value().relativePeakChange * 100.0, 0, 'g', 5);
                 } else {
                     threeLimbOperatingPoint = operating.value();
+                    if (!operating.value().withinBhCurveRange) {
+                        threeLimbOperatingPointWarning = tr(
+                            "Three-limb operating-point B EXTRAPOLATED_NOT_VERIFIED: one or more branches exceeded the measured B-H curve; μ0 differential-permeability continuation was used.");
+                    }
                 }
             }
         }
@@ -2702,6 +2708,11 @@ void MainWindow::calculateFilter()
                 maximumSamples->at(1), tr("samples"));
             addResult(tr("Three-limb worst successive peak |B| change"),
                 worst->at(2) * 100.0, tr("%"));
+            const bool allWithinMeasuredCurve = std::all_of(
+                threeLimbSamplingMetadata.begin(), threeLimbSamplingMetadata.end(),
+                [](const auto& item) { return item[4] != 0.0; });
+            if (!allWithinMeasuredCurve)
+                appendLog(tr("Coupled three-limb frequency sweep EXTRAPOLATED_NOT_VERIFIED: μ0 asymptotic continuation was used beyond the measured B-H curve."));
         }
     } else if (!threeLimbModelWarning.isEmpty()) {
         appendLog(threeLimbModelWarning);
@@ -2720,6 +2731,8 @@ void MainWindow::calculateFilter()
             static_cast<double>(threeLimbOperatingPoint->samplesUsed), tr("samples"));
         addResult(tr("Operating-point peak |B| convergence"),
             threeLimbOperatingPoint->relativePeakChange * 100.0, tr("%"));
+        if (!threeLimbOperatingPoint->withinBhCurveRange)
+            appendLog(threeLimbOperatingPointWarning);
     } else if (!threeLimbOperatingPointWarning.isEmpty()) {
         appendLog(threeLimbOperatingPointWarning);
     }
@@ -3142,7 +3155,12 @@ void MainWindow::calculateFilter()
         QJsonObject threeLimbOperatingSnapshot;
         if (threeLimbOperatingPoint) {
             const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
-            threeLimbOperatingSnapshot.insert(QStringLiteral("status"), QStringLiteral("VERIFIED_CONVERGED"));
+            threeLimbOperatingSnapshot.insert(QStringLiteral("status"),
+                threeLimbOperatingPoint->withinBhCurveRange
+                    ? QStringLiteral("VERIFIED_CONVERGED")
+                    : QStringLiteral("EXTRAPOLATED_NOT_VERIFIED"));
+            threeLimbOperatingSnapshot.insert(QStringLiteral("withinMeasuredBhCurve"),
+                threeLimbOperatingPoint->withinBhCurveRange);
             threeLimbOperatingSnapshot.insert(QStringLiteral("limbA_peak_B_T"), peakB[0].si());
             threeLimbOperatingSnapshot.insert(QStringLiteral("limbB_peak_B_T"), peakB[1].si());
             threeLimbOperatingSnapshot.insert(QStringLiteral("limbC_peak_B_T"), peakB[2].si());
@@ -3172,6 +3190,7 @@ void MainWindow::calculateFilter()
             sample.insert(QStringLiteral("relativePeakChange"), metadata[2]);
             sample.insert(QStringLiteral("relativeTolerance"), 1.0e-3);
             sample.insert(QStringLiteral("converged"), metadata[3] != 0.0);
+            sample.insert(QStringLiteral("withinMeasuredBhCurve"), metadata[4] != 0.0);
             threeLimbSamplingSnapshot.append(sample);
         }
         resultSnapshot.insert(QStringLiteral("threeLimbSampling"), threeLimbSamplingSnapshot);
