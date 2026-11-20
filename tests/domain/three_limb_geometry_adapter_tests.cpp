@@ -58,8 +58,10 @@ int main()
         assert(near(magnetic.limbAirGaps[limb]->si(), 0.0));
         assert(near(magnetic.limbGapEffectiveAreas[limb]->si(), 0.04 * 0.08 * 0.95));
     }
+    const std::array<double, 4> yokeThicknesses{0.03, 0.05, 0.04, 0.06};
     for (std::size_t yoke = 0; yoke < 4; ++yoke) {
-        assert(near(magnetic.yokeEffectiveAreas[yoke]->si(), 0.04 * 0.08 * 0.95));
+        assert(near(magnetic.yokeEffectiveAreas[yoke]->si(),
+                    yokeThicknesses[yoke] * 0.08 * 0.95));
         assert(near(magnetic.yokeSegmentPaths[yoke]->si(), 0.10));
     }
 
