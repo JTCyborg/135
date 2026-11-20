@@ -163,6 +163,39 @@ void testLinearFrequencySweep() {
         assert(near(response.value().points[i].frequency.si(), 100.0 * (i + 1)));
 }
 
+void testSourceTheveninRLSweepIsFrequencyDependent() {
+    Circuit c;
+    c.referenceNode = Gnd;
+    c.nodes = {{Gnd, "0"}, {N1, "source"}, {N2, "after_source"}};
+    c.elements = {
+        Element::makeVoltageSource(1, N1, Gnd, {230.0, 0.0}, "Thevenin source"),
+        Element::makeResistor(2, N1, N2, units::Resistance{0.08}, "Thevenin R"),
+        Element::makeInductor(3, N2, 4, units::Inductance{0.001}, "Thevenin L"),
+        Element::makeResistor(4, 4, Gnd, units::Resistance{10.0}, "Filter load")
+    };
+
+    FrequencySweep request;
+    request.study = Study{c, AnalysisKind::AcSteadyState, units::Frequency{50.0}};
+    request.startFrequency = units::Frequency{50.0};
+    request.stopFrequency = units::Frequency{250.0};
+    request.points = 3;
+    request.spacing = SweepSpacing::Linear;
+
+    const auto response = sweep(request);
+    assert(response);
+    assert(response.value().points.size() == 3);
+
+    const auto currentAt50 = std::abs(response.value().points.front().result.branches[3].rmsCurrent);
+    const auto currentAt250 = std::abs(response.value().points.back().result.branches[3].rmsCurrent);
+    const double expectedAt50 = 230.0 / std::abs(std::complex<double>{
+        10.08, 2.0 * std::acos(-1.0) * 50.0 * 0.001});
+    const double expectedAt250 = 230.0 / std::abs(std::complex<double>{
+        10.08, 2.0 * std::acos(-1.0) * 250.0 * 0.001});
+    assert(near(currentAt50, expectedAt50));
+    assert(near(currentAt250, expectedAt250));
+    assert(currentAt250 < currentAt50);
+}
+
 void testSweepRejectsInvalidRequest() {
     Circuit c;
     c.referenceNode = Gnd;
@@ -190,6 +223,7 @@ int main() {
     testAcRlPhaseAndReactivePower();
     testLogarithmicFrequencySweep();
     testLinearFrequencySweep();
+    testSourceTheveninRLSweepIsFrequencyDependent();
     testSweepRejectsInvalidRequest();
     return 0;
 }
