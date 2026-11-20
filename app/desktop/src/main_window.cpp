@@ -42,6 +42,7 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
+#include <QHash>
 #include <QHeaderView>
 #include <QJsonArray>
 #include <QJsonDocument>
