@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     assert(steel50A800.value().material.lossData.empty());
     assert(steel50A800.value().coreLossStatus == "NOT_PUBLISHED");
 
-    // Baosteel Appendix D provides manufacturer-typical AC loss anchors.
+    // Baosteel's official product page provides manufacturer-typical AC loss anchors.
     // Keep them separate from CoreMaterial::lossData because test temperature
     // is not published and the values are not guaranteed delivery limits.
     const auto baosteel35A300 = loadCoreLossReferenceDataset(
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
     assert(baosteel35A300.value().specificationLimit->maximumSpecificLoss.si() == 3.00);
     assert(baosteel35A300.value().qualityStatus ==
            "MANUFACTURER_TYPICAL_VALUES_NOT_GUARANTEED");
-    assert(baosteel35A300.value().measurementMethod == "GB/T 3655 Epstein square-frame method");
+    assert(baosteel35A300.value().measurementMethod == "GB/T 3655-2008 magnetic measurement method; Epstein square-frame method");
     assert(baosteel35A300.value().temperatureStatus == "NOT_STATED_IN_SOURCE");
     assert(baosteel35A300.value().sampleDirection.find("Half horizontal and half vertical") !=
            std::string::npos);
