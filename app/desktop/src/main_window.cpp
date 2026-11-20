@@ -3358,7 +3358,7 @@ void MainWindow::calculateFilter()
     }
     if (resultsBankCurrentPlot_) {
         resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
-            tr("Frequency (Hz, logarithmic)"), tr("Ideal-source diagnostic phase peak current (A)"));
+            tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
         resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
     }
     PlotCurve liveBusImpedanceCurve{tr("Current calculation"), {}};
