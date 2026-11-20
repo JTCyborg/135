@@ -379,3 +379,21 @@ if(MSVC)
 else()
     target_compile_options(Project135WindingElectrothermalTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135RevisionBoundWindingElectrothermalTests
+    infrastructure/revision_bound_winding_electrothermal_tests.cpp
+)
+target_link_libraries(Project135RevisionBoundWindingElectrothermalTests PRIVATE
+    Project135::InfrastructureSqlite Project135::Thermal
+)
+add_test(
+    NAME Project135RevisionBoundWindingElectrothermalTests
+    COMMAND Project135RevisionBoundWindingElectrothermalTests
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql
+)
+if(MSVC)
+    target_compile_options(Project135RevisionBoundWindingElectrothermalTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135RevisionBoundWindingElectrothermalTests PRIVATE -UNDEBUG)
+endif()
