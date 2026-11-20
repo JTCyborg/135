@@ -131,7 +131,11 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         material.grade = requiredString(sourceMaterial, "grade");
         material.family = parseFamily(requiredString(sourceMaterial, "family"));
         material.density = units::Density{requiredNumber(sourceMaterial, "density_kg_per_m3")};
-        material.dataSource = domain::MaterialDataSource::ManufacturerDatasheet;
+        const auto& quality = root.at("dataQuality");
+        const std::string sourceStatus = provenanceString(quality, "sourceStatus");
+        material.dataSource = sourceStatus == "MEASURED_RESEARCH_DATASET"
+            ? domain::MaterialDataSource::Measurement
+            : domain::MaterialDataSource::ManufacturerDatasheet;
         material.sourceReference = revision.sourceReference;
         material.datasetRevision = revision.datasetRevision;
 
@@ -148,10 +152,10 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
             });
         }
 
-        const auto& sourceLoss = root.at("coreLossData");
-        const auto& lossPoints = sourceLoss.at("points");
-        if (!lossPoints.is_array() || lossPoints.empty())
-            throw std::invalid_argument("Core-loss points are missing.");
+        const json sourceLoss = root.value("coreLossData", json::object());
+        const json lossPoints = sourceLoss.value("points", json::array());
+        if (!lossPoints.is_array())
+            throw std::invalid_argument("Core-loss points must be an array when supplied.");
         material.lossDataReference = revision.sourceReference;
         for (const auto& point : lossPoints) {
             // Starter records publish volumetric loss (W/m^3), while the
@@ -167,7 +171,6 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
             });
         }
 
-        const auto& quality = root.at("dataQuality");
         CoreMaterialRevisionSnapshot snapshot;
         snapshot.material = std::move(material);
         snapshot.revisionId = revision.revisionId;
@@ -188,14 +191,23 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.coreLossStatus = requiredString(quality, "coreLossStatus");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
+        const std::string bhCurveType = requiredString(sourceBh, "curveType");
+        if (bhCurveType == "DC initial magnetization curve") {
+            if (bhFrequency != 0.0)
+                throw std::invalid_argument("A DC B-H curve must declare frequency_Hz as zero.");
+        } else if (bhFrequency <= 0.0) {
+            throw std::invalid_argument("A non-DC B-H curve must declare a positive frequency.");
+        }
         snapshot.bhCurveFrequency = units::Frequency{bhFrequency};
-        snapshot.bhCurveTemperature = units::TemperatureKelvin{bhTemperature};
+        snapshot.bhCurveTemperature = bhTemperature > 0.0
+            ? std::optional<units::TemperatureKelvin>{units::TemperatureKelvin{bhTemperature}}
+            : std::nullopt;
 
         const auto validated = domain::validate(snapshot.material);
         if (!validated)
             return Result<CoreMaterialRevisionSnapshot>::failure(validated.error());
-        if (bhFrequency <= 0.0 || bhTemperature <= 0.0)
-            throw std::invalid_argument("B-H curve measurement conditions must be positive.");
+        if (bhTemperature < 0.0)
+            throw std::invalid_argument("B-H curve temperature cannot be negative.");
         return Result<CoreMaterialRevisionSnapshot>::success(std::move(snapshot));
     } catch (const std::exception& exception) {
         return Result<CoreMaterialRevisionSnapshot>::failure(loaderError(
