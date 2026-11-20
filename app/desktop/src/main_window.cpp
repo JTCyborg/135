@@ -251,6 +251,91 @@ private:
 };
 
 
+class ProductTopologyWidget final : public QWidget
+{
+public:
+    explicit ProductTopologyWidget(QWidget* parent = nullptr) : QWidget(parent)
+    {
+        setMinimumHeight(142);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    }
+
+    void setProductFamily(const QString& family)
+    {
+        family_ = family;
+        update();
+    }
+
+    void setConnection(const QString& connection)
+    {
+        connection_ = connection;
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent*) override
+    {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing, true);
+        p.fillRect(rect(), palette().alternateBase());
+
+        const int margin = 22;
+        const int y = 67;
+        const int h = 42;
+        const int available = std::max(1, width() - 2 * margin);
+        const QStringList labels = family_.contains("Shunt", Qt::CaseInsensitive)
+            ? QStringList{tr("3-phase bus"), tr("Fuse / CB"), tr("Contactor"), tr("Reactor L"), tr("Capacitor C"), connection_}
+            : family_.contains("VFD", Qt::CaseInsensitive)
+                ? QStringList{tr("VFD output"), tr("Protection"), tr("Contactor"), tr("Reactor L"), tr("Motor")}
+                : family_.contains("transformer", Qt::CaseInsensitive)
+                    ? QStringList{tr("Supply"), tr("Protection"), tr("Primary"), tr("Transformer"), tr("Secondary")}
+                    : family_.contains("AFE", Qt::CaseInsensitive)
+                        ? QStringList{tr("Grid"), tr("Protection"), tr("Reactor L"), tr("AFE converter"), tr("DC link")}
+                        : QStringList{tr("Electrical source"), tr("Protection"), tr("Reactor"), tr("Terminals")};
+
+        const int count = labels.size();
+        const int gap = count > 1 ? 12 : 0;
+        const int boxWidth = std::max(66, (available - gap * (count - 1)) / count);
+        const int totalWidth = boxWidth * count + gap * (count - 1);
+        const int startX = std::max(margin, (width() - totalWidth) / 2);
+
+        p.setPen(palette().color(QPalette::Text));
+        p.drawText(QRect(12, 8, width() - 24, 22), Qt::AlignCenter,
+            tr("Functional single-line preview — not a wiring diagram"));
+
+        for (int i = 0; i < count; ++i) {
+            const int x = startX + i * (boxWidth + gap);
+            if (i > 0) {
+                const int left = x - gap;
+                p.setPen(QPen(palette().color(QPalette::Text), 1.5));
+                p.drawLine(left + 1, y + h / 2, x - 4, y + h / 2);
+                p.drawLine(x - 9, y + h / 2 - 4, x - 4, y + h / 2);
+                p.drawLine(x - 9, y + h / 2 + 4, x - 4, y + h / 2);
+            }
+            const QRect box(x, y, boxWidth, h);
+            p.setPen(QPen(palette().color(QPalette::mid), 1.2));
+            p.setBrush(palette().base());
+            p.drawRoundedRect(box, 5, 5);
+            p.setPen(palette().color(QPalette::Text));
+            p.drawText(box.adjusted(4, 3, -4, -3), Qt::AlignCenter | Qt::TextWordWrap, labels[i]);
+        }
+
+        QString detail;
+        if (family_.contains("Shunt", Qt::CaseInsensitive))
+            detail = tr("Three-phase shunt branch • series-tuned R–L–C • termination: %1")
+                .arg(connection_);
+        else
+            detail = tr("Conceptual topology only • calculation workflow not yet implemented for this product family");
+        p.setPen(palette().color(QPalette::Mid));
+        p.drawText(QRect(12, 119, width() - 24, 18), Qt::AlignCenter, detail);
+    }
+
+private:
+    QString family_;
+    QString connection_{tr("Wye (Y) / Delta (Δ)")};
+};
+
+
 namespace {
 bool revisionIsUserDefined(const p135::application::MaterialRevision& revision,
                            const QJsonObject& document)
@@ -534,21 +619,37 @@ QWidget* MainWindow::createProjectPage()
     insulationClass->addItems({tr("F (155 °C)"), tr("H (180 °C)"), tr("Not specified")});
     auto* ipRating = new QComboBox;
     ipRating->addItems({"IP00", "IP20", "IP21", "IP23", "IP31", "IP41", "IP54", "IP55", tr("Other / not specified")});
+    auto* coolingMethod = new QComboBox;
+    coolingMethod->addItem(tr("AN — natural air cooling"), "AN");
+    coolingMethod->addItem(tr("AF — forced air cooling"), "AF");
+    auto* airflow = new QDoubleSpinBox;
+    airflow->setRange(0.0, 100000.0);
+    airflow->setDecimals(2);
+    airflow->setSuffix(tr(" m³/h"));
+    airflow->setSpecialValueText(tr("NOT SET"));
+    airflow->setEnabled(false);
+    airflow->setToolTip(tr("Enter the verified total airflow through the equipment enclosure, not the fan free-air rating."));
+    auto* coolingStatus = new QLabel(tr("Cooling method is recorded as a project assumption; it is not yet applied by the thermal solver."));
+    coolingStatus->setWordWrap(true);
+    coolingStatus->setStyleSheet("color: #a66b00;");
     environmentForm->addRow(tr("Maximum ambient temperature"), ambient);
     environmentForm->addRow(tr("Installation altitude"), altitude);
     environmentForm->addRow(tr("Insulation thermal class"), insulationClass);
     environmentForm->addRow(tr("Enclosure protection"), ipRating);
+    environmentForm->addRow(tr("Cooling method"), coolingMethod);
+    environmentForm->addRow(tr("Forced-air volume flow"), airflow);
+    environmentForm->addRow(coolingStatus);
+    connect(coolingMethod, &QComboBox::currentIndexChanged, this, [airflow](int index) {
+        airflow->setEnabled(index == 1);
+        if (index == 0) airflow->setValue(0.0);
+    });
     layout->addWidget(environment);
 
     auto* topology = new QGroupBox(tr("Selected product topology"));
     auto* topologyLayout = new QVBoxLayout(topology);
-    auto* topologyDiagram = new QLabel(
-        tr("3-phase bus  →  branch protection  →  series R–L–C tuned branch  →  PE / star point\n"
-           "                 A / B / C phases; single-tuned shunt connection"));
-    topologyDiagram->setTextFormat(Qt::PlainText);
-    topologyDiagram->setAlignment(Qt::AlignCenter);
-    topologyDiagram->setMinimumHeight(76);
-    topologyDiagram->setStyleSheet("font-family: Consolas, monospace; padding: 12px; background: palette(alternate-base);");
+    auto* topologyDiagram = new ProductTopologyWidget;
+    topologyDiagram->setProductFamily(productFamily_->currentText());
+    topologyDiagram->setMinimumWidth(720);
     topologyLayout->addWidget(topologyDiagram);
     layout->addWidget(topology);
 
@@ -558,7 +659,8 @@ QWidget* MainWindow::createProjectPage()
     layout->addWidget(note);
     layout->addStretch();
     connect(projectName_, &QLineEdit::textChanged, this, [this] { updateProjectTitle(); });
-    connect(productFamily_, &QComboBox::currentTextChanged, this, [this](const QString& value) {
+    connect(productFamily_, &QComboBox::currentTextChanged, this, [this, topologyDiagram](const QString& value) {
+        topologyDiagram->setProductFamily(value);
         QSettings settings;
         settings.setValue(QStringLiteral("project/productFamily"), value);
         appendLog(tr("Product family selected: %1").arg(value));
