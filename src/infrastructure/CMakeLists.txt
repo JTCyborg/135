@@ -1,9 +1,10 @@
+# vcpkg exports an unofficial config package; CMake's FindSQLite3 module
+# uses the canonical SQLite::SQLite3 imported target.
+find_package(unofficial-sqlite3 CONFIG QUIET)
 find_package(SQLite3 REQUIRED)
 
-# vcpkg's sqlite3 port exports unofficial::sqlite3::sqlite3, while CMake's
-# FindSQLite3 module exports SQLite3::SQLite3. Support both package providers.
-if(TARGET SQLite3::SQLite3)
-    set(P135_SQLITE_TARGET SQLite3::SQLite3)
+if(TARGET SQLite::SQLite3)
+    set(P135_SQLITE_TARGET SQLite::SQLite3)
 elseif(TARGET unofficial::sqlite3::sqlite3)
     set(P135_SQLITE_TARGET unofficial::sqlite3::sqlite3)
 else()
