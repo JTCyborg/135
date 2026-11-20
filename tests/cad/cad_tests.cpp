@@ -90,7 +90,13 @@ int main()
     assert(std::abs((zMax - zMin) - 80.0) < 1.0e-6);
 
     std::size_t solidCount = 0;
-    for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next()) ++solidCount;
+    for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next()) {
+        ++solidCount;
+        GProp_GProps volumeProperties;
+        BRepGProp::VolumeProperties(it.Current(), volumeProperties);
+        assert(std::isfinite(volumeProperties.Mass()));
+        assert(volumeProperties.Mass() > 1.0e-12);
+    }
     assert(solidCount == 7);
 
     // Top-level component order is limbs A/B/C, then yokes top AB/BC,
