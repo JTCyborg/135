@@ -22,7 +22,7 @@
 #include <QCheckBox>
 #include <QDoubleSpinBox>
 #include <QDir>
-#include <QDateTime>
+#include <QDateTime>\n#include <QDate>
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <QSettings>
@@ -479,8 +479,11 @@ MainWindow::MainWindow(QWidget* parent)
     appendLog(tr("Project135 desktop started. Core and filter synthesis remain independent from Qt."));
     if (!databaseError_.isEmpty()) {
         status_->setText(tr("Material database unavailable"));
+        status_->setToolTip(databaseError_);
+        status_->setStyleSheet("color: #b36b00;");
         appendLog(tr("Material database initialization failed: %1").arg(databaseError_));
     } else {
+        status_->setToolTip(tr("SQLite material catalog initialized successfully."));
         appendLog(tr("SQLite material database initialized."));
     }
     updateProjectTitle();
@@ -503,11 +506,53 @@ QWidget* MainWindow::createProjectPage()
     productFamily_ = new QComboBox;
     productFamily_->addItems({tr("Shunt passive harmonic filter"), tr("VFD output filter"),
         tr("Reactor / inductor"), tr("Power transformer"), tr("AFE reactor")});
-    form->addRow(tr("Name"), projectName_);
+    auto* customer = new QLineEdit;
+    auto* projectNumber = new QLineEdit;
+    auto* engineer = new QLineEdit;
+    auto* projectDate = new QLineEdit(QDate::currentDate().toString(Qt::ISODate));
+    auto* revision = new QLineEdit("A");
+    form->addRow(tr("Project name"), projectName_);
     form->addRow(tr("Product family"), productFamily_);
+    form->addRow(tr("Customer"), customer);
+    form->addRow(tr("Project number"), projectNumber);
+    form->addRow(tr("Design engineer"), engineer);
+    form->addRow(tr("Project date (YYYY-MM-DD)"), projectDate);
+    form->addRow(tr("Revision"), revision);
     layout->addWidget(group);
 
-    auto* note = new QLabel(tr("The first supported calculation workflow is a three-phase shunt filter with single-tuned series RLC branches. Other product families remain planned and are not calculated yet."));
+    auto* environment = new QGroupBox(tr("Installation and environmental conditions"));
+    auto* environmentForm = new QFormLayout(environment);
+    auto* ambient = new QDoubleSpinBox;
+    ambient->setRange(-50.0, 80.0);
+    ambient->setDecimals(1);
+    ambient->setValue(40.0);
+    ambient->setSuffix(tr(" °C"));
+    auto* altitude = new QSpinBox;
+    altitude->setRange(0, 6000);
+    altitude->setSuffix(tr(" m above sea level"));
+    auto* insulationClass = new QComboBox;
+    insulationClass->addItems({tr("F (155 °C)"), tr("H (180 °C)"), tr("Not specified")});
+    auto* ipRating = new QComboBox;
+    ipRating->addItems({"IP00", "IP20", "IP21", "IP23", "IP31", "IP41", "IP54", "IP55", tr("Other / not specified")});
+    environmentForm->addRow(tr("Maximum ambient temperature"), ambient);
+    environmentForm->addRow(tr("Installation altitude"), altitude);
+    environmentForm->addRow(tr("Insulation thermal class"), insulationClass);
+    environmentForm->addRow(tr("Enclosure protection"), ipRating);
+    layout->addWidget(environment);
+
+    auto* topology = new QGroupBox(tr("Selected product topology"));
+    auto* topologyLayout = new QVBoxLayout(topology);
+    auto* topologyDiagram = new QLabel(
+        tr("3-phase bus  →  branch protection  →  series R–L–C tuned branch  →  PE / star point\n"
+           "                 A / B / C phases; single-tuned shunt connection"));
+    topologyDiagram->setTextFormat(Qt::PlainText);
+    topologyDiagram->setAlignment(Qt::AlignCenter);
+    topologyDiagram->setMinimumHeight(76);
+    topologyDiagram->setStyleSheet("font-family: Consolas, monospace; padding: 12px; background: palette(alternate-base);");
+    topologyLayout->addWidget(topologyDiagram);
+    layout->addWidget(topology);
+
+    auto* note = new QLabel(tr("The first supported calculation workflow is a three-phase shunt filter with single-tuned series RLC branches. Environmental values are project assumptions only; verify them against the installation specification before thermal or insulation design. Other product families remain planned and are not calculated yet."));
     note->setWordWrap(true);
     note->setStyleSheet("color: palette(mid);");
     layout->addWidget(note);
@@ -876,9 +921,16 @@ QWidget* MainWindow::createMaterialsPage()
         return new MaterialDatabaseWidget(*materialStore_);
     auto* page = new QWidget;
     auto* layout = new QVBoxLayout(page);
-    auto* message = new QLabel(tr("Material database could not be initialized: %1").arg(databaseError_));
+    auto* heading = new QLabel(tr("Material database unavailable"));
+    heading->setStyleSheet("font-size: 20px; font-weight: 600; color: #b36b00;");
+    layout->addWidget(heading);
+    auto* message = new QLabel(tr("The SQLite material catalog did not initialize. Material-dependent component selection and material-backed design checks are unavailable.\n\nDiagnostic: %1").arg(databaseError_));
     message->setWordWrap(true);
+    message->setTextInteractionFlags(Qt::TextSelectableByMouse);
     layout->addWidget(message);
+    auto* hint = new QLabel(tr("Check that the application can write to its per-user data directory and that the migrations folder is deployed beside Project135.exe."));
+    hint->setWordWrap(true);
+    layout->addWidget(hint);
     layout->addStretch();
     return page;
 }
