@@ -1383,6 +1383,7 @@ QWidget* MainWindow::createConstructionPage()
     root->addStretch();
 
     const auto populateMaterial = [this](QComboBox* combo, const std::string& recordType) {
+        const QString previousRevision = combo->currentData().toString();
         combo->clear();
         combo->addItem(tr("— NOT_PROVIDED —"), QString{});
         if (!materialStore_) return std::size_t{0};
@@ -1398,6 +1399,18 @@ QWidget* MainWindow::createConstructionPage()
                 QStringLiteral(" — r%1").arg(revision.revisionNumber),
                 QString::fromStdString(revision.revisionId));
         }
+        int selected = combo->findData(previousRevision);
+        if (!previousRevision.isEmpty() && selected < 0) {
+            const auto pinned = materialStore_->findRevision(previousRevision.toStdString());
+            if (pinned && pinned.value()) {
+                const auto& revision = *pinned.value();
+                combo->addItem(QString::fromStdString(revision.materialId) +
+                    QStringLiteral(" — r%1 (pinned revision)").arg(revision.revisionNumber),
+                    QString::fromStdString(revision.revisionId));
+                selected = combo->count() - 1;
+            }
+        }
+        if (selected >= 0) combo->setCurrentIndex(selected);
         return static_cast<std::size_t>(combo->count() - 1);
     };
     const auto refreshChoices = [=] {
@@ -1435,9 +1448,8 @@ QWidget* MainWindow::createConstructionPage()
     }
 
     auto* scope = new QLabel(tr(
-        "Important: this tab captures the construction specification. It does not yet create a verified ReactorSizingRequest "
-        "or persist these selections into the project snapshot. The next integration step is to bind these controls to "
-        "the domain MagneticProduct / material revision records and invalidate downstream calculation results on edits."));
+        "Important: construction settings are saved locally per project, including exact material revision IDs. "
+        "They are not yet part of a portable project snapshot or connected to the physical sizing solver."));
     scope->setWordWrap(true);
     scope->setStyleSheet("color: palette(mid);");
     root->addWidget(scope);
