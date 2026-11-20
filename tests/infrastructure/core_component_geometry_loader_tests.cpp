@@ -34,6 +34,9 @@ int main(int argc, char** argv)
     assert(pq32);
     assert(pq32.value().orderingCode == "B65879B0000R087");
     assert(pq32.value().coreShape == "PQ 32/30");
+    assert(pq32.value().magneticMaterial == "N87");
+    assert(pq32.value().magneticMaterialFamily == "ferrite");
+    assert(pq32.value().ferriteMaterial == "N87");
     assert(pq32.value().hasMagneticGeometry());
     assert(!pq32.value().hasCompleteCadGeometry());
     assert(std::abs(*pq32.value().effectiveAreaM2 - 153.8e-6) < 1.0e-12);
