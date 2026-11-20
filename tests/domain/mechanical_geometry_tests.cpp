@@ -231,5 +231,13 @@ int main()
     auto windingFitsBobbinAxialLength = valid;
     windingFitsBobbinAxialLength.windingPacks[0].axialHeight = units::Length{0.105};
     assert(validate(windingFitsBobbinAxialLength));
+
+    auto missingBobbinFlangeEnvelope = valid;
+    missingBobbinFlangeEnvelope.bobbins[0].flangeOuterWidth = units::Length{};
+    assert(!validate(missingBobbinFlangeEnvelope));
+
+    auto flangeTooThickForBobbin = valid;
+    flangeTooThickForBobbin.bobbins[0].flangeThickness = units::Length{0.06};
+    assert(!validate(flangeTooThickForBobbin));
     return 0;
 }
