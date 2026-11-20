@@ -6,8 +6,12 @@
 
 namespace p135::filter {
 
-/// Builds a balanced, ideal three-phase AC source and the synthesized shunt RLC bank.
+/// Builds a balanced three-phase Thevenin source and the synthesized shunt RLC bank.
+/// Source resistance and inductance are per phase; zero values preserve an ideal source.
 /// The returned circuit uses RMS phasors and SI component values.
-[[nodiscard]] Result<circuit::Circuit> buildCircuit(const FilterDesign& design);
+[[nodiscard]] Result<circuit::Circuit> buildCircuit(
+    const FilterDesign& design,
+    units::Resistance sourceResistance = units::Resistance{0.0},
+    units::Inductance sourceInductance = units::Inductance{0.0});
 
 } // namespace p135::filter
