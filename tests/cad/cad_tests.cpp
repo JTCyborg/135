@@ -5,7 +5,9 @@
 #include <Bnd_Box.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopoDS_Iterator.hxx>
 
+#include <array>
 #include <cassert>
 #include <iostream>
 #include <cmath>
@@ -83,6 +85,26 @@ int main()
     std::size_t solidCount = 0;
     for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next()) ++solidCount;
     assert(solidCount == 7);
+
+    // Top-level component order is limbs A/B/C, then yokes top AB/BC,
+    // bottom AB/BC. The two top yoke halves must meet at x = 120 mm
+    // without overlapping around the middle limb.
+    std::array<Bnd_Box, 7> componentBounds;
+    std::size_t componentIndex = 0;
+    for (TopoDS_Iterator it(shape.value()); it.More(); it.Next()) {
+        assert(componentIndex < componentBounds.size());
+        BRepBndLib::Add(it.Value(), componentBounds[componentIndex]);
+        ++componentIndex;
+    }
+    assert(componentIndex == componentBounds.size());
+    Standard_Real topAbXMin = 0.0, topAbYMin = 0.0, topAbZMin = 0.0;
+    Standard_Real topAbXMax = 0.0, topAbYMax = 0.0, topAbZMax = 0.0;
+    Standard_Real topBcXMin = 0.0, topBcYMin = 0.0, topBcZMin = 0.0;
+    Standard_Real topBcXMax = 0.0, topBcYMax = 0.0, topBcZMax = 0.0;
+    componentBounds[3].Get(topAbXMin, topAbYMin, topAbZMin, topAbXMax, topAbYMax, topAbZMax);
+    componentBounds[4].Get(topBcXMin, topBcYMin, topBcZMin, topBcXMax, topBcYMax, topBcZMax);
+    assert(std::abs(topAbXMax - 120.0) < 1.0e-6);
+    assert(std::abs(topBcXMin - 120.0) < 1.0e-6);
 
     auto stepLapGeometry = geometry;
     stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
