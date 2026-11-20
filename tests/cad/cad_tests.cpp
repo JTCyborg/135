@@ -113,7 +113,7 @@ int main()
     // volumetrically or leave a gap. The top A interface is 40 x 80 mm.
     TopoDS_Shape limbASolid;
     TopoDS_Shape topAbYokeSolid;
-    for (TopExp_Explorer it(componentBounds[0].IsVoid() ? shape.value() : shape.value(), TopAbs_SOLID);
+    for (TopExp_Explorer it(shape.value(), TopAbs_SOLID);
          it.More(); it.Next()) {
         const auto& candidate = it.Current();
         Bnd_Box candidateBounds;
