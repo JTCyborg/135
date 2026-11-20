@@ -1,5 +1,6 @@
 add_library(Project135Application
     src/filter_reactor_magnetic.cpp
+    src/reactor_design_graph.cpp
     src/material_revision_use_cases.cpp
     src/reactor_design_inputs.cpp
 )
