@@ -175,13 +175,13 @@ int main(int argc, char** argv)
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
         const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
-        assert(seeded && seeded.value() == 68);
+        assert(seeded && seeded.value() == 120);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
         MaterialCatalogFilter ferriteCoreComponents;
         ferriteCoreComponents.recordType = "core-component";
         const auto ferriteCoreCatalog = store.searchLatestRevisions(ferriteCoreComponents);
-        assert(ferriteCoreCatalog && ferriteCoreCatalog.value().size() == 50);
+        assert(ferriteCoreCatalog && ferriteCoreCatalog.value().size() == 74);
         const auto pqCore = store.latestRevision("COMP-TDK-B65879B0000R087");
         assert(pqCore && pqCore.value());
         assert(pqCore.value()->payload.find("PQ 32/30") != std::string::npos);
@@ -190,8 +190,8 @@ int main(int argc, char** argv)
         MaterialCatalogFilter coreMaterials;
         coreMaterials.recordType = "core-material";
         const auto coreCatalog = store.searchLatestRevisions(coreMaterials);
-        // MAT-TEST plus two ferrites and three electrical-steel grades.
-        assert(coreCatalog && coreCatalog.value().size() == 6);
+        // MAT-TEST, two ferrite materials and 31 thyssenkrupp steel positions.
+        assert(coreCatalog && coreCatalog.value().size() == 34);
         const auto n87 = store.latestRevision("MAT-TDK-N87");
         assert(n87 && n87.value());
         assert(n87.value()->payload.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
@@ -212,6 +212,21 @@ int main(int argc, char** argv)
         assert(steel && steel.value());
         assert(steel.value()->payload.find("2.35") != std::string::npos);
         assert(steel.value()->payload.find("NOT_PUBLISHED_IN_IMPORTED_DATASET") != std::string::npos);
+
+        const auto steel65 = store.latestRevision("MAT-TK-POWERCORE-M1000-65A");
+        assert(steel65 && steel65.value());
+        assert(steel65.value()->payload.find("0.00065") != std::string::npos);
+        assert(steel65.value()->payload.find("10.0") != std::string::npos);
+        const auto steel50 = store.latestRevision("MAT-TK-POWERCORE-M940-50A");
+        assert(steel50 && steel50.value());
+        assert(steel50.value()->payload.find("9.4") != std::string::npos);
+        const auto etdCore = store.latestRevision("COMP-TDK-B66363G0000X187");
+        assert(etdCore && etdCore.value());
+        assert(etdCore.value()->payload.find("ETD 39/20/13") != std::string::npos);
+        assert(etdCore.value()->payload.find("2700") != std::string::npos);
+        const auto etdGapped = store.latestRevision("COMP-TDK-B66358G0200X187");
+        assert(etdGapped && etdGapped.value());
+        assert(etdGapped.value()->payload.find("0.2") != std::string::npos);
         const auto kapton = store.latestRevision("MAT-DUPONT-KAPTON-HN-25UM");
         assert(kapton && kapton.value());
         assert(kapton.value()->payload.find("303000000") != std::string::npos);
