@@ -366,3 +366,16 @@ if(MSVC)
 else()
     target_compile_options(Project135RevisionBoundWindingCopperLossTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135WindingElectrothermalTests
+    thermal/winding_electrothermal_tests.cpp
+)
+target_link_libraries(Project135WindingElectrothermalTests PRIVATE
+    Project135::Thermal Project135::Domain
+)
+add_test(NAME Project135WindingElectrothermalTests COMMAND Project135WindingElectrothermalTests)
+if(MSVC)
+    target_compile_options(Project135WindingElectrothermalTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135WindingElectrothermalTests PRIVATE -UNDEBUG)
+endif()
