@@ -706,6 +706,75 @@ std::vector<SeedRecord> starterRecords()
         });
     }
 
+    // Baosteel publishes manufacturer-typical AC loss reference points
+    // for its own B35A300 and B50A800 grades in Q/BQB 480-2023 Table D.1.
+    // These are NOT equivalent-material substitutions for other producers.
+    const std::string baosteelLossSource =
+        "https://esales.baosteel.com/baosteel_products/eleSteel/en/products/products_04_2.jsp";
+    const std::string baosteelStandardSource =
+        "https://pdt.static.globalsources.com/IMAGES/PDT/SPEC/829/K1229503829.pdf";
+    const auto addBaosteelLossDataset = [&](const std::string& grade,
+                                            double thicknessMm,
+                                            double densityKgPerM3,
+                                            double minimumStackingFactor,
+                                            double p10_50,
+                                            double p15_50,
+                                            double p10_60,
+                                            double p15_60,
+                                            double maximumP15_50) {
+        const std::string id = "DATASET-BAOSTEEL-" + grade + "-AC-LOSS";
+        const json payload = {
+            {"schemaVersion", 1},
+            {"material", {
+                {"id", "BAOSTEEL-" + grade},
+                {"manufacturer", "Baoshan Iron & Steel Co., Ltd."},
+                {"grade", grade + " non-oriented electrical steel"},
+                {"family", "fully finished non-grain-oriented electrical steel"},
+                {"laminationThickness_m", thicknessMm * 1.0e-3},
+                {"density_kg_per_m3", densityKgPerM3},
+                {"minimumLaminationFactor", minimumStackingFactor}
+            }},
+            {"coreLossReferencePoints", json::array({
+                {{"frequency_Hz", 50.0}, {"peakFluxDensity_T", 1.0}, {"specificLoss_W_per_kg", p10_50}},
+                {{"frequency_Hz", 50.0}, {"peakFluxDensity_T", 1.5}, {"specificLoss_W_per_kg", p15_50}},
+                {{"frequency_Hz", 60.0}, {"peakFluxDensity_T", 1.0}, {"specificLoss_W_per_kg", p10_60}},
+                {{"frequency_Hz", 60.0}, {"peakFluxDensity_T", 1.5}, {"specificLoss_W_per_kg", p15_60}}
+            })},
+            {"coreLossSpecificationLimits", {
+                {"maximumSpecificLoss_W_per_kg", {
+                    {"frequency_Hz", 50.0}, {"peakFluxDensity_T", 1.5},
+                    {"value", maximumP15_50}, {"limitType", "MAXIMUM_GUARANTEED_PRODUCT_STANDARD_LIMIT"}
+                }}
+            }},
+            {"coreLossProvenance", {
+                {"sourceDocument", "Baosteel Q/BQB 480-2023, Appendix D, Table D.1"},
+                {"sourcePage", "16 (Appendix D, Table D.1); 10 (Table 8 sampling)"},
+                {"measurementMethod", "GB/T 3655 Epstein square-frame method"},
+                {"sampleDirection", "Half horizontal and half vertical specimens per Table 8; Table D.1 gives aggregate typical values"},
+                {"waveform", "Sinusoidal magnetic-polarization waveform, as defined in Q/BQB 480-2023 clause 3.1"},
+                {"temperatureStatus", "NOT_STATED_IN_SOURCE"},
+                {"notes", "Appendix D values are manufacturer-typical laboratory values, explicitly not guaranteed delivery values. Test temperature is not stated. Use only as reference anchors at the exact frequency and peak flux density; no interpolation, extrapolation, or temperature correction is authorized by this dataset."}
+            }},
+            {"dataQuality", {
+                {"sourceStatus", "MANUFACTURER_PUBLISHED_TYPICAL_VALUES"},
+                {"coreLossStatus", "MANUFACTURER_TYPICAL_VALUES_NOT_GUARANTEED"},
+                {"specificationLimitStatus", "MANUFACTURER_PRODUCT_STANDARD_MAXIMUM"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Baosteel product grade only. Do not map these values onto JFE, thyssenkrupp, POSCO or generic JIS grades by name similarity. Core-loss temperature dependence and post-cutting/stacking stress effects are not characterized here."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "core-loss-reference",
+            baosteelLossSource,
+            "Baosteel Q/BQB 480-2023 Table D.1; standard: " + baosteelStandardSource,
+            payload
+        });
+    };
+    addBaosteelLossDataset("B35A300", 0.35, 7650.0, 0.95,
+                           1.10, 2.55, 1.40, 3.18, 3.00);
+    addBaosteelLossDataset("B50A800", 0.50, 7800.0, 0.96,
+                           2.42, 5.20, 3.01, 6.47, 8.00);
+
     // Measured DC initial-magnetization points published in Kobe Steel
     // Engineering Reports, Vol. 71 No. 2 (July 2022), Table 2, p. 19.
     // These are research measurements for the stated JIS grades, not a
