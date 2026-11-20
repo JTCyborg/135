@@ -552,15 +552,16 @@ MainWindow::MainWindow(QWidget* parent)
     toolbar->addSeparator();
     toolbar->addAction(tr("Calculate"), this, [this] {
         calculateFilter();
-        tabs_->setCurrentIndex(2);
+        tabs_->setCurrentIndex(3);
     });
 
     tabs_ = new QTabWidget(this);
     tabs_->addTab(createProjectPage(), tr("Project"));
     tabs_->addTab(createFilterPage(), tr("Filter definition"));
+    tabs_->addTab(createConstructionPage(), tr("Construction"));
     tabs_->addTab(createResultsPage(), tr("Calculation & design"));
     tabs_->addTab(createCadPage(), tr("3D CAD"));
-    tabs_->addTab(createMaterialsPage(), tr("Materials"));
+    tabs_->addTab(createMaterialsPage(), tr("Materials database"));
     tabs_->addTab(createHistoryPage(), tr("Calculation history"));
     if (auto* topologyContainer = findChild<QWidget*>(QStringLiteral("productTopologyDiagram"))) {
         if (auto* topology = dynamic_cast<ProductTopologyWidget*>(topologyContainer)) {
@@ -571,7 +572,7 @@ MainWindow::MainWindow(QWidget* parent)
     }
     setCentralWidget(tabs_);
     connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
-        if (index == 5) refreshCalculationHistory();
+        if (index == 6) refreshCalculationHistory();
     });
 
     loadProjectSettings();
@@ -1133,6 +1134,220 @@ QWidget* MainWindow::createFilterPage()
     layout->addStretch();
     auto* scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
+    scroll->setWidget(page);
+    return scroll;
+}
+
+QWidget* MainWindow::createConstructionPage()
+{
+    auto* page = new QWidget;
+    auto* root = new QVBoxLayout(page);
+    root->setSpacing(10);
+
+    auto* heading = new QLabel(tr("Reactor construction inputs"));
+    heading->setStyleSheet("font-size: 20px; font-weight: 600;");
+    root->addWidget(heading);
+    auto* intro = new QLabel(tr(
+        "Select physical materials and winding technology here. These are construction inputs, not calculated results. "
+        "A material is selectable only when a revision exists in the material database. Missing data stays NOT_PROVIDED; "
+        "no material, dimensions or thermal properties are assumed."));
+    intro->setWordWrap(true);
+    root->addWidget(intro);
+
+    auto* coreGroup = new QGroupBox(tr("1. Magnetic core"));
+    auto* coreForm = new QFormLayout(coreGroup);
+    auto* coreMaterial = new QComboBox;
+    coreMaterial->setObjectName(QStringLiteral("constructionCoreMaterial"));
+    auto* coreGeometry = new QComboBox;
+    coreGeometry->addItem(tr("Three-limb core"), QStringLiteral("three-limb"));
+    coreGeometry->addItem(tr("Three single-phase cores"), QStringLiteral("three-single-phase"));
+    coreGeometry->addItem(tr("EI core"), QStringLiteral("ei"));
+    coreGeometry->addItem(tr("UI core"), QStringLiteral("ui"));
+    coreGeometry->addItem(tr("Toroidal"), QStringLiteral("toroidal"));
+    coreGeometry->addItem(tr("Strip-wound"), QStringLiteral("strip-wound"));
+    coreGeometry->addItem(tr("Custom"), QStringLiteral("custom"));
+    auto* stackingFactor = new QDoubleSpinBox;
+    stackingFactor->setRange(0.0, 1.0);
+    stackingFactor->setDecimals(4);
+    stackingFactor->setSpecialValueText(tr("NOT_PROVIDED"));
+    stackingFactor->setValue(0.0);
+    coreForm->addRow(tr("Core material revision"), coreMaterial);
+    coreForm->addRow(tr("Core geometry family"), coreGeometry);
+    coreForm->addRow(tr("Stacking factor"), stackingFactor);
+    root->addWidget(coreGroup);
+
+    auto* windingGroup = new QGroupBox(tr("2. Winding and conductor"));
+    auto* windingForm = new QFormLayout(windingGroup);
+    auto* conductorMaterial = new QComboBox;
+    conductorMaterial->setObjectName(QStringLiteral("constructionConductorMaterial"));
+    auto* conductorShape = new QComboBox;
+    conductorShape->addItem(tr("Round wire"), QStringLiteral("round"));
+    conductorShape->addItem(tr("Rectangular wire"), QStringLiteral("rectangular"));
+    conductorShape->addItem(tr("Foil"), QStringLiteral("foil"));
+    conductorShape->addItem(tr("Litz wire"), QStringLiteral("litz"));
+    conductorShape->addItem(tr("Busbar"), QStringLiteral("busbar"));
+    auto* windingTechnology = new QComboBox;
+    windingTechnology->addItem(tr("Layer"), QStringLiteral("layer"));
+    windingTechnology->addItem(tr("Sectional"), QStringLiteral("sectional"));
+    windingTechnology->addItem(tr("Disc"), QStringLiteral("disc"));
+    windingTechnology->addItem(tr("Foil"), QStringLiteral("foil"));
+    windingTechnology->addItem(tr("Multilayer"), QStringLiteral("multilayer"));
+    windingTechnology->addItem(tr("Litz"), QStringLiteral("litz"));
+    auto* turns = new QSpinBox;
+    turns->setRange(0, 1000000);
+    turns->setSpecialValueText(tr("AUTO / NOT CALCULATED"));
+    auto* turnsPerLayer = new QSpinBox;
+    turnsPerLayer->setRange(0, 1000000);
+    turnsPerLayer->setSpecialValueText(tr("NOT_PROVIDED"));
+    auto* layers = new QSpinBox;
+    layers->setRange(0, 100000);
+    layers->setSpecialValueText(tr("NOT_PROVIDED"));
+    auto* parallelConductors = new QSpinBox;
+    parallelConductors->setRange(1, 10000);
+    parallelConductors->setValue(1);
+    auto* conductorArea = new QDoubleSpinBox;
+    conductorArea->setRange(0.0, 1000000.0);
+    conductorArea->setDecimals(4);
+    conductorArea->setSuffix(tr(" mm²"));
+    conductorArea->setSpecialValueText(tr("NOT_PROVIDED"));
+    auto* conductorWidth = new QDoubleSpinBox;
+    conductorWidth->setRange(0.0, 100000.0);
+    conductorWidth->setDecimals(4);
+    conductorWidth->setSuffix(tr(" mm"));
+    conductorWidth->setSpecialValueText(tr("NOT_PROVIDED"));
+    auto* conductorThickness = new QDoubleSpinBox;
+    conductorThickness->setRange(0.0, 100000.0);
+    conductorThickness->setDecimals(4);
+    conductorThickness->setSuffix(tr(" mm"));
+    conductorThickness->setSpecialValueText(tr("NOT_PROVIDED"));
+    windingForm->addRow(tr("Conductor material revision"), conductorMaterial);
+    windingForm->addRow(tr("Conductor cross-section"), conductorShape);
+    windingForm->addRow(tr("Winding technology"), windingTechnology);
+    windingForm->addRow(tr("Turns per phase"), turns);
+    windingForm->addRow(tr("Turns per layer"), turnsPerLayer);
+    windingForm->addRow(tr("Number of layers"), layers);
+    windingForm->addRow(tr("Parallel conductors"), parallelConductors);
+    windingForm->addRow(tr("Bare conductor area"), conductorArea);
+    windingForm->addRow(tr("Bare width (rectangular / foil)"), conductorWidth);
+    windingForm->addRow(tr("Bare thickness (rectangular / foil)"), conductorThickness);
+    auto* layerNote = new QLabel(tr(
+        "Turns = turns per layer × layers is applicable only to layer-based winding constructions. "
+        "For sectional, disc and foil windings, layer count and turn distribution require their own construction rules."));
+    layerNote->setWordWrap(true);
+    layerNote->setStyleSheet("color: palette(mid);");
+    windingForm->addRow(layerNote);
+    root->addWidget(windingGroup);
+
+    auto* insulationGroup = new QGroupBox(tr("3. Insulation and bobbin"));
+    auto* insulationForm = new QFormLayout(insulationGroup);
+    auto* insulationMaterial = new QComboBox;
+    insulationMaterial->setObjectName(QStringLiteral("constructionInsulationMaterial"));
+    auto* bobbinMaterial = new QLineEdit;
+    bobbinMaterial->setPlaceholderText(tr("Material ID / grade — NOT_PROVIDED until selected"));
+    auto* bobbinEnabled = new QCheckBox(tr("Bobbin is used"));
+    bobbinEnabled->setChecked(true);
+    auto* turnInsulation = new QDoubleSpinBox;
+    turnInsulation->setRange(0.0, 10000.0);
+    turnInsulation->setDecimals(4);
+    turnInsulation->setSuffix(tr(" mm"));
+    turnInsulation->setSpecialValueText(tr("NOT_PROVIDED"));
+    auto* layerInsulation = new QDoubleSpinBox;
+    layerInsulation->setRange(0.0, 10000.0);
+    layerInsulation->setDecimals(4);
+    layerInsulation->setSuffix(tr(" mm"));
+    layerInsulation->setSpecialValueText(tr("NOT_PROVIDED"));
+    auto* mainInsulation = new QDoubleSpinBox;
+    mainInsulation->setRange(0.0, 10000.0);
+    mainInsulation->setDecimals(4);
+    mainInsulation->setSuffix(tr(" mm"));
+    mainInsulation->setSpecialValueText(tr("NOT_PROVIDED"));
+    insulationForm->addRow(tr("Insulation material revision"), insulationMaterial);
+    insulationForm->addRow(tr("Turn insulation build"), turnInsulation);
+    insulationForm->addRow(tr("Layer insulation build"), layerInsulation);
+    insulationForm->addRow(tr("Main insulation build"), mainInsulation);
+    insulationForm->addRow(bobbinEnabled);
+    insulationForm->addRow(tr("Bobbin material"), bobbinMaterial);
+    root->addWidget(insulationGroup);
+
+    auto* thermalGroup = new QGroupBox(tr("4. Cooling and thermal limits"));
+    auto* thermalForm = new QFormLayout(thermalGroup);
+    auto* cooling = new QComboBox;
+    cooling->addItem(tr("Natural air"), QStringLiteral("natural-air"));
+    cooling->addItem(tr("Forced air"), QStringLiteral("forced-air"));
+    cooling->addItem(tr("Liquid"), QStringLiteral("liquid"));
+    auto* ambient = new QDoubleSpinBox;
+    ambient->setRange(-50.0, 200.0);
+    ambient->setDecimals(2);
+    ambient->setSuffix(tr(" °C"));
+    ambient->setSpecialValueText(tr("NOT_PROVIDED"));
+    ambient->setValue(-50.0);
+    auto* maximumWindingTemperature = new QDoubleSpinBox;
+    maximumWindingTemperature->setRange(-50.0, 300.0);
+    maximumWindingTemperature->setDecimals(2);
+    maximumWindingTemperature->setSuffix(tr(" °C"));
+    maximumWindingTemperature->setSpecialValueText(tr("NOT_PROVIDED"));
+    maximumWindingTemperature->setValue(-50.0);
+    thermalForm->addRow(tr("Cooling method"), cooling);
+    thermalForm->addRow(tr("Ambient temperature"), ambient);
+    thermalForm->addRow(tr("Maximum winding temperature"), maximumWindingTemperature);
+    root->addWidget(thermalGroup);
+
+    auto* catalogStatus = new QLabel;
+    catalogStatus->setWordWrap(true);
+    auto* refresh = new QPushButton(tr("Refresh material choices"));
+    auto* openCatalog = new QPushButton(tr("Open material database"));
+    auto* actionRow = new QHBoxLayout;
+    actionRow->addWidget(refresh);
+    actionRow->addWidget(openCatalog);
+    actionRow->addStretch();
+    root->addLayout(actionRow);
+    root->addWidget(catalogStatus);
+    root->addStretch();
+
+    const auto populateMaterial = [this](QComboBox* combo, const std::string& recordType) {
+        combo->clear();
+        combo->addItem(tr("— NOT_PROVIDED —"), QString{});
+        if (!materialStore_) return std::size_t{0};
+        p135::infrastructure::sqlite::MaterialCatalogFilter filter;
+        filter.recordType = recordType;
+        filter.pageSize = 500;
+        const auto revisions = materialStore_->searchLatestRevisions(filter);
+        if (!revisions) return std::size_t{0};
+        for (const auto& revision : revisions.value()) {
+            const auto archived = materialStore_->isArchived(revision.materialId);
+            if (!archived || archived.value()) continue;
+            combo->addItem(QString::fromStdString(revision.materialId) +
+                QStringLiteral(" — r%1").arg(revision.revisionNumber),
+                QString::fromStdString(revision.revisionId));
+        }
+        return static_cast<std::size_t>(combo->count() - 1);
+    };
+    const auto refreshChoices = [=] {
+        const auto coreCount = populateMaterial(coreMaterial, "core-material");
+        const auto conductorCount = populateMaterial(conductorMaterial, "conductor-material");
+        const auto insulationCount = populateMaterial(insulationMaterial, "insulation-material");
+        catalogStatus->setText(tr("Active material revisions — core: %1, conductor: %2, insulation: %3. "
+            "Selections are revision-pinned; they are not yet connected to the physical sizing solver.")
+            .arg(coreCount).arg(conductorCount).arg(insulationCount));
+    };
+    QObject::connect(refresh, &QPushButton::clicked, page, refreshChoices);
+    QObject::connect(openCatalog, &QPushButton::clicked, page, [this] {
+        if (tabs_) tabs_->setCurrentIndex(5);
+    });
+    refreshChoices();
+
+    auto* scope = new QLabel(tr(
+        "Important: this tab captures the construction specification. It does not yet create a verified ReactorSizingRequest "
+        "or persist these selections into the project snapshot. The next integration step is to bind these controls to "
+        "the domain MagneticProduct / material revision records and invalidate downstream calculation results on edits."));
+    scope->setWordWrap(true);
+    scope->setStyleSheet("color: palette(mid);");
+    root->addWidget(scope);
+
+    auto* scroll = new QScrollArea;
+    scroll->setObjectName(QStringLiteral("constructionScrollArea"));
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
     scroll->setWidget(page);
     return scroll;
 }
