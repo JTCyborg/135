@@ -1053,6 +1053,164 @@ std::vector<SeedRecord> starterRecords()
         elmoglasSource, "ELANTAS Elmoglas H 69 A polyesterimide binder varnish", elmoglas
     });
 
+
+    // Powder, nanocrystalline and amorphous soft-magnetic materials.
+    // Loss points are retained only with their published test conditions.
+    const auto addMagneticMaterial = [&records](
+        const std::string& id, const std::string& manufacturer,
+        const std::string& grade, const std::string& family,
+        const std::string& source, json properties,
+        const std::string& sourceStatus, const std::string& notes) {
+        properties["id"] = id;
+        properties["manufacturer"] = manufacturer;
+        properties["grade"] = grade;
+        properties["family"] = family;
+        const json payload = {
+            {"schemaVersion", 1},
+            {"material", std::move(properties)},
+            {"sourceDocuments", json::array({source})},
+            {"dataQuality", {
+                {"sourceStatus", sourceStatus},
+                {"bhCurveStatus", "NOT_IMPORTED"},
+                {"coreLossStatus", "CONDITION_SPECIFIC_VALUES_ONLY"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", notes}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "core-material",
+            source, manufacturer + " " + grade + " soft magnetic material",
+            payload
+        });
+    };
+
+    const std::string micrometalsMix2Source =
+        "https://datasheets.micrometals.com/D101-1002-DataSheet.pdf";
+    addMagneticMaterial(
+        "MAT-MICROMETALS-MIX-2", "Micrometals", "Mix-2",
+        "distributed-gap iron powder",
+        micrometalsMix2Source,
+        json{
+            {"initialPermeability_reference", 10.0},
+            {"temperatureStability_ppm_per_K_typical", 95.0},
+            {"coreLoss_W_per_m3", 18000.0},
+            {"coreLossTest", {{"peakFluxDensity_T", 0.014}, {"frequency_Hz", 100000.0}}},
+            {"coreLossTestFluxDensitySourceUnit", "140 gauss"}
+        },
+        "MANUFACTURER_PART_DATASHEET_D101-1002",
+        "Mix-2 values are from Micrometals D101-1002 disc-core datasheet. The 18 mW/cm3 loss is specified at 140 gauss and 100 kHz only; it is not a general loss curve or a guaranteed value for every Mix-2 geometry. No saturation curve is inferred.");
+
+    const std::string magneticsKoolMu14Source =
+        "https://www.mag-inc.com/Media/Magnetics/File-Library/Product%20Literature/Powder%20Core%20Literature/Magnetics-14-Kool-Mu.pdf";
+    addMagneticMaterial(
+        "MAT-MAGNETICS-KOOL-MU-14U", "Magnetics", "Kool Mµ 14µ",
+        "distributed-gap FeSiAl powder",
+        magneticsKoolMu14Source,
+        json{
+            {"composition", {{"Fe_percent", 85.0}, {"Si_percent", 9.0}, {"Al_percent", 6.0}}},
+            {"initialPermeability_nominal", 14.0},
+            {"saturationFluxDensity_T", 1.05},
+            {"curieTemperature_C", 500.0},
+            {"operatingTemperature_C", {-55.0, 200.0}},
+            {"coreLoss_W_per_m3", 600000.0},
+            {"coreLossTest", {{"frequency_Hz", 50000.0}, {"peakFluxDensity_T", 0.1}}},
+            {"dcBias_A_turns_per_cm", {{"permeabilityRetention_0p8", 175.0}, {"permeabilityRetention_0p7", 334.0}}}
+        },
+        "MANUFACTURER_14UM_PRODUCT_DATASHEET",
+        "14µ grade-specific data. Core loss is typical at 50 kHz and 100 mT. DC-bias values retain the manufacturer's A·turns/cm unit. Do not transfer these figures to Kool Mµ MAX, Hf, Ultra or other permeability grades.");
+
+    const std::string vitropermSource =
+        "https://www.vacuumschmelze.com/products/soft-magnetic-materials-and-stamped-parts/nanocrystalline-material-vitroperm";
+    const auto addVitroperm = [&](const std::string& grade, double saturationT,
+                                  double permeabilityMin, double permeabilityMax,
+                                  double coercivityMax, double magnetostrictionMin,
+                                  double magnetostrictionMax, double thicknessUm,
+                                  double densityAmorphous, double densityNano,
+                                  const json& lossData, const std::string& notes) {
+        json properties = {
+            {"materialTechnology", "nanocrystalline Fe-based ribbon"},
+            {"saturationPolarization_T", saturationT},
+            {"relativePermeability_range", {permeabilityMin, permeabilityMax}},
+            {"coerciveField_max_A_per_m", coercivityMax},
+            {"saturationMagnetostriction_ppm_range", {magnetostrictionMin, magnetostrictionMax}},
+            {"ribbonThickness_um_nominal", thicknessUm},
+            {"densityAmorphous_g_per_cm3", densityAmorphous},
+            {"densityNanocrystalline_g_per_cm3", densityNano},
+            {"electricalResistivity_ohm_m", 1.15e-6},
+            {"curieTemperature_C", 600.0},
+            {"crystallizationTemperature_C_typical", nullptr},
+            {"annealingRequired", true}
+        };
+        if (!lossData.is_null())
+            properties["coreLossData"] = lossData;
+        addMagneticMaterial(
+            "MAT-VAC-VITROPERM-" + grade, "VACUUMSCHMELZE", "VITROPERM " + grade,
+            "nanocrystalline soft magnetic ribbon", vitropermSource,
+            std::move(properties), "MANUFACTURER_GRADE_DATA",
+            notes + " Magnetic properties depend strongly on annealing field, stress and final core processing. The permeability and loss values apply only to the stated annealed condition; no generic B-H or loss curve is inferred.");
+    };
+    addVitroperm("220", 1.24, 1800.0, 2400.0, 5.0, 10.0, 11.0, 20.0, 7.42, 7.62,
+        nullptr, "Transverse-field annealed F-loop material; manufacturer reports low-permeability grade data.");
+    addVitroperm("250", 1.24, 2800.0, 4000.0, 3.0, 8.0, 9.0, 20.0, 7.35, 7.55,
+        nullptr, "Transverse-field annealed F-loop material; manufacturer reports low-permeability grade data.");
+    addVitroperm("270", 1.21, 4700.0, 5100.0, 3.0, 6.0, 7.0, 18.0, 7.30, 7.50,
+        nullptr, "Transverse-field annealed F-loop material; manufacturer reports low-permeability grade data.");
+    addVitroperm("400", 1.30, 80000.0, 500000.0, 1.0, 3.0, 5.0, 18.0, 7.20, 7.39,
+        json{{"specificLoss_W_per_kg", 70.0},
+             {"test", {{"frequency_Hz", 100000.0}, {"peakFluxDensity_T", 0.2},
+                       {"annealingCondition", "R-annealed"}}},
+             {"limitType", "maximum"}},
+        "R-annealed material; maximum loss <=70 W/kg at 100 kHz and 0.2 T. Permeability values depend on measurement field and annealing.");
+    addVitroperm("500-800", 1.24, 20000.0, 200000.0, 0.5, 0.0, 0.5, 18.0, 7.17, 7.35,
+        json{
+            {"points", json::array({
+                {{"specificLoss_W_per_kg", 80.0}, {"limitType", "maximum"},
+                 {"frequency_Hz", 100000.0}, {"peakFluxDensity_T", 0.3},
+                 {"annealingCondition", "F-annealed"}},
+                {{"specificLoss_W_per_kg", 0.03}, {"limitType", "typical"},
+                 {"frequency_Hz", 50.0}, {"peakFluxDensity_T", 1.0},
+                 {"annealingCondition", "R-annealed"}}
+            })}
+        },
+        "The 500/800 family values include distinct F- and R-annealed conditions; do not combine them into one loss curve or treat the 50 Hz point as an F-annealed value.");
+
+    const std::string metglasSource =
+        "https://metglas.com/wp-content/uploads/2021/06/Metglas-Power-Brochure-Updated.pdf";
+    addMagneticMaterial(
+        "MAT-METGLAS-2605SA1", "Metglas", "2605SA1",
+        "amorphous Fe-based ribbon",
+        metglasSource,
+        json{
+            {"saturationInduction_T", 1.56},
+            {"electricalResistivity_ohm_m", 1.3e-6},
+            {"saturationMagnetostriction_ppm", 27.0},
+            {"curieTemperature_C", 395.0},
+            {"density_g_per_cm3", 7.18},
+            {"crystallizationTemperature_C", 510.0},
+            {"tensileStrength_MPa", 2000.0},
+            {"youngsModulus_GPa", 110.0},
+            {"propertyValuesAreGuaranteed", false}
+        },
+        "MANUFACTURER_POWER_BROCHURE_TYPICAL_UNGUARANTEED",
+        "Manufacturer explicitly marks these general properties as not guaranteed. Magnetic loss and B-H data are not imported; they depend on ribbon processing, core geometry and annealing.");
+    addMagneticMaterial(
+        "MAT-METGLAS-2605HB1M", "Metglas", "2605HB1M",
+        "amorphous Fe-based ribbon",
+        metglasSource,
+        json{
+            {"saturationInduction_T", 1.63},
+            {"electricalResistivity_ohm_m", 1.2e-6},
+            {"saturationMagnetostriction_ppm", 27.0},
+            {"curieTemperature_C", 364.0},
+            {"density_g_per_cm3", 7.33},
+            {"crystallizationTemperature_C", 489.0},
+            {"tensileStrength_MPa", 2100.0},
+            {"youngsModulus_GPa", 120.0},
+            {"propertyValuesAreGuaranteed", false}
+        },
+        "MANUFACTURER_POWER_BROCHURE_TYPICAL_UNGUARANTEED",
+        "Manufacturer explicitly marks these general properties as not guaranteed. Magnetic loss and B-H data are not imported; they depend on ribbon processing, core geometry and annealing.");
+
     // Construction templates describe strand arrangements, not new bulk materials.
     // Electrical properties are deliberately inherited from the selected strand grade
     // and must account for transposition, insulation, proximity and skin effects.
