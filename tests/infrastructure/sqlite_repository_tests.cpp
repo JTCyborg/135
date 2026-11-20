@@ -175,7 +175,7 @@ int main(int argc, char** argv)
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
         const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
-        assert(seeded && seeded.value() == 168);
+        assert(seeded && seeded.value() == 195);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
         MaterialCatalogFilter ferriteCoreComponents;
@@ -191,7 +191,7 @@ int main(int argc, char** argv)
         coreMaterials.recordType = "core-material";
         const auto coreCatalog = store.searchLatestRevisions(coreMaterials);
         // MAT-TEST, two ferrite materials and 31 thyssenkrupp steel positions.
-        assert(coreCatalog && coreCatalog.value().size() == 34);
+        assert(coreCatalog && coreCatalog.value().size() == 51);
         const auto n87 = store.latestRevision("MAT-TDK-N87");
         assert(n87 && n87.value());
         assert(n87.value()->payload.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
@@ -233,7 +233,28 @@ int main(int argc, char** argv)
         MaterialCatalogFilter conductorProfiles;
         conductorProfiles.recordType = "conductor-stock-profile";
         const auto conductorProfileCatalog = store.searchLatestRevisions(conductorProfiles);
-        assert(conductorProfileCatalog && conductorProfileCatalog.value().size() == 40);
+        assert(conductorProfileCatalog && conductorProfileCatalog.value().size() == 46);
+        const auto copperFoil = store.latestRevision("FORM-CU-C11000-foil");
+        assert(copperFoil && copperFoil.value());
+        assert(copperFoil.value()->payload.find("PARAMETRIC_USER_INPUT") != std::string::npos);
+        const auto aluminiumFoil = store.latestRevision("FORM-AL-1350-H0-foil");
+        assert(aluminiumFoil && aluminiumFoil.value());
+        const auto cooledConductor = store.latestRevision("FORM-CU-C11000-hollow-rectangular-water-cooled");
+        assert(cooledConductor && cooledConductor.value());
+        assert(cooledConductor.value()->payload.find("hollow-rectangle") != std::string::npos);
+        const auto litz = store.latestRevision("ASM-CU-LITZ-ROUND");
+        assert(litz && litz.value());
+        assert(litz.value()->payload.find("NOT_MODELED") != std::string::npos);
+        const auto ctc = store.latestRevision("ASM-CU-CTC");
+        assert(ctc && ctc.value());
+        MaterialCatalogFilter conductorAssemblies;
+        conductorAssemblies.recordType = "conductor-assembly";
+        const auto assemblyCatalog = store.searchLatestRevisions(conductorAssemblies);
+        assert(assemblyCatalog && assemblyCatalog.value().size() == 4);
+        const auto goSteel = store.latestRevision("MAT-TK-POWERCORE-H080-23");
+        assert(goSteel && goSteel.value());
+        assert(goSteel.value()->payload.find("0.00023") != std::string::npos);
+        assert(goSteel.value()->payload.find("1.7") != std::string::npos);
         const auto steel = store.latestRevision("MAT-TK-POWERCORE-M235-35A");
         assert(steel && steel.value());
         assert(steel.value()->payload.find("2.35") != std::string::npos);
