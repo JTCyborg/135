@@ -6,6 +6,7 @@
 #include <array>
 
 #include "p135/infrastructure/sqlite/sqlite_database.hpp"
+#include "p135/application/reactor_design_inputs.hpp"
 
 #include <memory>
 
@@ -49,6 +50,7 @@ private:
     void loadProjectSettings();
     void appendLog(const QString& message);
     void calculateFilter();
+    [[nodiscard]] p135::application::ReactorDesignInputs collectReactorDesignInputs() const;
     void refreshComponentSelectors();
 
     QLineEdit* projectName_{};
@@ -112,4 +114,6 @@ private:
     QString databaseError_;
     QString projectId_;
     bool loadingProjectSettings_{};
+    QString latestFilterSnapshotId_;
+    std::uint32_t latestFilterBranchId_{};
 };
