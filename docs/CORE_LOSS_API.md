@@ -67,6 +67,25 @@ The core mass must be supplied explicitly with a non-empty source reference (for
 This API calculates the material loss at one supplied operating point. It does not yet derive a cycle-equivalent loss from the seven branch peak flux densities, sum spatially varying limb/yoke losses, or automatically populate a reactor thermal network. Those require local flux waveforms/material data and an explicit mapping of core regions and masses; a single peak-B value must not be treated as a complete loss calculation for a nonsinusoidal waveform.
 
 
+## Baosteel AC reference datasets (not yet solver-ready)
+
+Two immutable `core-loss-reference` records are seeded separately from `CoreMaterial::lossData`:
+
+| Baosteel grade | Thickness | Density | P10/50 | P15/50 | P10/60 | P15/60 | Product P15/50 maximum |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| B35A300 | 0.35 mm | 7650 kg/m³ | 1.14 W/kg | 2.53 W/kg | 1.42 W/kg | 3.13 W/kg | 3.00 W/kg |
+| B50A800 | 0.50 mm | 7800 kg/m³ | 2.67 W/kg | 5.70 W/kg | 3.34 W/kg | 7.11 W/kg | 8.00 W/kg |
+
+The four AC reference points per grade are transcribed from Baosteel's official "Typical electromagnetic performance" Series A table. The separate P15/50 maximum is the manufacturer's product-specification limit, not the typical table value. The official page identifies GB/T 3655-2008 as the magnetic test reference and states that half the test samples are horizontal and half vertical. Q/BQB 480-2023 defines specific total loss using a sinusoidal magnetic-polarization waveform.
+
+The test temperature is not stated. For this reason these values are intentionally loaded into `CoreLossReferenceDataset`, not into `CoreMaterial::lossData`. They are not eligible for trilinear interpolation or the revision-bound reactor thermal network, whose solver requires a frequency/flux/temperature grid. The dataset loader preserves temperature as absent rather than assigning room temperature. No interpolation, extrapolation, temperature correction, or conversion to a different manufacturer's nominally similar grade is performed.
+
+The current Baosteel HTML table is the numeric source of record. Its values differ slightly from the typical values printed in Q/BQB 480-2023 Appendix D; the import deliberately records the current official HTML values and does not blend the two tables.
+
+Sources:
+- Baosteel official product performance table: https://esales.baosteel.com/baosteel_products/eleSteel/en/products/products_04_2.jsp
+- Baosteel Q/BQB 480-2023 (test definitions and sampling): https://pdt.static.globalsources.com/IMAGES/PDT/SPEC/829/K1229503829.pdf
+
 ## Three-limb region-resolved loss accounting
 
 `ThreeLimbCoreLossRequest` and `calculateThreeLimbCoreLossPower()` account for seven independently specified regions in the magnetic solver's fixed order: limb A, limb B, limb C, top yoke AB, top yoke BC, bottom yoke AB, bottom yoke BC. Each region receives its own peak flux density, temperature, physical mass and mass-source reference. The function evaluates each region against the same exact material loss dataset and returns seven auditable power results plus their sum. If any region is missing mass provenance or lies outside the measured loss-data domain, the aggregate calculation fails rather than silently omitting that region.
