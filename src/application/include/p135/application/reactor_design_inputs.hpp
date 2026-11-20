@@ -29,6 +29,24 @@ struct ReactorDesignInputs {
     std::optional<double> stackingFactor;
     std::optional<double> ambientTemperatureK;
     std::optional<double> maximumWindingTemperatureK;
+
+    // Construction choices and dimensions; all dimensional values use SI units.
+    std::optional<std::string> coreGeometryFamily;
+    std::optional<std::string> conductorShape;
+    std::optional<std::string> windingTechnology;
+    std::optional<std::string> coolingMethod;
+    std::optional<bool> bobbinUsed;
+    std::optional<std::string> bobbinMaterialId;
+    std::optional<std::uint32_t> turnsPerPhase;
+    std::optional<std::uint32_t> turnsPerLayer;
+    std::optional<std::uint32_t> windingLayers;
+    std::optional<std::uint32_t> parallelConductors;
+    std::optional<double> conductorCrossSectionM2;
+    std::optional<double> conductorWidthM;
+    std::optional<double> conductorThicknessM;
+    std::optional<double> turnInsulationBuildM;
+    std::optional<double> layerInsulationBuildM;
+    std::optional<double> mainInsulationBuildM;
 };
 
 /// A candidate is evidence, not a promise that a physical design has passed.
