@@ -27,6 +27,8 @@ struct ReactorDesignInputs {
     std::optional<MaterialRevisionSelection> conductorMaterial;
     std::optional<MaterialRevisionSelection> insulationMaterial;
     std::optional<double> stackingFactor;
+    /// User-selected laminated-core stack depth; never inferred from EI outline size.
+    std::optional<double> coreStackDepthM;
     std::optional<double> ambientTemperatureK;
     std::optional<double> maximumWindingTemperatureK;
 
