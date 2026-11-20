@@ -112,6 +112,54 @@ int main(int argc, char** argv)
     assert(steel50A800.value().material.lossData.empty());
     assert(steel50A800.value().coreLossStatus == "NOT_PUBLISHED");
 
+    // Baosteel Appendix D provides manufacturer-typical AC loss anchors.
+    // Keep them separate from CoreMaterial::lossData because test temperature
+    // is not published and the values are not guaranteed delivery limits.
+    const auto baosteel35A300 = loadCoreLossReferenceDataset(
+        store, "SEED-DATASET-BAOSTEEL-B35A300-AC-LOSS-R1");
+    assert(baosteel35A300);
+    assert(baosteel35A300.value().manufacturer == "Baoshan Iron & Steel Co., Ltd.");
+    assert(baosteel35A300.value().grade == "B35A300 non-oriented electrical steel");
+    assert(baosteel35A300.value().laminationThickness.si() == 0.00035);
+    assert(baosteel35A300.value().density.si() == 7650.0);
+    assert(baosteel35A300.value().minimumStackingFactor == 0.95);
+    assert(baosteel35A300.value().points.size() == 4);
+    assert(baosteel35A300.value().points[0].frequency.si() == 50.0);
+    assert(baosteel35A300.value().points[0].peakFluxDensity.si() == 1.0);
+    assert(baosteel35A300.value().points[0].specificLoss.si() == 1.10);
+    assert(baosteel35A300.value().points[1].specificLoss.si() == 2.55);
+    assert(baosteel35A300.value().points[2].frequency.si() == 60.0);
+    assert(baosteel35A300.value().points[2].specificLoss.si() == 1.40);
+    assert(baosteel35A300.value().points[3].specificLoss.si() == 3.18);
+    for (const auto& point : baosteel35A300.value().points)
+        assert(!point.measurementTemperature.has_value());
+    assert(baosteel35A300.value().specificationLimit.has_value());
+    assert(baosteel35A300.value().specificationLimit->maximumSpecificLoss.si() == 3.00);
+    assert(baosteel35A300.value().qualityStatus ==
+           "MANUFACTURER_TYPICAL_VALUES_NOT_GUARANTEED");
+    assert(baosteel35A300.value().measurementMethod == "GB/T 3655 Epstein square-frame method");
+    assert(baosteel35A300.value().temperatureStatus == "NOT_STATED_IN_SOURCE");
+    assert(baosteel35A300.value().sampleDirection.find("Half horizontal and half vertical") !=
+           std::string::npos);
+
+    const auto baosteel50A800 = loadCoreLossReferenceDataset(
+        store, "SEED-DATASET-BAOSTEEL-B50A800-AC-LOSS-R1");
+    assert(baosteel50A800);
+    assert(baosteel50A800.value().laminationThickness.si() == 0.00050);
+    assert(baosteel50A800.value().density.si() == 7800.0);
+    assert(baosteel50A800.value().minimumStackingFactor == 0.96);
+    assert(baosteel50A800.value().points.size() == 4);
+    assert(baosteel50A800.value().points[0].specificLoss.si() == 2.42);
+    assert(baosteel50A800.value().points[1].specificLoss.si() == 5.20);
+    assert(baosteel50A800.value().points[2].specificLoss.si() == 3.01);
+    assert(baosteel50A800.value().points[3].specificLoss.si() == 6.47);
+    assert(baosteel50A800.value().specificationLimit.has_value());
+    assert(baosteel50A800.value().specificationLimit->maximumSpecificLoss.si() == 8.00);
+
+    const auto wrongLossRecord = loadCoreLossReferenceDataset(store, "SEED-TDK-N87-R1");
+    assert(!wrongLossRecord);
+    assert(wrongLossRecord.error().code == ErrorCode::InvalidInput);
+
     const auto missing = loadCoreMaterialRevision(store, "DOES-NOT-EXIST");
     assert(!missing);
     assert(missing.error().code == ErrorCode::MissingRequiredData);
