@@ -110,6 +110,19 @@ int main()
     assert(gappedSolidCount == 10);
     assert(BRepCheck_Analyzer(gappedShape.value()).IsValid());
 
+    // The top AB yoke spans 140 mm from the outside face of limb A to
+    // the outside face of limb B. This gap is near its right-hand end.
+    auto yokeGapNearEnd = geometry;
+    yokeGapNearEnd.core.airGaps = {
+        {CoreSegment::YokeTopAB, units::Length{0.12}, units::Length{0.01}}
+    };
+    const auto yokeGapShape = p135::cad::buildThreeLimbCoreShape(yokeGapNearEnd);
+    assert(yokeGapShape);
+    std::size_t yokeGapSolidCount = 0;
+    for (TopExp_Explorer it(yokeGapShape.value(), TopAbs_SOLID); it.More(); it.Next()) ++yokeGapSolidCount;
+    assert(yokeGapSolidCount == 8);
+    assert(BRepCheck_Analyzer(yokeGapShape.value()).IsValid());
+
     auto invalidWindowStack = geometry;
     invalidWindowStack.core.windowWidths[0] = units::Length{0.05};
     assert(!p135::cad::buildThreeLimbCoreShape(invalidWindowStack));
