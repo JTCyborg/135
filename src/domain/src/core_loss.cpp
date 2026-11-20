@@ -225,4 +225,48 @@ Result<units::CoreLossDensity> evaluateCoreLossData(
     return Result<units::CoreLossDensity>::success(units::CoreLossDensity{interpolated});
 }
 
+
+Result<CoreLossPowerResult> calculateCoreLossPower(
+    const CoreMaterial& material,
+    const CoreLossPowerRequest& request)
+{
+    const double massKg = request.coreMass.si();
+    if (!std::isfinite(massKg) || massKg <= 0.0)
+        return Result<CoreLossPowerResult>::failure(Error{
+            ErrorCode::InvalidInput,
+            "Core mass must be finite and positive.",
+            {Diagnostic{Severity::Error, "CORE_LOSS_MASS_INVALID",
+                "Core mass must be finite and positive.", "coreMass",
+                std::nullopt, std::nullopt}}
+        });
+    if (request.coreMassSourceReference.empty())
+        return Result<CoreLossPowerResult>::failure(Error{
+            ErrorCode::MissingRequiredData,
+            "A source reference for the supplied core mass is required.",
+            {Diagnostic{Severity::Error, "CORE_LOSS_MASS_PROVENANCE_MISSING",
+                "A source reference for the supplied core mass is required.",
+                "coreMassSourceReference", std::nullopt, std::nullopt}}
+        });
+
+    const auto specific = evaluateCoreLossData(
+        material, request.frequency, request.peakFluxDensity, request.temperature);
+    if (!specific)
+        return Result<CoreLossPowerResult>::failure(specific.error());
+
+    const double totalWatts = specific.value().si() * massKg;
+    if (!std::isfinite(totalWatts) || totalWatts < 0.0)
+        return Result<CoreLossPowerResult>::failure(Error{
+            ErrorCode::InvalidInput,
+            "Total core loss is not finite and non-negative.",
+            {Diagnostic{Severity::Error, "CORE_LOSS_POWER_INVALID",
+                "Total core loss is not finite and non-negative.", "totalLoss",
+                std::nullopt, std::nullopt}}
+        });
+
+    return Result<CoreLossPowerResult>::success(CoreLossPowerResult{
+        specific.value(), request.coreMass, units::Power{totalWatts},
+        material.lossDataReference, request.coreMassSourceReference
+    });
+}
+
 } // namespace p135::domain
