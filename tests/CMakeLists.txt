@@ -461,3 +461,21 @@ if(MSVC)
 else()
     target_compile_options(Project135IdealReactorSizingTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135CoreComponentGeometryLoaderTests
+    infrastructure/core_component_geometry_loader_tests.cpp
+)
+target_link_libraries(Project135CoreComponentGeometryLoaderTests PRIVATE
+    Project135::InfrastructureSqlite
+)
+add_test(
+    NAME Project135CoreComponentGeometryLoaderTests
+    COMMAND Project135CoreComponentGeometryLoaderTests
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql
+)
+if(MSVC)
+    target_compile_options(Project135CoreComponentGeometryLoaderTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135CoreComponentGeometryLoaderTests PRIVATE -UNDEBUG)
+endif()
