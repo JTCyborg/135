@@ -40,6 +40,13 @@ int main()
     const auto accepted = inputs;
     assert(!requiresRecalculation(inputs, accepted));
 
+    inputs.turnsPerPhase = 121;
+    assert(requiresRecalculation(inputs, accepted));
+    inputs.turnsPerPhase = 120;
+    inputs.mainInsulationBuildM = 1.1e-3;
+    assert(requiresRecalculation(inputs, accepted));
+    inputs.mainInsulationBuildM = 1.0e-3;
+
     inputs.conductorMaterial = MaterialRevisionSelection{"cu-user-rev-8", DesignInputOrigin::UserSelected};
     assert(requiresRecalculation(inputs, accepted));
     assert(validate(inputs));
