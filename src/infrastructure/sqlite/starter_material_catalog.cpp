@@ -749,11 +749,11 @@ std::vector<SeedRecord> starterRecords()
             {"coreLossProvenance", {
                 {"sourceDocument", "Baosteel official product overview, Typical electromagnetic performance, Series A"},
                 {"sourcePage", "Official Baosteel HTML table; Q/BQB 480-2023 Table 8 sampling reference"},
-                {"measurementMethod", "GB/T 3655 Epstein square-frame method"},
-                {"sampleDirection", "Half horizontal and half vertical specimens per Table 8; Table D.1 gives aggregate typical values"},
+                {"measurementMethod", "GB/T 3655-2008 magnetic measurement method; Epstein square-frame method"},
+                {"sampleDirection", "Half horizontal and half vertical specimens per Baosteel product overview note b; the published table gives aggregate typical values"},
                 {"waveform", "Sinusoidal magnetic-polarization waveform, as defined in Q/BQB 480-2023 clause 3.1"},
                 {"temperatureStatus", "NOT_STATED_IN_SOURCE"},
-                {"notes", "Official Baosteel Typical electromagnetic performance values; not guaranteed delivery values. The separate maximum P15/50 limits are from the manufacturer's product specification table. Test temperature is not stated. Use only as reference anchors at the exact frequency and peak flux density; no interpolation, extrapolation, or temperature correction is authorized by this dataset."}
+                {"notes", "Numeric anchors are transcribed from the current official Baosteel HTML Typical electromagnetic performance table, not from Q/BQB 480-2023 Table D.1 (which publishes slightly different typical values). They are not guaranteed delivery values. Maximum P15/50 limits are from the manufacturer's product specification table. Test temperature is not stated. Use only as reference anchors at the exact frequency and peak flux density; no interpolation, extrapolation, or temperature correction is authorized by this dataset."}
             }},
             {"dataQuality", {
                 {"sourceStatus", "MANUFACTURER_PUBLISHED_TYPICAL_VALUES"},
@@ -766,7 +766,7 @@ std::vector<SeedRecord> starterRecords()
         records.push_back(SeedRecord{
             id, "SEED-" + id + "-R1", "core-loss-reference",
             baosteelLossSource,
-            "Baosteel official product performance page; test standard reference: " + baosteelStandardSource,
+            "Baosteel official product performance page; Q/BQB 480-2023 is cited for test-condition definitions only: " + baosteelStandardSource,
             payload
         });
     };
