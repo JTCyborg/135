@@ -27,10 +27,15 @@ WindingElectrothermalRequest request()
     electrical.meanTurnLength = units::Length{0.5};
     electrical.bareConductorCrossSection = units::Area{1.0e-6};
     electrical.windingTemperature = units::TemperatureKelvin{293.15};
-    electrical.harmonicCurrents = {
-        {1, units::Frequency{50.0}, {
-            {10.0, 0.0}, {-5.0, 8.660254037844386}, {-5.0, -8.660254037844386}}}
+    domain::WindingHarmonicCurrent fundamental;
+    fundamental.order = 1;
+    fundamental.frequency = units::Frequency{50.0};
+    fundamental.phaseRmsCurrent = {
+        std::complex<double>{10.0, 0.0},
+        std::complex<double>{-5.0, 8.660254037844386},
+        std::complex<double>{-5.0, -8.660254037844386}
     };
+    electrical.harmonicCurrents.push_back(fundamental);
     input.ambientTemperature = units::TemperatureKelvin{293.15};
     input.thermalResistanceKPerW = 0.5;
     input.maximumWindingTemperature = units::TemperatureKelvin{393.15};
