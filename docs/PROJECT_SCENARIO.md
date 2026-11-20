@@ -361,7 +361,9 @@ Scope limitation: this is a domain contract and validation stage only. The OCCT 
 
 ## P135.008.5 — Physical yoke segment datum and CI SQLite target compatibility
 
-Corrected the air-gap validation length for all four yoke segments to use the same physical datum as the OCCT boxes: from the outside face of the first adjacent limb to the outside face of the second adjacent limb. The physical segment length is therefore limb width A + clear window AB + limb width B (or B + window BC + C), not merely the limb-center spacing. This keeps a yoke air-gap position measured from the left physical end consistent between domain validation and CAD generation. Added domain and CAD regression cases for a gap close to the far end of a yoke segment, including the resulting split-solid count and B-Rep validity.
+Defined each horizontal yoke as two non-overlapping physical halves meeting at the centre plane of the middle limb. The AB half runs from the outside face of limb A to the centre plane of limb B; the BC half runs from the centre plane of B to the outside face of C. Their lengths are respectively A + window AB + half B, and half B + window BC + C. The OCCT builder now uses those same extents, eliminating the previous overlap between the two yoke solids around the middle limb. Domain air-gap range validation uses the exact same segment lengths and start datums. Added regression tests for near-end gaps, split-solid count and B-Rep validity.
+
+For the current Butt box model, domain validation also requires matching physical stack depths across each limb/yoke interface and matching top-pair and bottom-pair yoke thicknesses. These constraints ensure full-depth contact and a common planar limb end face; unsupported mismatches are rejected instead of creating visible gaps or intersections.
 
 Also made the SQLite imported target provider-aware: use CMake's `SQLite3::SQLite3` when available, otherwise use vcpkg's `unofficial::sqlite3::sqlite3`, and fail configuration with an explicit diagnostic if neither target exists. This addresses the CI configure failure after vcpkg dependency installation.
 
