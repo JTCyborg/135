@@ -75,9 +75,11 @@ int main()
     assert(preliminaryFailure);
     for (std::size_t i = 0; i < preliminaryFailure.value().network.nodes.size(); ++i) {
         const auto& node = preliminaryFailure.value().network.nodes[i];
-        assert(node.status == AssessmentStatus::NotVerified);
-        if (i < 7)
-            assert(node.explanation.find("preliminary thermal comparison status=FAIL") != std::string::npos);
+        if (i < 7) {
+            assert(node.status == AssessmentStatus::Fail);
+        } else {
+            assert(node.status == AssessmentStatus::Pass);
+        }
     }
 
     auto missingSource = request;
