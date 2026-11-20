@@ -524,31 +524,69 @@ std::vector<SeedRecord> starterRecords()
         "https://www.tdk-electronics.tdk.com/en/529374/products/product-catalog/ferrites-and-accessories/pq-cores-and-accessories/search-results-pq-cores-and-accessories";
     for (const auto& [orderingCode, shape, material, alValue] : tdkPqCores) {
         const std::string id = "COMP-TDK-" + orderingCode;
+        const bool hasPq32Geometry = shape == "PQ 32/30";
+        const bool hasPq40Geometry = shape == "PQ 40/40";
+        const std::string geometrySource = hasPq32Geometry
+            ? "https://product.tdk.com/en/system/files/dam/doc/product/ferrite/ferrite/ferrite-core/data_sheet/80/db/fer/pq_32_30.pdf"
+            : (hasPq40Geometry
+                ? "https://www.tdk-electronics.tdk.com/inf/80/db/fer/pq_40_40.pdf"
+                : tdkPqUrl);
+        json magneticGeometry = nullptr;
+        if (hasPq32Geometry) {
+            magneticGeometry = {
+                {"effectiveArea_m2", 153.8e-6},
+                {"minimumArea_m2", 127.5e-6},
+                {"effectivePathLength_m", 67.80e-3},
+                {"effectiveVolume_m3", 10440.0e-9},
+                {"coreFactor_per_m", 0.441e3}
+            };
+        } else if (hasPq40Geometry) {
+            magneticGeometry = {
+                {"effectiveArea_m2", 189.0e-6},
+                {"minimumArea_m2", 174.0e-6},
+                {"effectivePathLength_m", 93.0e-3},
+                {"effectiveVolume_m3", 17580.0e-9},
+                {"coreFactor_per_m", 0.492e3}
+            };
+        }
+        const bool magneticGeometryImported = !magneticGeometry.is_null();
+        const std::string geometryStatus = magneticGeometryImported
+            ? "MAGNETIC_GEOMETRY_FROM_MANUFACTURER_DATASHEET"
+            : "DIMENSIONS_NOT_IMPORTED";
+        const std::string cadGeometryStatus =
+            "PARTIAL_DRAWING_ONLY_NOT_PARAMETRIC_CAD";
         const json payload = {
             {"schemaVersion", 1},
             {"component", {
                 {"id", id}, {"manufacturer", "TDK Electronics"},
                 {"orderingCode", orderingCode}, {"coreShape", shape},
                 {"ferriteMaterial", material}, {"coreType", "PQ ferrite core"},
-                {"inductanceFactor_AL_nH_per_turn_squared", alValue},
+                {"inductanceFactor_AL_nH_per_turn_squared", alValue * 1.0e-9},
                 {"AL_tolerance_fraction", { -0.20, 0.30 }},
                 {"airGap", "ungapped"},
                 {"turnsSquaredForInductance", "L = AL * N^2"},
                 {"dimensionsImported", false}
             }},
-            {"sourceDocuments", json::array({tdkPqUrl})},
+            {"magneticGeometry", magneticGeometry},
+            {"sourceDocuments", json::array({geometrySource})},
             {"dataQuality", {
-                {"sourceStatus", "MANUFACTURER_LIVE_PRODUCT_SEARCH_TABLE"},
+                {"sourceStatus", "MANUFACTURER_DATASHEET_AND_PRODUCT_CATALOG"},
                 {"alValueStatus", "MANUFACTURER_LISTED_NOMINAL_AL"},
                 {"toleranceStatus", "MANUFACTURER_LISTED_PLUS_30_MINUS_20_PERCENT"},
-                {"geometryStatus", "DIMENSIONS_NOT_IMPORTED"},
+                {"geometryStatus", geometryStatus},
+                {"cadGeometryStatus", cadGeometryStatus},
                 {"designReleaseStatus", "NOT_VERIFIED"},
-                {"notes", "Exact TDK ordering code, PQ geometry, ferrite material and AL value are imported from the manufacturer search result. AL tolerance is +30/-20 percent. Mechanical dimensions, effective area, effective path length, volume and loss curves must be loaded from the individual datasheet before CAD/FEM or final magnetic design."}
+                {"notes", magneticGeometryImported
+                    ? "Ae, Amin, le, Ve and core factor are imported from the TDK geometry datasheet for this exact PQ size. The drawing is not yet a complete parametric CAD profile; winding former, bobbin clearance, detailed contour and assembly tolerances remain unavailable. No CAD solid is generated from these magnetic dimensions."
+                    : "Exact TDK ordering code, PQ geometry, ferrite material and AL value are imported from the manufacturer product catalogue. Effective magnetic dimensions are not yet imported for this size. Do not use this record for physical sizing or CAD."}
             }}
         };
         records.push_back(SeedRecord{
             id, "SEED-" + orderingCode + "-R1", "core-component",
-            tdkPqUrl, "TDK PQ core catalog search; ordering code " + orderingCode,
+            geometrySource,
+            magneticGeometryImported
+                ? "TDK PQ core geometry datasheet; ordering code " + orderingCode
+                : "TDK PQ core catalog; ordering code " + orderingCode,
             payload
         });
     }
