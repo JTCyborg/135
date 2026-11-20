@@ -40,6 +40,12 @@ int main(int argc, char** argv)
     assert(n87.value().material.bhCurve.size() == 8);
     assert(n87.value().material.lossData.size() == 4);
     assert(n87.value().bhCurveStatus == "APPROXIMATE_DIGITIZATION");
+    assert(n87.value().bhCurveSourceDocument == "TDK FAL0599-4");
+    assert(n87.value().bhCurveSourcePage == "NOT_STATED_IN_IMPORTED_REFERENCE");
+    assert(n87.value().bhCurveMeasurementMethod == "NOT_STATED_IN_IMPORTED_REFERENCE");
+    assert(n87.value().bhCurveSampleDirection == "NOT_STATED_IN_IMPORTED_REFERENCE");
+    assert(n87.value().bhCurveCaptureMethod == "APPROXIMATE_DIGITIZATION_FROM_MANUFACTURER_GRAPH");
+    assert(n87.value().bhCurveNotes.find("raw tabular B-H") != std::string::npos);
     assert(n87.value().designReleaseStatus == "NOT_VERIFIED");
     assert(n87.value().bhCurveFrequency.si() == 10000.0);
     assert(n87.value().bhCurveTemperature.si() == 298.15);
