@@ -35,10 +35,9 @@ int main()
 
     const auto thermalPlan = planReactorRecalculation({"thermal.ambient"});
     assert(thermalPlan);
-    assert(thermalPlan.value().orderedStages.size() == 3);
+    assert(thermalPlan.value().orderedStages.size() == 2);
     assert(thermalPlan.value().orderedStages[0] == "input.thermal.ambient");
-    assert(thermalPlan.value().orderedStages[1] == "thermal.ambient");
-    assert(thermalPlan.value().orderedStages[2] == "thermal.steady_state");
+    assert(thermalPlan.value().orderedStages[1] == "thermal.steady_state");
 
     const auto limitPlan = planReactorRecalculation(
         {"input.thermal.maximum_winding_temperature"});
