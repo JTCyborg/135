@@ -5,6 +5,7 @@ add_library(Project135Application
     src/reactor_design_execution.cpp
     src/material_revision_use_cases.cpp
     src/reactor_design_inputs.cpp
+    src/ideal_reactor_sizing.cpp
 )
 add_library(Project135::Application ALIAS Project135Application)
 
