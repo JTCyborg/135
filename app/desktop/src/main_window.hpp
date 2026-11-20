@@ -42,6 +42,8 @@ private:
     void loadCalculationInputs(int row);
     void compareSelectedCalculationGraphs();
     void updateProjectTitle();
+    void saveProjectSettings();
+    void loadProjectSettings();
     void appendLog(const QString& message);
     void calculateFilter();
     void refreshComponentSelectors();
