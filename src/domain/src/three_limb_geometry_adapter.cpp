@@ -1,0 +1,107 @@
+#include "p135/domain/three_limb_geometry_adapter.hpp"
+
+#include <array>
+#include <cmath>
+#include <string>
+#include <utility>
+
+namespace p135::domain {
+namespace {
+
+Result<ThreeLimbMagneticGeometry> invalid(std::string message, std::string field)
+{
+    Error error;
+    error.code = ErrorCode::InvalidInput;
+    error.message = std::move(message);
+    error.diagnostics.push_back(Diagnostic{
+        Severity::Error, "THREE_LIMB_GEOMETRY_ADAPTER_INVALID", error.message,
+        std::move(field), std::nullopt, std::nullopt
+    });
+    return Result<ThreeLimbMagneticGeometry>::failure(std::move(error));
+}
+
+} // namespace
+
+Result<ThreeLimbMagneticGeometry> buildThreeLimbMagneticGeometry(
+    const ThreeLimbCorePhysicalGeometry& physical,
+    double stackingFactor)
+{
+    const auto validation = validate(physical);
+    if (!validation)
+        return Result<ThreeLimbMagneticGeometry>::failure(validation.error());
+
+    if (!std::isfinite(stackingFactor) ||
+        stackingFactor <= 0.0 || stackingFactor > 1.0)
+        return invalid("Stacking factor must be finite and in the interval (0, 1].",
+                       "stackingFactor");
+
+    ThreeLimbMagneticGeometry result;
+    for (std::size_t limb = 0; limb < 3; ++limb) {
+        const double grossArea =
+            physical.limbWidths[limb].si() * physical.limbDepths[limb].si();
+        const double effectiveArea = grossArea * stackingFactor;
+        if (!std::isfinite(effectiveArea) || effectiveArea <= 0.0)
+            return invalid("Calculated limb effective area is not finite and positive.",
+                           "limbEffectiveAreas[" + std::to_string(limb) + "]");
+
+        result.limbEffectiveAreas[limb] = units::Area{effectiveArea};
+        result.limbGapEffectiveAreas[limb] = units::Area{effectiveArea};
+
+        // The magnetic solver represents each limb by the distance between
+        // the top and bottom yoke centre-lines.
+        const std::size_t topYoke = limb == 2 ? 1 : 0;
+        const std::size_t bottomYoke = limb == 2 ? 3 : 2;
+        const double path = physical.coreOverallHeight.si() -
+            0.5 * physical.yokeThicknesses[topYoke].si() -
+            0.5 * physical.yokeThicknesses[bottomYoke].si();
+        if (!std::isfinite(path) || path <= 0.0)
+            return invalid("Derived limb centre-line path must be finite and positive.",
+                           "limbMeanPaths[" + std::to_string(limb) + "]");
+        result.limbMeanPaths[limb] = units::Length{path};
+    }
+
+    // The solver has four independent yoke branches: top AB, top BC,
+    // bottom AB and bottom BC. Their centre-line paths follow the explicit
+    // limb centre spacings in the physical drawing.
+    for (std::size_t yoke = 0; yoke < 4; ++yoke) {
+        const double grossArea =
+            physical.yokeThicknesses[yoke].si() * physical.yokeDepths[yoke].si();
+        const double effectiveArea = grossArea * stackingFactor;
+        if (!std::isfinite(effectiveArea) || effectiveArea <= 0.0)
+            return invalid("Calculated yoke effective area is not finite and positive.",
+                           "yokeEffectiveAreas[" + std::to_string(yoke) + "]");
+        result.yokeEffectiveAreas[yoke] = units::Area{effectiveArea};
+        result.yokeSegmentPaths[yoke] = physical.limbCenterSpacings[yoke % 2];
+    }
+
+    std::array<double, 3> totalLimbGap{};
+    for (std::size_t index = 0; index < physical.airGaps.size(); ++index) {
+        const auto& gap = physical.airGaps[index];
+        std::size_t limb = 0;
+        switch (gap.segment) {
+        case CoreSegment::LimbA: limb = 0; break;
+        case CoreSegment::LimbB: limb = 1; break;
+        case CoreSegment::LimbC: limb = 2; break;
+        case CoreSegment::YokeTopAB:
+        case CoreSegment::YokeTopBC:
+        case CoreSegment::YokeBottomAB:
+        case CoreSegment::YokeBottomBC:
+            return invalid(
+                "The current nonlinear magnetic solver models air gaps in limb branches only; "
+                "a yoke-segment air gap cannot be mapped without extending the solver.",
+                "airGaps[" + std::to_string(index) + "].segment");
+        }
+
+        totalLimbGap[limb] += gap.length.si();
+        if (!std::isfinite(totalLimbGap[limb]))
+            return invalid("Total air-gap length is not finite.",
+                           "airGaps[" + std::to_string(index) + "].length");
+    }
+
+    for (std::size_t limb = 0; limb < 3; ++limb)
+        result.limbAirGaps[limb] = units::Length{totalLimbGap[limb]};
+
+    return Result<ThreeLimbMagneticGeometry>::success(std::move(result));
+}
+
+} // namespace p135::domain

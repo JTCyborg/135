@@ -146,6 +146,17 @@ else()
     target_compile_options(Project135ThreeLimbSolverTests PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135ThreeLimbGeometryAdapterTests
+    domain/three_limb_geometry_adapter_tests.cpp
+)
+target_link_libraries(Project135ThreeLimbGeometryAdapterTests PRIVATE Project135::Domain)
+add_test(NAME Project135ThreeLimbGeometryAdapterTests COMMAND Project135ThreeLimbGeometryAdapterTests)
+if(MSVC)
+    target_compile_options(Project135ThreeLimbGeometryAdapterTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ThreeLimbGeometryAdapterTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135ComponentCatalogTests
     domain/component_catalog_tests.cpp
 )
