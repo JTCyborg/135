@@ -1,4 +1,7 @@
 #include "p135/infrastructure/sqlite/core_material_revision_loader.hpp"
+#include "p135/infrastructure/sqlite/canonical_json.hpp"
+
+#include <nlohmann/json.hpp>
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
@@ -159,6 +162,30 @@ int main(int argc, char** argv)
     const auto wrongLossRecord = loadCoreLossReferenceDataset(store, "SEED-TDK-N87-R1");
     assert(!wrongLossRecord);
     assert(wrongLossRecord.error().code == ErrorCode::InvalidInput);
+
+    // A duplicated frequency/flux coordinate is ambiguous and must not be
+    // silently accepted as two independent measurements.
+    const auto originalLossRevision = store.findRevision(
+        "SEED-DATASET-BAOSTEEL-B35A300-AC-LOSS-R1");
+    assert(originalLossRevision && originalLossRevision.value().has_value());
+    auto duplicatePayload = nlohmann::json::parse(originalLossRevision.value()->payload);
+    duplicatePayload["coreLossReferencePoints"].push_back(
+        duplicatePayload["coreLossReferencePoints"].front());
+    const auto duplicateCanonical = canonicalizeJson(duplicatePayload.dump());
+    assert(duplicateCanonical);
+    const auto duplicateHash = sha256Hex(duplicateCanonical.value());
+    assert(duplicateHash);
+    auto duplicateRevision = *originalLossRevision.value();
+    duplicateRevision.revisionId = "TEST-BAOSTEEL-B35A300-DUPLICATE-POINTS";
+    duplicateRevision.materialId = "TEST-BAOSTEEL-B35A300-DUPLICATE";
+    duplicateRevision.revisionNumber = 1;
+    duplicateRevision.payload = duplicateCanonical.value();
+    duplicateRevision.contentHash = duplicateHash.value();
+    assert(store.appendRevision(duplicateRevision));
+    const auto duplicateDataset = loadCoreLossReferenceDataset(
+        store, duplicateRevision.revisionId);
+    assert(!duplicateDataset);
+    assert(duplicateDataset.error().code == ErrorCode::InvalidInput);
 
     const auto missing = loadCoreMaterialRevision(store, "DOES-NOT-EXIST");
     assert(!missing);
