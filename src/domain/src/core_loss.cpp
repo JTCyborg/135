@@ -5,7 +5,7 @@
 
 namespace p135::domain {
 namespace {
-Result<units::CoreLossDensity> fail(ErrorCode code, std::string message,
+Result<units::VolumetricCoreLossDensity> fail(ErrorCode code, std::string message,
                                     std::string field)
 {
     Error error;
@@ -15,11 +15,11 @@ Result<units::CoreLossDensity> fail(ErrorCode code, std::string message,
         Severity::Error, "CORE_LOSS_EQUATION_INVALID", error.message,
         std::move(field), std::nullopt, std::nullopt
     });
-    return Result<units::CoreLossDensity>::failure(std::move(error));
+    return Result<units::VolumetricCoreLossDensity>::failure(std::move(error));
 }
 } // namespace
 
-Result<units::CoreLossDensity> evaluateCoreLossEquation(
+Result<units::VolumetricCoreLossDensity> evaluateCoreLossEquation(
     const CoreLossEquation& equation,
     units::Frequency frequency,
     units::FluxDensity peakFluxDensity)
@@ -84,8 +84,8 @@ Result<units::CoreLossDensity> evaluateCoreLossEquation(
         return fail(ErrorCode::InvalidInput,
                     "Core-loss equation produced a non-finite or negative result.",
                     "equation.result");
-    return Result<units::CoreLossDensity>::success(
-        units::CoreLossDensity{lossWPerM3});
+    return Result<units::VolumetricCoreLossDensity>::success(
+        units::VolumetricCoreLossDensity{lossWPerM3});
 }
 
 } // namespace p135::domain
