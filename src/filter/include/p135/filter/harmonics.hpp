@@ -6,6 +6,7 @@
 
 #include <complex>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace p135::filter {
@@ -19,11 +20,24 @@ struct HarmonicVoltage {
     std::complex<double> phaseVoltageRms{};
 };
 
+/// Balanced harmonic current drawn by one nonlinear load at the PCC.
+/// Positive phasor direction is load consumption (current leaving the bus).
+struct HarmonicCurrentInjection {
+    std::string sourceId;
+    std::uint32_t order{};
+    HarmonicSequence sequence{HarmonicSequence::Positive};
+    /// Phase-A RMS current phasor; multiple loads are superposed as complex values.
+    std::complex<double> phaseCurrentRms{};
+};
+
 struct HarmonicAnalysisRequest {
     FilterDesign design;
     SourceImpedance source;
     /// Must include exactly one fundamental (order 1) entry.
     std::vector<HarmonicVoltage> sourceVoltageSpectrum;
+    /// Optional nonlinear-load current spectrum. Each order/sequence must have a
+    /// corresponding voltage-spectrum entry (use a zero voltage phasor when absent).
+    std::vector<HarmonicCurrentInjection> loadCurrentInjections;
 };
 
 struct HarmonicAnalysisPoint {
@@ -33,6 +47,7 @@ struct HarmonicAnalysisPoint {
     double busVoltageMagnitudeV{};
     double filterCurrentMagnitudeA{};
     double sourceCurrentMagnitudeA{};
+    double loadCurrentMagnitudeA{};
     double filterImpedanceMagnitudeOhm{};
 };
 
