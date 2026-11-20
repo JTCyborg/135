@@ -1,8 +1,33 @@
 #include "p135/infrastructure/sqlite/revision_bound_physical_filter_magnetic.hpp"
 
 #include <utility>
+#include <string>
 
 namespace p135::infrastructure::sqlite {
+namespace {
+
+Error materialQualityError(std::string message, std::string field)
+{
+    Error error;
+    error.code = ErrorCode::MissingMaterialProperty;
+    error.message = std::move(message);
+    error.diagnostics.push_back(Diagnostic{
+        Severity::Error, "CORE_MATERIAL_BH_QUALITY_NOT_VERIFIED", error.message,
+        std::move(field), std::nullopt, std::nullopt
+    });
+    return error;
+}
+
+bool hasVerifiedBhCurveStatus(const std::string& status)
+{
+    // Only source-tabulated manufacturer curves or traceable measurement
+    // datasets qualify. Digitized typical graphs and missing datasets remain
+    // useful for exploration, but are not accepted for a verified design run.
+    return status == "MANUFACTURER_TABULATED" ||
+           status == "MEASURED_TABULAR";
+}
+
+} // namespace
 
 Result<RevisionBoundPhysicalFilterMagneticResult>
 analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
@@ -13,6 +38,16 @@ analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
     const auto material = loadCoreMaterialRevision(store, materialRevisionId);
     if (!material)
         return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(material.error());
+
+    if (!hasVerifiedBhCurveStatus(material.value().bhCurveStatus)) {
+        return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(
+            materialQualityError(
+                "The selected material revision does not contain a verified tabulated B-H curve "
+                "(bhCurveStatus=" + material.value().bhCurveStatus +
+                "). Approximate digitization or missing B-H data cannot be used for a verified "
+                "magnetic design calculation.",
+                "materialRevision.bhCurveStatus"));
+    }
 
     auto boundRequest = request;
     boundRequest.filterMagnetic.magnetic.material = material.value().material;
