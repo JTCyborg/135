@@ -1,0 +1,59 @@
+#include "p135/application/reactor_design_execution.hpp"
+
+#include <cassert>
+#include <string>
+#include <vector>
+
+using namespace p135;
+using namespace p135::application;
+
+int main()
+{
+    ReactorDesignExecutionState state;
+    state.accepted.number = 7;
+    state.accepted.verified = true;
+    state.accepted.stages["core.material"] = {
+        ReactorStageStatus::Valid, "7", "previous-core"
+    };
+
+    ReactorRecalculationPlan plan{{"core.material", "core.magnetic_properties",
+                                   "magnetic.operating_point"}};
+    std::vector<std::string> calls;
+    const auto failed = executeReactorDesignPlan(plan, state,
+        [&calls](const std::string& id) -> Result<std::string> {
+            calls.push_back(id);
+            if (id == "core.magnetic_properties")
+                return Result<std::string>::failure(
+                    {ErrorCode::NonConvergence, "magnetic solver did not converge", {}});
+            return Result<std::string>::success("artifact:" + id);
+        });
+
+    assert(failed);
+    assert(!failed.value().committed);
+    assert(failed.value().failedStage == "core.magnetic_properties");
+    assert(calls.size() == 2);
+    assert(state.accepted.number == 7);
+    assert(state.accepted.verified);
+    assert(state.accepted.stages.at("core.material").payload == "previous-core");
+    assert(state.candidate.number == 8);
+    assert(!state.candidate.verified);
+    assert(state.candidate.stages.at("core.magnetic_properties").status ==
+           ReactorStageStatus::NotVerified);
+    assert(!state.candidate.stages.contains("magnetic.operating_point"));
+    assert(!state.candidateInProgress);
+
+    const auto success = executeReactorDesignPlan(
+        ReactorRecalculationPlan{{"core.material"}},
+        state,
+        [](const std::string& id) {
+            return Result<std::string>::success("new:" + id);
+        });
+    assert(success && success.value().committed);
+    assert(state.accepted.number == 8);
+    assert(!state.accepted.verified);
+    assert(state.accepted.stages.at("core.material").payload == "new:core.material");
+
+    const auto noExecutor = executeReactorDesignPlan(plan, state, {});
+    assert(!noExecutor);
+    return 0;
+}
