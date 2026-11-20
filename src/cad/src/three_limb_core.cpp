@@ -2,9 +2,11 @@
 
 #include <BRep_Builder.hxx>
 #include <BRepCheck_Analyzer.hxx>
+#include <BRepGProp.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <TopoDS_Compound.hxx>
 #include <gp_Pnt.hxx>
+#include <GProp_GProps.hxx>
 
 #include <algorithm>
 #include <array>
@@ -51,6 +53,10 @@ Result<TopoDS_Compound> makeSegmentedBox(
             (splitAlongX ? lengthY : end - start) * toMillimetres,
             depth * toMillimetres).Shape();
         if (solid.IsNull() || !BRepCheck_Analyzer(solid).IsValid()) return false;
+        GProp_GProps volumeProperties;
+        BRepGProp::VolumeProperties(solid, volumeProperties);
+        const double volume = volumeProperties.Mass();
+        if (!std::isfinite(volume) || volume <= 1.0e-12) return false;
         builder.Add(component, solid);
         return true;
     };
