@@ -97,6 +97,36 @@ Result<double> calculateThreePhaseEiEffectiveLimbAreaM2(
     return Result<double>::success(area);
 }
 
+Result<double> calculateThreePhaseEiEffectiveYokeAreaM2(
+    const application::ReactorDesignInputs& inputs)
+{
+    if (!inputs.coreStackDepthM || !inputs.coreYokeThicknessM || !inputs.stackingFactor) {
+        Error error;
+        error.code = ErrorCode::MissingRequiredData;
+        error.message = "EI yoke area requires explicit stack depth, yoke thickness and stacking factor.";
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "THREE_PHASE_EI_YOKE_INPUTS_MISSING", error.message,
+            "coreStackDepthM/coreYokeThicknessM/stackingFactor", std::nullopt, std::nullopt
+        });
+        return Result<double>::failure(std::move(error));
+    }
+    if (!std::isfinite(*inputs.coreStackDepthM) || *inputs.coreStackDepthM <= 0.0 ||
+        !std::isfinite(*inputs.coreYokeThicknessM) || *inputs.coreYokeThicknessM <= 0.0 ||
+        !std::isfinite(*inputs.stackingFactor) || *inputs.stackingFactor <= 0.0 ||
+        *inputs.stackingFactor > 1.0) {
+        Error error;
+        error.code = ErrorCode::InvalidInput;
+        error.message = "EI yoke dimensions and stacking factor must be finite and physically positive.";
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "THREE_PHASE_EI_YOKE_INPUTS_INVALID", error.message,
+            "coreStackDepthM/coreYokeThicknessM/stackingFactor", std::nullopt, std::nullopt
+        });
+        return Result<double>::failure(std::move(error));
+    }
+    return Result<double>::success(
+        *inputs.coreYokeThicknessM * *inputs.coreStackDepthM * *inputs.stackingFactor);
+}
+
 Result<double> calculateThreePhaseEiEffectiveLimbAreaM2(
     const CoreComponentGeometrySnapshot& geometry,
     const application::ReactorDesignInputs& inputs)
