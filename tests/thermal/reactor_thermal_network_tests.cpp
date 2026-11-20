@@ -68,6 +68,16 @@ int main()
     for (const auto& node : gated.value().network.nodes)
         assert(node.status == AssessmentStatus::NotVerified);
 
+    auto unqualifiedOverTemperature = request;
+    for (auto& limit : unqualifiedOverTemperature.coreMaximumTemperatures)
+        limit = units::TemperatureKelvin{294.0};
+    const auto preliminaryFailure = analyzeReactorThermalNetwork(unqualifiedOverTemperature);
+    assert(preliminaryFailure);
+    for (const auto& node : preliminaryFailure.value().network.nodes) {
+        assert(node.status == AssessmentStatus::NotVerified);
+        assert(node.explanation.find("preliminary thermal comparison status=FAIL") != std::string::npos);
+    }
+
     auto missingSource = request;
     missingSource.windingLossSourceReference.clear();
     assert(!analyzeReactorThermalNetwork(missingSource));
