@@ -76,20 +76,30 @@ Result<circuit::Circuit> buildCircuit(const FilterDesign& design,
     }
 
     circuit::ComponentId nextComponent = 4;
-    circuit::NodeId nextNode = hasSourceImpedance ? 7 : 4;
+    circuit::NodeId nextNode = hasSourceImpedance ? 10 : 4;
     if (hasSourceImpedance) {
         for (std::size_t phase = 0; phase < 3; ++phase) {
             const auto sourceNode = sourceNodes[phase];
             const auto busNode = phaseNodes[phase];
             const std::string suffix = " L" + std::to_string(phase + 1);
-            if (sourceR > 0.0)
+            if (sourceR > 0.0 && sourceL > 0.0) {
+                const auto intermediateNode = static_cast<circuit::NodeId>(7 + phase);
+                result.nodes.push_back({intermediateNode, "Thevenin R-L junction" + suffix});
+                result.elements.push_back(circuit::Element::makeResistor(
+                    nextComponent++, sourceNode, intermediateNode, sourceResistance,
+                    "Thevenin resistance" + suffix));
+                result.elements.push_back(circuit::Element::makeInductor(
+                    nextComponent++, intermediateNode, busNode, sourceInductance,
+                    "Thevenin inductance" + suffix));
+            } else if (sourceR > 0.0) {
                 result.elements.push_back(circuit::Element::makeResistor(
                     nextComponent++, sourceNode, busNode, sourceResistance,
                     "Thevenin resistance" + suffix));
-            if (sourceL > 0.0)
+            } else if (sourceL > 0.0) {
                 result.elements.push_back(circuit::Element::makeInductor(
                     nextComponent++, sourceNode, busNode, sourceInductance,
                     "Thevenin inductance" + suffix));
+            }
         }
     }
 
