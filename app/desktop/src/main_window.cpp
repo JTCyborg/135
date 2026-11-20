@@ -2448,7 +2448,9 @@ void MainWindow::calculateFilter()
     const bool hasLoadCurrentInjection = !harmonicRequest.loadCurrentInjections.empty();
     if (!hasSourceImpedance && (suppliedHarmonics > 0 || hasLoadCurrentInjection)) {
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: enter source R and/or L from a network study.");
-    } else if (hasSourceImpedance && (suppliedHarmonics > 0 || hasLoadCurrentInjection) && spectrumValid) {
+    } else if (hasSourceImpedance &&
+               (suppliedHarmonics > 0 || hasLoadCurrentInjection || threeLimbMagneticBase.has_value()) &&
+               spectrumValid) {
         const auto harmonics = p135::filter::analyzeHarmonics(harmonicRequest);
         if (harmonics) {
             harmonicResult = harmonics.value();
@@ -2460,6 +2462,59 @@ void MainWindow::calculateFilter()
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: invalid input spectrum.");
     } else if (suppliedHarmonics == 0 && !hasLoadCurrentInjection && advancedWarning.isEmpty()) {
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
+    }
+
+    std::optional<p135::domain::ThreeLimbMagneticCycleSamplingResult> threeLimbOperatingPoint;
+    QString threeLimbOperatingPointWarning;
+    if (threeLimbMagneticBase) {
+        if (!harmonicResult) {
+            threeLimbOperatingPointWarning = tr(
+                "Three-limb operating-point B NOT_VERIFIED: harmonic branch-current spectrum is unavailable; enter source R/L and a valid spectrum.");
+        } else {
+            p135::domain::ThreeLimbMagneticCycleSamplingRequest operatingRequest;
+            operatingRequest.magnetic = *threeLimbMagneticBase;
+            operatingRequest.maximumSamples = 288;
+            operatingRequest.relativePeakTolerance = 1.0e-3;
+            for (std::size_t phase = 0; phase < 3; ++phase) {
+                operatingRequest.phaseDcCurrents[phase] = p135::units::Current{
+                    phaseDcBiasCurrentA_[phase] ? phaseDcBiasCurrentA_[phase]->value() : 0.0
+                };
+            }
+            // Sum all tuned filter branches phase-by-phase at each harmonic.
+            // The resulting waveform is the actual multi-frequency operating
+            // current, not the independent single-frequency resonance sweep.
+            for (const auto& branchPoint : harmonicResult->branchPoints) {
+                auto found = std::find_if(
+                    operatingRequest.harmonicExcitations.begin(),
+                    operatingRequest.harmonicExcitations.end(),
+                    [&branchPoint](const auto& item) { return item.order == branchPoint.order; });
+                if (found == operatingRequest.harmonicExcitations.end()) {
+                    operatingRequest.harmonicExcitations.push_back({
+                        branchPoint.order, branchPoint.phaseCurrentRms
+                    });
+                } else {
+                    for (std::size_t phase = 0; phase < 3; ++phase)
+                        found->phaseRmsPhasors[phase] += branchPoint.phaseCurrentRms[phase];
+                }
+            }
+            if (operatingRequest.harmonicExcitations.empty()) {
+                threeLimbOperatingPointWarning = tr(
+                    "Three-limb operating-point B NOT_VERIFIED: no filter branch harmonic currents were produced.");
+            } else {
+                const auto operating = p135::domain::sampleThreeLimbMagneticCycle(operatingRequest);
+                if (!operating) {
+                    threeLimbOperatingPointWarning = tr("Three-limb operating-point B NOT_VERIFIED: %1")
+                        .arg(QString::fromStdString(operating.error().message));
+                } else if (!operating.value().converged) {
+                    threeLimbOperatingPointWarning = tr(
+                        "Three-limb operating-point B NOT_VERIFIED: peak |B| did not converge to 0.1%% by %1 samples (last relative change %2%%).")
+                        .arg(static_cast<qulonglong>(operating.value().samplesUsed))
+                        .arg(operating.value().relativePeakChange * 100.0, 0, 'g', 5);
+                } else {
+                    threeLimbOperatingPoint = operating.value();
+                }
+            }
+        }
     }
 
     std::optional<p135::thermal::CapacitorThermalResult> capacitorThermalResult;
