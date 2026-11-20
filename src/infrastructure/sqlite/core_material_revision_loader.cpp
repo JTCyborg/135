@@ -217,6 +217,14 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
             ? std::optional<units::TemperatureKelvin>{units::TemperatureKelvin{bhTemperature}}
             : std::nullopt;
 
+        if (snapshot.material.bhCurve.empty() &&
+            (snapshot.material.family == domain::CoreMaterialFamily::ElectricalSteel ||
+             snapshot.material.family == domain::CoreMaterialFamily::CRGO)) {
+            return Result<CoreMaterialRevisionSnapshot>::failure(loaderError(
+                ErrorCode::InvalidInput,
+                "Electrical-steel core material without a published B-H curve cannot be loaded as a solver material.",
+                "bhCurve"));
+        }
         if (!snapshot.material.bhCurve.empty()) {
             const auto validated = domain::validate(snapshot.material);
             if (!validated)
