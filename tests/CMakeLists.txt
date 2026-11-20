@@ -168,6 +168,19 @@ else()
     target_compile_options(Project135ApplicationTests PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135FilterReactorMagneticTests
+    application/filter_reactor_magnetic_tests.cpp
+)
+target_link_libraries(Project135FilterReactorMagneticTests PRIVATE
+    Project135::Application Project135::Domain Project135::Filter
+)
+add_test(NAME Project135FilterReactorMagneticTests COMMAND Project135FilterReactorMagneticTests)
+if(MSVC)
+    target_compile_options(Project135FilterReactorMagneticTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135FilterReactorMagneticTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135SqliteInfrastructureTests
     infrastructure/sqlite_repository_tests.cpp
 )
