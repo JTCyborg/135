@@ -2638,8 +2638,9 @@ void MainWindow::calculateFilter()
     addResult(tr("Capacitance per phase"), branch.capacitance.si() * 1.0e6, tr("µF"));
     addResult(tr("Inductance per phase"), branch.inductance.si() * 1.0e3, tr("mH"));
     addResult(tr("Series damping resistance"), branch.dampingResistance.si(), tr("Ω"));
+    addResult(tr("Tuning harmonic order"), branch.tuningHarmonicOrder, tr("× fundamental"));
     addResult(tr("Tuning frequency"), fundamentalFrequency_->value() *
-              static_cast<double>(branch.tuningHarmonicOrder), tr("Hz"));
+              branch.tuningHarmonicOrder, tr("Hz"));
     addResult(tr("Target three-phase reactive power"), branch.targetReactivePower.si() / 1000.0,
               tr("kvar"));
     addResult(tr("Branch quality factor"), branch.qualityFactor, tr("—"));
