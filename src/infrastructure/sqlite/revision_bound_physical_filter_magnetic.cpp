@@ -56,6 +56,21 @@ analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
     if (!analysis)
         return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(analysis.error());
 
+    if (!analysis.value().magneticAnalysis.magneticCycle.withinBhCurveRange) {
+        Error error;
+        error.code = ErrorCode::ModelOutOfDomain;
+        error.message =
+            "At least one limb or yoke operating point exceeds the selected revision's "
+            "tabulated B-H range. The solver's permeability asymptote is exploratory only "
+            "and cannot be accepted as a verified material result.";
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "CORE_MATERIAL_BH_RANGE_EXCEEDED", error.message,
+            "magneticAnalysis.magneticCycle.withinBhCurveRange",
+            std::nullopt, std::nullopt
+        });
+        return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(std::move(error));
+    }
+
     RevisionBoundPhysicalFilterMagneticResult result;
     result.materialRevision = material.value();
     result.magneticAnalysis = analysis.value();
