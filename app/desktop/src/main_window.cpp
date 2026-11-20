@@ -2260,15 +2260,21 @@ void MainWindow::calculateFilter()
         addTextResult(tr("Peak bank / phase current"), tr("NOT_REPORTED — ideal-source resonance can be unbounded"));
     }
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
-    if (magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) {
-        const double marginPercent =
-            (*magneticKneeCurrentA - peakPhasePeakCurrent) / *magneticKneeCurrentA * 100.0;
-        addResult(tr("B-H knee current margin"), marginPercent, tr("%"));
-    }
-    if (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0) {
-        const double reference = inductorSaturationCurrent_->value();
-        const double marginPercent = (reference - peakPhasePeakCurrent) / reference * 100.0;
-        addResult(tr("Manufacturer Isat reference margin"), marginPercent, tr("%"));
+    if (hasSourceImpedance) {
+        if (magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) {
+            const double marginPercent =
+                (*magneticKneeCurrentA - peakPhasePeakCurrent) / *magneticKneeCurrentA * 100.0;
+            addResult(tr("B-H knee current margin"), marginPercent, tr("%"));
+        }
+        if (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0) {
+            const double reference = inductorSaturationCurrent_->value();
+            const double marginPercent = (reference - peakPhasePeakCurrent) / reference * 100.0;
+            addResult(tr("Manufacturer Isat reference margin"), marginPercent, tr("%"));
+        }
+    } else if ((magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) ||
+               (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0)) {
+        addTextResult(tr("Current-based saturation margins"),
+            tr("NOT_VERIFIED — a source-limited current sweep is required"));
     }
     if (magneticCircuitBase && magneticSweepValid && !magneticFluxDensityPoints.empty()) {
         const auto peak = std::max_element(magneticFluxDensityPoints.begin(),
