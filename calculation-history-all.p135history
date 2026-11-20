@@ -8202,7 +8202,7 @@
                 "magneticTimeSampling": "adaptive-72-144-288-peak-B-1e-3-v2",
                 "thermal": "thermal-steady-v1"
             },
-            "contentHash": "51485169d761078e14da4b3816f7d75fbce12b3da07cf9674e2ef563c23d9d8b",
+            "contentHash": "119c0857489092858716a2b099926c09dd500ce3590660020370c5c8ab8253ad",
             "author": "test-scenario",
             "createdAtUtc": "2026-11-20T11:20:00.000Z",
             "materialLinks": []
