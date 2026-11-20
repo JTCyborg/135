@@ -1325,8 +1325,12 @@ Result<std::size_t> seedStarterMaterialCatalog(
             actor, timestampUtc
         };
         const auto saved = store.appendRevision(revision);
-        if (!saved)
-            return Result<std::size_t>::failure(saved.error());
+        if (!saved) {
+            Error error = saved.error();
+            error.message = "Failed to seed material '" + seed.materialId +
+                "' revision '" + seed.revisionId + "': " + error.message;
+            return Result<std::size_t>::failure(std::move(error));
+        }
         ++inserted;
     }
     return Result<std::size_t>::success(inserted);
