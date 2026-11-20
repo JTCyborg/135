@@ -68,6 +68,11 @@ int main(int argc, char** argv)
     assert(std::abs(*ei200.value().overallWidthM - 0.200) < 1.0e-12);
     assert(std::abs(*ei200.value().windowHeightM - 0.040) < 1.0e-12);
     assert(std::abs(*ei200.value().windowWidthM - 0.120) < 1.0e-12);
+    assert(!ei200.value().stackDepthM.has_value());
+    assert(ei200.value().stackDepthStatus == "VARIABLE_ORDER_OR_ASSEMBLY_PARAMETER");
+    assert(ei200.value().laminationThicknessOptionsM.size() == 2);
+    assert(std::abs(ei200.value().laminationThicknessOptionsM[0] - 0.00050) < 1.0e-12);
+    assert(std::abs(ei200.value().laminationThicknessOptionsM[1] - 0.00035) < 1.0e-12);
     assert(ei200.value().holeCount == 6);
     assert(!ei200.value().hasMagneticGeometry());
     assert(!ei200.value().hasCompleteCadGeometry());
