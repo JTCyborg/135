@@ -235,8 +235,8 @@ int main()
     auto stepLapGeometry = geometry;
     stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
     stepLapGeometry.core.joints[0].stepLapPackets = {
-        {units::Length{0.0}, units::Length{0.04}, units::Length{0.02}, units::Length{0.02}},
-        {units::Length{0.04}, units::Length{0.04}, units::Length{0.03}, units::Length{0.03}}
+        {units::Length{0.0}, units::Length{0.04}, units::Length{0.02}, units::Length{0.02}, StepLapPacketDirection::LimbIntoYoke},
+        {units::Length{0.04}, units::Length{0.04}, units::Length{0.03}, units::Length{0.03}, StepLapPacketDirection::YokeIntoLimb}
     };
     assert(validate(stepLapGeometry.core));
     assert(!p135::cad::buildThreeLimbCoreShape(stepLapGeometry));
