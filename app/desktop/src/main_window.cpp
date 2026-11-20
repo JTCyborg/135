@@ -2042,6 +2042,29 @@ void MainWindow::calculateFilter()
                 spectrumValid = false;
                 break;
             }
+            const bool matchingVoltage = std::any_of(
+                harmonicRequest.sourceVoltageSpectrum.begin(),
+                harmonicRequest.sourceVoltageSpectrum.end(),
+                [order, sequence](const auto& voltage) {
+                    return voltage.order == order && voltage.sequence == sequence;
+                });
+            const bool conflictingVoltage = std::any_of(
+                harmonicRequest.sourceVoltageSpectrum.begin(),
+                harmonicRequest.sourceVoltageSpectrum.end(),
+                [order, sequence](const auto& voltage) {
+                    return voltage.order == order && voltage.sequence != sequence;
+                });
+            if (conflictingVoltage) {
+                advancedWarning = tr("Load-current injection row %1 sequence conflicts with the voltage spectrum at the same harmonic order.")
+                    .arg(row + 1);
+                spectrumValid = false;
+                break;
+            }
+            if (!matchingVoltage) {
+                harmonicRequest.sourceVoltageSpectrum.push_back({
+                    static_cast<std::uint32_t>(order), sequence, {0.0, 0.0}
+                });
+            }
             harmonicRequest.loadCurrentInjections.push_back({
                 sourceId.toStdString(), static_cast<std::uint32_t>(order), sequence,
                 std::polar(magnitude, phaseDegrees * pi / 180.0)
@@ -2049,9 +2072,10 @@ void MainWindow::calculateFilter()
         }
     }
 
-    if (!hasSourceImpedance && suppliedHarmonics > 0) {
+    const bool hasLoadCurrentInjection = !harmonicRequest.loadCurrentInjections.empty();
+    if (!hasSourceImpedance && (suppliedHarmonics > 0 || hasLoadCurrentInjection)) {
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: enter source R and/or L from a network study.");
-    } else if (hasSourceImpedance && suppliedHarmonics > 0 && spectrumValid) {
+    } else if (hasSourceImpedance && (suppliedHarmonics > 0 || hasLoadCurrentInjection) && spectrumValid) {
         const auto harmonics = p135::filter::analyzeHarmonics(harmonicRequest);
         if (harmonics) {
             harmonicResult = harmonics.value();
@@ -2061,7 +2085,7 @@ void MainWindow::calculateFilter()
         }
     } else if (!spectrumValid && advancedWarning.isEmpty()) {
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: invalid input spectrum.");
-    } else if (suppliedHarmonics == 0 && advancedWarning.isEmpty()) {
+    } else if (suppliedHarmonics == 0 && !hasLoadCurrentInjection && advancedWarning.isEmpty()) {
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
     }
 
