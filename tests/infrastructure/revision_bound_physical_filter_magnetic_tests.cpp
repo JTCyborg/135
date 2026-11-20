@@ -90,21 +90,22 @@ int main(int argc, char** argv)
         store, "revision-bound-magnetic-test", "2026-11-20T00:00:00Z");
     assert(seeded && seeded.value() > 0);
 
-    const auto result = analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
+    // N87 has a curve digitized approximately from a typical manufacturer
+    // graph. It remains available for exploratory data inspection, but must
+    // not be accepted as verified input to the physical design solver.
+    const auto approximateFerrite = analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
         store, "SEED-TDK-N87-R1", makeRequest());
-    assert(result);
-    assert(result.value().materialRevision.revisionId == "SEED-TDK-N87-R1");
-    assert(result.value().materialRevision.material.id == "MAT-TDK-N87");
-    assert(result.value().materialRevision.sourceMaterialId == "TDK-N87");
-    assert(result.value().materialRevision.bhCurveStatus == "APPROXIMATE_DIGITIZATION");
-    assert(result.value().magneticAnalysis.magneticAnalysis.filterBranchId == 7);
-    assert(result.value().magneticAnalysis.magneticAnalysis.excitations.size() == 1);
-    assert(result.value().magneticAnalysis.effectiveMagneticGeometry.limbEffectiveAreas[0]);
+    assert(!approximateFerrite);
+    assert(approximateFerrite.error().code == ErrorCode::MissingMaterialProperty);
+    assert(approximateFerrite.error().message.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
 
+    // The electrical-steel starter record has no imported continuous B-H
+    // curve and must be rejected explicitly rather than approximated.
     const auto incompleteSteel = analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
         store, "SEED-TK-M235-35A-R1", makeRequest());
     assert(!incompleteSteel);
-    assert(incompleteSteel.error().code == ErrorCode::InvalidInput);
+    assert(incompleteSteel.error().code == ErrorCode::MissingMaterialProperty);
+    assert(incompleteSteel.error().message.find("NOT_PUBLISHED_IN_IMPORTED_DATASET") != std::string::npos);
 
     const auto missingRevision = analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
         store, "NO-SUCH-REVISION", makeRequest());
