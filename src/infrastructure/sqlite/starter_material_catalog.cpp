@@ -1125,6 +1125,7 @@ std::vector<SeedRecord> starterRecords()
                                   double permeabilityMin, double permeabilityMax,
                                   double coercivityMax, double magnetostrictionMin,
                                   double magnetostrictionMax, double thicknessUm,
+                                  double crystallizationTemperatureC,
                                   double densityAmorphous, double densityNano,
                                   const json& lossData, const std::string& notes) {
         json properties = {
@@ -1138,7 +1139,7 @@ std::vector<SeedRecord> starterRecords()
             {"densityNanocrystalline_g_per_cm3", densityNano},
             {"electricalResistivity_ohm_m", 1.15e-6},
             {"curieTemperature_C", 600.0},
-            {"crystallizationTemperature_C_typical", nullptr},
+            {"crystallizationTemperature_C_typical", crystallizationTemperatureC},
             {"annealingRequired", true}
         };
         if (!lossData.is_null())
@@ -1149,19 +1150,19 @@ std::vector<SeedRecord> starterRecords()
             std::move(properties), "MANUFACTURER_GRADE_DATA",
             notes + " Magnetic properties depend strongly on annealing field, stress and final core processing. The permeability and loss values apply only to the stated annealed condition; no generic B-H or loss curve is inferred.");
     };
-    addVitroperm("220", 1.24, 1800.0, 2400.0, 5.0, 10.0, 11.0, 20.0, 7.42, 7.62,
+    addVitroperm("220", 1.24, 1800.0, 2400.0, 5.0, 10.0, 11.0, 20.0, 460.0, 7.42, 7.62,
         nullptr, "Transverse-field annealed F-loop material; manufacturer reports low-permeability grade data.");
-    addVitroperm("250", 1.24, 2800.0, 4000.0, 3.0, 8.0, 9.0, 20.0, 7.35, 7.55,
+    addVitroperm("250", 1.24, 2800.0, 4000.0, 3.0, 8.0, 9.0, 20.0, 480.0, 7.35, 7.55,
         nullptr, "Transverse-field annealed F-loop material; manufacturer reports low-permeability grade data.");
-    addVitroperm("270", 1.21, 4700.0, 5100.0, 3.0, 6.0, 7.0, 18.0, 7.30, 7.50,
+    addVitroperm("270", 1.21, 4700.0, 5100.0, 3.0, 6.0, 7.0, 18.0, 480.0, 7.30, 7.50,
         nullptr, "Transverse-field annealed F-loop material; manufacturer reports low-permeability grade data.");
-    addVitroperm("400", 1.30, 80000.0, 500000.0, 1.0, 3.0, 5.0, 18.0, 7.20, 7.39,
+    addVitroperm("400", 1.30, 80000.0, 500000.0, 1.0, 3.0, 5.0, 18.0, 495.0, 7.20, 7.39,
         json{{"specificLoss_W_per_kg", 70.0},
              {"test", {{"frequency_Hz", 100000.0}, {"peakFluxDensity_T", 0.2},
                        {"annealingCondition", "R-annealed"}}},
              {"limitType", "maximum"}},
         "R-annealed material; maximum loss <=70 W/kg at 100 kHz and 0.2 T. Permeability values depend on measurement field and annealing.");
-    addVitroperm("500-800", 1.24, 20000.0, 200000.0, 0.5, 0.0, 0.5, 18.0, 7.17, 7.35,
+    addVitroperm("500-800", 1.24, 20000.0, 200000.0, 0.5, 0.0, 0.5, 18.0, 510.0, 7.17, 7.35,
         json{
             {"points", json::array({
                 {{"specificLoss_W_per_kg", 80.0}, {"limitType", "maximum"},
