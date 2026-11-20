@@ -64,7 +64,7 @@ Result<FilterDesign> synthesize(const FilterSpecification& specification)
 
         if (!ids.insert(branch.id).second)
             return invalid("Branch identifiers must be unique.", prefix + ".id");
-        if (branch.tuningHarmonicOrder < 2)
+        if (!std::isfinite(branch.tuningHarmonicOrder) || branch.tuningHarmonicOrder < 2.0)
             return invalid("Tuning harmonic order must be at least 2.",
                            prefix + ".tuningHarmonicOrder");
         if (!finitePositive(branch.targetReactivePower.si()))
@@ -74,7 +74,7 @@ Result<FilterDesign> synthesize(const FilterSpecification& specification)
             return invalid("Quality factor must be finite and greater than zero.",
                            prefix + ".qualityFactor");
 
-        const double harmonicOrder = static_cast<double>(branch.tuningHarmonicOrder);
+        const double harmonicOrder = branch.tuningHarmonicOrder;
         const double tuningFrequency = fundamental * harmonicOrder;
         const double omegaTuning = kTwoPi * tuningFrequency;
         const double qPerPhase = branch.targetReactivePower.si() / 3.0;
