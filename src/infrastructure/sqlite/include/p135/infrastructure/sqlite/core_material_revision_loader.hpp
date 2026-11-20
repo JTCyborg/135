@@ -28,7 +28,7 @@ struct CoreMaterialRevisionSnapshot {
     std::string designReleaseStatus;
     std::string notes;
     units::Frequency bhCurveFrequency;
-    units::TemperatureKelvin bhCurveTemperature;
+    std::optional<units::TemperatureKelvin> bhCurveTemperature;
 };
 
 /// Loads one exact immutable revision (never "latest") and converts its
