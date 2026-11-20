@@ -191,8 +191,10 @@ int main(int argc, char** argv)
         MaterialCatalogFilter coreMaterials;
         coreMaterials.recordType = "core-material";
         const auto coreCatalog = store.searchLatestRevisions(coreMaterials);
-        // MAT-TEST, two ferrite materials, 32 non-oriented and 17 grain-oriented steel grades, plus nine powder/amorphous/nanocrystalline grades.
-        assert(coreCatalog && coreCatalog.value().size() == 61);
+        // MAT-TEST, two ferrites, 32 thyssenkrupp non-oriented grades,
+        // two measured research steel datasets, 17 grain-oriented grades,
+        // and nine powder/amorphous/nanocrystalline materials.
+        assert(coreCatalog && coreCatalog.value().size() == 63);
         const auto n87 = store.latestRevision("MAT-TDK-N87");
         assert(n87 && n87.value());
         assert(n87.value()->payload.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
