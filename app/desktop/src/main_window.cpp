@@ -2512,32 +2512,32 @@ void MainWindow::markConstructionInputsChanged()
     }
     const QString objectName = sender() ? sender()->objectName() : QString{};
     QString stage;
-    if (objectName == QStringLiteral("construction_coreMaterial")) stage = QStringLiteral("core.material");
-    else if (objectName == QStringLiteral("construction_coreGeometry")) stage = QStringLiteral("core.geometry");
-    else if (objectName == QStringLiteral("construction_stackingFactor")) stage = QStringLiteral("core.stacking_factor");
-    else if (objectName == QStringLiteral("construction_conductorMaterial")) stage = QStringLiteral("winding.conductor_material");
+    if (objectName == QStringLiteral("construction_coreMaterial")) stage = QStringLiteral("input.core.material");
+    else if (objectName == QStringLiteral("construction_coreGeometry")) stage = QStringLiteral("input.core.geometry");
+    else if (objectName == QStringLiteral("construction_stackingFactor")) stage = QStringLiteral("input.core.stacking_factor");
+    else if (objectName == QStringLiteral("construction_conductorMaterial")) stage = QStringLiteral("input.winding.conductor_material");
     else if (objectName == QStringLiteral("construction_conductorShape") ||
              objectName == QStringLiteral("construction_conductorArea") ||
              objectName == QStringLiteral("construction_conductorWidth") ||
              objectName == QStringLiteral("construction_conductorThickness"))
-        stage = QStringLiteral("winding.conductor_geometry");
+        stage = QStringLiteral("input.winding.conductor_geometry");
     else if (objectName == QStringLiteral("construction_turns") ||
              objectName == QStringLiteral("construction_turnsPerLayer") ||
              objectName == QStringLiteral("construction_layers"))
-        stage = QStringLiteral("winding.turns");
+        stage = QStringLiteral("input.winding.turns");
     else if (objectName == QStringLiteral("construction_insulationMaterial") ||
              objectName == QStringLiteral("construction_turnInsulation") ||
              objectName == QStringLiteral("construction_layerInsulation") ||
              objectName == QStringLiteral("construction_mainInsulation"))
-        stage = QStringLiteral("winding.insulation");
-    else if (objectName == QStringLiteral("construction_cooling")) stage = QStringLiteral("thermal.cooling");
-    else if (objectName == QStringLiteral("construction_ambient")) stage = QStringLiteral("thermal.ambient");
+        stage = QStringLiteral("input.winding.insulation");
+    else if (objectName == QStringLiteral("construction_cooling")) stage = QStringLiteral("input.thermal.cooling");
+    else if (objectName == QStringLiteral("construction_ambient")) stage = QStringLiteral("input.thermal.ambient");
     else if (objectName == QStringLiteral("construction_maximumWindingTemperature"))
-        stage = QStringLiteral("design.verification");
+        stage = QStringLiteral("input.thermal.maximum_winding_temperature");
     else if (objectName == QStringLiteral("construction_bobbinMaterial") ||
              objectName == QStringLiteral("construction_bobbinUsage") ||
              objectName == QStringLiteral("construction_windingTechnology"))
-        stage = QStringLiteral("winding.geometry");
+        stage = QStringLiteral("input.winding.bobbin");
     if (!stage.isEmpty()) {
         const auto plan = p135::application::planReactorRecalculation({stage.toStdString()});
         if (plan) {
