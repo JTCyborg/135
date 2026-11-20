@@ -277,7 +277,7 @@ int main(int argc, char** argv)
         const auto kapton = store.latestRevision("MAT-DUPONT-KAPTON-HN-25UM");
         assert(kapton && kapton.value());
         assert(kapton.value()->payload.find("303000000") != std::string::npos);
-        assert(kapton.value()->payload.find("0.000025") != std::string::npos);
+        assert(kapton.value()->payload.find("2.5e-05") != std::string::npos);
         const auto glassTape = store.latestRevision("COMP-3M-SCOTCH-27");
         assert(glassTape && glassTape.value());
         assert(glassTape.value()->payload.find("0.000177") != std::string::npos);
