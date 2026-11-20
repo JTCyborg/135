@@ -3179,8 +3179,9 @@ void MainWindow::calculateFilter()
             threeLimbOperatingSnapshot.insert(QStringLiteral("harmonicOrders"), harmonicOrders);
         } else {
             threeLimbOperatingSnapshot.insert(QStringLiteral("status"), QStringLiteral("NOT_VERIFIED"));
-            threeLimbOperatingSnapshot.insert(QStringLiteral("warning"), threeLimbOperatingPointWarning);
         }
+        if (!threeLimbOperatingPointWarning.isEmpty())
+            threeLimbOperatingSnapshot.insert(QStringLiteral("warning"), threeLimbOperatingPointWarning);
         resultSnapshot.insert(QStringLiteral("threeLimbOperatingPoint"), threeLimbOperatingSnapshot);
         QJsonArray threeLimbSamplingSnapshot;
         for (const auto& metadata : threeLimbSamplingMetadata) {
