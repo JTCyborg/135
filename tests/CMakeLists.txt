@@ -113,6 +113,17 @@ else()
     target_compile_options(Project135ThreeLimbTest01Regression PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135ThreeLimbSolverTests
+    domain/three_limb_solver_tests.cpp
+)
+target_link_libraries(Project135ThreeLimbSolverTests PRIVATE Project135::Domain)
+add_test(NAME Project135ThreeLimbSolverTests COMMAND Project135ThreeLimbSolverTests)
+if(MSVC)
+    target_compile_options(Project135ThreeLimbSolverTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ThreeLimbSolverTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135ComponentCatalogTests
     domain/component_catalog_tests.cpp
 )
