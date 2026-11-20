@@ -4,7 +4,8 @@
 #include "p135/core/units.hpp"
 #include "p135/domain/magnetic_product.hpp"
 
-#include <array>\n#include <string>
+#include <array>
+#include <string>
 #include <vector>
 
 namespace p135::domain {
@@ -39,7 +40,6 @@ struct CoreLossEquation {
     units::Frequency frequency,
     units::FluxDensity peakFluxDensity);
 
-
 /// Trilinearly interpolates manufacturer/measured specific core-loss data
 /// (W/kg) on the supplied frequency, peak-flux-density and temperature grid.
 /// Every required grid corner must exist; extrapolation is never performed.
@@ -49,10 +49,8 @@ struct CoreLossEquation {
     units::FluxDensity peakFluxDensity,
     units::TemperatureKelvin temperature);
 
-
 /// Converts measured specific core loss (W/kg) to total core loss (W)
 /// using an explicitly supplied core mass and its source reference.
-/// Core mass is not inferred from magnetic path dimensions.
 struct CoreLossPowerRequest {
     units::Frequency frequency;
     units::FluxDensity peakFluxDensity;
@@ -72,5 +70,27 @@ struct CoreLossPowerResult {
 [[nodiscard]] Result<CoreLossPowerResult> calculateCoreLossPower(
     const CoreMaterial& material,
     const CoreLossPowerRequest& request);
+
+/// Seven-region order: limb A, limb B, limb C, top yoke AB, top yoke BC,
+/// bottom yoke AB, bottom yoke BC. Frequency is common to all regions;
+/// peak flux density, temperature and explicit physical mass are region-specific.
+struct ThreeLimbCoreLossRequest {
+    units::Frequency frequency;
+    std::array<units::FluxDensity, 7> peakFluxDensities{};
+    std::array<units::TemperatureKelvin, 7> temperatures{};
+    std::array<units::Mass, 7> regionMasses{};
+    std::array<std::string, 7> regionMassSourceReferences{};
+};
+
+struct ThreeLimbCoreLossResult {
+    std::array<CoreLossPowerResult, 7> regions{};
+    units::Power totalLoss;
+};
+
+/// Evaluates every region against the same material loss dataset. The
+/// aggregate fails if any region is invalid or lacks mass provenance.
+[[nodiscard]] Result<ThreeLimbCoreLossResult> calculateThreeLimbCoreLossPower(
+    const CoreMaterial& material,
+    const ThreeLimbCoreLossRequest& request);
 
 } // namespace p135::domain
