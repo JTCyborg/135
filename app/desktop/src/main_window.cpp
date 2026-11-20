@@ -1098,6 +1098,13 @@ QWidget* MainWindow::createFilterPage()
         "Zero means no verified thermal resistance has been supplied. It must not be interpreted as ideal cooling."));
     resistorThermalSource_ = new QLineEdit;
     resistorThermalSource_->setPlaceholderText(tr("Rθ source: mounting/heatsink measurement"));
+    ambientTemperature_->setObjectName(QStringLiteral("filterThermalAmbientTemperatureC"));
+    capacitorComponent_->setObjectName(QStringLiteral("filterCapacitorRevision"));
+    capacitorThermalResistance_->setObjectName(QStringLiteral("filterCapacitorToAmbientThermalResistanceKPerW"));
+    capacitorThermalSource_->setObjectName(QStringLiteral("filterCapacitorThermalEvidence"));
+    resistorComponent_->setObjectName(QStringLiteral("filterDampingResistorRevision"));
+    resistorThermalResistance_->setObjectName(QStringLiteral("filterResistorToAmbientThermalResistanceKPerW"));
+    resistorThermalSource_->setObjectName(QStringLiteral("filterResistorThermalEvidence"));
     componentForm->addRow(tr("Thermal ambient temperature"), ambientTemperature_);
     componentForm->addRow(tr("Filter capacitor revision"), capacitorComponent_);
     componentForm->addRow(tr("Capacitor-to-ambient Rθ"), capacitorThermalResistance_);
@@ -1136,6 +1143,18 @@ QWidget* MainWindow::createFilterPage()
     sourceInductance_->setDecimals(6);
     sourceInductance_->setValue(0.0);
     sourceInductance_->setSuffix(tr(" mH"));
+    sourceResistance_->setObjectName(QStringLiteral("filterSourceTheveninResistanceOhm"));
+    sourceInductance_->setObjectName(QStringLiteral("filterSourceTheveninInductanceMh"));
+    inductorSaturationCurrent_->setObjectName(QStringLiteral("filterInductorSaturationCurrentAPeak"));
+    inductorSaturationSource_->setObjectName(QStringLiteral("filterInductorSaturationEvidence"));
+    coreEffectiveAreaMm2_->setObjectName(QStringLiteral("coreEffectiveAreaMm2"));
+    coreMeanPathMm_->setObjectName(QStringLiteral("coreMeanMagneticPathMm"));
+    coreAirGapMm_->setObjectName(QStringLiteral("coreTotalAirGapPerLimbMm"));
+    coreGapEffectiveAreaMm2_->setObjectName(QStringLiteral("coreEffectiveGapAreaMm2"));
+    coreYokeEffectiveAreaMm2_->setObjectName(QStringLiteral("coreYokeEffectiveAreaMm2"));
+    coreYokeSegmentPathMm_->setObjectName(QStringLiteral("coreYokeSegmentPathMm"));
+    inductorTurns_->setObjectName(QStringLiteral("filterInductorTurnsPerPhase"));
+    coreBhSource_->setObjectName(QStringLiteral("coreBhCurveEvidence"));
     sourceForm->addRow(tr("Thevenin source resistance"), sourceResistance_);
     sourceForm->addRow(tr("Thevenin source inductance"), sourceInductance_);
 
@@ -1193,13 +1212,15 @@ QWidget* MainWindow::createFilterPage()
     auto* branchGeometryGroup = new QGroupBox(tr("Independent three-limb geometry overrides"));
     auto* branchGeometryForm = new QFormLayout(branchGeometryGroup);
     const auto addGeometryOverride = [branchGeometryForm](
-        const QString& label, QCheckBox*& enabled, QDoubleSpinBox*& value,
+        const QString& label, const QString& key, QCheckBox*& enabled, QDoubleSpinBox*& value,
         const QString& suffix, int decimals, double maximum) {
         auto* row = new QWidget;
         auto* layout = new QHBoxLayout(row);
         layout->setContentsMargins(0, 0, 0, 0);
         enabled = new QCheckBox(QObject::tr("Override"));
+        enabled->setObjectName(key + QStringLiteral("OverrideEnabled"));
         value = new QDoubleSpinBox;
+        value->setObjectName(key + QStringLiteral("OverrideValue"));
         value->setRange(0.0, maximum);
         value->setDecimals(decimals);
         value->setSuffix(suffix);
@@ -1213,22 +1234,25 @@ QWidget* MainWindow::createFilterPage()
         tr("Limb A"), tr("Limb B"), tr("Limb C")
     };
     for (std::size_t i = 0; i < limbNames.size(); ++i) {
-        addGeometryOverride(limbNames[i] + tr(" — effective area"),
+        const QString limbKey = QStringLiteral("coreLimb%1").arg(QChar(static_cast<ushort>('A' + i)));
+        addGeometryOverride(limbNames[i] + tr(" — effective area"), limbKey + QStringLiteral("EffectiveAreaMm2"),
             limbAreaOverrideEnabled_[i], limbAreaOverrides_[i], tr(" mm²"), 3, 10000000.0);
-        addGeometryOverride(limbNames[i] + tr(" — mean path"),
+        addGeometryOverride(limbNames[i] + tr(" — mean path"), limbKey + QStringLiteral("MeanPathMm"),
             limbPathOverrideEnabled_[i], limbPathOverrides_[i], tr(" mm"), 2, 10000000.0);
-        addGeometryOverride(limbNames[i] + tr(" — air gap"),
+        addGeometryOverride(limbNames[i] + tr(" — air gap"), limbKey + QStringLiteral("AirGapMm"),
             limbGapOverrideEnabled_[i], limbGapOverrides_[i], tr(" mm"), 3, 1000000.0);
-        addGeometryOverride(limbNames[i] + tr(" — effective gap area"),
+        addGeometryOverride(limbNames[i] + tr(" — effective gap area"), limbKey + QStringLiteral("EffectiveGapAreaMm2"),
             limbGapAreaOverrideEnabled_[i], limbGapAreaOverrides_[i], tr(" mm²"), 3, 10000000.0);
     }
     const std::array<QString, 4> yokeNames{
         tr("Top A-B"), tr("Top B-C"), tr("Bottom A-B"), tr("Bottom B-C")
     };
+    const std::array<QString, 4> yokeKeys{QStringLiteral("TopAB"), QStringLiteral("TopBC"), QStringLiteral("BottomAB"), QStringLiteral("BottomBC")};
     for (std::size_t i = 0; i < yokeNames.size(); ++i) {
-        addGeometryOverride(yokeNames[i] + tr(" — effective area"),
+        const QString yokeKey = QStringLiteral("coreYoke%1").arg(yokeKeys[i]);
+        addGeometryOverride(yokeNames[i] + tr(" — effective area"), yokeKey + QStringLiteral("EffectiveAreaMm2"),
             yokeAreaOverrideEnabled_[i], yokeAreaOverrides_[i], tr(" mm²"), 3, 10000000.0);
-        addGeometryOverride(yokeNames[i] + tr(" — segment path"),
+        addGeometryOverride(yokeNames[i] + tr(" — segment path"), yokeKey + QStringLiteral("SegmentPathMm"),
             yokePathOverrideEnabled_[i], yokePathOverrides_[i], tr(" mm"), 2, 10000000.0);
     }
     branchGeometryGroup->setToolTip(tr(
@@ -1241,6 +1265,7 @@ QWidget* MainWindow::createFilterPage()
     const std::array<QString, 3> dcPhaseNames{tr("Phase A"), tr("Phase B"), tr("Phase C")};
     for (std::size_t i = 0; i < phaseDcBiasCurrentA_.size(); ++i) {
         phaseDcBiasCurrentA_[i] = new QDoubleSpinBox;
+        phaseDcBiasCurrentA_[i]->setObjectName(QStringLiteral("corePhase%1DcBiasCurrentA").arg(QChar(static_cast<ushort>('A' + i))));
         phaseDcBiasCurrentA_[i]->setRange(-1000000.0, 1000000.0);
         phaseDcBiasCurrentA_[i]->setDecimals(4);
         phaseDcBiasCurrentA_[i]->setValue(0.0);
@@ -1256,6 +1281,7 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(dcBiasGroup);
 
     coreBhCurve_ = new QPlainTextEdit;
+    coreBhCurve_->setObjectName(QStringLiteral("coreBhCurvePoints"));
     coreBhCurve_->setPlaceholderText(
         tr("Enter measured B-H points, one per line: H [A/m], B [T]\n"
            "Example format only (replace with actual material data):\n"
@@ -1279,6 +1305,7 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(spectrumHelp);
 
     harmonicSpectrumTable_ = new QTableWidget(0, 4);
+    harmonicSpectrumTable_->setObjectName(QStringLiteral("filterVoltageHarmonics"));
     harmonicSpectrumTable_->setHorizontalHeaderLabels({
         tr("Harmonic order"), tr("Sequence"), tr("Phase-A source voltage RMS (V)"), tr("Phase angle (°)")
     });
@@ -1319,6 +1346,7 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(currentInjectionHelp);
 
     harmonicCurrentTable_ = new QTableWidget(0, 5);
+    harmonicCurrentTable_->setObjectName(QStringLiteral("filterLoadCurrentHarmonics"));
     harmonicCurrentTable_->setHorizontalHeaderLabels({
         tr("Load source ID"), tr("Harmonic order"), tr("Sequence"),
         tr("Phase-A load current RMS (A)"), tr("Phase angle (°)")
@@ -1369,9 +1397,10 @@ QWidget* MainWindow::createFilterPage()
     harmonicCurrentTable_->setObjectName(QStringLiteral("filterLoadCurrentHarmonics"));
 
     auto* calculate = new QPushButton(tr("Synthesize LC branch"));
+    calculate->setObjectName(QStringLiteral("synthesizeLcBranch"));
     connect(calculate, &QPushButton::clicked, this, [this] {
         calculateFilter();
-        tabs_->setCurrentIndex(2);
+        // Synthesis is not confirmation; only the explicit confirmation control advances.
     });
     layout->addWidget(calculate);
 
