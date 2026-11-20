@@ -26,6 +26,7 @@ add_library(Project135InfrastructureSqlite
     sqlite/revision_bound_winding_copper_loss.cpp
     sqlite/revision_bound_winding_electrothermal.cpp
     sqlite/revision_bound_physical_filter_magnetic.cpp
+    sqlite/revision_bound_reactor_thermal_network.cpp
     sqlite/starter_material_catalog.cpp
 )
 add_library(Project135::InfrastructureSqlite ALIAS Project135InfrastructureSqlite)
