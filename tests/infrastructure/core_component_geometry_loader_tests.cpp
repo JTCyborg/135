@@ -83,8 +83,12 @@ int main(int argc, char** argv)
     designInputs.filterBranchId = 1;
     designInputs.coreGeometryFamily = "three-limb";
     designInputs.coreStackDepthM = 0.12;
+    designInputs.coreYokeThicknessM = 0.03;
     designInputs.stackingFactor = 0.95;
     const auto fromDesignInputs = calculateThreePhaseEiEffectiveLimbAreaM2(ei200.value(), designInputs);
+    const auto yokeArea = calculateThreePhaseEiEffectiveYokeAreaM2(designInputs);
+    assert(yokeArea);
+    assert(std::abs(yokeArea.value() - 0.03 * 0.12 * 0.95) < 1.0e-12);
     assert(fromDesignInputs);
     assert(std::abs(fromDesignInputs.value() - eiArea.value()) < 1.0e-12);
     designInputs.coreStackDepthM.reset();
