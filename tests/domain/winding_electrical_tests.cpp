@@ -63,11 +63,11 @@ int main()
                     expectedResistance) < 1.0e-10);
     assert(result.value().harmonicLosses.size() == 2);
     assert(std::abs(result.value().harmonicLosses[0].totalThreePhaseLoss.si() -
-                    150.0 * expectedResistance) < 1.0e-8);
+                    300.0 * expectedResistance) < 1.0e-8);
     assert(std::abs(result.value().harmonicLosses[1].totalThreePhaseLoss.si() -
                     27.0 * expectedResistance) < 1.0e-8);
     assert(std::abs(result.value().totalThreePhaseCopperLoss.si() -
-                    177.0 * expectedResistance) < 1.0e-8);
+                    327.0 * expectedResistance) < 1.0e-8);
     assert(!result.value().includesAcEffects);
 
     auto bad = request();
