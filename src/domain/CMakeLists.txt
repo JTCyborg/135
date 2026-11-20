@@ -9,6 +9,7 @@ add_library(Project135Domain
     src/three_limb_magnetic.cpp
     src/three_limb_geometry_adapter.cpp
     src/material_catalog.cpp
+    src/winding_electrical.cpp
     src/component_catalog.cpp
 )
 add_library(Project135::Domain ALIAS Project135Domain)
