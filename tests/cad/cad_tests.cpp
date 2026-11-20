@@ -296,10 +296,11 @@ int main()
     for (TopExp_Explorer it(gappedShape.value(), TopAbs_SOLID); it.More(); it.Next()) ++gappedSolidCount;
     assert(gappedSolidCount == 10);
     assert(BRepCheck_Analyzer(gappedShape.value()).IsValid());
-    // Two limb-A gaps remove 40 x 80 x (1 + 2) mm3;
-    // the top-AB yoke gap removes 120 x 80 x 1 mm3.
+    // Two limb-A gaps remove 40 x 80 x (1 + 2) mm3.
+    // A yoke gap is cut along the yoke length (X), so its removed
+    // cross-section is yoke thickness (Y) x stack depth (Z): 40 x 80 x 1.
     const double expectedGappedVolume = baseVolumeMm3 -
-        (40.0 * 80.0 * 3.0 + 120.0 * 80.0 * 1.0);
+        (40.0 * 80.0 * 3.0 + 40.0 * 80.0 * 1.0);
     assert(std::abs(volumeOf(gappedShape.value()) - expectedGappedVolume) < 1.0e-6);
 
     // Adjacent air-gap intervals are a single continuous cut. They must not
