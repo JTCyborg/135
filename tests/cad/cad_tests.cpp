@@ -50,7 +50,7 @@ ReactorPhysicalGeometry validGeometry()
     }
     for (auto& b : g.bobbins) {
         b.innerWidth = units::Length{0.04}; b.innerHeight = units::Length{0.11};
-        b.axialLength = units::Length{0.075}; b.wallThickness = units::Length{0.001};
+        b.axialLength = units::Length{0.115}; b.wallThickness = units::Length{0.001};
         b.flangeThickness = units::Length{0.002}; b.windingClearance = units::Length{0.001};
         b.material = "test polymer";
     }
