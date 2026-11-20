@@ -2277,7 +2277,7 @@ void MainWindow::calculateFilter()
                 };
                 }
             samplingRequest.relativePeakTolerance = 1.0e-3;
-            samplingRequest.maximumSamples = 288;
+            samplingRequest.maximumSamples = 576;
             const auto sampledCycle =
                 p135::domain::sampleThreeLimbMagneticCycle(samplingRequest);
                 if (!sampledCycle) {
