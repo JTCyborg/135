@@ -282,3 +282,22 @@ if(MSVC)
 else()
     target_compile_options(Project135PhysicalFilterReactorMagneticTests PRIVATE -UNDEBUG)
 endif()
+
+
+add_executable(Project135CoreMaterialRevisionLoaderTests
+    infrastructure/core_material_revision_loader_tests.cpp
+)
+target_link_libraries(Project135CoreMaterialRevisionLoaderTests PRIVATE
+    Project135::InfrastructureSqlite
+)
+add_test(
+    NAME Project135CoreMaterialRevisionLoaderTests
+    COMMAND Project135CoreMaterialRevisionLoaderTests
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql
+)
+if(MSVC)
+    target_compile_options(Project135CoreMaterialRevisionLoaderTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135CoreMaterialRevisionLoaderTests PRIVATE -UNDEBUG)
+endif()
