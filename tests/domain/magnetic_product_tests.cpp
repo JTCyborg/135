@@ -316,6 +316,18 @@ int main()
         const auto invalidOperatingPoint = evaluateCoreLossEquation(
             equation, units::Frequency{0.0}, units::FluxDensity{0.014});
         assert(!invalidOperatingPoint);
+
+        auto missingSource = equation;
+        missingSource.sourceReference.clear();
+        const auto missingProvenance = evaluateCoreLossEquation(
+            missingSource, units::Frequency{100000.0}, units::FluxDensity{0.014});
+        assert(!missingProvenance);
+        assert(missingProvenance.error().code == ErrorCode::MissingRequiredData);
+
+        auto invalidTerm = equation;
+        invalidTerm.denominatorTerms.front().coefficient = -1.0;
+        assert(!evaluateCoreLossEquation(
+            invalidTerm, units::Frequency{100000.0}, units::FluxDensity{0.014}));
     }
 
     CoreMaterialCatalog catalog;
