@@ -19,18 +19,6 @@ Error invalid(std::string message, std::string field)
     return error;
 }
 
-Error nonConvergent(std::string message)
-{
-    Error error;
-    error.code = ErrorCode::NonConvergence;
-    error.message = std::move(message);
-    error.diagnostics.push_back(Diagnostic{
-        Severity::Warning, "WINDING_ELECTROTHERMAL_NON_CONVERGENCE",
-        error.message, "maximumIterations", std::nullopt, std::nullopt
-    });
-    return error;
-}
-
 bool finitePositive(double value)
 {
     return std::isfinite(value) && value > 0.0;
@@ -67,6 +55,7 @@ Result<WindingElectrothermalResult> analyzeWindingElectrothermal(
                     "sourceReferences"));
 
     double temperature = ambient;
+    domain::WindingCopperLossResult lastLoss;
     WindingElectrothermalResult result;
     for (std::size_t iteration = 1; iteration <= request.maximumIterations; ++iteration) {
         auto electrical = request.electrical;
@@ -75,6 +64,7 @@ Result<WindingElectrothermalResult> analyzeWindingElectrothermal(
         if (!loss)
             return Result<WindingElectrothermalResult>::failure(loss.error());
 
+        lastLoss = loss.value();
         const double target = ambient +
             loss.value().totalThreePhaseCopperLoss.si() * request.thermalResistanceKPerW;
         const double residual = target - temperature;
@@ -104,14 +94,8 @@ Result<WindingElectrothermalResult> analyzeWindingElectrothermal(
                 result.explanation = "NOT_VERIFIED: final loss re-evaluation moved the thermal operating point outside the convergence tolerance.";
                 return Result<WindingElectrothermalResult>::success(std::move(result));
             }
-            if (request.materialRevisionReference.empty() ||
-                request.thermalResistanceSourceReference.empty() ||
-                request.temperatureLimitSourceReference.empty()) {
-                result.status = AssessmentStatus::NotVerified;
-            } else {
-                result.status = finalTemperature <= maximum
-                    ? AssessmentStatus::Pass : AssessmentStatus::Fail;
-            }
+            result.status = finalTemperature <= maximum
+                ? AssessmentStatus::Pass : AssessmentStatus::Fail;
             result.explanation = result.status == AssessmentStatus::Pass
                 ? "PASS: copper-loss and winding temperature iteration converged within the supplied temperature limit."
                 : "FAIL: converged winding temperature exceeds the supplied limit.";
@@ -124,7 +108,8 @@ Result<WindingElectrothermalResult> analyzeWindingElectrothermal(
     result.status = AssessmentStatus::NotVerified;
     result.estimatedWindingTemperature = units::TemperatureKelvin{temperature};
     result.temperatureMargin = units::TemperatureDifference{maximum - temperature};
-    result.explanation = "NOT_VERIFIED: electrothermal iteration did not converge within the configured iteration limit.";
+    result.copperLoss = std::move(lastLoss);
+    result.explanation = "NOT_VERIFIED: electrothermal iteration did not converge within the configured iteration limit; the reported copper loss belongs to the last evaluated iterate.";
     return Result<WindingElectrothermalResult>::success(std::move(result));
 }
 
