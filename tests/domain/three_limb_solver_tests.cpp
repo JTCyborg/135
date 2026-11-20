@@ -46,7 +46,8 @@ bool near(double left, double right, double tolerance)
 int main()
 {
     // Zero excitation must be a numerically converged equilibrium and must not
-    // spuriously report B-H extrapolation.
+    // spuriously report B-H extrapolation. Allow round-off at the solver's
+    // floating-point boundary instead of requiring bitwise zero.
     {
         const auto result = analyzeThreeLimbMagneticCircuit(makeRequest());
         assert(result);
@@ -54,9 +55,9 @@ int main()
         assert(near(result.value().maximumFluxResidual_Wb, 0.0, 1.0e-12));
         assert(result.value().withinBhCurveRange);
         for (const auto value : result.value().limbFluxDensity)
-            assert(value.si() == 0.0);
+            assert(near(value.si(), 0.0, 1.0e-12));
         for (const auto value : result.value().yokeFluxDensity)
-            assert(value.si() == 0.0);
+            assert(near(value.si(), 0.0, 1.0e-12));
     }
 
     // The implemented positive B-H branch is mirrored for negative excitation.
