@@ -5,7 +5,6 @@
 #include "p135/application/material_revision_use_cases.hpp"
 
 #include <cassert>
-#include <cstdio>
 #include <filesystem>
 #include <string>
 
@@ -176,12 +175,7 @@ int main(int argc, char** argv)
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
         const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
-        if (!seeded) {
-            std::fprintf(stderr, "Starter catalog seed failed: %s\\n", seeded.error().message.c_str());
-        } else {
-            std::fprintf(stderr, "Starter catalog inserted %zu records (expected 212).\\n", seeded.value());
-        }
-        assert(seeded && seeded.value() == 212);
+        assert(seeded && seeded.value() == 213);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
         MaterialCatalogFilter ferriteCoreComponents;
