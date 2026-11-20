@@ -235,6 +235,8 @@ Result<void> validate(const BobbinPhysicalGeometry& g)
         const double bodyHeight = g.innerHeight.si() + 2.0 * g.wallThickness.si();
         if (g.flangeOuterWidth.si() < bodyWidth || g.flangeOuterHeight.si() < bodyHeight)
             return invalid("Bobbin flange outer dimensions must enclose the tube outer dimensions.", "bobbin.flangeOuterDimensions");
+        if (2.0 * g.flangeThickness.si() > g.axialLength.si())
+            return invalid("The two bobbin flanges must fit within the axial length.", "bobbin.flangeThickness");
     }
     if (g.material.empty()) return invalid("Bobbin material is required.", "bobbin.material");
     return Result<void>::success();
