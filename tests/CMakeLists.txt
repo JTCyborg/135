@@ -479,3 +479,19 @@ if(MSVC)
 else()
     target_compile_options(Project135CoreComponentGeometryLoaderTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135Test01FilterSizingScenario
+    application/test01_filter_sizing_scenario.cpp
+)
+target_link_libraries(Project135Test01FilterSizingScenario PRIVATE
+    Project135::Application Project135::Filter
+)
+add_test(
+    NAME Project135Test01FilterSizingScenario
+    COMMAND Project135Test01FilterSizingScenario
+)
+if(MSVC)
+    target_compile_options(Project135Test01FilterSizingScenario PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135Test01FilterSizingScenario PRIVATE -UNDEBUG)
+endif()
