@@ -126,11 +126,11 @@ int main(int argc, char** argv)
     assert(baosteel35A300.value().points.size() == 4);
     assert(baosteel35A300.value().points[0].frequency.si() == 50.0);
     assert(baosteel35A300.value().points[0].peakFluxDensity.si() == 1.0);
-    assert(baosteel35A300.value().points[0].specificLoss.si() == 1.10);
-    assert(baosteel35A300.value().points[1].specificLoss.si() == 2.55);
+    assert(baosteel35A300.value().points[0].specificLoss.si() == 1.14);
+    assert(baosteel35A300.value().points[1].specificLoss.si() == 2.53);
     assert(baosteel35A300.value().points[2].frequency.si() == 60.0);
-    assert(baosteel35A300.value().points[2].specificLoss.si() == 1.40);
-    assert(baosteel35A300.value().points[3].specificLoss.si() == 3.18);
+    assert(baosteel35A300.value().points[2].specificLoss.si() == 1.42);
+    assert(baosteel35A300.value().points[3].specificLoss.si() == 3.13);
     for (const auto& point : baosteel35A300.value().points)
         assert(!point.measurementTemperature.has_value());
     assert(baosteel35A300.value().specificationLimit.has_value());
@@ -149,10 +149,10 @@ int main(int argc, char** argv)
     assert(baosteel50A800.value().density.si() == 7800.0);
     assert(baosteel50A800.value().minimumStackingFactor == 0.96);
     assert(baosteel50A800.value().points.size() == 4);
-    assert(baosteel50A800.value().points[0].specificLoss.si() == 2.42);
-    assert(baosteel50A800.value().points[1].specificLoss.si() == 5.20);
-    assert(baosteel50A800.value().points[2].specificLoss.si() == 3.01);
-    assert(baosteel50A800.value().points[3].specificLoss.si() == 6.47);
+    assert(baosteel50A800.value().points[0].specificLoss.si() == 2.67);
+    assert(baosteel50A800.value().points[1].specificLoss.si() == 5.70);
+    assert(baosteel50A800.value().points[2].specificLoss.si() == 3.34);
+    assert(baosteel50A800.value().points[3].specificLoss.si() == 7.11);
     assert(baosteel50A800.value().specificationLimit.has_value());
     assert(baosteel50A800.value().specificationLimit->maximumSpecificLoss.si() == 8.00);
 
