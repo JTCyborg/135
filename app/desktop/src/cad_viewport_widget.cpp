@@ -3,6 +3,9 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QPaintEngine>
+#include <QResizeEvent>
+#include <QShowEvent>
 #include <QVBoxLayout>
 
 #include <AIS_InteractiveContext.hxx>
@@ -11,6 +14,7 @@
 #include <Aspect_Handle.hxx>
 #include <Graphic3d_GraphicDriver.hxx>
 #include <OpenGl_GraphicDriver.hxx>
+#include <Standard_Failure.hxx>
 #include <V3d_View.hxx>
 #include <V3d_Viewer.hxx>
 
