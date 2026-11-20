@@ -911,15 +911,17 @@ std::vector<SeedRecord> starterRecords()
     // Construction templates describe strand arrangements, not new bulk materials.
     // Electrical properties are deliberately inherited from the selected strand grade
     // and must account for transposition, insulation, proximity and skin effects.
-    const std::vector<std::tuple<std::string, std::string, std::string>> conductorAssemblies{
-        {"ASM-CU-LITZ-ROUND", "litz-wire", "bundle-of-insulated-round-strands"},
-        {"ASM-CU-PARALLEL-STRANDS", "parallel-strands", "parallel-round-or-rectangular-strands"},
-        {"ASM-CU-CTC", "continuously-transposed-conductor", "transposed-rectangular-strands"},
-        {"ASM-CU-BRAID", "braided-flexible-conductor", "woven-round-strands"}
+    const std::vector<std::tuple<std::string, std::string, std::string, std::string>> conductorAssemblies{
+        {"ASM-CU-LITZ-ROUND", "litz-wire", "bundle-of-insulated-round-strands",
+            "https://www.elektrisola.com/Download/LitzWire_eng.pdf"},
+        {"ASM-CU-PARALLEL-STRANDS", "parallel-strands", "parallel-round-or-rectangular-strands",
+            "https://www.deangeliprodotti.com/wp-content/uploads/2025/07/DAP_PLDNCA_ENG_L.pdf"},
+        {"ASM-CU-CTC", "continuously-transposed-conductor", "transposed-rectangular-strands",
+            "https://www.deangeliprodotti.com/en/products/ctc-continuously-transposed-cable/"},
+        {"ASM-CU-BRAID", "braided-flexible-conductor", "woven-round-strands",
+            "https://www.deangeliprodotti.com/wp-content/uploads/2025/07/DAP_PLDNCA_ENG_L.pdf"}
     };
-    const std::string assemblyReference =
-        "https://www.iec.ch/";
-    for (const auto& [id, construction, geometry] : conductorAssemblies) {
+    for (const auto& [id, construction, geometry, assemblyReference] : conductorAssemblies) {
         const json payload = {
             {"schemaVersion", 1},
             {"component", {
