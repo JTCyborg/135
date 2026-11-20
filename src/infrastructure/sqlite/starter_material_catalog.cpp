@@ -271,7 +271,7 @@ std::vector<SeedRecord> starterRecords()
         {"material", {
             {"id", "TK-POWERCORE-M235-35A"}, {"manufacturer", "thyssenkrupp Electrical Steel"},
             {"grade", "powercore M235-35A"}, {"family", "non-grain-oriented electrical steel"},
-            {"standard", grade == "940-100A" ? "Special mill grade" : "DIN EN 10106"}, {"laminationThickness_m", 0.00035},
+            {"standard", "DIN EN 10106"}, {"laminationThickness_m", 0.00035},
             {"density_kg_per_m3", 7600.0},
             {"maximumSpecificCoreLoss_W_per_kg", {
                 {"50Hz_1p0T", 0.95}, {"50Hz_1p5T", 2.35}
@@ -601,7 +601,7 @@ std::vector<SeedRecord> starterRecords()
                 {"id", id}, {"manufacturer", "thyssenkrupp Steel"},
                 {"grade", "powercore " + grade},
                 {"family", "fully finished non-grain-oriented electrical steel"},
-                {"standard", "DIN EN 10106"},
+                {"standard", grade == "940-100A" ? "Special mill grade" : "DIN EN 10106"},
                 {"laminationThickness_m", thicknessMm * 1.0e-3},
                 {"density_kg_per_m3", density * 1000.0},
                 {"maximumSpecificCoreLoss_W_per_kg", {
@@ -686,6 +686,162 @@ std::vector<SeedRecord> starterRecords()
         records.push_back(SeedRecord{
             id, "SEED-" + orderingCode + "-R1", "core-component",
             tdkEtdUrl, "TDK ER/ETD/EQ catalog search; " + orderingCode, payload
+        });
+    }
+
+    // Electrical conductor stock materials. Values at 20 C; geometry templates
+    // below are parametric and do not imply a fixed commercial size.
+    const auto conductorMaterial = [](const std::string& id, const std::string& manufacturer,
+                                      const std::string& grade, const std::string& family,
+                                      double resistivity, double density, double alpha,
+                                      double iacs, const std::string& source,
+                                      const std::string& propertyStatus) {
+        const json payload = {
+            {"schemaVersion", 1},
+            {"material", {
+                {"id", id}, {"manufacturer", manufacturer}, {"grade", grade},
+                {"family", family}, {"resistivityAt20C_ohm_m", resistivity},
+                {"density_kg_per_m3", density},
+                {"temperatureCoefficientAt20C_per_K", alpha},
+                {"conductivity_percent_IACS", iacs},
+                {"referenceTemperature_K", 293.15}
+            }},
+            {"sourceDocuments", json::array({source})},
+            {"dataQuality", {
+                {"sourceStatus", propertyStatus},
+                {"electricalPropertiesStatus", "MANUFACTURER_OR_STANDARD_PUBLISHED_AT_20C"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Reference properties at 20 C. Actual values depend on temper, product form, processing and batch certification. Use exact supplier certificate and applicable product standard for released design."}
+            }}
+        };
+        return payload;
+    };
+    const std::string aluminiumSource =
+        "https://inotal.hu/en/products/wire-rod/continuous-cast-ec-grade-wire-rod/";
+    const std::string ccaSource =
+        "https://www.alleima.com/en/products/wire/ultra-fine-medical-wire/wire-products/fine-wire/conductive-wire/copper-clad-aluminium/";
+    const std::string copperSource =
+        "https://www.avivametals.com/assets/files/aviva-c11000.pdf";
+    records.push_back({"MAT-CU-C10100", "SEED-CU-C10100-R1", "conductor-material",
+        copperSource, "Copper C10100 oxygen-free high conductivity reference",
+        conductorMaterial("CU-C10100", "Copper Development Association / UNS",
+            "C10100 OFHC copper", "oxygen-free high conductivity copper",
+            1.707e-8, 8940.0, 0.00393, 101.0, copperSource, "STANDARD_REFERENCE_VALUES")});
+    records.push_back({"MAT-CU-C10200", "SEED-CU-C10200-R1", "conductor-material",
+        copperSource, "Copper C10200 oxygen-free copper reference",
+        conductorMaterial("CU-C10200", "UNS C10200", "C10200 OF copper",
+            "oxygen-free copper", 1.724e-8, 8940.0, 0.00393, 100.0,
+            copperSource, "STANDARD_REFERENCE_VALUES")});
+    records.push_back({"MAT-CU-C11000", "SEED-CU-C11000-R1", "conductor-material",
+        copperSource, "Copper C11000 ETP copper reference",
+        conductorMaterial("CU-C11000", "UNS C11000", "C11000 ETP copper",
+            "electrolytic tough pitch copper", 1.724e-8, 8910.0, 0.00393, 100.0,
+            copperSource, "MANUFACTURER_PRODUCT_DATASHEET")});
+    records.push_back({"MAT-AL-1350-H0", "SEED-AL-1350-H0-R1", "conductor-material",
+        aluminiumSource, "EN AW-1350 / EC grade aluminium H0",
+        conductorMaterial("AL-1350-H0", "Inotal Aluminium", "EN AW-1350 H0",
+            "electrical conductor aluminium", 2.725e-8, 2703.0, 0.00403, 63.3,
+            aluminiumSource, "EN_1715_2_TABLE")});
+    records.push_back({"MAT-AL-1370-H0", "SEED-AL-1370-H0-R1", "conductor-material",
+        aluminiumSource, "EN AW-1370 / EC grade aluminium H0",
+        conductorMaterial("AL-1370-H0", "Inotal Aluminium", "EN AW-1370 H0",
+            "electrical conductor aluminium", 2.725e-8, 2703.0, 0.00403, 63.3,
+            aluminiumSource, "EN_1715_2_TABLE")});
+    records.push_back({"MAT-AL-6101-T4", "SEED-AL-6101-T4-R1", "conductor-material",
+        aluminiumSource, "EN AW-6101 T4 aluminium alloy",
+        conductorMaterial("AL-6101-T4", "Inotal Aluminium", "EN AW-6101 T4",
+            "Al-Mg-Si electrical conductor alloy", 3.50e-8, 2700.0, 0.00403, 49.2,
+            aluminiumSource, "MANUFACTURER_PRODUCT_TABLE")});
+    records.push_back({"MAT-CCA-10", "SEED-CCA-10-R1", "conductor-material",
+        ccaSource, "Copper-clad aluminium 10 percent copper by volume",
+        conductorMaterial("CCA-10", "Kanthal / Alleima", "10% CCA",
+            "copper-clad aluminium composite conductor", 1.65e-8, 3320.0, 0.0039,
+            62.854, ccaSource, "MANUFACTURER_DATASHEET")});
+    records.push_back({"MAT-CCA-15", "SEED-CCA-15-R1", "conductor-material",
+        ccaSource, "Copper-clad aluminium 15 percent copper by volume",
+        conductorMaterial("CCA-15", "Kanthal / Alleima", "15% CCA",
+            "copper-clad aluminium composite conductor", 1.61e-8, 3630.0, 0.0039,
+            64.416, ccaSource, "MANUFACTURER_DATASHEET")});
+
+    const auto conductorProfile = [](const std::string& id, const std::string& grade,
+                                     const std::string& form, const std::string& geometry,
+                                     const std::string& applicableStandard,
+                                     const std::string& source, const std::string& note) {
+        return json{
+            {"schemaVersion", 1},
+            {"component", {
+                {"id", id}, {"materialGrade", grade}, {"productForm", form},
+                {"crossSectionGeometry", geometry},
+                {"dimensions", "PARAMETRIC_USER_INPUT"},
+                {"dimensionUnits", "m"},
+                {"applicableStandard", applicableStandard},
+                {"dimensionsAreManufacturerStockSizes", false}
+            }},
+            {"sourceDocuments", json::array({source})},
+            {"dataQuality", {
+                {"sourceStatus", "GEOMETRY_TEMPLATE_WITH_REFERENCED_PRODUCT_FORM"},
+                {"dimensionStatus", "NO_FIXED_DIMENSIONS_ASSUMED"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", note}
+            }}
+        };
+    };
+    const std::string copperFormsNote =
+        "Parametric cross-section template only. Select width, thickness, diameter, wall thickness and temper from a supplier drawing and applicable product standard. Do not infer ampacity without installation, cooling and AC-loss analysis.";
+    const std::string aluminiumFormsNote =
+        "Parametric aluminium conductor template. Confirm alloy, temper, dimensions, conductivity and mechanical properties from supplier certificate. Aluminium joint oxidation and connection design require separate treatment.";
+    const std::string ccaFormsNote =
+        "Round CCA wire form only; copper fraction and conductor properties are manufacturer-listed. Confirm diameter, copper layer uniformity, temper and insulation from the selected product datasheet.";
+    const std::vector<std::tuple<std::string, std::string, std::string, std::string,
+                                 std::string, std::string>> conductorProfiles{
+        {"CU-C10100", "round-wire", "circle", "EN 13601 / ASTM B49", copperSource, copperFormsNote},
+        {"CU-C10100", "rectangular-wire", "rectangle", "IEC 60317 / supplier drawing", copperSource, copperFormsNote},
+        {"CU-C10100", "strip", "rectangle", "EN 13599 / ASTM B152", copperSource, copperFormsNote},
+        {"CU-C10100", "flat-bar-busbar", "rectangle", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C10100", "round-bar", "circle", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C10100", "square-bar", "square", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C10100", "hex-bar", "regular-hexagon", "Supplier drawing", copperSource, copperFormsNote},
+        {"CU-C10100", "tube", "hollow-circle", "Supplier drawing", copperSource, copperFormsNote},
+        {"CU-C10200", "round-wire", "circle", "EN 13601 / ASTM B49", copperSource, copperFormsNote},
+        {"CU-C10200", "rectangular-wire", "rectangle", "IEC 60317 / supplier drawing", copperSource, copperFormsNote},
+        {"CU-C10200", "strip", "rectangle", "EN 13599 / ASTM B152", copperSource, copperFormsNote},
+        {"CU-C10200", "flat-bar-busbar", "rectangle", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C10200", "round-bar", "circle", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C10200", "square-bar", "square", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C10200", "hex-bar", "regular-hexagon", "Supplier drawing", copperSource, copperFormsNote},
+        {"CU-C10200", "tube", "hollow-circle", "Supplier drawing", copperSource, copperFormsNote},
+        {"CU-C11000", "round-wire", "circle", "EN 13601 / ASTM B49", copperSource, copperFormsNote},
+        {"CU-C11000", "rectangular-wire", "rectangle", "IEC 60317 / supplier drawing", copperSource, copperFormsNote},
+        {"CU-C11000", "strip", "rectangle", "EN 13599 / ASTM B152", copperSource, copperFormsNote},
+        {"CU-C11000", "flat-bar-busbar", "rectangle", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C11000", "round-bar", "circle", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C11000", "square-bar", "square", "EN 13601 / ASTM B187", copperSource, copperFormsNote},
+        {"CU-C11000", "hex-bar", "regular-hexagon", "Supplier drawing", copperSource, copperFormsNote},
+        {"CU-C11000", "tube", "hollow-circle", "Supplier drawing", copperSource, copperFormsNote},
+        {"AL-1350-H0", "round-wire-rod", "circle", "EN 1715-2 / EN 573-3", aluminiumSource, aluminiumFormsNote},
+        {"AL-1350-H0", "rectangular-wire", "rectangle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-1350-H0", "strip", "rectangle", "EN 1715-2 / supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-1350-H0", "flat-bar-busbar", "rectangle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-1350-H0", "round-bar", "circle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-1370-H0", "round-wire-rod", "circle", "EN 1715-2 / EN 573-3", aluminiumSource, aluminiumFormsNote},
+        {"AL-1370-H0", "rectangular-wire", "rectangle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-1370-H0", "strip", "rectangle", "EN 1715-2 / supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-1370-H0", "flat-bar-busbar", "rectangle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-1370-H0", "round-bar", "circle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-6101-T4", "round-wire-rod", "circle", "EN 1715-2 / EN 573-3", aluminiumSource, aluminiumFormsNote},
+        {"AL-6101-T4", "strip", "rectangle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-6101-T4", "flat-bar-busbar", "rectangle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"AL-6101-T4", "round-bar", "circle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
+        {"CCA-10", "round-wire", "circle", "Manufacturer product datasheet", ccaSource, ccaFormsNote},
+        {"CCA-15", "round-wire", "circle", "Manufacturer product datasheet", ccaSource, ccaFormsNote}
+    };
+    for (const auto& [grade, form, geometry, standard, source, note] : conductorProfiles) {
+        const std::string id = "FORM-" + grade + "-" + form;
+        const json payload = conductorProfile(id, grade, form, geometry, standard, source, note);
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "conductor-stock-profile",
+            source, "Parametric conductor stock profile " + grade + " " + form,
+            payload
         });
     }
     return records;
