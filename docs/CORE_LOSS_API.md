@@ -86,6 +86,14 @@ Baosteel also publishes a B35A300 0.35 mm PDF with plotted 50 Hz and 60 Hz loss-
 
 The immutable dataset loader now rejects duplicate frequency/flux coordinates, non-positive explicitly supplied measurement temperatures, invalid specification limits, missing source/dataset revision identifiers, and incomplete quality/test provenance. This prevents ambiguous anchors from entering later calculations while preserving the exact source values.
 
+### Supplementary manufacturer graphs
+
+The immutable Baosteel reference records also retain links and declared scopes for the manufacturer's plotted curves:
+- B35A300: 50/60 Hz loss-versus-flux, DC magnetization and hysteresis plots; separate high-frequency loss curves at 100, 200, 300, 400, 500, 1000 and 2000 Hz.
+- B50A800: 50/60 Hz loss-versus-flux curves, with the source identifying Epstein samples before stress-relief annealing.
+
+These are stored as supplementary graph-source metadata with capture status `GRAPH_ONLY_NOT_DIGITIZED`. No graph coordinates have been invented or imported as numeric loss anchors. The graph metadata is descriptive only: it does not change the four exact HTML-table anchors, does not satisfy the temperature requirement, and cannot be passed to the loss interpolator or thermal network. A future digitization must preserve axis calibration, extraction uncertainty, source page/figure, and an explicitly non-validated quality status before any numeric samples are stored.
+
 `findExactCoreLossReferencePoint()` exposes a safe read-only path for inspecting one of these anchors: both frequency and peak flux density must match an imported coordinate exactly. A nearby point returns no result. This helper is not a loss model and does not authorize use in the thermal solver; the caller must still honor the dataset's quality status, excitation waveform and unknown measurement temperature.
 
 Sources:
