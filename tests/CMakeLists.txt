@@ -417,3 +417,17 @@ if(MSVC)
 else()
     target_compile_options(Project135ThreeLimbCoreLossTests PRIVATE -UNDEBUG)
 endif()
+
+
+add_executable(Project135ReactorThermalNetworkTests
+    thermal/reactor_thermal_network_tests.cpp
+)
+target_link_libraries(Project135ReactorThermalNetworkTests PRIVATE
+    Project135::Thermal Project135::Domain
+)
+add_test(NAME Project135ReactorThermalNetworkTests COMMAND Project135ReactorThermalNetworkTests)
+if(MSVC)
+    target_compile_options(Project135ReactorThermalNetworkTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ReactorThermalNetworkTests PRIVATE -UNDEBUG)
+endif()
