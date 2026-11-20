@@ -86,6 +86,17 @@ else()
     target_compile_options(Project135ThermalFilterBridgeTests PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135DesignParameterTests
+    domain/design_parameter_tests.cpp
+)
+target_link_libraries(Project135DesignParameterTests PRIVATE Project135::Domain)
+add_test(NAME Project135DesignParameterTests COMMAND Project135DesignParameterTests)
+if(MSVC)
+    target_compile_options(Project135DesignParameterTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135DesignParameterTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135DomainTests
     domain/magnetic_product_tests.cpp
 )
