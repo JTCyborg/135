@@ -24,6 +24,11 @@ namespace p135::cad {
 [[nodiscard]] Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
     const domain::ReactorPhysicalGeometry& geometry);
 
+// Builds the core, three bobbins and three positioned winding-pack envelope
+// solids. The existing core-and-bobbin assembly API remains unchanged.
+[[nodiscard]] Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
+    const domain::ReactorPhysicalGeometry& geometry);
+
 // Builds a seven-component B-Rep compound (three limbs and four yoke segments)
 // from explicit physical dimensions. The returned shape is not a fused single
 // solid; assembly identity is retained for the later BOM/assembly stage.
