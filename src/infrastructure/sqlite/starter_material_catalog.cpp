@@ -757,12 +757,12 @@ std::vector<SeedRecord> starterRecords()
     records.push_back({"MAT-CCA-10", "SEED-CCA-10-R1", "conductor-material",
         ccaSource, "Copper-clad aluminium 10 percent copper by volume",
         conductorMaterial("CCA-10", "Kanthal / Alleima", "10% CCA",
-            "copper-clad aluminium composite conductor", 1.65e-8, 3320.0, 0.0039,
+            "copper-clad aluminium composite conductor", 2.744e-8, 3320.0, 0.0,
             62.854, ccaSource, "MANUFACTURER_DATASHEET")});
     records.push_back({"MAT-CCA-15", "SEED-CCA-15-R1", "conductor-material",
         ccaSource, "Copper-clad aluminium 15 percent copper by volume",
         conductorMaterial("CCA-15", "Kanthal / Alleima", "15% CCA",
-            "copper-clad aluminium composite conductor", 1.61e-8, 3630.0, 0.0039,
+            "copper-clad aluminium composite conductor", 2.678e-8, 3630.0, 0.0,
             64.416, ccaSource, "MANUFACTURER_DATASHEET")});
 
     const auto conductorProfile = [](const std::string& id, const std::string& grade,
