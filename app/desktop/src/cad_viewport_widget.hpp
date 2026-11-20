@@ -5,6 +5,7 @@
 #include "p135/cad/assembly_presentation.hpp"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 class QLabel;
@@ -20,6 +21,8 @@ public:
 
     void setDisplayItems(
         const std::vector<p135::cad::AssemblyPresentationDisplayItem>& items);
+    bool setComponentVisibility(const std::string& componentId, bool visible);
+    bool setComponentTransparency(const std::string& componentId, double transparency);
 
 private:
     class NativeView;
