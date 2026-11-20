@@ -1095,10 +1095,27 @@ std::vector<SeedRecord> starterRecords()
             {"temperatureStability_ppm_per_K_typical", 95.0},
             {"coreLoss_W_per_m3", 18000.0},
             {"coreLossTest", {{"peakFluxDensity_T", 0.014}, {"frequency_Hz", 100000.0}}},
-            {"coreLossTestFluxDensitySourceUnit", "140 gauss"}
+            {"coreLossTestFluxDensitySourceUnit", "140 gauss"},
+            {"coreLossEquation", {
+                {"expression", "f / (a/B^3 + b/B^2.3 + c/B^1.65) + d*B^2*f^2"},
+                {"sourceFrequencyUnit", "Hz"},
+                {"sourceFluxDensityUnit", "gauss"},
+                {"sourceLossUnit", "mW/cm3"},
+                {"sourceFluxDensityUnitsPerTesla", 10000.0},
+                {"outputWattsPerM3PerSourceUnit", 1000.0},
+                {"validFrequency_Hz", {60.0, 500000.0}},
+                {"validPeakFluxDensity_T", {0.001, 1.0}},
+                {"denominatorTerms", json::array({
+                    {{"coefficient", 4.00e9}, {"fluxDensityExponent", 3.0}},
+                    {{"coefficient", 3.00e8}, {"fluxDensityExponent", 2.3}},
+                    {{"coefficient", 2.70e6}, {"fluxDensityExponent", 1.65}}
+                })},
+                {"eddyCoefficient", 9.60e-16},
+                {"datasetRevision", "2023-12-15"}
+            }}
         },
         "MANUFACTURER_PART_DATASHEET_D101-1002",
-        "Mix-2 values are from Micrometals D101-1002 disc-core datasheet. The 18 mW/cm3 loss is specified at 140 gauss and 100 kHz only; it is not a general loss curve or a guaranteed value for every Mix-2 geometry. No saturation curve is inferred.");
+        "Mix-2 values and the bounded core-loss equation are from the Micrometals 2023-12-15 Mix-02 datasheet. Equation input domain is the published chart range (60 Hz to 500 kHz; 10 to 10,000 gauss). At 140 gauss and 100 kHz the equation evaluates to approximately 17.70 mW/cm3 against the 18 mW/cm3 nominal datasheet point. The 18 mW/cm3 point and equation are not a guarantee for every geometry. No B-H curve is inferred.");
 
     const std::string magneticsKoolMu14Source =
         "https://www.mag-inc.com/Media/Magnetics/File-Library/Product%20Literature/Powder%20Core%20Literature/Magnetics-14-Kool-Mu.pdf";
