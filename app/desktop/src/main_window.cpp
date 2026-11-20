@@ -531,7 +531,7 @@ MainWindow::MainWindow(QWidget* parent)
     auto* viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(tr("Project"), this, [this] { tabs_->setCurrentIndex(0); });
     viewMenu->addAction(tr("Filter definition"), this, [this] { tabs_->setCurrentIndex(1); });
-    viewMenu->addAction(tr("Results"), this, [this] { tabs_->setCurrentIndex(2); });
+    viewMenu->addAction(tr("Calculation & design"), this, [this] { tabs_->setCurrentIndex(2); });
     viewMenu->addAction(tr("CAD"), this, [this] { tabs_->setCurrentIndex(3); });
     viewMenu->addAction(tr("Material database"), this, [this] { tabs_->setCurrentIndex(4); });
     viewMenu->addAction(tr("Calculation history"), this, [this] {
@@ -558,7 +558,7 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_ = new QTabWidget(this);
     tabs_->addTab(createProjectPage(), tr("Project"));
     tabs_->addTab(createFilterPage(), tr("Filter definition"));
-    tabs_->addTab(createResultsPage(), tr("Calculation"));
+    tabs_->addTab(createResultsPage(), tr("Calculation & design"));
     tabs_->addTab(createCadPage(), tr("3D CAD"));
     tabs_->addTab(createMaterialsPage(), tr("Materials"));
     tabs_->addTab(createHistoryPage(), tr("Calculation history"));
@@ -1152,6 +1152,65 @@ QWidget* MainWindow::createResultsPage()
     resultsNote_->setMinimumHeight(48);
     resultsNote_->setStyleSheet("QLabel { background: #fff4d6; color: #704b00; border: 1px solid #d6a43a; border-radius: 4px; padding: 8px; }");
     layout->addWidget(resultsNote_);
+
+    auto* designGroup = new QGroupBox(tr("Construction design parameters"));
+    auto* designLayout = new QVBoxLayout(designGroup);
+    auto* designStatus = new QLabel(tr(
+        "Physical sizing is not yet calculated. The existing magnetic solver analyses a supplied core geometry; "
+        "it does not synthesize physical dimensions from filter requirements. Values are deliberately left unavailable "
+        "rather than populated with guessed dimensions."));
+    designStatus->setWordWrap(true);
+    designStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    designLayout->addWidget(designStatus);
+
+    auto* designTable = new QTableWidget(0, 4, designGroup);
+    designTable->setObjectName(QStringLiteral("constructionDesignTable"));
+    designTable->setHorizontalHeaderLabels({
+        tr("Parameter"), tr("Calculated"), tr("Accepted"), tr("State")
+    });
+    designTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    designTable->verticalHeader()->setDefaultSectionSize(26);
+    designTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    const QStringList designParameters{
+        tr("Limb width A / B / C"),
+        tr("Core stack depth"),
+        tr("Window width left / right"),
+        tr("Window height left / right"),
+        tr("Yoke thickness top / bottom"),
+        tr("Air gap per limb"),
+        tr("Turns per phase"),
+        tr("Winding conductor cross-section")
+    };
+    for (const auto& parameter : designParameters) {
+        const int row = designTable->rowCount();
+        designTable->insertRow(row);
+        designTable->setItem(row, 0, new QTableWidgetItem(parameter));
+        designTable->setItem(row, 1, new QTableWidgetItem(tr("NOT CALCULATED")));
+        designTable->setItem(row, 2, new QTableWidgetItem(tr("—")));
+        designTable->setItem(row, 3, new QTableWidgetItem(tr("NOT_VERIFIED")));
+    }
+    designTable->setMinimumHeight(250);
+    designLayout->addWidget(designTable);
+
+    auto* missingInputs = new QLabel(tr(
+        "Required for a physically grounded automatic design: core material B-H and loss data; phase RMS/peak and harmonic currents; "
+        "winding voltage and insulation requirements; conductor current-density or thermal design criterion; winding technology and fill constraints; "
+        "cooling/ambient limits; and construction rules. Missing data must remain explicit."));
+    missingInputs->setWordWrap(true);
+    missingInputs->setStyleSheet("color: #a66b00;");
+    designLayout->addWidget(missingInputs);
+
+    auto* recalculateProject = new QPushButton(tr("Recalculate project"));
+    recalculateProject->setObjectName(QStringLiteral("recalculateProjectButton"));
+    connect(recalculateProject, &QPushButton::clicked, this, [this, designStatus] {
+        calculateFilter();
+        designStatus->setText(tr(
+            "Electrical filter synthesis was refreshed. Physical geometry, winding sizing and coupled electro-magnetic-thermal "
+            "design remain NOT_CALCULATED because the inverse physical-design solver and required design inputs are not yet available."));
+        appendLog(tr("Project recalculation requested: electrical synthesis executed; physical design remains NOT_CALCULATED."));
+    });
+    designLayout->addWidget(recalculateProject);
+    layout->addWidget(designGroup);
 
     resultsTable_ = new QTableWidget(0, 3);
     resultsTable_->setHorizontalHeaderLabels({tr("Parameter"), tr("Value"), tr("Unit")});
@@ -1950,33 +2009,14 @@ QWidget* MainWindow::createCadPage()
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
 
-    auto* dimensionsBox = new QGroupBox(tr("Physical core dimensions — enter values from a drawing or measurement"), page);
-    auto* dimensionsForm = new QFormLayout(dimensionsBox);
-    const auto makeDimension = [dimensionsBox](const QString& name) {
-        auto* input = new QDoubleSpinBox(dimensionsBox);
-        input->setObjectName(name);
-        input->setDecimals(3);
-        input->setRange(0.0, 5000.0);
-        input->setSingleStep(1.0);
-        input->setSuffix(QStringLiteral(" mm"));
-        input->setSpecialValueText(QObject::tr("Not provided"));
-        input->setValue(0.0);
-        return input;
-    };
-    auto* limbWidth = makeDimension(QStringLiteral("cadLimbWidth"));
-    auto* limbDepth = makeDimension(QStringLiteral("cadLimbDepth"));
-    auto* windowWidth = makeDimension(QStringLiteral("cadWindowWidth"));
-    auto* overallHeight = makeDimension(QStringLiteral("cadOverallHeight"));
-    auto* yokeThickness = makeDimension(QStringLiteral("cadYokeThickness"));
-    dimensionsForm->addRow(tr("All three limb widths"), limbWidth);
-    dimensionsForm->addRow(tr("Common core stack depth"), limbDepth);
-    dimensionsForm->addRow(tr("Both clear window widths"), windowWidth);
-    dimensionsForm->addRow(tr("Overall core height"), overallHeight);
-    dimensionsForm->addRow(tr("Top and bottom yoke thickness"), yokeThickness);
-
-    auto* generateButton = new QPushButton(tr("Generate core 3D model"), dimensionsBox);
-    dimensionsForm->addRow(generateButton);
-    layout->addWidget(dimensionsBox);
+    auto* status = new QLabel(tr(
+        "The CAD workspace is a read-only presentation of the current accepted project geometry. "
+        "Physical dimensions are defined and corrected on the Calculation & design tab. "
+        "No geometry is generated until a verified physical-geometry result is supplied by the design solver."));
+    status->setWordWrap(true);
+    status->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    status->setStyleSheet("color: palette(mid);");
+    layout->addWidget(status);
 
     auto* workspace = new QSplitter(Qt::Horizontal, page);
     workspace->setChildrenCollapsible(false);
@@ -1996,14 +2036,28 @@ QWidget* MainWindow::createCadPage()
     tree->setRootIsDecorated(true);
     tree->setAlternatingRowColors(true);
     tree->setMinimumHeight(240);
+    auto* root = new QTreeWidgetItem(tree, {tr("Three-limb magnetic core"), QStringLiteral("NOT_CALCULATED")});
+    root->setExpanded(true);
+    const QStringList names{
+        tr("Limb A"), tr("Limb B"), tr("Limb C"),
+        tr("Top yoke A-B"), tr("Top yoke B-C"),
+        tr("Bottom yoke A-B"), tr("Bottom yoke B-C"),
+        tr("Bobbin and winding packs"), tr("Insulation and terminals")
+    };
+    for (const auto& name : names) {
+        auto* item = new QTreeWidgetItem(root, {name, QStringLiteral("NOT_CALCULATED")});
+        item->setToolTip(1, tr("Awaiting a consistent physical-design result."));
+    }
     structureLayout->addWidget(tree, 1);
 
     auto* propertiesTitle = new QLabel(tr("Component properties"), structurePanel);
     propertiesTitle->setStyleSheet("font-weight: 600;");
     structureLayout->addWidget(propertiesTitle);
-    auto* properties = new QLabel(tr("Enter verified physical dimensions and generate the core model."), structurePanel);
+    auto* properties = new QLabel(tr(
+        "No accepted physical geometry is available yet. Run the project design calculation "
+        "from the Calculation & design tab after supplying the required engineering data."));
     properties->setWordWrap(true);
-    properties->setMinimumHeight(64);
+    properties->setMinimumHeight(72);
     properties->setFrameShape(QFrame::StyledPanel);
     properties->setMargin(8);
     structureLayout->addWidget(properties);
@@ -2021,121 +2075,13 @@ QWidget* MainWindow::createCadPage()
     workspace->setSizes({300, 900});
     layout->addWidget(workspace, 1);
 
-    auto* geometryNote = new QLabel(tr(
-        "This first CAD generation step creates the seven-segment magnetic core only (three limbs and four yoke halves). "
-        "Dimensions are explicit user inputs; window heights, center spacings and overall width are calculated from the entered stack-up. "
-        "Bobbin, winding, insulation, clamps and terminals remain NOT_PROVIDED and are not fabricated."));
-    geometryNote->setWordWrap(true);
-    geometryNote->setStyleSheet("color: palette(mid);");
-    layout->addWidget(geometryNote);
-
-    connect(tree, &QTreeWidget::currentItemChanged, page,
-        [properties](QTreeWidgetItem* current, QTreeWidgetItem*) {
-            if (!current) {
-                properties->setText(QObject::tr("Select a component."));
-                return;
-            }
-            properties->setText(QObject::tr("%1\nStatus: %2\nRepresentation: simplified physical core solid")
-                .arg(current->text(0), current->text(1)));
-        });
-
-    connect(generateButton, &QPushButton::clicked, page,
-        [=]() {
-            const double w = limbWidth->value() / 1000.0;
-            const double d = limbDepth->value() / 1000.0;
-            const double window = windowWidth->value() / 1000.0;
-            const double height = overallHeight->value() / 1000.0;
-            const double yoke = yokeThickness->value() / 1000.0;
-            if (w <= 0.0 || d <= 0.0 || window <= 0.0 || height <= 0.0 || yoke <= 0.0) {
-                QMessageBox::warning(page, tr("Missing dimensions"),
-                    tr("Enter all five positive physical dimensions before generating the model."));
-                return;
-            }
-            if (height <= 2.0 * yoke) {
-                QMessageBox::warning(page, tr("Invalid dimensions"),
-                    tr("Overall height must be greater than the combined top and bottom yoke thickness."));
-                return;
-            }
-
-            p135::domain::ReactorPhysicalGeometry geometry;
-            geometry.productId = "Project135-Core-Preview";
-            geometry.dimensionalSource = "User-entered physical dimensions";
-            geometry.dimensionalRevision = "Current CAD workspace input";
-            auto& core = geometry.core;
-            core.limbWidths.fill(p135::units::Length{w});
-            core.limbDepths.fill(p135::units::Length{d});
-            core.windowWidths.fill(p135::units::Length{window});
-            core.windowHeights.fill(p135::units::Length{height - 2.0 * yoke});
-            core.yokeThicknesses.fill(p135::units::Length{yoke});
-            core.yokeDepths.fill(p135::units::Length{d});
-            core.limbCenterSpacings = {
-                p135::units::Length{w + window},
-                p135::units::Length{w + window},
-                p135::units::Length{2.0 * (w + window)}
-            };
-            core.coreOverallWidth = p135::units::Length{3.0 * w + 2.0 * window};
-            core.coreOverallHeight = p135::units::Length{height};
-            core.laminationConstruction = "Butt-jointed core; packet/layer detail not modelled";
-            constexpr std::array<p135::domain::CoreJointInterface, 8> interfaces{
-                p135::domain::CoreJointInterface::TopYokeABToLimbA,
-                p135::domain::CoreJointInterface::TopYokeABToLimbB,
-                p135::domain::CoreJointInterface::TopYokeBCToLimbB,
-                p135::domain::CoreJointInterface::TopYokeBCToLimbC,
-                p135::domain::CoreJointInterface::BottomYokeABToLimbA,
-                p135::domain::CoreJointInterface::BottomYokeABToLimbB,
-                p135::domain::CoreJointInterface::BottomYokeBCToLimbB,
-                p135::domain::CoreJointInterface::BottomYokeBCToLimbC
-            };
-            for (const auto interface : interfaces)
-                core.joints.push_back({interface, p135::domain::CoreJointType::Butt, {}});
-
-            const auto built = p135::cad::buildThreeLimbCoreShape(geometry);
-            if (!built) {
-                QString message = QString::fromStdString(built.error().message);
-                for (const auto& diagnostic : built.error().diagnostics)
-                    message += QStringLiteral("\n%1: %2")
-                        .arg(QString::fromStdString(diagnostic.code),
-                             QString::fromStdString(diagnostic.message));
-                QMessageBox::critical(page, tr("CAD generation failed"), message);
-                return;
-            }
-
-            std::vector<p135::cad::AssemblyPresentationDisplayItem> displayItems;
-            constexpr std::array<const char*, 7> ids{
-                "core.limb.A", "core.limb.B", "core.limb.C",
-                "core.yoke.top.AB", "core.yoke.top.BC",
-                "core.yoke.bottom.AB", "core.yoke.bottom.BC"
-            };
-            for (TopoDS_Iterator it(built.value()); it.More(); it.Next()) {
-                const std::size_t index = displayItems.size();
-                if (index >= ids.size()) break;
-                displayItems.push_back({ids[index], it.Value(), 0.0});
-            }
-            if (displayItems.size() != ids.size()) {
-                QMessageBox::critical(page, tr("CAD generation failed"),
-                    tr("The core generator did not return the expected three limbs and four yoke segments."));
-                return;
-            }
-
-            viewport->setDisplayItems(displayItems);
-            tree->clear();
-            auto* root = new QTreeWidgetItem(tree, {tr("Three-limb magnetic core"), QStringLiteral("VALID")});
-            root->setExpanded(true);
-            const QStringList names{
-                tr("Limb A"), tr("Limb B"), tr("Limb C"),
-                tr("Top yoke A-B"), tr("Top yoke B-C"),
-                tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
-            };
-            for (int i = 0; i < names.size(); ++i) {
-                auto* item = new QTreeWidgetItem(root, {names[i], QStringLiteral("VALID")});
-                item->setToolTip(1, tr("Valid OCCT B-Rep solid; simplified physical segment, not detailed lamination geometry."));
-            }
-            root->setExpanded(true);
-            properties->setText(tr("Core geometry generated successfully.\n7 B-Rep components\nUnits: mm\nStatus: VALID (geometry only; not manufacturing or standards approval)"));
-            geometryNote->setText(tr(
-                "Generated model: three limbs and four yoke halves. This is a simplified solid representation of the entered physical envelope. "
-                "Lamination packet detail, joints beyond butt interfaces, bobbins, windings, insulation, clamps and terminals are not modelled."));
-        });
+    auto* note = new QLabel(tr(
+        "This page does not accept dimensions and does not run independent calculations. "
+        "The 3D model will be rebuilt only from the accepted physical geometry of a consistent project revision. "
+        "A valid CAD solid alone will not imply magnetic, thermal, dielectric, manufacturing or standards approval."));
+    note->setWordWrap(true);
+    note->setStyleSheet("color: palette(mid);");
+    layout->addWidget(note);
     return page;
 }
 
