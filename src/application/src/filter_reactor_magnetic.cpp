@@ -59,6 +59,22 @@ analyzeFilterReactorMagneticCycle(const FilterReactorMagneticRequest& request)
             invalid("Selected filter branch has no fundamental current; magnetic cycle sampling requires order 1.",
                     "harmonicAnalysis.branchPoints"));
 
+    const auto fundamentalPoint = std::find_if(points.begin(), points.end(),
+        [&request](const auto& point) {
+            return point.branchId == request.filterBranchId && point.order == 1;
+        });
+    const double fundamentalFrequency = fundamentalPoint->frequency.si();
+    for (const auto& point : points) {
+        if (point.branchId != request.filterBranchId)
+            continue;
+        const double expected = fundamentalFrequency * static_cast<double>(point.order);
+        const double scale = std::max({std::abs(expected), std::abs(point.frequency.si()), 1.0});
+        if (std::abs(point.frequency.si() - expected) > 1.0e-9 * scale)
+            return Result<FilterReactorMagneticResult>::failure(
+                invalid("Harmonic frequencies must be integer multiples of the selected branch fundamental.",
+                        "harmonicAnalysis.branchPoints.frequency"));
+    }
+
     FilterReactorMagneticResult result;
     result.filterBranchId = request.filterBranchId;
     result.excitations.reserve(byOrder.size());
