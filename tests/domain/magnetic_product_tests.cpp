@@ -1,4 +1,5 @@
 #include "p135/domain/magnetic_product.hpp"
+#include "p135/domain/core_loss.hpp"
 #include "p135/domain/magnetic_circuit.hpp"
 #include "p135/domain/three_limb_magnetic.hpp"
 #include "p135/domain/material_catalog.hpp"
@@ -275,6 +276,46 @@ int main()
         assert(!outside);
         assert(outside.error().code == ErrorCode::ModelOutOfDomain ||
                outside.error().code == ErrorCode::NonConvergence);
+    }
+
+
+    {
+        // Micrometals Mix-2 manufacturer equation, source units: gauss and mW/cm3.
+        CoreLossEquation equation;
+        equation.denominatorTerms = {
+            {4.00e9, 3.0},
+            {3.00e8, 2.3},
+            {2.70e6, 1.65}
+        };
+        equation.eddyCoefficient = 9.60e-16;
+        equation.minimumFrequency_Hz = 60.0;
+        equation.maximumFrequency_Hz = 500000.0;
+        equation.minimumFluxDensity_T = 0.001; // 10 G
+        equation.maximumFluxDensity_T = 1.0;   // 10,000 G
+        equation.sourceFluxDensityUnitsPerTesla = 10000.0;
+        equation.outputWattsPerM3PerSourceUnit = 1000.0; // mW/cm3 -> W/m3
+        equation.sourceReference =
+            "https://s3.amazonaws.com/micrometals-production/filer_public/20/4e/204efa63-7335-47a8-96f8-09fa750a0990/mix-02-datasheet.pdf";
+        equation.datasetRevision = "2023-12-15";
+
+        const auto nominalPoint = evaluateCoreLossEquation(
+            equation, units::Frequency{100000.0}, units::FluxDensity{0.014});
+        assert(nominalPoint);
+        // Datasheet nominal point: 18 mW/cm3 at 100 kHz and 140 gauss.
+        assert(nominalPoint.value().si() > 17600.0);
+        assert(nominalPoint.value().si() < 17800.0);
+
+        const auto outsideFrequency = evaluateCoreLossEquation(
+            equation, units::Frequency{600000.0}, units::FluxDensity{0.014});
+        assert(!outsideFrequency);
+        assert(outsideFrequency.error().code == ErrorCode::ModelOutOfDomain);
+        const auto outsideFlux = evaluateCoreLossEquation(
+            equation, units::Frequency{100000.0}, units::FluxDensity{1.01});
+        assert(!outsideFlux);
+        assert(outsideFlux.error().code == ErrorCode::ModelOutOfDomain);
+        const auto invalidOperatingPoint = evaluateCoreLossEquation(
+            equation, units::Frequency{0.0}, units::FluxDensity{0.014});
+        assert(!invalidOperatingPoint);
     }
 
     CoreMaterialCatalog catalog;
