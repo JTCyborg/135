@@ -127,7 +127,9 @@ Result<ThermalNetworkResult> analyzeThermalNetwork(
 
     for (std::size_t i = 0; i < count; ++i) {
         rhs[i] = request.nodes[i].loss.si();
-        if (request.nodes[i].lossSourceReference.empty())
+        if (request.nodes[i].lossSourceReference.empty() ||
+            !request.nodes[i].maximumTemperature ||
+            request.nodes[i].temperatureLimitSourceReference.empty())
             provenanceComplete = false;
     }
 
