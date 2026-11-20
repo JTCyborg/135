@@ -41,6 +41,8 @@ private:
     void showCalculationDetails(int row);
     void loadCalculationInputs(int row);
     void compareSelectedCalculationGraphs();
+    void exportCalculationHistory(bool selectedOnly);
+    void importCalculationHistory();
     void updateProjectTitle();
     void saveProjectSettings();
     void loadProjectSettings();
