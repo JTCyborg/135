@@ -219,7 +219,10 @@ protected:
     void showEvent(QShowEvent* event) override
     {
         QWidget::showEvent(event);
-        if (initialize() && !items_.empty())
+        // Do not create a native HWND/OpenGL surface for the empty CAD state.
+        // The native child window can otherwise reveal stale pixels from the
+        // previously visible QTabWidget page.
+        if (!items_.empty() && initialize())
             displayItems();
     }
 
