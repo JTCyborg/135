@@ -239,7 +239,11 @@ int main()
         {units::Length{0.04}, units::Length{0.04}, units::Length{0.03}, units::Length{0.03}, StepLapPacketDirection::YokeIntoLimb}
     };
     assert(validate(stepLapGeometry.core));
-    assert(!p135::cad::buildThreeLimbCoreShape(stepLapGeometry));
+    const auto unsupportedStepLap = p135::cad::buildThreeLimbCoreShape(stepLapGeometry);
+    assert(!unsupportedStepLap);
+    assert(unsupportedStepLap.error().code == ErrorCode::UnsupportedConfiguration);
+    assert(!unsupportedStepLap.error().diagnostics.empty());
+    assert(unsupportedStepLap.error().diagnostics.front().code == "CAD_STEP_LAP_NOT_IMPLEMENTED");
 
     auto invalid = geometry;
     invalid.core.coreOverallHeight = units::Length{0.05};
