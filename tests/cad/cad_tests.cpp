@@ -358,6 +358,76 @@ int main()
                         (baseVolumeMm3 - 40.0 * 80.0 * 1.0)) < 1.0e-6);
     }
 
+    // Asymmetric physical dimensions catch placement formulas that only
+    // work for the symmetric 40/60/40 mm fixture above.
+    auto asymmetric = geometry;
+    asymmetric.core.limbWidths = {
+        units::Length{0.03}, units::Length{0.05}, units::Length{0.04}
+    };
+    asymmetric.core.windowWidths = {
+        units::Length{0.07}, units::Length{0.09}
+    };
+    asymmetric.core.limbCenterSpacings = {
+        units::Length{0.11}, units::Length{0.135}, units::Length{0.245}
+    };
+    asymmetric.core.yokeThicknesses = {
+        units::Length{0.03}, units::Length{0.03},
+        units::Length{0.04}, units::Length{0.04}
+    };
+    asymmetric.core.windowHeights = {
+        units::Length{0.15}, units::Length{0.15}
+    };
+    asymmetric.core.limbDepths.fill(units::Length{0.06});
+    asymmetric.core.yokeDepths.fill(units::Length{0.06});
+    asymmetric.core.coreOverallWidth = units::Length{0.28};
+    asymmetric.core.coreOverallHeight = units::Length{0.22};
+    const auto asymmetricShape = p135::cad::buildThreeLimbCoreShape(asymmetric);
+    assert(asymmetricShape);
+    assert(BRepCheck_Analyzer(asymmetricShape.value()).IsValid());
+    Bnd_Box asymmetricBounds;
+    BRepBndLib::Add(asymmetricShape.value(), asymmetricBounds);
+    double ax0 = 0.0, ay0 = 0.0, az0 = 0.0;
+    double ax1 = 0.0, ay1 = 0.0, az1 = 0.0;
+    asymmetricBounds.Get(ax0, ay0, az0, ax1, ay1, az1);
+    assert(std::abs(ax0) < 1.0e-6 && std::abs(ay0) < 1.0e-6 && std::abs(az0) < 1.0e-6);
+    assert(std::abs(ax1 - 280.0) < 1.0e-6);
+    assert(std::abs(ay1 - 220.0) < 1.0e-6);
+    assert(std::abs(az1 - 60.0) < 1.0e-6);
+
+    const std::array<std::array<double, 6>, 7> expectedAsymmetricBounds{{
+        {{0.0, 40.0, 0.0, 30.0, 190.0, 60.0}},
+        {{100.0, 40.0, 0.0, 150.0, 190.0, 60.0}},
+        {{240.0, 40.0, 0.0, 280.0, 190.0, 60.0}},
+        {{0.0, 190.0, 0.0, 125.0, 220.0, 60.0}},
+        {{125.0, 190.0, 0.0, 280.0, 220.0, 60.0}},
+        {{0.0, 0.0, 0.0, 125.0, 40.0, 60.0}},
+        {{125.0, 0.0, 0.0, 280.0, 40.0, 60.0}}
+    }};
+    std::size_t asymmetricComponent = 0;
+    for (TopoDS_Iterator it(asymmetricShape.value()); it.More(); it.Next()) {
+        assert(asymmetricComponent < expectedAsymmetricBounds.size());
+        Bnd_Box componentBox;
+        BRepBndLib::Add(it.Value(), componentBox);
+        double x0 = 0.0, y0 = 0.0, z0 = 0.0;
+        double x1 = 0.0, y1 = 0.0, z1 = 0.0;
+        componentBox.Get(x0, y0, z0, x1, y1, z1);
+        const auto& expected = expectedAsymmetricBounds[asymmetricComponent];
+        assert(std::abs(x0 - expected[0]) < 1.0e-6);
+        assert(std::abs(y0 - expected[1]) < 1.0e-6);
+        assert(std::abs(z0 - expected[2]) < 1.0e-6);
+        assert(std::abs(x1 - expected[3]) < 1.0e-6);
+        assert(std::abs(y1 - expected[4]) < 1.0e-6);
+        assert(std::abs(z1 - expected[5]) < 1.0e-6);
+        ++asymmetricComponent;
+    }
+    assert(asymmetricComponent == expectedAsymmetricBounds.size());
+    constexpr double asymmetricExpectedVolumeMm3 =
+        30.0 * 150.0 * 60.0 + 50.0 * 150.0 * 60.0 + 40.0 * 150.0 * 60.0 +
+        125.0 * 30.0 * 60.0 + 155.0 * 30.0 * 60.0 +
+        125.0 * 40.0 * 60.0 + 155.0 * 40.0 * 60.0;
+    assert(std::abs(volumeOf(asymmetricShape.value()) -
+                    asymmetricExpectedVolumeMm3) < 1.0e-6);
+
     auto invalidWindowStack = geometry;
     invalidWindowStack.core.windowWidths[0] = units::Length{0.05};
     assert(!p135::cad::buildThreeLimbCoreShape(invalidWindowStack));
