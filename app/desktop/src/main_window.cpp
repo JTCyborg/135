@@ -3135,7 +3135,7 @@ void MainWindow::calculateFilter()
         }
         resultSnapshot.insert(QStringLiteral("magneticSweep"), magneticSweepSnapshot);
         resultSnapshot.insert(QStringLiteral("magneticSweepWithinMeasuredBhCurve"),
-            !magneticSweepExtrapolated);
+            magneticSweepValid && !magneticSweepExtrapolated);
         QJsonArray threeLimbSweepSnapshot;
         if (threeLimbMagneticBase && threeLimbSweepValid) {
             for (const auto& sample : threeLimbFluxDensitySweep) {
