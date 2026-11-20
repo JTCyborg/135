@@ -19,6 +19,7 @@ int main()
     inputs.insulationMaterial = MaterialRevisionSelection{"ins-rev-5", DesignInputOrigin::Recommended};
     inputs.stackingFactor = 0.95;
     inputs.coreStackDepthM = 0.12;
+    inputs.coreYokeThicknessM = 0.03;
     inputs.ambientTemperatureK = 298.15;
     inputs.maximumWindingTemperatureK = 393.15;
     inputs.coreGeometryFamily = "three-limb";
@@ -44,6 +45,9 @@ int main()
     inputs.coreStackDepthM = 0.125;
     assert(requiresRecalculation(inputs, accepted));
     inputs.coreStackDepthM = 0.12;
+    inputs.coreYokeThicknessM = 0.031;
+    assert(requiresRecalculation(inputs, accepted));
+    inputs.coreYokeThicknessM = 0.03;
 
     inputs.turnsPerPhase = 121;
     assert(requiresRecalculation(inputs, accepted));
@@ -59,6 +63,9 @@ int main()
     inputs.coreStackDepthM = 0.0;
     assert(!validate(inputs));
     inputs.coreStackDepthM = 0.12;
+    inputs.coreYokeThicknessM = 0.0;
+    assert(!validate(inputs));
+    inputs.coreYokeThicknessM = 0.03;
     inputs.stackingFactor = 1.2;
     assert(!validate(inputs));
     inputs.stackingFactor = 0.95;
