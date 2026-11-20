@@ -47,13 +47,23 @@ Result<ThreeLimbMagneticGeometry> buildThreeLimbMagneticGeometry(
         result.limbEffectiveAreas[limb] = units::Area{effectiveArea};
         result.limbGapEffectiveAreas[limb] = units::Area{effectiveArea};
 
-        // The magnetic solver represents each limb by the distance between
-        // the top and bottom yoke centre-lines.
-        const std::size_t topYoke = limb == 2 ? 1 : 0;
-        const std::size_t bottomYoke = limb == 2 ? 3 : 2;
+        // The centre limb joins both AB and BC yokes. Its centre-line datum
+        // therefore uses the mean thickness of the two top and two bottom
+        // yoke segments instead of arbitrarily selecting the AB segment.
+        const double topYokeThickness = limb == 0
+            ? physical.yokeThicknesses[0].si()
+            : limb == 1
+                ? 0.5 * (physical.yokeThicknesses[0].si() +
+                         physical.yokeThicknesses[1].si())
+                : physical.yokeThicknesses[1].si();
+        const double bottomYokeThickness = limb == 0
+            ? physical.yokeThicknesses[2].si()
+            : limb == 1
+                ? 0.5 * (physical.yokeThicknesses[2].si() +
+                         physical.yokeThicknesses[3].si())
+                : physical.yokeThicknesses[3].si();
         const double path = physical.coreOverallHeight.si() -
-            0.5 * physical.yokeThicknesses[topYoke].si() -
-            0.5 * physical.yokeThicknesses[bottomYoke].si();
+            0.5 * topYokeThickness - 0.5 * bottomYokeThickness;
         if (!std::isfinite(path) || path <= 0.0)
             return invalid("Derived limb centre-line path must be finite and positive.",
                            "limbMeanPaths[" + std::to_string(limb) + "]");

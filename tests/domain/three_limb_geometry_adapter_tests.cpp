@@ -1,5 +1,6 @@
 #include "p135/domain/three_limb_geometry_adapter.hpp"
 
+#include <array>
 #include <cassert>
 #include <cmath>
 
@@ -15,7 +16,10 @@ ThreeLimbCorePhysicalGeometry validCore()
     g.limbDepths = {units::Length{0.08}, units::Length{0.08}, units::Length{0.08}};
     g.windowWidths = {units::Length{0.06}, units::Length{0.06}};
     g.windowHeights = {units::Length{0.12}, units::Length{0.12}};
-    g.yokeThicknesses.fill(units::Length{0.04});
+    g.yokeThicknesses = {
+        units::Length{0.03}, units::Length{0.05},
+        units::Length{0.04}, units::Length{0.06}
+    };
     g.yokeDepths.fill(units::Length{0.08});
     g.limbCenterSpacings = {
         units::Length{0.10}, units::Length{0.10}, units::Length{0.20}
@@ -47,9 +51,10 @@ int main()
     assert(converted);
 
     const auto& magnetic = converted.value();
+    const std::array<double, 3> expectedPaths{0.165, 0.155, 0.145};
     for (std::size_t limb = 0; limb < 3; ++limb) {
         assert(near(magnetic.limbEffectiveAreas[limb]->si(), 0.04 * 0.08 * 0.95));
-        assert(near(magnetic.limbMeanPaths[limb]->si(), 0.16));
+        assert(near(magnetic.limbMeanPaths[limb]->si(), expectedPaths[limb]));
         assert(near(magnetic.limbAirGaps[limb]->si(), 0.0));
         assert(near(magnetic.limbGapEffectiveAreas[limb]->si(), 0.04 * 0.08 * 0.95));
     }
