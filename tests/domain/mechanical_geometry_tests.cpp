@@ -109,6 +109,10 @@ int main()
     excessiveStepLapOverlap.core.joints[0].stepLapPackets[0].overlapIntoLimb = units::Length{0.13};
     assert(!validate(excessiveStepLapOverlap));
 
+    auto excessiveYokeThicknessOverlap = stepLap;
+    excessiveYokeThicknessOverlap.core.joints[0].stepLapPackets[0].overlapIntoYoke = units::Length{0.05};
+    assert(!validate(excessiveYokeThicknessOverlap));
+
     auto nonAlternatingStepLap = stepLap;
     nonAlternatingStepLap.core.joints[0].stepLapPackets[1].direction = StepLapPacketDirection::LimbIntoYoke;
     assert(!validate(nonAlternatingStepLap));
