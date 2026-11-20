@@ -1528,8 +1528,10 @@ QWidget* MainWindow::createResultsPage()
         addIdealCriterion(QStringLiteral("idealSizing_J"), 100.0, 3, tr(" A/mm²")));
     idealCriteriaLayout->addRow(tr("Window utilization Ku:"), 
         addIdealCriterion(QStringLiteral("idealSizing_Ku"), 100.0, 2, tr(" %")));
-    idealCriteriaLayout->addRow(tr("Stacking factor Ks:"), 
+    idealCriteriaLayout->addRow(tr("Stacking factor Ks:"),
         addIdealCriterion(QStringLiteral("idealSizing_Ks"), 100.0, 2, tr(" %")));
+    idealCriteriaLayout->addRow(tr("Window / core area ratio Aw/Ae:"),
+        addIdealCriterion(QStringLiteral("idealSizing_AwAe"), 1000.0, 4, QString{}));
     designLayout->addWidget(idealCriteria);
 
     auto* idealSizingResult = new QLabel(tr("Ideal area-product estimate: NOT CALCULATED — enter all four criteria and recalculate."));
@@ -1556,7 +1558,12 @@ QWidget* MainWindow::createResultsPage()
         tr("Turns per phase"),
         tr("Winding conductor cross-section"),
         tr("Minimum gross area product Ae×Aw"),
-        tr("Equivalent square area scale")
+        tr("Equivalent square area scale"),
+        tr("Estimated gross core area Ae"),
+        tr("Estimated effective core area"),
+        tr("Estimated window area Aw"),
+        tr("Ideal minimum turns per reactor"),
+        tr("Ideal total equivalent air gap")
     };
     for (const auto& parameter : designParameters) {
         const int row = designTable->rowCount();
@@ -3278,9 +3285,11 @@ void MainWindow::calculateFilter()
         auto* density = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_J"));
         auto* utilization = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ku"));
         auto* stacking = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ks"));
-        if (bmax && density && utilization && stacking && !result.value().branches.empty() &&
-            bmax->value() > 0.0 && density->value() > 0.0 &&
-            utilization->value() > 0.0 && stacking->value() > 0.0) {
+        auto* areaRatio = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_AwAe"));
+        if (bmax && density && utilization && stacking && areaRatio &&
+            !result.value().branches.empty() && bmax->value() > 0.0 &&
+            density->value() > 0.0 && utilization->value() > 0.0 &&
+            stacking->value() > 0.0 && areaRatio->value() > 0.0) {
             const auto branchIt = std::find_if(result.value().branches.begin(),
                 result.value().branches.end(), [this](const auto& branch) {
                     return branch.id == latestFilterBranchId_;
@@ -3319,7 +3328,8 @@ void MainWindow::calculateFilter()
                 const auto estimate = p135::application::calculateIdealReactorAreaProduct({
                     inductance, peakCurrentBound, rmsCurrent,
                     bmax->value(), density->value() * 1.0e6,
-                    utilization->value() / 100.0, stacking->value() / 100.0
+                    utilization->value() / 100.0, stacking->value() / 100.0,
+                    areaRatio->value()
                 });
                 if (estimate) {
                     const auto& value = estimate.value();
@@ -3335,6 +3345,26 @@ void MainWindow::calculateFilter()
                                 table->setItem(row, 1, new QTableWidgetItem(
                                     QString::number(value.equivalentSquareSideM * 1.0e3, 'g', 6) + tr(" mm")));
                                 table->setItem(row, 3, new QTableWidgetItem(tr("REFERENCE ONLY")));
+                            } else if (parameter->text() == tr("Estimated gross core area Ae")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.estimatedGrossCoreAreaM2 * 1.0e6, 'g', 6) + tr(" mm²")));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEALIZED")));
+                            } else if (parameter->text() == tr("Estimated effective core area")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.estimatedEffectiveCoreAreaM2 * 1.0e6, 'g', 6) + tr(" mm²")));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEALIZED")));
+                            } else if (parameter->text() == tr("Estimated window area Aw")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.estimatedWindowAreaM2 * 1.0e6, 'g', 6) + tr(" mm²")));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEALIZED")));
+                            } else if (parameter->text() == tr("Ideal minimum turns per reactor")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(static_cast<qulonglong>(value.idealMinimumTurns))));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEALIZED")));
+                            } else if (parameter->text() == tr("Ideal total equivalent air gap")) {
+                                table->setItem(row, 1, new QTableWidgetItem(
+                                    QString::number(value.idealTotalAirGapM * 1.0e3, 'g', 6) + tr(" mm")));
+                                table->setItem(row, 3, new QTableWidgetItem(tr("IDEALIZED")));
                             }
                         }
                     }
@@ -3346,6 +3376,8 @@ void MainWindow::calculateFilter()
                         "Equivalent square side ≥ %2 mm\n"
                         "Stored peak energy = %3 J\n"
                         "Design current: Irms=%8 A; Ipeak bound=%9 A\n"
+                        "Gross Ae=%10 mm²; effective Ae=%11 mm²; window Aw=%12 mm²\n"
+                        "Ideal turns=%13; equivalent total gap=%14 mm; Aw/Ae=%15\n"
                         "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\n"
                         "Peak current uses the sum of harmonic magnitudes (conservative envelope). "
                         "This is NOT a selected core or winding design; core loss, gap geometry, "
@@ -3358,7 +3390,13 @@ void MainWindow::calculateFilter()
                         .arg(value.assumedWindowUtilization * 100.0, 0, 'g', 5)
                         .arg(value.assumedStackingFactor * 100.0, 0, 'g', 5)
                         .arg(rmsCurrent, 0, 'g', 6)
-                        .arg(peakCurrentBound, 0, 'g', 6));
+                        .arg(peakCurrentBound, 0, 'g', 6)
+                        .arg(value.estimatedGrossCoreAreaM2 * 1.0e6, 0, 'g', 6)
+                        .arg(value.estimatedEffectiveCoreAreaM2 * 1.0e6, 0, 'g', 6)
+                        .arg(value.estimatedWindowAreaM2 * 1.0e6, 0, 'g', 6)
+                        .arg(static_cast<qulonglong>(value.idealMinimumTurns))
+                        .arg(value.idealTotalAirGapM * 1.0e3, 0, 'g', 6)
+                        .arg(value.assumedWindowToCoreAreaRatio, 0, 'g', 6));
                 } else {
                     output->setText(tr("Ideal area-product estimate failed: %1")
                         .arg(QString::fromStdString(estimate.error().message)));
