@@ -1928,9 +1928,9 @@ void MainWindow::importCalculationHistory()
         const std::string archivedHash = requiredString("contentHash").toStdString();
         if (hash.value() != archivedHash) {
             const auto answer = QMessageBox::warning(this, tr("History checksum mismatch"),
-                tr("The SHA-256 checksum stored in the archive does not match calculation %1.\\n\\n"
-                   "Stored: %2\\nCalculated from the imported data: %3\\n\\n"
-                   "Recalculate the checksum and import this record?\\n"
+                tr("The SHA-256 checksum stored in the archive does not match calculation %1.\n\n"
+                   "Stored: %2\nCalculated from the imported data: %3\n\n"
+                   "Recalculate the checksum and import this record?\n"
                    "Choose No to stop the import.")
                     .arg(id, QString::fromStdString(archivedHash),
                          QString::fromStdString(hash.value())),
@@ -2728,11 +2728,11 @@ void MainWindow::calculateFilter()
                 if (estimate) {
                     const auto& value = estimate.value();
                     output->setText(tr(
-                        "IDEAL LOWER BOUND (fundamental current only)\\n"
-                        "Gross Ae×Aw ≥ %1 mm⁴\\n"
-                        "Equivalent square side ≥ %2 mm\\n"
-                        "Stored peak energy = %3 J\\n"
-                        "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\\n"
+                        "IDEAL LOWER BOUND (fundamental current only)\n"
+                        "Gross Ae×Aw ≥ %1 mm⁴\n"
+                        "Equivalent square side ≥ %2 mm\n"
+                        "Stored peak energy = %3 J\n"
+                        "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\n"
                         "NOT a selected core or winding design. Harmonics, losses, gap geometry, "
                         "insulation, cooling and temperature rise are not included.")
                         .arg(value.minimumGrossAreaProductM4 * 1.0e12, 0, 'g', 6)
@@ -2831,7 +2831,7 @@ void MainWindow::calculateFilter()
         request.material.datasetRevision = "user-entered-v1";
         bool curveValid = true;
         if (coreBhCurve_) {
-            const auto lines = coreBhCurve_->toPlainText().split(QRegularExpression("[\\r\\n]+"),
+            const auto lines = coreBhCurve_->toPlainText().split(QRegularExpression("[\\r\n]+"),
                 Qt::SkipEmptyParts);
             for (const auto& rawLine : lines) {
                 const QString line = rawLine.trimmed();
@@ -3838,7 +3838,7 @@ void MainWindow::calculateFilter()
             coreBhSource_ ? coreBhSource_->text() : QString{});
         QJsonArray coreBhSnapshot;
         if (coreBhCurve_) {
-            const auto lines = coreBhCurve_->toPlainText().split(QRegularExpression("[\\r\\n]+"),
+            const auto lines = coreBhCurve_->toPlainText().split(QRegularExpression("[\\r\n]+"),
                 Qt::SkipEmptyParts);
             for (const auto& rawLine : lines) {
                 const QString line = rawLine.trimmed();
