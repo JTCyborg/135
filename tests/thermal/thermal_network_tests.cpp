@@ -30,7 +30,7 @@ int main()
     {
         // Node A: 10 W, G(A-ambient)=1 W/K, G(A-B)=1 W/K.
         // Node B: 0 W, G(B-ambient)=1 W/K.
-        // Exact solution: A=303.15 K, B=298.15 K at 293.15 K ambient.
+        // Exact solution: A=299.8167 K, B=296.4833 K at 293.15 K ambient.
         ThermalNetworkRequest request;
         request.nodes = {node("A", 10.0, 330.0), node("B", 0.0, 320.0)};
         request.links.push_back({"A", "B", 1.0, "thermal-model:rev-1"});
