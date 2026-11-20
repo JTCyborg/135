@@ -75,6 +75,8 @@ struct BobbinPhysicalGeometry {
     units::Length axialLength;  // bobbin length along Y
     units::Length wallThickness;
     units::Length flangeThickness;
+    units::Length flangeOuterWidth;  // explicit flange envelope along X
+    units::Length flangeOuterHeight; // explicit flange envelope along Z
     units::Length windingClearance;
     std::string material;
 };
