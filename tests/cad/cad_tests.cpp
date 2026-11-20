@@ -1,6 +1,7 @@
 #include "p135/cad/three_limb_core.hpp"
 
 #include <BRepAdaptor_Surface.hxx>
+#include <BRepAlgoAPI_Common.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepGProp.hxx>
 #include <GProp_GProps.hxx>
@@ -18,6 +19,7 @@
 #include <cassert>
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 using namespace p135;
 using namespace p135::domain;
@@ -98,6 +100,22 @@ int main()
         assert(volumeProperties.Mass() > 1.0e-12);
     }
     assert(solidCount == 7);
+
+    // The assembly is intentionally a compound, not a fused solid. Its
+    // members may share contact faces, but no pair may overlap in volume.
+    std::vector<TopoDS_Shape> baseSolids;
+    for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next())
+        baseSolids.push_back(it.Current());
+    for (std::size_t i = 0; i < baseSolids.size(); ++i) {
+        for (std::size_t j = i + 1; j < baseSolids.size(); ++j) {
+            BRepAlgoAPI_Common common(baseSolids[i], baseSolids[j]);
+            common.Build();
+            assert(common.IsDone());
+            GProp_GProps commonVolume;
+            BRepGProp::VolumeProperties(common.Shape(), commonVolume);
+            assert(std::abs(commonVolume.Mass()) < 1.0e-8);
+        }
+    }
 
     const auto volumeOf = [](const TopoDS_Shape& candidate) {
         GProp_GProps properties;
