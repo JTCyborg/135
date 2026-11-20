@@ -186,6 +186,16 @@ int main(int argc, char** argv)
     assert(baosteel50A800.value().supplementaryGraphSources.front().sourceReference ==
            "https://esales.baosteel.com/portal/eleSteel/cn/download/B50A800.pdf");
 
+    const auto wrongLossRecord = loadCoreLossReferenceDataset(store, "SEED-TDK-N87-R1");
+    assert(!wrongLossRecord);
+    assert(wrongLossRecord.error().code == ErrorCode::InvalidInput);
+
+    // A duplicated frequency/flux coordinate is ambiguous and must not be
+    // silently accepted as two independent measurements.
+    const auto originalLossRevision = store.findRevision(
+        "SEED-DATASET-BAOSTEEL-B35A300-AC-LOSS-R1");
+    assert(originalLossRevision && originalLossRevision.value().has_value());
+
     auto invalidGraphPayload = nlohmann::json::parse(originalLossRevision.value()->payload);
     invalidGraphPayload["supplementaryGraphSources"][0]["captureStatus"] = "SOLVER_READY";
     const auto invalidGraphCanonical = canonicalizeJson(invalidGraphPayload.dump());
@@ -204,15 +214,6 @@ int main(int argc, char** argv)
     assert(!invalidGraphDataset);
     assert(invalidGraphDataset.error().code == ErrorCode::InvalidInput);
 
-    const auto wrongLossRecord = loadCoreLossReferenceDataset(store, "SEED-TDK-N87-R1");
-    assert(!wrongLossRecord);
-    assert(wrongLossRecord.error().code == ErrorCode::InvalidInput);
-
-    // A duplicated frequency/flux coordinate is ambiguous and must not be
-    // silently accepted as two independent measurements.
-    const auto originalLossRevision = store.findRevision(
-        "SEED-DATASET-BAOSTEEL-B35A300-AC-LOSS-R1");
-    assert(originalLossRevision && originalLossRevision.value().has_value());
     auto duplicatePayload = nlohmann::json::parse(originalLossRevision.value()->payload);
     duplicatePayload["coreLossReferencePoints"].push_back(
         duplicatePayload["coreLossReferencePoints"].front());
