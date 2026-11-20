@@ -36,6 +36,8 @@ struct ReactorDesignExecutionState {
 struct ReactorDesignExecutionReport {
     bool committed{};
     std::string failedStage;
+    std::string failureMessage;
+    ErrorCode failureCode{ErrorCode::InternalError};
     std::vector<std::string> executedStages;
 };
 
