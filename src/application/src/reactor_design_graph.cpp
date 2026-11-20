@@ -45,8 +45,8 @@ const std::vector<std::string>& reactorDesignParameterIds()
 
 const std::vector<std::string>& reactorDesignDependencyPairs()
 {
-    // Encoded as "dependent|dependency" to keep the public graph representation
-    // simple while preserving the domain layer's explicit edge semantics.
+    // Edges are "dependent|dependency". Input nodes seed invalidation only;
+    // every edge target that is executable is a real calculation artifact.
     static const std::vector<std::string> pairs{
         "core.material|input.core.material",
         "core.geometry|input.core.geometry",
@@ -57,8 +57,6 @@ const std::vector<std::string>& reactorDesignDependencyPairs()
         "winding.insulation|input.winding.insulation",
         "winding.geometry|input.winding.technology",
         "winding.geometry|input.winding.bobbin",
-        "thermal.cooling|input.thermal.cooling",
-        "thermal.ambient|input.thermal.ambient",
         "design.verification|input.thermal.maximum_winding_temperature",
         "filter.excitation|input.filter.excitation",
         "core.magnetic_properties|core.material",
@@ -109,7 +107,6 @@ Result<ReactorRecalculationPlan> planReactorRecalculation(
     if (!affected)
         return Result<ReactorRecalculationPlan>::failure(affected.error());
 
-    // Input nodes seed invalidation but are not executable calculation stages.
     auto stages = std::move(affected.value());
     stages.erase(std::remove_if(stages.begin(), stages.end(),
         [](const std::string& id) { return id.starts_with("input."); }), stages.end());
