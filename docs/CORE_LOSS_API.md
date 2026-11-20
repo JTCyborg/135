@@ -51,3 +51,17 @@ The generated curve is a fit/equation sample, not a set of measured points. Its 
 
 Micrometals, Mix-02 Powder Core Solutions datasheet, revision 2023-12-15:
 https://s3.amazonaws.com/micrometals-production/filer_public/20/4e/204efa63-7335-47a8-96f8-09fa750a0990/mix-02-datasheet.pdf
+
+## Measured core-loss data and total core power
+
+CoreMaterial::lossData stores mass-specific loss in W/kg on a frequency, peak-flux-density and temperature grid. evaluateCoreLossData() performs trilinear interpolation in those three coordinates. It requires all corners needed for the requested interpolation cell, rejects duplicate coordinates and incomplete cells, and never extrapolates beyond the measured axes. Interpolation is linear in the supplied physical coordinates; it is not a logarithmic fit.
+
+calculateCoreLossPower() converts the interpolated W/kg value to total core loss in watts:
+
+```text
+P_core [W] = p_specific [W/kg] * m_core [kg]
+```
+
+The core mass must be supplied explicitly with a non-empty source reference (for example, a weighing record or a controlled manufacturing drawing/BOM). It is deliberately not inferred from Ae, le, magnetic path length or a partially specified CAD model. The result preserves both the loss-data reference and the core-mass source reference for downstream thermal accounting.
+
+This API calculates the material loss at one supplied operating point. It does not yet derive a cycle-equivalent loss from the seven branch peak flux densities, sum spatially varying limb/yoke losses, or automatically populate a reactor thermal network. Those require local flux waveforms/material data and an explicit mapping of core regions and masses; a single peak-B value must not be treated as a complete loss calculation for a nonsinusoidal waveform.
