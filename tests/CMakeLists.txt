@@ -337,3 +337,14 @@ if(MSVC)
 else()
     target_compile_options(Project135ConductorMaterialRevisionLoaderTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135WindingElectricalTests
+    domain/winding_electrical_tests.cpp
+)
+target_link_libraries(Project135WindingElectricalTests PRIVATE Project135::Domain)
+add_test(NAME Project135WindingElectricalTests COMMAND Project135WindingElectricalTests)
+if(MSVC)
+    target_compile_options(Project135WindingElectricalTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135WindingElectricalTests PRIVATE -UNDEBUG)
+endif()
