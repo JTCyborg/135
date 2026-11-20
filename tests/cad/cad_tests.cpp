@@ -197,7 +197,6 @@ int main()
         const auto limbFace = findPlanarFace(
             limbSolids[joint.limb], joint.planeY,
             joint.limbX0, joint.limbX1, 0.0, 80.0);
-        const bool topYoke = joint.planeY > 100.0;
         const double yokeX0 = (joint.yoke % 2) == 0 ? 0.0 : 120.0;
         const double yokeX1 = (joint.yoke % 2) == 0 ? 120.0 : 240.0;
         const auto yokeFace = findPlanarFace(
@@ -230,7 +229,6 @@ int main()
         const double overlapZ = std::min(lz1, yz1) - std::max(lz0, yz0);
         assert(std::abs(overlapX - 40.0) < 1.0e-6);
         assert(std::abs(overlapZ - 80.0) < 1.0e-6);
-        (void)topYoke;
     }
 
     auto stepLapGeometry = geometry;
