@@ -175,7 +175,7 @@ int main(int argc, char** argv)
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
         const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
-        assert(seeded && seeded.value() == 203);
+        assert(seeded && seeded.value() == 212);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
         MaterialCatalogFilter ferriteCoreComponents;
@@ -190,8 +190,8 @@ int main(int argc, char** argv)
         MaterialCatalogFilter coreMaterials;
         coreMaterials.recordType = "core-material";
         const auto coreCatalog = store.searchLatestRevisions(coreMaterials);
-        // MAT-TEST, two ferrite materials, 31 non-oriented and 17 grain-oriented steel grades.
-        assert(coreCatalog && coreCatalog.value().size() == 51);
+        // MAT-TEST, two ferrite materials, 31 non-oriented and 17 grain-oriented steel grades, plus nine powder/amorphous/nanocrystalline grades.
+        assert(coreCatalog && coreCatalog.value().size() == 60);
         const auto n87 = store.latestRevision("MAT-TDK-N87");
         assert(n87 && n87.value());
         assert(n87.value()->payload.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
@@ -310,6 +310,27 @@ int main(int argc, char** argv)
         const auto elmoglas = store.latestRevision("MAT-ELANTAS-ELMOGLAS-H69A");
         assert(elmoglas && elmoglas.value());
         assert(elmoglas.value()->payload.find("180") != std::string::npos);
+        const auto mix2 = store.latestRevision("MAT-MICROMETALS-MIX-2");
+        assert(mix2 && mix2.value());
+        assert(mix2.value()->payload.find("18000") != std::string::npos);
+        const auto koolMu = store.latestRevision("MAT-MAGNETICS-KOOL-MU-14U");
+        assert(koolMu && koolMu.value());
+        assert(koolMu.value()->payload.find("1.05") != std::string::npos);
+        const auto vitroperm220 = store.latestRevision("MAT-VAC-VITROPERM-220");
+        assert(vitroperm220 && vitroperm220.value());
+        assert(vitroperm220.value()->payload.find("1.24") != std::string::npos);
+        const auto vitroperm400 = store.latestRevision("MAT-VAC-VITROPERM-400");
+        assert(vitroperm400 && vitroperm400.value());
+        assert(vitroperm400.value()->payload.find("70000000") != std::string::npos);
+        const auto vitroperm500 = store.latestRevision("MAT-VAC-VITROPERM-500-800");
+        assert(vitroperm500 && vitroperm500.value());
+        assert(vitroperm500.value()->payload.find("F-annealed") != std::string::npos);
+        const auto metglasSa1 = store.latestRevision("MAT-METGLAS-2605SA1");
+        assert(metglasSa1 && metglasSa1.value());
+        assert(metglasSa1.value()->payload.find("1.56") != std::string::npos);
+        const auto metglasHb1m = store.latestRevision("MAT-METGLAS-2605HB1M");
+        assert(metglasHb1m && metglasHb1m.value());
+        assert(metglasHb1m.value()->payload.find("1.63") != std::string::npos);
         MaterialCatalogFilter conductors;
         conductors.recordType = "conductor-material";
         const auto conductorCatalog = store.searchLatestRevisions(conductors);
