@@ -47,6 +47,17 @@ int main()
         assert(result.value().branchPoints.size() == 3);
         assert(result.value().branchStresses.size() == 1);
         for (const auto& point : result.value().branchPoints) {
+            for (const auto& phaseCurrent : point.phaseCurrentRms)
+                assert(std::isfinite(phaseCurrent.real()) &&
+                       std::isfinite(phaseCurrent.imag()));
+            assert(std::abs(std::abs(point.phaseCurrentRms[0]) -
+                            point.capacitorCurrentRmsA) < 1.0e-9);
+            assert(std::abs(std::abs(point.phaseCurrentRms[1]) -
+                            point.capacitorCurrentRmsA) < 1.0e-9);
+            assert(std::abs(std::abs(point.phaseCurrentRms[2]) -
+                            point.capacitorCurrentRmsA) < 1.0e-9);
+        }
+        for (const auto& point : result.value().branchPoints) {
             assert(point.branchId == 1);
             assert(point.capacitorCurrentRmsA > 0.0);
             assert(point.frequency.si() > 0.0);
