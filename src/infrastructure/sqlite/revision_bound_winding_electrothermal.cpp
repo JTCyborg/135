@@ -27,6 +27,17 @@ analyzeRevisionBoundWindingElectrothermal(
     RevisionBoundWindingElectrothermalResult result;
     result.conductorMaterialRevision = material.value();
     result.electrothermal = analysis.value();
+
+    // A converged thermal estimate is not a design release. Keep the result
+    // NOT_VERIFIED until the immutable material revision itself is released.
+    if (result.electrothermal.converged &&
+        material.value().designReleaseStatus != "VERIFIED") {
+        result.electrothermal.status = thermal::AssessmentStatus::NotVerified;
+        result.electrothermal.explanation =
+            "NOT_VERIFIED: thermal iteration converged, but the selected conductor material revision is not design-released (" +
+            material.value().designReleaseStatus + "). " +
+            result.electrothermal.explanation;
+    }
     return Result<RevisionBoundWindingElectrothermalResult>::success(std::move(result));
 }
 
