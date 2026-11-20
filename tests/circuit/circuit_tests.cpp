@@ -166,7 +166,7 @@ void testLinearFrequencySweep() {
 void testSourceTheveninRLSweepIsFrequencyDependent() {
     Circuit c;
     c.referenceNode = Gnd;
-    c.nodes = {{Gnd, "0"}, {N1, "source"}, {N2, "after_source"}};
+    c.nodes = {{Gnd, "0"}, {N1, "source"}, {N2, "after_source"}, {4, "filter_load"}};
     c.elements = {
         Element::makeVoltageSource(1, N1, Gnd, {230.0, 0.0}, "Thevenin source"),
         Element::makeResistor(2, N1, N2, units::Resistance{0.08}, "Thevenin R"),
