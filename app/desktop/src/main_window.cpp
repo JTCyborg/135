@@ -2191,17 +2191,55 @@ void MainWindow::calculateFilter()
     double peakBankCurrentFrequency = 0.0;
     double peakPhasePeakCurrent = 0.0;
     double peakPhasePeakCurrentFrequency = 0.0;
+    const auto filterBranchCurrent = [&circuitResult](const p135::circuit::ElectricalResult& electrical,
+                                                       const std::string& nameSuffix)
+        -> std::optional<std::complex<double>> {
+        const auto element = std::find_if(circuitResult.value().elements.begin(),
+            circuitResult.value().elements.end(),
+            [&nameSuffix](const p135::circuit::Element& candidate) {
+                return candidate.kind == p135::circuit::ElementKind::Resistor &&
+                       candidate.name.ends_with(nameSuffix);
+            });
+        if (element == circuitResult.value().elements.end()) return std::nullopt;
+        const auto branch = std::find_if(electrical.branches.begin(), electrical.branches.end(),
+            [element](const p135::circuit::BranchResult& candidate) {
+                return candidate.component == element->id;
+            });
+        if (branch == electrical.branches.end()) return std::nullopt;
+        return branch->rmsCurrent;
+    };
+    const bool isWyeConnection =
+        result.value().network.connection == p135::filter::Connection::Wye;
     for (const auto& point : sweepResult.value().points) {
+        std::array<std::complex<double>, 3> phasePhasors{};
+        bool phaseCurrentsAvailable = false;
+        if (isWyeConnection) {
+            const auto a = filterBranchCurrent(point.result, " L1 R");
+            const auto b = filterBranchCurrent(point.result, " L2 R");
+            const auto c = filterBranchCurrent(point.result, " L3 R");
+            phaseCurrentsAvailable = a && b && c;
+            if (phaseCurrentsAvailable) phasePhasors = {*a, *b, *c};
+        } else {
+            const auto ab = filterBranchCurrent(point.result, " L1-L2 R");
+            const auto bc = filterBranchCurrent(point.result, " L2-L3 R");
+            const auto ca = filterBranchCurrent(point.result, " L3-L1 R");
+            phaseCurrentsAvailable = ab && bc && ca;
+            if (phaseCurrentsAvailable)
+                phasePhasors = {*ab - *ca, *bc - *ab, *ca - *bc};
+        }
+        if (!phaseCurrentsAvailable) {
+            magneticSweepValid = false;
+            threeLimbSweepValid = false;
+            magneticModelWarning = tr("Source-limited sweep NOT_VERIFIED: filter branch currents could not be mapped to the three phase conductors.");
+            threeLimbModelWarning = magneticModelWarning;
+            break;
+        }
         double currentSquared = 0.0;
         double maximumPhaseRmsCurrent = 0.0;
-        // For the current single-branch Wye/Delta model, the three phase
-        // series-branch currents are the R elements at indices 3, 6 and 9.
-        for (const std::size_t index : {3U, 6U, 9U}) {
-            if (index < point.result.branches.size()) {
-                const double phaseRms = std::abs(point.result.branches[index].rmsCurrent);
-                currentSquared += phaseRms * phaseRms;
-                maximumPhaseRmsCurrent = std::max(maximumPhaseRmsCurrent, phaseRms);
-            }
+        for (const auto& phaseCurrent : phasePhasors) {
+            const double phaseRms = std::abs(phaseCurrent);
+            currentSquared += phaseRms * phaseRms;
+            maximumPhaseRmsCurrent = std::max(maximumPhaseRmsCurrent, phaseRms);
         }
         const double bankCurrent = std::sqrt(currentSquared);
         const double phasePeakCurrent = std::sqrt(2.0) * maximumPhaseRmsCurrent;
@@ -2230,20 +2268,7 @@ void MainWindow::calculateFilter()
             }
         }
         if (threeLimbMagneticBase && threeLimbSweepValid) {
-            std::array<std::complex<double>, 3> phasePhasors{};
-            bool phaseCurrentsAvailable = true;
-            for (std::size_t phase = 0; phase < 3; ++phase) {
-                const std::size_t branchIndex = 3U + phase * 3U;
-                if (branchIndex >= point.result.branches.size()) {
-                    phaseCurrentsAvailable = false;
-                    break;
-                }
-                phasePhasors[phase] = point.result.branches[branchIndex].rmsCurrent;
-            }
-            if (!phaseCurrentsAvailable) {
-                threeLimbSweepValid = false;
-                threeLimbModelWarning = tr("Coupled magnetic sweep NOT_VERIFIED: phase branch currents are missing from the AC result.");
-            } else {
+            {
                 p135::domain::ThreeLimbMagneticCycleSamplingRequest samplingRequest;
                 samplingRequest.magnetic = *threeLimbMagneticBase;
                 samplingRequest.phaseRmsPhasors = phasePhasors;
