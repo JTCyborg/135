@@ -450,3 +450,14 @@ if(MSVC)
 else()
     target_compile_options(Project135RevisionBoundReactorThermalNetworkTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135IdealReactorSizingTests
+    application/ideal_reactor_sizing_tests.cpp
+)
+target_link_libraries(Project135IdealReactorSizingTests PRIVATE Project135::Application)
+add_test(NAME Project135IdealReactorSizingTests COMMAND Project135IdealReactorSizingTests)
+if(MSVC)
+    target_compile_options(Project135IdealReactorSizingTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135IdealReactorSizingTests PRIVATE -UNDEBUG)
+endif()
