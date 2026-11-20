@@ -578,7 +578,7 @@ int main()
         for (const auto& diagnostic : windingEnvelope.error().diagnostics) {
             std::cerr << "  [" << diagnostic.code << "] "
                       << diagnostic.message << " (field: "
-                      << diagnostic.field << ")\n";
+                      << diagnostic.fieldPath.value_or("<none>") << ")\n";
         }
     }
     assert(windingEnvelope);
