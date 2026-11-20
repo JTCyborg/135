@@ -2268,19 +2268,18 @@ void MainWindow::calculateFilter()
             }
         }
         if (threeLimbMagneticBase && threeLimbSweepValid) {
-            {
-                p135::domain::ThreeLimbMagneticCycleSamplingRequest samplingRequest;
-                samplingRequest.magnetic = *threeLimbMagneticBase;
-                samplingRequest.phaseRmsPhasors = phasePhasors;
-                for (std::size_t phase = 0; phase < 3; ++phase) {
-                    samplingRequest.phaseDcCurrents[phase] = p135::units::Current{
-                        phaseDcBiasCurrentA_[phase] ? phaseDcBiasCurrentA_[phase]->value() : 0.0
-                    };
+            p135::domain::ThreeLimbMagneticCycleSamplingRequest samplingRequest;
+            samplingRequest.magnetic = *threeLimbMagneticBase;
+            samplingRequest.phaseRmsPhasors = phasePhasors;
+            for (std::size_t phase = 0; phase < 3; ++phase) {
+                samplingRequest.phaseDcCurrents[phase] = p135::units::Current{
+                    phaseDcBiasCurrentA_[phase] ? phaseDcBiasCurrentA_[phase]->value() : 0.0
+                };
                 }
-                samplingRequest.relativePeakTolerance = 1.0e-3;
-                samplingRequest.maximumSamples = 288;
-                const auto sampledCycle =
-                    p135::domain::sampleThreeLimbMagneticCycle(samplingRequest);
+            samplingRequest.relativePeakTolerance = 1.0e-3;
+            samplingRequest.maximumSamples = 288;
+            const auto sampledCycle =
+                p135::domain::sampleThreeLimbMagneticCycle(samplingRequest);
                 if (!sampledCycle) {
                     threeLimbSweepValid = false;
                     threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz: %2")
