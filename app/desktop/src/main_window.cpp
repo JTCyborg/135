@@ -821,7 +821,127 @@ QWidget* MainWindow::createProjectPage()
     note->setWordWrap(true);
     note->setStyleSheet("color: palette(mid);");
     layout->addWidget(note);
+
+    auto* confirmationRow = new QHBoxLayout;
+    auto* confirmationStatus = new QLabel(tr("Project data has not been confirmed."));
+    confirmationStatus->setObjectName(QStringLiteral("projectConfirmationStatus"));
+    confirmationStatus->setWordWrap(true);
+    auto* confirmProject = new QPushButton(tr("Confirm project and continue"));
+    confirmProject->setObjectName(QStringLiteral("confirmProjectAndContinue"));
+    confirmationRow->addWidget(confirmationStatus, 1);
+    confirmationRow->addWidget(confirmProject);
+    layout->addLayout(confirmationRow);
     layout->addStretch();
+
+    connect(confirmProject, &QPushButton::clicked, this, [this, page, confirmationStatus,
+        projectDate, revision, coolingMethod, airflow] {
+        const QString projectName = projectName_->text().trimmed();
+        if (projectName.isEmpty()) {
+            QMessageBox::warning(this, tr("Project data is incomplete"),
+                tr("Enter a project name before confirming this tab."));
+            projectName_->setFocus();
+            return;
+        }
+        const QDate parsedDate = QDate::fromString(projectDate->text().trimmed(), Qt::ISODate);
+        if (!parsedDate.isValid() ||
+            parsedDate.toString(Qt::ISODate) != projectDate->text().trimmed()) {
+            QMessageBox::warning(this, tr("Invalid project date"),
+                tr("Enter the project date in YYYY-MM-DD format."));
+            projectDate->setFocus();
+            return;
+        }
+        if (revision->text().trimmed().isEmpty()) {
+            QMessageBox::warning(this, tr("Missing project revision"),
+                tr("Enter a project revision, for example A."));
+            revision->setFocus();
+            return;
+        }
+        if (coolingMethod->currentData().toString() == QStringLiteral("AF") &&
+            airflow->value() <= 0.0) {
+            QMessageBox::warning(this, tr("Missing airflow"),
+                tr("Forced-air cooling is selected. Enter a verified airflow greater than zero."));
+            airflow->setFocus();
+            return;
+        }
+
+        saveProjectSettings();
+
+        QJsonObject fields;
+        for (QWidget* widget : page->findChildren<QWidget*>()) {
+            const QString key = widget->objectName();
+            if (key.isEmpty()) continue;
+            if (const auto* line = qobject_cast<const QLineEdit*>(widget)) {
+                fields.insert(key, line->text());
+            } else if (const auto* combo = qobject_cast<const QComboBox*>(widget)) {
+                QJsonObject value;
+                value.insert(QStringLiteral("text"), combo->currentText());
+                value.insert(QStringLiteral("data"), QJsonValue::fromVariant(combo->currentData()));
+                fields.insert(key, value);
+            } else if (const auto* number = qobject_cast<const QDoubleSpinBox*>(widget)) {
+                fields.insert(key, number->value());
+            } else if (const auto* integer = qobject_cast<const QSpinBox*>(widget)) {
+                fields.insert(key, integer->value());
+            } else if (const auto* check = qobject_cast<const QCheckBox*>(widget)) {
+                fields.insert(key, check->isChecked());
+            } else if (const auto* text = qobject_cast<const QPlainTextEdit*>(widget)) {
+                fields.insert(key, text->toPlainText());
+            } else if (const auto* table = qobject_cast<const QTableWidget*>(widget)) {
+                QJsonArray rows;
+                for (int row = 0; row < table->rowCount(); ++row) {
+                    QJsonArray cells;
+                    for (int column = 0; column < table->columnCount(); ++column) {
+                        const auto* item = table->item(row, column);
+                        cells.append(item ? QJsonValue(item->text()) : QJsonValue(QJsonValue::Null));
+                    }
+                    rows.append(cells);
+                }
+                fields.insert(key, rows);
+            }
+        }
+
+        QJsonObject snapshot;
+        snapshot.insert(QStringLiteral("schemaVersion"), 1);
+        snapshot.insert(QStringLiteral("tabId"), QStringLiteral("project"));
+        snapshot.insert(QStringLiteral("tabTitle"), QStringLiteral("Project"));
+        snapshot.insert(QStringLiteral("projectId"), projectId_);
+        snapshot.insert(QStringLiteral("confirmedAtUtc"),
+            QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+        snapshot.insert(QStringLiteral("buildConfiguration"),
+#ifdef _DEBUG
+            QStringLiteral("Debug")
+#else
+            QStringLiteral("Release")
+#endif
+        );
+        snapshot.insert(QStringLiteral("fields"), fields);
+
+#ifdef _DEBUG
+        const QString outputDirectory = QStringLiteral("C:/Temp/trdos/135");
+        if (!QDir().mkpath(outputDirectory)) {
+            QMessageBox::critical(this, tr("Cannot save project snapshot"),
+                tr("Cannot create output directory: %1").arg(outputDirectory));
+            return;
+        }
+        QSaveFile output(QDir(outputDirectory).filePath(QStringLiteral("01_project.json")));
+        if (!output.open(QIODevice::WriteOnly)) {
+            QMessageBox::critical(this, tr("Cannot save project snapshot"), output.errorString());
+            return;
+        }
+        const QByteArray json = QJsonDocument(snapshot).toJson(QJsonDocument::Indented);
+        if (output.write(json) != json.size() || !output.commit()) {
+            QMessageBox::critical(this, tr("Cannot save project snapshot"),
+                tr("Writing the project snapshot failed: %1").arg(output.errorString()));
+            return;
+        }
+        confirmationStatus->setText(tr("Confirmed. Debug snapshot saved: C:/Temp/trdos/135/01_project.json"));
+        appendLog(tr("Project tab confirmed; snapshot saved to C:/Temp/trdos/135/01_project.json."));
+#else
+        confirmationStatus->setText(tr("Project data confirmed."));
+        appendLog(tr("Project tab confirmed (Release build; debug snapshot is disabled)."));
+#endif
+        tabs_->setCurrentIndex(1);
+    });
+
     connect(projectName_, &QLineEdit::textChanged, this, [this] { updateProjectTitle(); saveProjectSettings(); });
     connect(customer, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
     connect(projectNumber, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
