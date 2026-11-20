@@ -6,6 +6,8 @@
 
 #include <cmath>
 #include <string>
+#include <stdexcept>
+#include <exception>
 #include <utility>
 
 namespace p135::infrastructure::sqlite {
