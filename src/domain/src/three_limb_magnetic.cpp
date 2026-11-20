@@ -47,9 +47,17 @@ std::optional<std::pair<double, double>> bhAtFluxDensity(
     const CoreMaterial& material, double fluxDensity)
 {
     const auto& curve = material.bhCurve;
-    if (curve.size() < 2 || fluxDensity < 0.0 ||
-        fluxDensity > curve.back().fluxDensity.si())
+    if (curve.size() < 2 || !std::isfinite(fluxDensity) || fluxDensity < 0.0)
         return std::nullopt;
+    // Above the final measured point, continue with the vacuum-permeability
+    // differential slope. This is an explicit physical asymptote, not measured
+    // material data; callers still report whether the solution extrapolated.
+    if (fluxDensity > curve.back().fluxDensity.si()) {
+        const double hLast = curve.back().fieldStrength.si();
+        const double bLast = curve.back().fluxDensity.si();
+        return std::pair{hLast + (fluxDensity - bLast) / vacuumPermeability,
+                         1.0 / vacuumPermeability};
+    }
     for (std::size_t i = 1; i < curve.size(); ++i) {
         const double b0 = curve[i - 1].fluxDensity.si();
         const double b1 = curve[i].fluxDensity.si();
@@ -77,14 +85,19 @@ std::optional<EdgeState> evaluateEdge(const CoreMaterial& material,
 {
     const double drive = nodeDrop + edge.mmf;
     const double magnitude = std::abs(drive);
-    const double maximum = requiredMmf(material, edge,
-        material.bhCurve.back().fluxDensity.si());
-    if (!std::isfinite(maximum) || magnitude > maximum * (1.0 + 1.0e-12))
-        return std::nullopt;
-
     double low = 0.0;
     double high = material.bhCurve.back().fluxDensity.si();
-    for (int iteration = 0; iteration < 70; ++iteration) {
+    // Expand the flux-density bracket when the requested MMF is beyond the
+    // measured B-H range. bhAtFluxDensity() supplies the μ0 asymptote there.
+    for (int expansion = 0; expansion < 64; ++expansion) {
+        const double required = requiredMmf(material, edge, high);
+        if (!std::isfinite(required)) return std::nullopt;
+        if (required >= magnitude) break;
+        high *= 2.0;
+        if (!std::isfinite(high) || high <= 0.0) return std::nullopt;
+        if (expansion == 63) return std::nullopt;
+    }
+    for (int iteration = 0; iteration < 80; ++iteration) {
         const double middle = 0.5 * (low + high);
         if (requiredMmf(material, edge, middle) < magnitude)
             low = middle;
@@ -373,9 +386,16 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
     for (std::size_t phase = 0; phase < 3; ++phase)
         potential[phase] = edges[phase].mmf;
     auto state = evaluateNetwork(material, edges, potential);
+    // The winding-MMF seed is only a Newton starting guess. It can create
+    // artificial yoke potential differences even when the physical zero-current
+    // state is valid. Fall back to the true zero-potential state before failing.
+    if (!state) {
+        potential.fill(0.0);
+        state = evaluateNetwork(material, edges, potential);
+    }
     if (!state)
         return fail(ErrorCode::ModelOutOfDomain,
-            "Zero-state initialization is outside the supplied B-H domain.",
+            "Zero-potential magnetic network initialization is invalid for the supplied B-H curve.",
             "material.bhCurve");
     const double maximumBranchArea = std::max({
         limbAreas[0], limbAreas[1], limbAreas[2],
