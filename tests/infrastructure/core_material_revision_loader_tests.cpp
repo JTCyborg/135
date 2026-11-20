@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     // Published steel seed records do not contain a continuous B-H curve.
     // They must not be silently converted into solver-ready core materials.
     const auto incompleteSteel =
-        loadCoreMaterialRevision(store, "SEED-MAT-TK-POWERCORE-M235-35A-R1");
+        loadCoreMaterialRevision(store, "SEED-TK-M235-35A-R1");
     assert(!incompleteSteel);
     assert(incompleteSteel.error().code == ErrorCode::InvalidInput);
 
