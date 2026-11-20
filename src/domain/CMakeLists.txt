@@ -2,6 +2,7 @@ add_library(Project135Domain
     src/mechanical_geometry.cpp
     src/magnetic_product.cpp
     src/magnetic_circuit.cpp
+    src/core_loss.cpp
     src/three_limb_magnetic.cpp
     src/material_catalog.cpp
     src/component_catalog.cpp
