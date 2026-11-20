@@ -39,6 +39,7 @@ int main()
     assert(thermalPlan.value().orderedStages[1] == "thermal.steady_state");
 
     assert(!planReactorRecalculation({"unknown.input"}));
-    assert(!planReactorRecalculation({}));
+    const auto noChanges = planReactorRecalculation({});
+    assert(noChanges && noChanges.value().orderedStages.empty());
     return 0;
 }
