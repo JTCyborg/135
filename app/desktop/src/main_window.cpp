@@ -10,6 +10,7 @@
 
 #include "p135/application/reactor_design_inputs.hpp"
 #include "p135/application/reactor_design_graph.hpp"
+#include "p135/application/ideal_reactor_sizing.hpp"
 #include "p135/filter/synthesis.hpp"
 #include "p135/filter/harmonics.hpp"
 #include "p135/filter/analysis.hpp"
@@ -1507,6 +1508,36 @@ QWidget* MainWindow::createResultsPage()
     designStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
     designLayout->addWidget(designStatus);
 
+    auto* idealCriteria = new QGroupBox(tr("Ideal first-pass sizing criteria (user supplied)"), designGroup);
+    auto* idealCriteriaLayout = new QFormLayout(idealCriteria);
+    const auto addIdealCriterion = [idealCriteria](const QString& objectName, double maximum,
+                                                    int decimals, const QString& suffix) {
+        auto* control = new QDoubleSpinBox(idealCriteria);
+        control->setObjectName(objectName);
+        control->setRange(0.0, maximum);
+        control->setDecimals(decimals);
+        control->setSingleStep(decimals <= 2 ? 0.01 : 0.1);
+        control->setSpecialValueText(QObject::tr("NOT PROVIDED"));
+        control->setSuffix(suffix);
+        control->setValue(0.0);
+        return control;
+    };
+    idealCriteriaLayout->addRow(tr("Allowable peak flux density Bmax:"), 
+        addIdealCriterion(QStringLiteral("idealSizing_Bmax"), 2.0, 4, tr(" T")));
+    idealCriteriaLayout->addRow(tr("Allowable current density J:"), 
+        addIdealCriterion(QStringLiteral("idealSizing_J"), 100.0, 3, tr(" A/mm²")));
+    idealCriteriaLayout->addRow(tr("Window utilization Ku:"), 
+        addIdealCriterion(QStringLiteral("idealSizing_Ku"), 100.0, 2, tr(" %")));
+    idealCriteriaLayout->addRow(tr("Stacking factor Ks:"), 
+        addIdealCriterion(QStringLiteral("idealSizing_Ks"), 100.0, 2, tr(" %")));
+    designLayout->addWidget(idealCriteria);
+
+    auto* idealSizingResult = new QLabel(tr("Ideal area-product estimate: NOT CALCULATED — enter all four criteria and recalculate."));
+    idealSizingResult->setObjectName(QStringLiteral("idealSizingResult"));
+    idealSizingResult->setWordWrap(true);
+    idealSizingResult->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    designLayout->addWidget(idealSizingResult);
+
     auto* designTable = new QTableWidget(0, 4, designGroup);
     designTable->setObjectName(QStringLiteral("constructionDesignTable"));
     designTable->setHorizontalHeaderLabels({
@@ -2668,6 +2699,58 @@ void MainWindow::calculateFilter()
                    "dimensions, turns and conductor section without assumptions.")
                     .arg(automaticMaterialNotes.join(QStringLiteral("\n"))));
             constructionState->setStyleSheet("color: #a66b00; font-weight: 600;");
+        }
+    }
+
+    // First-pass ideal area-product bound. Inputs are explicit user criteria;
+    // this intentionally uses the fundamental branch current only. Harmonic
+    // copper loss, core loss, geometry, insulation and temperature remain outside
+    // this lower-bound estimate and are never represented as verified.
+    if (auto* output = findChild<QLabel*>(QStringLiteral("idealSizingResult"))) {
+        auto* bmax = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Bmax"));
+        auto* density = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_J"));
+        auto* utilization = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ku"));
+        auto* stacking = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ks"));
+        if (bmax && density && utilization && stacking && !result.value().branches.empty() &&
+            bmax->value() > 0.0 && density->value() > 0.0 &&
+            utilization->value() > 0.0 && stacking->value() > 0.0) {
+            const auto& branch = result.value().branches.front();
+            const double phaseVoltage = branch.phaseVoltage.si();
+            const double inductance = branch.inductance.si();
+            const double branchPower = branch.targetReactivePower.si();
+            if (phaseVoltage > 0.0 && inductance > 0.0 && branchPower > 0.0) {
+                const double rmsCurrent = branchPower / (3.0 * phaseVoltage);
+                const auto estimate = p135::application::calculateIdealReactorAreaProduct({
+                    inductance, std::sqrt(2.0) * rmsCurrent, rmsCurrent,
+                    bmax->value(), density->value() * 1.0e6,
+                    utilization->value() / 100.0, stacking->value() / 100.0
+                });
+                if (estimate) {
+                    const auto& value = estimate.value();
+                    output->setText(tr(
+                        "IDEAL LOWER BOUND (fundamental current only)\\n"
+                        "Gross Ae×Aw ≥ %1 mm⁴\\n"
+                        "Equivalent square side ≥ %2 mm\\n"
+                        "Stored peak energy = %3 J\\n"
+                        "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\\n"
+                        "NOT a selected core or winding design. Harmonics, losses, gap geometry, "
+                        "insulation, cooling and temperature rise are not included.")
+                        .arg(value.minimumGrossAreaProductM4 * 1.0e12, 0, 'g', 6)
+                        .arg(value.equivalentSquareSideM * 1.0e3, 0, 'g', 6)
+                        .arg(value.storedPeakEnergyJ, 0, 'g', 6)
+                        .arg(value.assumedAllowablePeakFluxDensityT, 0, 'g', 5)
+                        .arg(value.assumedAllowableCurrentDensityApm2 / 1.0e6, 0, 'g', 5)
+                        .arg(value.assumedWindowUtilization * 100.0, 0, 'g', 5)
+                        .arg(value.assumedStackingFactor * 100.0, 0, 'g', 5));
+                } else {
+                    output->setText(tr("Ideal area-product estimate failed: %1")
+                        .arg(QString::fromStdString(estimate.error().message)));
+                }
+            } else {
+                output->setText(tr("Ideal area-product estimate unavailable: synthesized branch data is incomplete."));
+            }
+        } else {
+            output->setText(tr("Ideal area-product estimate: NOT CALCULATED — enter all four criteria and recalculate."));
         }
     }
 
