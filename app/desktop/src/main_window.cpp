@@ -2647,14 +2647,20 @@ void MainWindow::calculateFilter()
     addResult(tr("Target three-phase reactive power"), branch.targetReactivePower.si() / 1000.0,
               tr("kvar"));
     addResult(tr("Branch quality factor"), branch.qualityFactor, tr("—"));
-    addResult(tr("MNA filter-bank active power"), electricalResult.value().powerBalance.totalActivePowerW, tr("W"));
-    addResult(tr("MNA filter-bank reactive power"),
-              [&electricalResult] {
-                  double q = 0.0;
-                  for (std::size_t i = 3; i < electricalResult.value().branches.size(); ++i)
-                      q += electricalResult.value().branches[i].complexPowerVA.imag();
-                  return q;
-              }(), tr("var"));
+    p135::circuit::Complex filterBankComplexPower{};
+    for (const auto& branchResult : electricalResult.value().branches) {
+        const auto element = std::find_if(circuitResult.value().elements.begin(),
+            circuitResult.value().elements.end(),
+            [&branchResult](const p135::circuit::Element& candidate) {
+                return candidate.id == branchResult.component;
+            });
+        if (element == circuitResult.value().elements.end()) continue;
+        if (element->name.starts_with("Thevenin") || element->name.starts_with("Source"))
+            continue;
+        filterBankComplexPower += branchResult.complexPowerVA;
+    }
+    addResult(tr("MNA filter-bank active power"), filterBankComplexPower.real(), tr("W"));
+    addResult(tr("MNA filter-bank reactive power"), filterBankComplexPower.imag(), tr("var"));
     addResult(tr("MNA matrix order"),
               static_cast<double>(electricalResult.value().solver.matrixOrder), tr("unknowns"));
     addResult(tr("MNA relative residual"),
