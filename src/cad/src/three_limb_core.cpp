@@ -278,6 +278,12 @@ Result<TopoDS_Shape> buildWindingPackEnvelopeShape(
     const double outerWidth = innerWidth + 2.0 * radialBuild;
     const double outerDepth = innerDepth + 2.0 * radialBuild;
     const double axialHeight = winding.axialHeight.si();
+    const double requiredAxialLength = axialHeight + 2.0 * winding.endClearance.si();
+    const double axialTolerance = std::max(1.0e-9, bobbin.axialLength.si() * 1.0e-6);
+    if (requiredAxialLength > bobbin.axialLength.si() + axialTolerance)
+        return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+            "Winding axial height plus both end clearances must fit inside the bobbin.",
+            "windingPack.axialHeight");
 
     const double xOuter = -0.5 * outerWidth * toMm;
     const double zOuter = -0.5 * outerDepth * toMm;
