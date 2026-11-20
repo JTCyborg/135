@@ -314,6 +314,9 @@ int main()
     for (TopExp_Explorer it(yokeGapShape.value(), TopAbs_SOLID); it.More(); it.Next()) ++yokeGapSolidCount;
     assert(yokeGapSolidCount == 8);
     assert(BRepCheck_Analyzer(yokeGapShape.value()).IsValid());
+    // A 10 mm cut along the yoke length removes 10 x 40 x 80 mm3.
+    assert(std::abs(volumeOf(yokeGapShape.value()) -
+                    (baseVolumeMm3 - 10.0 * 40.0 * 80.0)) < 1.0e-6);
 
     auto invalidWindowStack = geometry;
     invalidWindowStack.core.windowWidths[0] = units::Length{0.05};
