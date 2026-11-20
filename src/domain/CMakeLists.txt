@@ -5,6 +5,7 @@ add_library(Project135Domain
     src/magnetic_product.cpp
     src/magnetic_circuit.cpp
     src/core_loss.cpp
+    src/three_limb_core_loss.cpp
     src/initial_magnetization.cpp
     src/three_limb_magnetic.cpp
     src/three_limb_geometry_adapter.cpp
