@@ -31,9 +31,17 @@ struct BhInterpolated {
 std::optional<BhInterpolated> interpolateBh(const CoreMaterial& material, double b)
 {
     const auto& curve = material.bhCurve;
-    if (curve.size() < 2 || b < curve.front().fluxDensity.si() ||
-        b > curve.back().fluxDensity.si())
+    if (curve.size() < 2 || !std::isfinite(b) ||
+        b < curve.front().fluxDensity.si())
         return std::nullopt;
+    if (b > curve.back().fluxDensity.si()) {
+        const double bLast = curve.back().fluxDensity.si();
+        const double hLast = curve.back().fieldStrength.si();
+        return BhInterpolated{
+            hLast + (b - bLast) / vacuumPermeability,
+            1.0 / vacuumPermeability
+        };
+    }
 
     for (std::size_t i = 1; i < curve.size(); ++i) {
         const double b0 = curve[i - 1].fluxDensity.si();
@@ -110,17 +118,24 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
         if (!point) return std::numeric_limits<double>::quiet_NaN();
         return point->h * path + b * area * gap / (vacuumPermeability * gapArea);
     };
-    const double maximumMmf = requiredMmf(bMax);
-    if (!std::isfinite(maximumMmf) || mmf > maximumMmf)
-        return fail(ErrorCode::ModelOutOfDomain,
-                    "Requested current drives flux beyond the measured B-H curve; no extrapolation was performed.",
-                    "current");
-
     double b = 0.0;
     if (mmf > 0.0) {
         double low = bMin;
         double high = bMax;
-        for (int iteration = 0; iteration < 100; ++iteration) {
+        // Continue beyond the last measured point with dH/dB = 1/μ0.
+        // The returned range flag distinguishes this asymptote from measured data.
+        for (int expansion = 0; expansion < 64; ++expansion) {
+            const double highMmf = requiredMmf(high);
+            if (!std::isfinite(highMmf))
+                return fail(ErrorCode::ModelOutOfDomain,
+                    "Magnetic-circuit MMF bracket became non-finite.", "current");
+            if (highMmf >= mmf) break;
+            high *= 2.0;
+            if (!std::isfinite(high) || high <= 0.0 || expansion == 63)
+                return fail(ErrorCode::ModelOutOfDomain,
+                    "Unable to bracket the magnetic operating point.", "current");
+        }
+        for (int iteration = 0; iteration < 120; ++iteration) {
             const double middle = 0.5 * (low + high);
             if (requiredMmf(middle) < mmf) low = middle;
             else high = middle;
@@ -142,7 +157,7 @@ analyzeMagneticCircuit(const MagneticCircuitRequest& request)
     result.coreAreaAtGap = units::Area{area};
     result.effectiveGapArea = units::Area{gapArea};
     result.gapFringingFactor = gapArea / area;
-    result.withinBhCurveRange = true;
+    result.withinBhCurveRange = b <= bMax;
 
     const double reluctanceDifferential =
         path * operating->slopeHPerT / area + gap / (vacuumPermeability * gapArea);
