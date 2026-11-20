@@ -867,24 +867,56 @@ QWidget* MainWindow::createProjectPage()
         saveProjectSettings();
 
         QJsonObject fields;
+        QJsonObject fieldLabels;
+        QJsonObject fieldUnits;
+        const QHash<QString, QString> labels{
+            {QStringLiteral("projectName"), tr("Project name")},
+            {QStringLiteral("projectProductFamily"), tr("Product family")},
+            {QStringLiteral("projectCustomer"), tr("Customer")},
+            {QStringLiteral("projectNumber"), tr("Project number")},
+            {QStringLiteral("projectEngineer"), tr("Design engineer")},
+            {QStringLiteral("projectDate"), tr("Project date")},
+            {QStringLiteral("projectRevision"), tr("Revision")},
+            {QStringLiteral("projectAmbientC"), tr("Maximum ambient temperature")},
+            {QStringLiteral("projectAltitudeM"), tr("Installation altitude")},
+            {QStringLiteral("projectInsulationClass"), tr("Insulation thermal class")},
+            {QStringLiteral("projectIpRating"), tr("Enclosure protection")},
+            {QStringLiteral("projectCoolingMethod"), tr("Cooling method")},
+            {QStringLiteral("projectAirflowM3h"), tr("Forced-air volume flow")}
+        };
+        const QHash<QString, QString> units{
+            {QStringLiteral("projectAmbientC"), QStringLiteral("°C")},
+            {QStringLiteral("projectAltitudeM"), QStringLiteral("m above sea level")},
+            {QStringLiteral("projectAirflowM3h"), QStringLiteral("m³/h")}
+        };
         for (QWidget* widget : page->findChildren<QWidget*>()) {
             const QString key = widget->objectName();
-            if (key.isEmpty()) continue;
+            // Qt creates unnamed/internal editor children (for example qt_spinbox_lineedit).
+            // They are implementation details, not independent project fields.
+            if (key.isEmpty() || key.startsWith(QStringLiteral("qt_"))) continue;
+            bool captured = false;
             if (const auto* line = qobject_cast<const QLineEdit*>(widget)) {
                 fields.insert(key, line->text());
+                captured = true;
             } else if (const auto* combo = qobject_cast<const QComboBox*>(widget)) {
                 QJsonObject value;
                 value.insert(QStringLiteral("text"), combo->currentText());
+                value.insert(QStringLiteral("index"), combo->currentIndex());
                 value.insert(QStringLiteral("data"), QJsonValue::fromVariant(combo->currentData()));
                 fields.insert(key, value);
+                captured = true;
             } else if (const auto* number = qobject_cast<const QDoubleSpinBox*>(widget)) {
                 fields.insert(key, number->value());
+                captured = true;
             } else if (const auto* integer = qobject_cast<const QSpinBox*>(widget)) {
                 fields.insert(key, integer->value());
+                captured = true;
             } else if (const auto* check = qobject_cast<const QCheckBox*>(widget)) {
                 fields.insert(key, check->isChecked());
+                captured = true;
             } else if (const auto* text = qobject_cast<const QPlainTextEdit*>(widget)) {
                 fields.insert(key, text->toPlainText());
+                captured = true;
             } else if (const auto* table = qobject_cast<const QTableWidget*>(widget)) {
                 QJsonArray rows;
                 for (int row = 0; row < table->rowCount(); ++row) {
@@ -896,6 +928,13 @@ QWidget* MainWindow::createProjectPage()
                     rows.append(cells);
                 }
                 fields.insert(key, rows);
+                captured = true;
+            }
+            if (captured && labels.contains(key)) {
+                fieldLabels.insert(key, labels.value(key));
+            }
+            if (captured && units.contains(key)) {
+                fieldUnits.insert(key, units.value(key));
             }
         }
 
@@ -914,6 +953,10 @@ QWidget* MainWindow::createProjectPage()
 #endif
         );
         snapshot.insert(QStringLiteral("fields"), fields);
+        snapshot.insert(QStringLiteral("fieldLabels"), fieldLabels);
+        snapshot.insert(QStringLiteral("fieldUnits"), fieldUnits);
+        snapshot.insert(QStringLiteral("topologyPreview"),
+            tr("Three-phase shunt branch: series-tuned R-L-C, termination Wye (Y)"));
 
 #ifdef _DEBUG
         const QString outputDirectory = QStringLiteral("C:/Temp/trdos/135");
