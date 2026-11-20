@@ -3592,7 +3592,7 @@ void MainWindow::calculateFilter()
             ? std::optional<double>{inductorSaturationCurrent_->value()} : std::nullopt;
 
 
-    QString calculationSummary = tr("LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed.");
+    QString calculationSummary = tr("LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available.");
     if (impedanceResult)
         calculationSummary += tr(" Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures.");
     else
@@ -3702,7 +3702,7 @@ void MainWindow::calculateFilter()
         }
         inputSnapshot.insert(QStringLiteral("constructionInputs"), constructionSnapshot);
         inputSnapshot.insert(QStringLiteral("constructionSizingStatus"),
-            QStringLiteral("NOT_CONNECTED_TO_SOLVER"));
+            QStringLiteral("AUTO_MATERIAL_CANDIDATES_SELECTED_PHYSICAL_SIZING_NOT_VERIFIED"));
 
         inputSnapshot.insert(QStringLiteral("sourceResistance_ohm"), sourceResistance);
         inputSnapshot.insert(QStringLiteral("sourceInductance_H"), sourceInductance);
