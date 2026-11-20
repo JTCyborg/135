@@ -258,6 +258,63 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
 }
 
 
+
+Result<TopoDS_Shape> buildWindingPackEnvelopeShape(
+    const domain::BobbinPhysicalGeometry& bobbin,
+    const domain::WindingPackPhysicalGeometry& winding)
+{
+    const auto bobbinValidation = domain::validate(bobbin);
+    if (!bobbinValidation) return Result<TopoDS_Shape>::failure(bobbinValidation.error());
+    const auto windingValidation = domain::validate(winding);
+    if (!windingValidation) return Result<TopoDS_Shape>::failure(windingValidation.error());
+
+    const double toMm = 1000.0;
+    const double bobbinBodyWidth = bobbin.innerWidth.si() + 2.0 * bobbin.wallThickness.si();
+    const double bobbinBodyDepth = bobbin.innerHeight.si() + 2.0 * bobbin.wallThickness.si();
+    const double clearance = bobbin.windingClearance.si();
+    const double radialBuild = winding.radialBuild.si();
+    const double innerWidth = bobbinBodyWidth + 2.0 * clearance;
+    const double innerDepth = bobbinBodyDepth + 2.0 * clearance;
+    const double outerWidth = innerWidth + 2.0 * radialBuild;
+    const double outerDepth = innerDepth + 2.0 * radialBuild;
+    const double axialHeight = winding.axialHeight.si();
+
+    const double xOuter = -0.5 * outerWidth * toMm;
+    const double zOuter = -0.5 * outerDepth * toMm;
+    const double xInner = -0.5 * innerWidth * toMm;
+    const double zInner = -0.5 * innerDepth * toMm;
+    BRepPrimAPI_MakeBox outerMaker(
+        gp_Pnt(xOuter, 0.0, zOuter),
+        outerWidth * toMm, axialHeight * toMm, outerDepth * toMm);
+    BRepPrimAPI_MakeBox innerMaker(
+        gp_Pnt(xInner, 0.0, zInner),
+        innerWidth * toMm, axialHeight * toMm, innerDepth * toMm);
+    if (!outerMaker.IsDone() || !innerMaker.IsDone())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to create the winding-pack envelope primitives.",
+            "windingPack.envelope");
+
+    BRepAlgoAPI_Cut cut(outerMaker.Shape(), innerMaker.Shape());
+    cut.Build();
+    if (!cut.IsDone() || cut.Shape().IsNull() ||
+        !BRepCheck_Analyzer(cut.Shape()).IsValid())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to create a valid hollow winding-pack envelope.",
+            "windingPack.envelope");
+
+    std::size_t solidCount = 0;
+    for (TopExp_Explorer it(cut.Shape(), TopAbs_SOLID); it.More(); it.Next())
+        ++solidCount;
+    GProp_GProps volumeProperties;
+    BRepGProp::VolumeProperties(cut.Shape(), volumeProperties);
+    if (solidCount != 1 || !std::isfinite(volumeProperties.Mass()) ||
+        volumeProperties.Mass() <= 0.0)
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "Winding-pack envelope must be one finite, positive-volume solid.",
+            "windingPack.envelope");
+    return Result<TopoDS_Shape>::success(cut.Shape());
+}
+
 Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
     const domain::ReactorPhysicalGeometry& geometry)
 {
