@@ -126,6 +126,21 @@ Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
         const auto legacyFerriteIt = component.find("ferriteMaterial");
         if (legacyFerriteIt != component.end() && legacyFerriteIt->is_string())
             snapshot.ferriteMaterial = legacyFerriteIt->get<std::string>();
+        snapshot.stackDepthM = optionalPositive(component, "stackDepth_m");
+        const auto stackStatus = component.find("stackDepthStatus");
+        if (stackStatus != component.end() && stackStatus->is_string())
+            snapshot.stackDepthStatus = stackStatus->get<std::string>();
+        const auto thicknessOptions = component.find("laminationThicknessOptions_m");
+        if (thicknessOptions != component.end()) {
+            if (!thicknessOptions->is_array())
+                throw std::invalid_argument("laminationThicknessOptions_m must be an array.");
+            for (const auto& thickness : *thicknessOptions) {
+                if (!thickness.is_number() || !std::isfinite(thickness.get<double>()) ||
+                    thickness.get<double>() <= 0.0)
+                    throw std::invalid_argument("Every lamination thickness option must be positive.");
+                snapshot.laminationThicknessOptionsM.push_back(thickness.get<double>());
+            }
+        }
         snapshot.sourceReference = revision.sourceReference;
         snapshot.datasetRevision = revision.datasetRevision;
 
