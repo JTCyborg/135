@@ -1,10 +1,14 @@
 #include "p135/cad/three_limb_core.hpp"
 
 #include <BRep_Builder.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepGProp.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopAbs_ShapeEnum.hxx>
+#include <TopExp_Explorer.hxx>
 #include <gp_Pnt.hxx>
 #include <GProp_GProps.hxx>
 
@@ -77,6 +81,70 @@ Result<TopoDS_Compound> makeSegmentedBox(
 }
 
 } // namespace
+
+
+Result<TopoDS_Shape> buildBobbinShape(const domain::BobbinPhysicalGeometry& geometry)
+{
+    const auto validation = domain::validate(geometry);
+    if (!validation) return Result<TopoDS_Shape>::failure(validation.error());
+    if (geometry.flangeThickness.si() <= 0.0)
+        return failure<TopoDS_Shape>(ErrorCode::UnsupportedConfiguration,
+            "A CAD bobbin requires a positive physical flange thickness.", "bobbin.flangeThickness");
+
+    constexpr double mm = 1000.0;
+    const double innerW = geometry.innerWidth.si();
+    const double innerH = geometry.innerHeight.si();
+    const double length = geometry.axialLength.si();
+    const double wall = geometry.wallThickness.si();
+    const double flangeT = geometry.flangeThickness.si();
+    const double bodyW = innerW + 2.0 * wall;
+    const double bodyH = innerH + 2.0 * wall;
+    const double flangeW = geometry.flangeOuterWidth.si();
+    const double flangeH = geometry.flangeOuterHeight.si();
+
+    const gp_Pnt bodyOrigin(-0.5 * bodyW * mm, 0.0, -0.5 * bodyH * mm);
+    const auto tube = BRepPrimAPI_MakeBox(bodyOrigin, bodyW * mm, length * mm, bodyH * mm).Shape();
+    const auto lowerFlange = BRepPrimAPI_MakeBox(
+        gp_Pnt(-0.5 * flangeW * mm, 0.0, -0.5 * flangeH * mm),
+        flangeW * mm, flangeT * mm, flangeH * mm).Shape();
+    const auto upperFlange = BRepPrimAPI_MakeBox(
+        gp_Pnt(-0.5 * flangeW * mm, (length - flangeT) * mm, -0.5 * flangeH * mm),
+        flangeW * mm, flangeT * mm, flangeH * mm).Shape();
+
+    BRepAlgoAPI_Fuse fuseLower(tube, lowerFlange);
+    fuseLower.Build();
+    if (!fuseLower.IsDone() || fuseLower.Shape().IsNull())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to fuse the lower bobbin flange to the tube.", "bobbin.lowerFlange");
+    BRepAlgoAPI_Fuse fuseUpper(fuseLower.Shape(), upperFlange);
+    fuseUpper.Build();
+    if (!fuseUpper.IsDone() || fuseUpper.Shape().IsNull())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to fuse the upper bobbin flange to the tube.", "bobbin.upperFlange");
+
+    const auto bore = BRepPrimAPI_MakeBox(
+        gp_Pnt(-0.5 * innerW * mm, -1.0e-3, -0.5 * innerH * mm),
+        innerW * mm, (length + 2.0e-3) * mm, innerH * mm).Shape();
+    BRepAlgoAPI_Cut hollow(fuseUpper.Shape(), bore);
+    hollow.Build();
+    if (!hollow.IsDone() || hollow.Shape().IsNull() ||
+        !BRepCheck_Analyzer(hollow.Shape()).IsValid())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to create a valid hollow bobbin solid.", "bobbin");
+
+    std::size_t solids = 0;
+    for (TopExp_Explorer it(hollow.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++solids;
+    if (solids != 1)
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "The bobbin must be one connected solid after flange fusion and bore cutting.", "bobbin");
+
+    GProp_GProps volumeProperties;
+    BRepGProp::VolumeProperties(hollow.Shape(), volumeProperties);
+    if (!std::isfinite(volumeProperties.Mass()) || volumeProperties.Mass() <= 0.0)
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "The bobbin solid has a non-positive or non-finite volume.", "bobbin");
+    return Result<TopoDS_Shape>::success(hollow.Shape());
+}
 
 Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeometry& geometry)
 {
