@@ -1145,16 +1145,6 @@ QWidget* MainWindow::createFilterPage()
     sourceInductance_->setSuffix(tr(" mH"));
     sourceResistance_->setObjectName(QStringLiteral("filterSourceTheveninResistanceOhm"));
     sourceInductance_->setObjectName(QStringLiteral("filterSourceTheveninInductanceMh"));
-    inductorSaturationCurrent_->setObjectName(QStringLiteral("filterInductorSaturationCurrentAPeak"));
-    inductorSaturationSource_->setObjectName(QStringLiteral("filterInductorSaturationEvidence"));
-    coreEffectiveAreaMm2_->setObjectName(QStringLiteral("coreEffectiveAreaMm2"));
-    coreMeanPathMm_->setObjectName(QStringLiteral("coreMeanMagneticPathMm"));
-    coreAirGapMm_->setObjectName(QStringLiteral("coreTotalAirGapPerLimbMm"));
-    coreGapEffectiveAreaMm2_->setObjectName(QStringLiteral("coreEffectiveGapAreaMm2"));
-    coreYokeEffectiveAreaMm2_->setObjectName(QStringLiteral("coreYokeEffectiveAreaMm2"));
-    coreYokeSegmentPathMm_->setObjectName(QStringLiteral("coreYokeSegmentPathMm"));
-    inductorTurns_->setObjectName(QStringLiteral("filterInductorTurnsPerPhase"));
-    coreBhSource_->setObjectName(QStringLiteral("coreBhCurveEvidence"));
     sourceForm->addRow(tr("Thevenin source resistance"), sourceResistance_);
     sourceForm->addRow(tr("Thevenin source inductance"), sourceInductance_);
 
@@ -1199,6 +1189,16 @@ QWidget* MainWindow::createFilterPage()
     inductorTurns_->setRange(0, 1000000);
     coreBhSource_ = new QLineEdit;
     coreBhSource_->setPlaceholderText(tr("Manufacturer datasheet / measured B-H report and revision"));
+    inductorSaturationCurrent_->setObjectName(QStringLiteral("filterInductorSaturationCurrentAPeak"));
+    inductorSaturationSource_->setObjectName(QStringLiteral("filterInductorSaturationEvidence"));
+    coreEffectiveAreaMm2_->setObjectName(QStringLiteral("coreEffectiveAreaMm2"));
+    coreMeanPathMm_->setObjectName(QStringLiteral("coreMeanMagneticPathMm"));
+    coreAirGapMm_->setObjectName(QStringLiteral("coreTotalAirGapPerLimbMm"));
+    coreGapEffectiveAreaMm2_->setObjectName(QStringLiteral("coreEffectiveGapAreaMm2"));
+    coreYokeEffectiveAreaMm2_->setObjectName(QStringLiteral("coreYokeEffectiveAreaMm2"));
+    coreYokeSegmentPathMm_->setObjectName(QStringLiteral("coreYokeSegmentPathMm"));
+    inductorTurns_->setObjectName(QStringLiteral("filterInductorTurnsPerPhase"));
+    coreBhSource_->setObjectName(QStringLiteral("coreBhCurveEvidence"));
     sourceForm->addRow(tr("Core effective area Ae"), coreEffectiveAreaMm2_);
     sourceForm->addRow(tr("Mean magnetic path le"), coreMeanPathMm_);
     sourceForm->addRow(tr("Total air gap per limb"), coreAirGapMm_);
