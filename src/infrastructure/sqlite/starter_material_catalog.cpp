@@ -1092,9 +1092,27 @@ std::vector<SeedRecord> starterRecords()
         micrometalsMix2Source,
         json{
             {"initialPermeability_reference", 10.0},
+            {"density_g_per_cm3", 5.0},
+            {"saturationFluxDensity_T", 1.48},
             {"temperatureStability_ppm_per_K_typical", 95.0},
             {"coreLoss_W_per_m3", 18000.0},
+            {"coreLossNominal_W_per_m3", 18000.0},
+            {"coreLossMaximum_W_per_m3", 20000.0},
             {"coreLossTest", {{"peakFluxDensity_T", 0.014}, {"frequency_Hz", 100000.0}}},
+            {"dcBiasTest", {{"magnetizingForce_Oe", 200.0},
+                            {"permeabilityRetentionNominal_percent", 95.9},
+                            {"permeabilityRetentionMinimum_percent", 94.8}}},
+            {"dcBiasPermeabilityEquation", {
+                {"expression", "1 / (a + b * H^c) + d"},
+                {"validMagnetizingForce_Oe", {1.0, 1000.0}},
+                {"a", 1.00e-2}, {"b", 1.83e-7}, {"c", 1.46}, {"d", 0.0}
+            }},
+            {"initialMagnetizationEquation", {
+                {"expression", "mu_i / (1/(H+a*H^b) + 1/(c*H^d) + 1/e)"},
+                {"validMagnetizingForce_Oe", {0.0, 4000.0}},
+                {"a", 1.50e-3}, {"b", 1.96}, {"c", 1.97e4},
+                {"d", 9.18e-4}, {"e", 1.48e3}
+            }},
             {"coreLossTestFluxDensitySourceUnit", "140 gauss"},
             {"coreLossEquation", {
                 {"expression", "f / (a/B^3 + b/B^2.3 + c/B^1.65) + d*B^2*f^2"},
