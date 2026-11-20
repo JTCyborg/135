@@ -499,6 +499,50 @@ int main()
                noProvenance.error().code == ErrorCode::MissingRequiredData);
     }
 
+
+    {
+        CoreMaterial measured;
+        measured.id = "CORE-LOSS-POWER";
+        measured.sourceReference = "manufacturer-loss-datasheet";
+        measured.datasetRevision = "R3";
+        measured.lossDataReference = "manufacturer-loss-table-R3";
+        for (const double f : {50.0, 100.0}) {
+            for (const double b : {0.5, 1.0}) {
+                for (const double temp : {293.15, 353.15}) {
+                    measured.lossData.push_back({
+                        units::Frequency{f}, units::FluxDensity{b},
+                        units::TemperatureKelvin{temp}, units::CoreLossDensity{4.0}});
+                }
+            }
+        }
+
+        CoreLossPowerRequest request;
+        request.frequency = units::Frequency{75.0};
+        request.peakFluxDensity = units::FluxDensity{0.75};
+        request.temperature = units::TemperatureKelvin{323.15};
+        request.coreMass = units::Mass{12.5};
+        request.coreMassSourceReference = "weighed-core-assembly-record-17";
+
+        const auto power = calculateCoreLossPower(measured, request);
+        assert(power);
+        assert(std::abs(power.value().specificLoss.si() - 4.0) < 1.0e-12);
+        assert(std::abs(power.value().totalLoss.si() - 50.0) < 1.0e-12);
+        assert(power.value().lossDataReference == measured.lossDataReference);
+        assert(power.value().coreMassSourceReference == request.coreMassSourceReference);
+
+        auto missingMassSource = request;
+        missingMassSource.coreMassSourceReference.clear();
+        const auto noMassProvenance = calculateCoreLossPower(measured, missingMassSource);
+        assert(!noMassProvenance);
+        assert(noMassProvenance.error().code == ErrorCode::MissingRequiredData);
+
+        auto invalidMass = request;
+        invalidMass.coreMass = units::Mass{-1.0};
+        const auto badMass = calculateCoreLossPower(measured, invalidMass);
+        assert(!badMass);
+        assert(badMass.error().code == ErrorCode::InvalidInput);
+    }
+
     CoreMaterialCatalog catalog;
     auto material = validProduct().coreMaterial;
     material.lossDataReference = "measured loss fixture";
