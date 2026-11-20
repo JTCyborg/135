@@ -63,7 +63,25 @@ int main()
 
     {
         auto spec = validWyeSpecification();
-        spec.branches.front().tuningHarmonicOrder = 1;
+        spec.branches.front().tuningHarmonicOrder = 4.75;
+        const auto result = synthesize(spec);
+        assert(result);
+        assert(near(result.value().branches.front().tuningHarmonicOrder, 4.75));
+        const auto& branch = result.value().branches.front();
+        const double actualTuneHz = 1.0 / std::sqrt(
+            branch.inductance.si() * branch.capacitance.si()) /
+            (2.0 * 3.14159265358979323846);
+        assert(near(actualTuneHz, 50.0 * 4.75));
+    }
+    {
+        auto spec = validWyeSpecification();
+        spec.branches.front().tuningHarmonicOrder = 1.99;
+        assert(!synthesize(spec));
+    }
+    {
+        auto spec = validWyeSpecification();
+        spec.branches.front().tuningHarmonicOrder =
+            std::numeric_limits<double>::quiet_NaN();
         assert(!synthesize(spec));
     }
     {
