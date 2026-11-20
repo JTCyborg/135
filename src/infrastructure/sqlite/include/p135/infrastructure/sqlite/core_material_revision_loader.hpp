@@ -4,6 +4,7 @@
 #include "p135/domain/material_catalog.hpp"
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
 
+#include <optional>
 #include <string>
 
 namespace p135::infrastructure::sqlite {
