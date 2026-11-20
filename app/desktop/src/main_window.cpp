@@ -640,6 +640,8 @@ void MainWindow::saveProjectSettings()
 void MainWindow::loadProjectSettings()
 {
     if (projectId_.isEmpty()) return;
+    latestFilterSnapshotId_.clear();
+    latestFilterBranchId_ = 0;
     loadingProjectSettings_ = true;
     QSettings settings;
     settings.beginGroup(QStringLiteral("projects/") + projectId_);
