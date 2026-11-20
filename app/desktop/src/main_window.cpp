@@ -580,7 +580,7 @@ MainWindow::MainWindow(QWidget* parent)
 
 void MainWindow::saveProjectSettings()
 {
-    if (projectId_.isEmpty() || !projectName_ || !productFamily_) return;
+    if (loadingProjectSettings_ || projectId_.isEmpty() || !projectName_ || !productFamily_) return;
     QSettings settings;
     settings.beginGroup(QStringLiteral("projects/") + projectId_);
     settings.setValue(QStringLiteral("name"), projectName_->text());
@@ -607,6 +607,7 @@ void MainWindow::saveProjectSettings()
 void MainWindow::loadProjectSettings()
 {
     if (projectId_.isEmpty()) return;
+    loadingProjectSettings_ = true;
     QSettings settings;
     settings.beginGroup(QStringLiteral("projects/") + projectId_);
     const auto get = [&settings](const char* key, const QVariant& fallback = QVariant{}) {
@@ -642,6 +643,7 @@ void MainWindow::loadProjectSettings()
         const auto* method = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"));
         flow->setEnabled(method && method->currentData().toString() == QStringLiteral("AF"));
     }
+    loadingProjectSettings_ = false;
 }
 
 MainWindow::~MainWindow() = default;
