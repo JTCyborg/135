@@ -3,6 +3,8 @@ qt_add_executable(Project135
     src/main.cpp
     src/main_window.cpp
     src/main_window.hpp
+    src/cad_viewport_widget.cpp
+    src/cad_viewport_widget.hpp
     src/material_database_widget.cpp
     src/material_database_widget.hpp
 )
