@@ -3373,17 +3373,17 @@ void MainWindow::calculateFilter()
                             }
                         }
                     }
-                    output->setText(tr(
-                        harmonicSpectrumUsed
-                            ? "IDEAL LOWER BOUND (harmonic RMS + conservative peak envelope)\n"
-                            : "IDEAL LOWER BOUND (fundamental current only; harmonic spectrum unavailable)\n"
-                        "Gross Ae×Aw ≥ %1 mm⁴\n"
-                        "Equivalent square side ≥ %2 mm\n"
-                        "Stored peak energy = %3 J\n"
-                        "Design current: Irms=%8 A; Ipeak bound=%9 A\n"
-                        "Gross Ae=%10 mm²; effective Ae=%11 mm²; window Aw=%12 mm²\n"
-                        "Ideal turns=%13; equivalent total gap=%14 mm; Aw/Ae=%15\n"
-                        "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\n"
+                    const QString sizingHeader = harmonicSpectrumUsed
+                        ? tr("IDEAL LOWER BOUND (harmonic RMS + conservative peak envelope)\\n")
+                        : tr("IDEAL LOWER BOUND (fundamental current only; harmonic spectrum unavailable)\\n");
+                    output->setText(sizingHeader + tr(
+                        "Gross Ae×Aw ≥ %1 mm⁴\\n"
+                        "Equivalent square side ≥ %2 mm\\n"
+                        "Stored peak energy = %3 J\\n"
+                        "Design current: Irms=%8 A; Ipeak bound=%9 A\\n"
+                        "Gross Ae=%10 mm²; effective Ae=%11 mm²; window Aw=%12 mm²\\n"
+                        "Ideal turns=%13; equivalent total gap=%14 mm; Aw/Ae=%15\\n"
+                        "Assumptions: Bmax=%4 T; J=%5 A/mm²; Ku=%6%; Ks=%7%.\\n"
                         "Peak current uses the sum of harmonic magnitudes (conservative envelope). "
                         "This is NOT a selected core or winding design; core loss, gap geometry, "
                         "insulation, cooling and temperature rise are not included.")
