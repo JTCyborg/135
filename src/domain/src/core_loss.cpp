@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <set>
+#include <tuple>
 #include <utility>
 
 namespace p135::domain {
@@ -152,6 +154,7 @@ Result<units::CoreLossDensity> evaluateCoreLossData(
     std::vector<double> frequencies;
     std::vector<double> fluxDensities;
     std::vector<double> temperatures;
+    std::set<std::tuple<double, double, double>> coordinates;
     for (const auto& point : material.lossData) {
         const double pf = point.frequency.si();
         const double pb = point.peakFluxDensity.si();
@@ -161,6 +164,10 @@ Result<units::CoreLossDensity> evaluateCoreLossData(
             !std::isfinite(loss) || pf <= 0.0 || pb <= 0.0 || pt <= 0.0 || loss < 0.0)
             return failMeasuredData(ErrorCode::InvalidInput,
                 "Every measured core-loss point must contain finite positive coordinates and non-negative loss.",
+                "material.lossData");
+        if (!coordinates.emplace(pf, pb, pt).second)
+            return failMeasuredData(ErrorCode::InvalidInput,
+                "Measured core-loss data contains duplicate frequency/flux-density/temperature coordinates.",
                 "material.lossData");
         frequencies.push_back(pf);
         fluxDensities.push_back(pb);
