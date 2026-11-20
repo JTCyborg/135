@@ -202,11 +202,21 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
             request.design.network.connection == Connection::Delta ? kSqrtThree : 1.0;
         for (std::size_t index = 0; index < request.design.branches.size(); ++index) {
             const auto& branch = request.design.branches[index];
-            const Complex branchCurrent =
-                deltaBranchFactor * busVoltage / branchImpedances[index];
-            const double currentMagnitude = std::abs(branchCurrent);
+            Complex phaseACurrent = busVoltage / branchImpedances[index];
+            const double sequenceDirection =
+                harmonic.sequence == HarmonicSequence::Positive ? 1.0 : -1.0;
+            if (request.design.network.connection == Connection::Delta) {
+                phaseACurrent *= deltaBranchFactor *
+                    std::polar(1.0, sequenceDirection * kTwoPi / 12.0);
+            }
+            const Complex phaseBCurrent = phaseACurrent *
+                std::polar(1.0, -sequenceDirection * kTwoPi / 3.0);
+            const Complex phaseCCurrent = phaseACurrent *
+                std::polar(1.0, sequenceDirection * kTwoPi / 3.0);
+            const double currentMagnitude = std::abs(phaseACurrent);
             result.branchPoints.push_back(BranchHarmonicPoint{
-                branch.id, harmonic.order, units::Frequency{frequency}, currentMagnitude
+                branch.id, harmonic.order, units::Frequency{frequency}, currentMagnitude,
+                {phaseACurrent, phaseBCurrent, phaseCCurrent}
             });
             const double capacitorVoltage = currentMagnitude /
                 (omega * branch.capacitance.si());
