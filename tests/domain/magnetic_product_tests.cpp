@@ -116,8 +116,12 @@ int main()
         auto beyondCurve = request;
         beyondCurve.current = units::Current{11.0};
         const auto outOfDomain = analyzeMagneticCircuit(beyondCurve);
-        assert(!outOfDomain);
-        assert(outOfDomain.error().code == ErrorCode::ModelOutOfDomain);
+        assert(outOfDomain);
+        assert(!outOfDomain.value().withinBhCurveRange);
+        assert(outOfDomain.value().fluxDensity.si() >
+               request.material.bhCurve.back().fluxDensity.si());
+        assert(std::isfinite(outOfDomain.value().coreFieldStrength.si()));
+        assert(std::isfinite(outOfDomain.value().differentialInductance.si()));
 
         auto invalidRatio = request;
         invalidRatio.kneeSlopeRatio = 1.0;
