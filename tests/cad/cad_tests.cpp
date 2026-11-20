@@ -136,6 +136,9 @@ int main()
     GProp_GProps contactProperties;
     BRepGProp::SurfaceProperties(buttContact.Shape(), contactProperties);
     assert(std::abs(contactProperties.Mass() - 3200.0) < 1.0e-6);
+    GProp_GProps intersectionVolume;
+    BRepGProp::VolumeProperties(buttContact.Shape(), intersectionVolume);
+    assert(std::abs(intersectionVolume.Mass()) < 1.0e-6);
 
     auto stepLapGeometry = geometry;
     stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
