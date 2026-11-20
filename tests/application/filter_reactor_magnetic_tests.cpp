@@ -1,6 +1,8 @@
 #include "p135/application/filter_reactor_magnetic.hpp"
 
+#include <array>
 #include <cassert>
+#include <complex>
 
 using namespace p135;
 
@@ -52,5 +54,6 @@ int main()
     assert(result.value().excitations[0].order == 1);
     assert(result.value().excitations[1].order == 5);
     assert(result.value().magneticCycle.samplesUsed >= 72);
+    assert(result.value().magneticCycle.withinBhCurveRange);
     return 0;
 }
