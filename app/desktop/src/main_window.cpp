@@ -642,6 +642,7 @@ void MainWindow::loadProjectSettings()
     if (projectId_.isEmpty()) return;
     latestFilterSnapshotId_.clear();
     latestFilterBranchId_ = 0;
+    constructionInputsDirty_ = true;
     loadingProjectSettings_ = true;
     QSettings settings;
     settings.beginGroup(QStringLiteral("projects/") + projectId_);
@@ -1434,23 +1435,30 @@ QWidget* MainWindow::createConstructionPage()
     });
     refreshChoices();
 
-    // Persist construction inputs per project. Material selectors store immutable revision IDs.
+    auto* constructionState = new QLabel(tr("CONSTRUCTION INPUTS: NOT YET CAPTURED"));
+    constructionState->setObjectName(QStringLiteral("constructionInputState"));
+    constructionState->setWordWrap(true);
+    constructionState->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    constructionState->setStyleSheet("color: #a66b00; font-weight: 600;");
+    root->addWidget(constructionState);
+
+    // Persist construction inputs and invalidate their capture on every edit.
     for (auto* widget : page->findChildren<QWidget*>()) {
         if (auto* combo = qobject_cast<QComboBox*>(widget)) {
             connect(combo, qOverload<int>(&QComboBox::currentIndexChanged), this,
-                    [this](int) { saveProjectSettings(); });
+                    [this](int) { saveProjectSettings(); markConstructionInputsChanged(); });
         } else if (auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
             connect(number, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
-                    [this](double) { saveProjectSettings(); });
+                    [this](double) { saveProjectSettings(); markConstructionInputsChanged(); });
         } else if (auto* integer = qobject_cast<QSpinBox*>(widget)) {
             connect(integer, qOverload<int>(&QSpinBox::valueChanged), this,
                     [this](int) { saveProjectSettings(); });
         } else if (auto* line = qobject_cast<QLineEdit*>(widget)) {
             connect(line, &QLineEdit::textChanged, this,
-                    [this](const QString&) { saveProjectSettings(); });
+                    [this](const QString&) { saveProjectSettings(); markConstructionInputsChanged(); });
         } else if (auto* check = qobject_cast<QCheckBox*>(widget)) {
             connect(check, &QCheckBox::toggled, this,
-                    [this](bool) { saveProjectSettings(); });
+                    [this](bool) { saveProjectSettings(); markConstructionInputsChanged(); });
         }
     }
 
@@ -2491,6 +2499,17 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.layerInsulationBuildM = lengthMetres("construction_layerInsulation");
     inputs.mainInsulationBuildM = lengthMetres("construction_mainInsulation");
     return inputs;
+}
+
+void MainWindow::markConstructionInputsChanged()
+{
+    if (loadingProjectSettings_) return;
+    constructionInputsDirty_ = true;
+    if (auto* state = findChild<QLabel*>(QStringLiteral("constructionInputState"))) {
+        state->setText(tr("CONSTRUCTION INPUTS CHANGED — previous design-input capture is stale. Run the project calculation to create a new linked snapshot."));
+        state->setStyleSheet("color: #a66b00; font-weight: 600;");
+    }
+    appendLog(tr("Construction input changed; previous captured design inputs are stale. Physical sizing has not been recalculated."));
 }
 
 void MainWindow::calculateFilter()
@@ -3916,10 +3935,18 @@ void MainWindow::calculateFilter()
                 const auto designInputs = collectReactorDesignInputs();
                 const auto inputStatus = p135::application::validate(designInputs);
                 if (inputStatus) {
+                    constructionInputsDirty_ = false;
+                    if (auto* state = findChild<QLabel*>(QStringLiteral("constructionInputState"))) {
+                        state->setText(tr("INPUTS CAPTURED — filter snapshot %1 / branch %2. Physical sizing: NOT_CONNECTED_TO_SOLVER.").arg(latestFilterSnapshotId_).arg(latestFilterBranchId_));
+                        state->setStyleSheet("color: palette(text); font-weight: 600;");
+                    }
                     appendLog(tr("Construction inputs captured against filter snapshot %1 / branch %2. "
                                  "Physical sizing remains NOT_CONNECTED_TO_SOLVER.")
                         .arg(latestFilterSnapshotId_).arg(latestFilterBranchId_));
                 } else {
+                    constructionInputsDirty_ = true;
+                    if (auto* state = findChild<QLabel*>(QStringLiteral("constructionInputState")))
+                        state->setText(tr("INPUTS NOT CAPTURED — %1").arg(QString::fromStdString(inputStatus.error().message)));
                     appendLog(tr("Construction inputs are incomplete or invalid: %1")
                         .arg(QString::fromStdString(inputStatus.error().message)));
                 }
