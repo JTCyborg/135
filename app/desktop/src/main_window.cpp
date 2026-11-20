@@ -60,6 +60,7 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollArea>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QTreeWidget>
 #include <QSpinBox>
@@ -2596,6 +2597,71 @@ void MainWindow::calculateFilter()
         appendLog(tr("Filter synthesis failed: %1").arg(QString::fromStdString(error.message)));
         QMessageBox::warning(this, tr("Invalid filter definition"), resultsNote_->text());
         return;
+    }
+
+    // The construction page is a calculated output first. Resolve material
+    // candidates from exact immutable database revisions after electrical synthesis.
+    // Existing user selections are treated as FIXED and are never overwritten.
+    QStringList automaticMaterialNotes;
+    if (materialStore_) {
+        const auto selectDatabaseCandidate = [this, &automaticMaterialNotes](
+            const char* objectName, const std::string& recordType,
+            const std::string& preferredMaterialId, const QString& role) {
+            auto* combo = findChild<QComboBox*>(QString::fromLatin1(objectName));
+            if (!combo || !combo->currentData().toString().isEmpty()) return;
+            p135::infrastructure::sqlite::MaterialCatalogFilter filter;
+            filter.recordType = recordType;
+            filter.pageSize = 500;
+            const auto revisions = materialStore_->searchLatestRevisions(filter);
+            if (!revisions) {
+                automaticMaterialNotes.push_back(role + tr(": database query failed"));
+                return;
+            }
+            const auto found = std::find_if(revisions.value().begin(), revisions.value().end(),
+                [&preferredMaterialId](const auto& revision) {
+                    return revision.materialId == preferredMaterialId;
+                });
+            if (found == revisions.value().end()) {
+                automaticMaterialNotes.push_back(role + tr(": compatible catalog revision not found"));
+                return;
+            }
+            const QSignalBlocker blocker(combo);
+            const QString revisionId = QString::fromStdString(found->revisionId);
+            int index = combo->findData(revisionId);
+            if (index < 0) {
+                combo->addItem(QString::fromStdString(found->materialId) +
+                    QStringLiteral(" — r%1 [AUTO]").arg(found->revisionNumber), revisionId);
+                index = combo->count() - 1;
+            }
+            combo->setCurrentIndex(index);
+            automaticMaterialNotes.push_back(role + QStringLiteral(": ") +
+                QString::fromStdString(found->materialId) +
+                QStringLiteral(" / ") + revisionId);
+        };
+
+        // M235-35A is the starter catalogue's only electrical-steel record
+        // carrying manufacturer maximum-loss points explicitly at 50 Hz.
+        // It has no continuous B-H curve, so this is a material candidate,
+        // not a verified magnetic design release.
+        selectDatabaseCandidate("construction_coreMaterial", "core-material",
+            "MAT-TK-POWERCORE-M235-35A", tr("Core material candidate"));
+        selectDatabaseCandidate("construction_conductorMaterial", "conductor-material",
+            "MAT-CU-C11000", tr("Conductor material candidate"));
+        selectDatabaseCandidate("construction_insulationMaterial", "insulation-material",
+            "MAT-DUPONT-NOMEX-410-50UM", tr("Turn insulation candidate"));
+    }
+    if (auto* constructionState = findChild<QLabel*>(QStringLiteral("constructionInputState"))) {
+        if (!automaticMaterialNotes.isEmpty()) {
+            constructionState->setText(
+                tr("IDEAL MATERIAL CANDIDATES SELECTED FROM DATABASE\n%1\n"
+                   "Physical sizing remains NOT_VERIFIED: the selected electrical-steel revision "
+                   "has 50 Hz maximum-loss points but no continuous B-H curve; the database does "
+                   "not yet provide a complete three-limb core stock geometry, winding window, "
+                   "thermal boundary conditions and insulation coordination needed to calculate "
+                   "dimensions, turns and conductor section without assumptions.")
+                    .arg(automaticMaterialNotes.join(QStringLiteral("\n"))));
+            constructionState->setStyleSheet("color: #a66b00; font-weight: 600;");
+        }
     }
 
     const double sourceResistanceOhm = sourceResistance_ ? sourceResistance_->value() : 0.0;
