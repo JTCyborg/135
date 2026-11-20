@@ -58,6 +58,30 @@ int main(int argc, char** argv)
     assert(!geometryUnavailable.value().hasMagneticGeometry());
     assert(geometryUnavailable.value().geometryStatus == "DIMENSIONS_NOT_IMPORTED");
 
+    const auto ei200 = loadCoreComponentGeometryRevision(
+        store, "SEED-CORE-BRIGHTSTEEL-3PH-EI-200-200-R1");
+    assert(ei200);
+    assert(ei200.value().magneticMaterialFamily == "electrical-steel-lamination");
+    assert(ei200.value().coreShape == "3PH EI laminated core");
+    assert(std::abs(*ei200.value().columnWidthM - 0.040) < 1.0e-12);
+    assert(std::abs(*ei200.value().overallHeightM - 0.200) < 1.0e-12);
+    assert(std::abs(*ei200.value().overallWidthM - 0.200) < 1.0e-12);
+    assert(std::abs(*ei200.value().windowHeightM - 0.040) < 1.0e-12);
+    assert(std::abs(*ei200.value().windowWidthM - 0.120) < 1.0e-12);
+    assert(ei200.value().holeCount == 6);
+    assert(!ei200.value().hasMagneticGeometry());
+    assert(!ei200.value().hasCompleteCadGeometry());
+
+    const auto ei300Short = loadCoreComponentGeometryRevision(
+        store, "SEED-CORE-BRIGHTSTEEL-3PH-EI-300-270-R1");
+    assert(ei300Short);
+    assert(std::abs(*ei300Short.value().overallWidthM - 0.270) < 1.0e-12);
+
+    const auto ei350Long = loadCoreComponentGeometryRevision(
+        store, "SEED-CORE-BRIGHTSTEEL-3PH-EI-350-490-R1");
+    assert(ei350Long);
+    assert(std::abs(*ei350Long.value().overallWidthM - 0.490) < 1.0e-12);
+
     const auto wrongType =
         loadCoreComponentGeometryRevision(store, "SEED-TDK-N87-R1");
     assert(!wrongType && wrongType.error().code == ErrorCode::InvalidInput);
