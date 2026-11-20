@@ -2303,8 +2303,7 @@ void MainWindow::calculateFilter()
     std::optional<p135::filter::FrequencyResponseResult> impedanceResult;
     QString advancedWarning;
     const double sourceResistance = sourceResistanceOhm;
-    const double sourceInductance = sourceInductanceH
-        ? sourceInductance_->value() * 1.0e-3 : 0.0;
+    const double sourceInductance = sourceInductanceH;
     const bool hasSourceImpedance = sourceResistance > 0.0 || sourceInductance > 0.0;
 
     if (hasSourceImpedance) {
@@ -2660,12 +2659,18 @@ void MainWindow::calculateFilter()
               static_cast<double>(electricalResult.value().solver.matrixOrder), tr("unknowns"));
     addResult(tr("MNA relative residual"),
               electricalResult.value().solver.relativeResidual, tr("—"));
-    addTextResult(tr("Thevenin source-limited frequency sweep"),
-        tr("FREQUENCY-RESPONSE DIAGNOSTIC — per-phase source R/L is included. This is not the multi-harmonic operating current and must not be used alone for Isat margins."));
-    addResult(tr("Source-limited sweep peak bank current (diagnostic)"), peakBankCurrent, tr("A RMS"));
-    addResult(tr("Frequency at ideal-source sweep peak"), peakBankCurrentFrequency, tr("Hz"));
-    addResult(tr("Source-limited sweep maximum phase current (diagnostic)"), peakPhasePeakCurrent, tr("A peak"));
-    addResult(tr("Frequency at ideal-source phase-current peak"), peakPhasePeakCurrentFrequency, tr("Hz"));
+    const bool hasTheveninSourceImpedance =
+        sourceResistanceOhm > 0.0 || sourceInductanceH > 0.0;
+    addTextResult(hasTheveninSourceImpedance
+            ? tr("Thevenin source-limited frequency sweep")
+            : tr("Ideal-source frequency sweep"),
+        hasTheveninSourceImpedance
+            ? tr("FREQUENCY-RESPONSE DIAGNOSTIC — per-phase source R/L is included. This is not the multi-harmonic operating current and must not be used alone for Isat margins.")
+            : tr("IDEAL-SOURCE DIAGNOSTIC — source R/L is zero. Peak currents are not operating stresses."));
+    addResult(tr("Frequency-sweep peak bank current (diagnostic)"), peakBankCurrent, tr("A RMS"));
+    addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
+    addResult(tr("Frequency-sweep maximum phase current (diagnostic)"), peakPhasePeakCurrent, tr("A peak"));
+    addResult(tr("Frequency at phase-current peak"), peakPhasePeakCurrentFrequency, tr("Hz"));
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
     if ((magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) ||
         (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0)) {
