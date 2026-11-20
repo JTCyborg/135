@@ -1119,6 +1119,8 @@ std::vector<SeedRecord> starterRecords()
                 {"sourceFrequencyUnit", "Hz"},
                 {"sourceFluxDensityUnit", "gauss"},
                 {"sourceLossUnit", "mW/cm3"},
+                {"outputLossBasis", "VOLUMETRIC_W_PER_M3"},
+                {"temperatureDependence", "NOT_PUBLISHED_DO_NOT_INFER"},
                 {"sourceFluxDensityUnitsPerTesla", 10000.0},
                 {"outputWattsPerM3PerSourceUnit", 1000.0},
                 {"validFrequency_Hz", {60.0, 500000.0}},
