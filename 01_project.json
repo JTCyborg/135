@@ -1,0 +1,36 @@
+{
+    "buildConfiguration": "Debug",
+    "confirmedAtUtc": "2026-11-20T22:47:59.120Z",
+    "fields": {
+        "projectAirflowM3h": 0,
+        "projectAltitudeM": 0,
+        "projectAmbientC": 40,
+        "projectCoolingMethod": {
+            "data": "AN",
+            "text": "AN — natural air cooling"
+        },
+        "projectCustomer": "",
+        "projectDate": "2026-11-20",
+        "projectEngineer": "",
+        "projectInsulationClass": {
+            "data": null,
+            "text": "F (155 °C)"
+        },
+        "projectIpRating": {
+            "data": null,
+            "text": "IP00"
+        },
+        "projectName": "TEST-01 — Industrial detuned LC filter 5th harmonic, 100 kVAr / 400 V",
+        "projectNumber": "",
+        "projectProductFamily": {
+            "data": null,
+            "text": "Shunt passive harmonic filter"
+        },
+        "projectRevision": "A",
+        "qt_spinbox_lineedit": "NOT SET"
+    },
+    "projectId": "8eaf90c7-5e4a-4d22-b8d7-202611201120",
+    "schemaVersion": 1,
+    "tabId": "project",
+    "tabTitle": "Project"
+}
