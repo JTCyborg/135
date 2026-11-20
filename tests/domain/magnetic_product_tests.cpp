@@ -291,6 +291,15 @@ int main()
         assert(!cappedCycle.value().converged);
         assert(cappedCycle.value().samplesUsed == 144);
 
+        auto extendedSampling = sampling;
+        extendedSampling.maximumSamples = 576;
+        extendedSampling.relativePeakTolerance = 1.0e-14;
+        const auto extendedCappedCycle =
+            sampleThreeLimbMagneticCycle(extendedSampling);
+        assert(extendedCappedCycle);
+        assert(!extendedCappedCycle.value().converged);
+        assert(extendedCappedCycle.value().samplesUsed == 576);
+
         auto invalidSampling = sampling;
         invalidSampling.maximumSamples = 200;
         assert(!sampleThreeLimbMagneticCycle(invalidSampling));
