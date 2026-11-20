@@ -628,6 +628,60 @@ std::vector<SeedRecord> starterRecords()
         });
     }
 
+    // Manufacturer-listed grain-oriented powercore grades for transformer cores.
+    // Losses are maximum values at 1.7 T / 50 Hz; do not infer a full loss map.
+    const std::vector<std::tuple<std::string, std::string, double, double, double>> tkGrainOriented{
+        {"H070-20", "M70-20R5", 0.20, 0.70, 1.88},
+        {"H075-20", "M75-20R5", 0.20, 0.75, 1.88},
+        {"H070-23", "", 0.23, 0.70, 1.88},
+        {"H075-23", "M75-23R5", 0.23, 0.75, 1.88},
+        {"H078-23", "", 0.23, 0.78, 1.88},
+        {"H080-23", "M80-23R5", 0.23, 0.80, 1.88},
+        {"H085-23", "M85-23R5", 0.23, 0.85, 1.88},
+        {"H090-23", "M90-23R5", 0.23, 0.90, 1.88},
+        {"H100-23", "M100-23P5", 0.23, 1.00, 1.85},
+        {"H085-27", "M85-27R5", 0.27, 0.85, 1.88},
+        {"H090-27", "M90-27R5", 0.27, 0.90, 1.88},
+        {"H095-27", "", 0.27, 0.95, 1.88},
+        {"H100-27", "", 0.27, 1.00, 1.88},
+        {"H100-30", "M100-30P5", 0.30, 1.00, 1.88},
+        {"H105-30", "M105-30P5", 0.30, 1.05, 1.88},
+        {"H110-30", "M110-30P5", 0.30, 1.10, 1.88},
+        {"H125-35", "M125-35P5", 0.35, 1.25, 1.88}
+    };
+    const std::string tkGoSteelUrl =
+        "https://www.thyssenkrupp-steel.com/en/products/electrical-steel/electrical-steel-grain-oriented/powercore/powercore.html";
+    for (const auto& [grade, iecGrade, thicknessMm, loss17, polarization800] : tkGrainOriented) {
+        const std::string id = "MAT-TK-POWERCORE-" + grade;
+        const json payload = {
+            {"schemaVersion", 1},
+            {"material", {
+                {"id", id}, {"manufacturer", "thyssenkrupp Electrical Steel"},
+                {"grade", "powercore " + grade},
+                {"iec60404_8_7Grade", iecGrade.empty() ? json(nullptr) : json(iecGrade)},
+                {"family", "grain-oriented electrical steel"},
+                {"standard", "EN 10107 / IEC 60404-8-7"},
+                {"laminationThickness_m", thicknessMm * 1.0e-3},
+                {"maximumSpecificCoreLoss_W_per_kg", {{"50Hz_1p7T", loss17}}},
+                {"minimumPolarization_T", {{"at_800_A_per_m", polarization800}}}
+            }},
+            {"sourceDocuments", json::array({tkGoSteelUrl,
+                "https://www.thyssenkrupp-steel.com/media/content_1/publikationen/epd/thyssenkrupp_epd_grain_oriented_electrical_steel_en_steel.pdf"})},
+            {"dataQuality", {
+                {"sourceStatus", "MANUFACTURER_PRODUCT_RANGE_AND_EPD"},
+                {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUE_AT_50HZ_1P7T"},
+                {"polarizationStatus", "MANUFACTURER_MINIMUM_AT_800A_PER_M"},
+                {"bhCurveStatus", "NOT_PUBLISHED_IN_IMPORTED_DATASET"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Grain-oriented steel is anisotropic: magnetic loss and polarization apply along the rolling direction. Do not use these values for transverse flux or synthesize a B-H curve. Confirm grade, coating, stress-relief annealing and laser-domain treatment with the ordered coil certificate."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "core-material", tkGoSteelUrl,
+            "thyssenkrupp powercore grain-oriented product range; " + grade, payload
+        });
+    }
+
     // Exact TDK ETD ordering codes, AL values and air gaps from manufacturer
     // ER/ETD/EQ search tables. Gapped AL tolerance is left unspecified where
     // the catalog does not publish one.
@@ -837,7 +891,13 @@ std::vector<SeedRecord> starterRecords()
         {"AL-6101-T4", "flat-bar-busbar", "rectangle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
         {"AL-6101-T4", "round-bar", "circle", "Supplier drawing", aluminiumSource, aluminiumFormsNote},
         {"CCA-10", "round-wire", "circle", "Manufacturer product datasheet", ccaSource, ccaFormsNote},
-        {"CCA-15", "round-wire", "circle", "Manufacturer product datasheet", ccaSource, ccaFormsNote}
+        {"CCA-15", "round-wire", "circle", "Manufacturer product datasheet", ccaSource, ccaFormsNote},
+        {"CU-C10100", "foil", "rectangle", "Supplier drawing / ASTM B152", copperOfhcSource, copperFormsNote},
+        {"CU-C10200", "foil", "rectangle", "Supplier drawing / ASTM B152", copperOfhcSource, copperFormsNote},
+        {"CU-C11000", "foil", "rectangle", "ASTM B152", copperSource, copperFormsNote},
+        {"AL-1350-H0", "foil", "rectangle", "Supplier drawing / EN 485", aluminiumSource, aluminiumFormsNote},
+        {"AL-1370-H0", "foil", "rectangle", "Supplier drawing / EN 485", aluminiumSource, aluminiumFormsNote},
+        {"CU-C11000", "hollow-rectangular-water-cooled", "hollow-rectangle", "Supplier drawing", copperSource, copperFormsNote}
     };
     for (const auto& [grade, form, geometry, standard, source, note] : conductorProfiles) {
         const std::string id = "FORM-" + grade + "-" + form;
@@ -848,6 +908,45 @@ std::vector<SeedRecord> starterRecords()
             payload
         });
     }
+    // Construction templates describe strand arrangements, not new bulk materials.
+    // Electrical properties are deliberately inherited from the selected strand grade
+    // and must account for transposition, insulation, proximity and skin effects.
+    const std::vector<std::tuple<std::string, std::string, std::string>> conductorAssemblies{
+        {"ASM-CU-LITZ-ROUND", "litz-wire", "bundle-of-insulated-round-strands"},
+        {"ASM-CU-PARALLEL-STRANDS", "parallel-strands", "parallel-round-or-rectangular-strands"},
+        {"ASM-CU-CTC", "continuously-transposed-conductor", "transposed-rectangular-strands"},
+        {"ASM-CU-BRAID", "braided-flexible-conductor", "woven-round-strands"}
+    };
+    const std::string assemblyReference =
+        "https://www.iec.ch/";
+    for (const auto& [id, construction, geometry] : conductorAssemblies) {
+        const json payload = {
+            {"schemaVersion", 1},
+            {"component", {
+                {"id", id}, {"conductorMaterial", "USER_SELECTED_COPPER_GRADE"},
+                {"construction", construction}, {"strandGeometry", geometry},
+                {"strandCount", "PARAMETRIC_USER_INPUT"},
+                {"strandDiameter_m", "PARAMETRIC_USER_INPUT"},
+                {"layLength_m", "PARAMETRIC_USER_INPUT"},
+                {"individualStrandInsulation", "USER_SELECTED"},
+                {"overallInsulation", "USER_SELECTED"},
+                {"dimensionsAreManufacturerStockSizes", false}
+            }},
+            {"sourceDocuments", json::array({assemblyReference})},
+            {"dataQuality", {
+                {"sourceStatus", "GENERIC_ENGINEERING_CONSTRUCTION_TEMPLATE"},
+                {"electricalModelStatus", "NOT_MODELED"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "This is a construction template, not a manufacturer part or an electrical-property dataset. Require a supplier drawing and strand schedule. AC resistance, proximity loss, transposition effectiveness, packing factor, impregnation and insulation build must be modeled separately; do not substitute DC bulk-copper resistance for the assembled conductor."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "conductor-assembly",
+            assemblyReference, "Parametric conductor construction template " + construction,
+            payload
+        });
+    }
+
     return records;
 }
 
