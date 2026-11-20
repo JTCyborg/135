@@ -706,7 +706,7 @@ void MainWindow::loadProjectSettings()
             line->setText(settings.value(key).toString());
         } else if (auto* check = qobject_cast<QCheckBox*>(widget)) {
             check->setChecked(settings.contains(key) ? settings.value(key).toBool()
-                : key == QStringLiteral("construction_bobbinEnabled"));
+                : false);
         }
     }
     settings.endGroup();
@@ -1217,6 +1217,7 @@ QWidget* MainWindow::createConstructionPage()
     coreMaterial->setObjectName(QStringLiteral("constructionCoreMaterial"));
     auto* coreGeometry = new QComboBox;
     coreGeometry->setObjectName(QStringLiteral("construction_coreGeometry"));
+    coreGeometry->addItem(tr("— NOT_PROVIDED —"), QString{});
     coreGeometry->addItem(tr("Three-limb core"), QStringLiteral("three-limb"));
     coreGeometry->addItem(tr("Three single-phase cores"), QStringLiteral("three-single-phase"));
     coreGeometry->addItem(tr("EI core"), QStringLiteral("ei"));
@@ -1242,6 +1243,7 @@ QWidget* MainWindow::createConstructionPage()
     conductorMaterial->setObjectName(QStringLiteral("constructionConductorMaterial"));
     auto* conductorShape = new QComboBox;
     conductorShape->setObjectName(QStringLiteral("construction_conductorShape"));
+    conductorShape->addItem(tr("— NOT_PROVIDED —"), QString{});
     conductorShape->addItem(tr("Round wire"), QStringLiteral("round"));
     conductorShape->addItem(tr("Rectangular wire"), QStringLiteral("rectangular"));
     conductorShape->addItem(tr("Foil"), QStringLiteral("foil"));
@@ -1249,6 +1251,7 @@ QWidget* MainWindow::createConstructionPage()
     conductorShape->addItem(tr("Busbar"), QStringLiteral("busbar"));
     auto* windingTechnology = new QComboBox;
     windingTechnology->setObjectName(QStringLiteral("construction_windingTechnology"));
+    windingTechnology->addItem(tr("— NOT_PROVIDED —"), QString{});
     windingTechnology->addItem(tr("Layer"), QStringLiteral("layer"));
     windingTechnology->addItem(tr("Sectional"), QStringLiteral("sectional"));
     windingTechnology->addItem(tr("Disc"), QStringLiteral("disc"));
@@ -1269,8 +1272,9 @@ QWidget* MainWindow::createConstructionPage()
     layers->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* parallelConductors = new QSpinBox;
     parallelConductors->setObjectName(QStringLiteral("construction_parallelConductors"));
-    parallelConductors->setRange(1, 10000);
-    parallelConductors->setValue(1);
+    parallelConductors->setRange(0, 10000);
+    parallelConductors->setSpecialValueText(tr("NOT_PROVIDED"));
+    parallelConductors->setValue(0);
     auto* conductorArea = new QDoubleSpinBox;
     conductorArea->setObjectName(QStringLiteral("construction_conductorArea"));
     conductorArea->setRange(0.0, 1000000.0);
@@ -1315,9 +1319,11 @@ QWidget* MainWindow::createConstructionPage()
     auto* bobbinMaterial = new QLineEdit;
     bobbinMaterial->setObjectName(QStringLiteral("construction_bobbinMaterial"));
     bobbinMaterial->setPlaceholderText(tr("Material ID / grade — NOT_PROVIDED until selected"));
-    auto* bobbinEnabled = new QCheckBox(tr("Bobbin is used"));
-    bobbinEnabled->setObjectName(QStringLiteral("construction_bobbinEnabled"));
-    bobbinEnabled->setChecked(true);
+    auto* bobbinUsage = new QComboBox;
+    bobbinUsage->setObjectName(QStringLiteral("construction_bobbinUsage"));
+    bobbinUsage->addItem(tr("— NOT_PROVIDED —"), QString{});
+    bobbinUsage->addItem(tr("Yes"), true);
+    bobbinUsage->addItem(tr("No"), false);
     auto* turnInsulation = new QDoubleSpinBox;
     turnInsulation->setObjectName(QStringLiteral("construction_turnInsulation"));
     turnInsulation->setRange(0.0, 10000.0);
@@ -1340,7 +1346,7 @@ QWidget* MainWindow::createConstructionPage()
     insulationForm->addRow(tr("Turn insulation build"), turnInsulation);
     insulationForm->addRow(tr("Layer insulation build"), layerInsulation);
     insulationForm->addRow(tr("Main insulation build"), mainInsulation);
-    insulationForm->addRow(bobbinEnabled);
+    insulationForm->addRow(tr("Bobbin used"), bobbinUsage);
     insulationForm->addRow(tr("Bobbin material"), bobbinMaterial);
     root->addWidget(insulationGroup);
 
@@ -1348,6 +1354,7 @@ QWidget* MainWindow::createConstructionPage()
     auto* thermalForm = new QFormLayout(thermalGroup);
     auto* cooling = new QComboBox;
     cooling->setObjectName(QStringLiteral("construction_cooling"));
+    cooling->addItem(tr("— NOT_PROVIDED —"), QString{});
     cooling->addItem(tr("Natural air"), QStringLiteral("natural-air"));
     cooling->addItem(tr("Forced air"), QStringLiteral("forced-air"));
     cooling->addItem(tr("Liquid"), QStringLiteral("liquid"));
