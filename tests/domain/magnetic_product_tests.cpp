@@ -247,6 +247,24 @@ int main()
         for (const auto density : convergedCycle.value().peakAbsoluteFluxDensity)
             assert(std::isfinite(density.si()) && density.si() >= 0.0);
 
+        // The operating-point sampler must superpose harmonics in the
+        // instantaneous waveform, not treat each order as an independent sweep.
+        auto multiHarmonicSampling = sampling;
+        multiHarmonicSampling.harmonicExcitations = {
+            {1, sampling.phaseRmsPhasors},
+            {5, {
+                std::complex<double>{0.08, 0.0},
+                std::polar(0.05, 1.2),
+                std::polar(0.04, -1.1)
+            }}
+        };
+        const auto multiHarmonicCycle =
+            sampleThreeLimbMagneticCycle(multiHarmonicSampling);
+        assert(multiHarmonicCycle);
+        assert(multiHarmonicCycle.value().converged);
+        assert(multiHarmonicCycle.value().peakAbsoluteFluxDensity[0].si() >
+               convergedCycle.value().peakAbsoluteFluxDensity[0].si());
+
         // DC bias is superimposed on each instantaneous AC phase current.
         auto dcBiasedSampling = sampling;
         dcBiasedSampling.phaseDcCurrents[0] = units::Current{0.05};
