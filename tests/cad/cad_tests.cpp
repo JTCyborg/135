@@ -421,6 +421,74 @@ int main()
         ++asymmetricComponent;
     }
     assert(asymmetricComponent == expectedAsymmetricBounds.size());
+
+    // Asymmetric dimensions must preserve all eight physical Butt contacts
+    // and must not introduce volumetric intersections between components.
+    std::array<TopoDS_Shape, 7> asymmetricSolids;
+    std::size_t asymmetricSolidCount = 0;
+    for (TopExp_Explorer it(asymmetricShape.value(), TopAbs_SOLID); it.More(); it.Next()) {
+        assert(asymmetricSolidCount < asymmetricSolids.size());
+        asymmetricSolids[asymmetricSolidCount++] = it.Current();
+    }
+    assert(asymmetricSolidCount == asymmetricSolids.size());
+    for (std::size_t i = 0; i < asymmetricSolids.size(); ++i) {
+        for (std::size_t j = i + 1; j < asymmetricSolids.size(); ++j) {
+            BRepAlgoAPI_Common common(asymmetricSolids[i], asymmetricSolids[j]);
+            common.Build();
+            assert(common.IsDone());
+            GProp_GProps commonVolume;
+            BRepGProp::VolumeProperties(common.Shape(), commonVolume);
+            assert(std::abs(commonVolume.Mass()) < 1.0e-8);
+        }
+    }
+
+    struct AsymmetricJointExpectation {
+        std::size_t limb;
+        std::size_t yoke;
+        double planeY;
+        double limbX0;
+        double limbX1;
+        double expectedContactWidth;
+    };
+    const std::array<AsymmetricJointExpectation, 8> asymmetricJoints{{
+        {0, 0, 190.0, 0.0, 30.0, 30.0},
+        {1, 0, 190.0, 100.0, 150.0, 25.0},
+        {1, 1, 190.0, 100.0, 150.0, 25.0},
+        {2, 1, 190.0, 240.0, 280.0, 40.0},
+        {0, 2, 40.0, 0.0, 30.0, 30.0},
+        {1, 2, 40.0, 100.0, 150.0, 25.0},
+        {1, 3, 40.0, 100.0, 150.0, 25.0},
+        {2, 3, 40.0, 240.0, 280.0, 40.0}
+    }};
+    for (const auto& joint : asymmetricJoints) {
+        const auto limbFace = findPlanarFace(
+            asymmetricSolids[joint.limb], joint.planeY,
+            joint.limbX0, joint.limbX1, 0.0, 60.0);
+        const double yokeX0 = (joint.yoke % 2) == 0 ? 0.0 : 125.0;
+        const double yokeX1 = (joint.yoke % 2) == 0 ? 125.0 : 280.0;
+        const auto yokeFace = findPlanarFace(
+            asymmetricSolids[3 + joint.yoke], joint.planeY,
+            yokeX0, yokeX1, 0.0, 60.0);
+        assert(!limbFace.IsNull());
+        assert(!yokeFace.IsNull());
+        Bnd_Box limbFaceBounds;
+        Bnd_Box yokeFaceBounds;
+        BRepBndLib::Add(limbFace, limbFaceBounds);
+        BRepBndLib::Add(yokeFace, yokeFaceBounds);
+        double lx0 = 0.0, ly0 = 0.0, lz0 = 0.0;
+        double lx1 = 0.0, ly1 = 0.0, lz1 = 0.0;
+        double yx0 = 0.0, yy0 = 0.0, yz0 = 0.0;
+        double yx1 = 0.0, yy1 = 0.0, yz1 = 0.0;
+        limbFaceBounds.Get(lx0, ly0, lz0, lx1, ly1, lz1);
+        yokeFaceBounds.Get(yx0, yy0, yz0, yx1, yy1, yz1);
+        assert(std::abs(ly0 - joint.planeY) < 1.0e-6);
+        assert(std::abs(yy0 - joint.planeY) < 1.0e-6);
+        const double contactWidth = std::min(lx1, yx1) - std::max(lx0, yx0);
+        const double contactDepth = std::min(lz1, yz1) - std::max(lz0, yz0);
+        assert(std::abs(contactWidth - joint.expectedContactWidth) < 1.0e-6);
+        assert(std::abs(contactDepth - 60.0) < 1.0e-6);
+    }
+
     constexpr double asymmetricExpectedVolumeMm3 =
         30.0 * 150.0 * 60.0 + 50.0 * 150.0 * 60.0 + 40.0 * 150.0 * 60.0 +
         125.0 * 30.0 * 60.0 + 155.0 * 30.0 * 60.0 +
