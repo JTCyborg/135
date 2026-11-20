@@ -83,6 +83,24 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
         return Result<HarmonicAnalysisResult>::failure(
             invalid("Source voltage spectrum must contain the fundamental (order 1)."));
 
+    std::unordered_set<std::string> loadSourceIds;
+    for (const auto& injection : request.loadCurrentInjections) {
+        if (injection.sourceId.empty() || !loadSourceIds.insert(injection.sourceId).second ||
+            injection.order == 0 || !finite(injection.phaseCurrentRms) ||
+            (injection.sequence != HarmonicSequence::Positive &&
+             injection.sequence != HarmonicSequence::Negative))
+            return Result<HarmonicAnalysisResult>::failure(
+                invalid("Load-current injections require unique non-empty source IDs, positive orders, valid sequences and finite phasors."));
+        const bool matchingVoltageOrder = std::any_of(
+            request.sourceVoltageSpectrum.begin(), request.sourceVoltageSpectrum.end(),
+            [&injection](const auto& voltage) {
+                return voltage.order == injection.order && voltage.sequence == injection.sequence;
+            });
+        if (!matchingVoltageOrder)
+            return Result<HarmonicAnalysisResult>::failure(
+                invalid("Every load-current injection order/sequence must exist in the voltage spectrum; use a zero voltage phasor if the grid voltage harmonic is absent."));
+    }
+
     HarmonicAnalysisResult result;
     result.points.reserve(request.sourceVoltageSpectrum.size());
     result.branchPoints.reserve(request.sourceVoltageSpectrum.size() * request.design.branches.size());
@@ -137,11 +155,20 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
         if (!finite(divider) || std::abs(divider) <= std::numeric_limits<double>::min())
             return Result<HarmonicAnalysisResult>::failure(
                 invalid("The source/filter voltage divider is singular."));
-        const Complex busVoltage = harmonic.phaseVoltageRms / divider;
+        Complex loadCurrent{};
+        for (const auto& injection : request.loadCurrentInjections) {
+            if (injection.order == harmonic.order && injection.sequence == harmonic.sequence)
+                loadCurrent += injection.phaseCurrentRms;
+        }
+        // KCL at the PCC: (Vs - Vbus)/Zs = Yfilter*Vbus + Iload.
+        // The load current is a sink from the bus; its phasor is therefore
+        // subtracted from the Thevenin voltage before applying the divider.
+        const Complex busVoltage =
+            (harmonic.phaseVoltageRms - sourceImpedance * loadCurrent) / divider;
         const Complex sourceCurrent =
             (harmonic.phaseVoltageRms - busVoltage) / sourceImpedance;
         const Complex filterCurrent = busVoltage * bankAdmittance;
-        if (!finite(busVoltage) || !finite(sourceCurrent) || !finite(filterCurrent))
+        if (!finite(busVoltage) || !finite(sourceCurrent) || !finite(filterCurrent) || !finite(loadCurrent))
             return Result<HarmonicAnalysisResult>::failure(
                 invalid("Calculated harmonic response is outside the supported numeric domain."));
 
@@ -163,6 +190,7 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
             busMagnitude,
             std::abs(filterCurrent),
             sourceCurrentMagnitude,
+            std::abs(loadCurrent),
             1.0 / std::abs(bankAdmittance)
         });
 
