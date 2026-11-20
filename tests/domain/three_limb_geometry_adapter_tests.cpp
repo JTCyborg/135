@@ -84,6 +84,16 @@ int main()
     assert(near(gapped.value().limbAirGaps[0]->si(), 0.003));
     assert(near(gapped.value().limbAirGaps[1]->si(), 0.0));
     assert(near(gapped.value().limbAirGaps[2]->si(), 0.0015));
+    // The solver adds gap reluctance separately; iron path must exclude it.
+    assert(near(gapped.value().limbMeanPaths[0]->si(), 0.165 - 0.003));
+    assert(near(gapped.value().limbMeanPaths[1]->si(), 0.165));
+    assert(near(gapped.value().limbMeanPaths[2]->si(), 0.165 - 0.0015));
+
+    auto excessiveGap = physical;
+    excessiveGap.airGaps = {
+        {CoreSegment::LimbA, units::Length{0.02}, units::Length{0.166}}
+    };
+    assert(!buildThreeLimbMagneticGeometry(excessiveGap, 1.0));
 
     assert(!buildThreeLimbMagneticGeometry(physical, 0.0));
     assert(!buildThreeLimbMagneticGeometry(physical, 1.01));
