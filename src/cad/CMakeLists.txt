@@ -1,5 +1,6 @@
 add_library(Project135Cad
     src/three_limb_core.cpp
+    src/assembly_presentation.cpp
 )
 add_library(Project135::Cad ALIAS Project135Cad)
 
