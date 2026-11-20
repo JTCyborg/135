@@ -59,7 +59,11 @@ struct CoreComponentGeometrySnapshot {
     const CoreComponentGeometrySnapshot& geometry,
     double stackDepthM,
     double stackingFactor);
-
+[[nodiscard]] Result<double> calculateThreePhaseEiEffectiveLimbAreaM2(
+    const CoreComponentGeometrySnapshot& geometry,
+    const application::ReactorDesignInputs& inputs);
+[[nodiscard]] Result<double> calculateThreePhaseEiEffectiveYokeAreaM2(
+    const application::ReactorDesignInputs& inputs);
 
 /// Decodes a pinned core-component revision. Missing geometry is preserved as
 /// unavailable; malformed or non-positive supplied geometry is rejected.
