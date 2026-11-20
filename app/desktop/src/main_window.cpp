@@ -2280,37 +2280,37 @@ void MainWindow::calculateFilter()
                 samplingRequest.phaseDcCurrents[phase] = p135::units::Current{
                     phaseDcBiasCurrentA_[phase] ? phaseDcBiasCurrentA_[phase]->value() : 0.0
                 };
-                }
+            }
             samplingRequest.relativePeakTolerance = 1.0e-3;
             samplingRequest.maximumSamples = 576;
             const auto sampledCycle =
                 p135::domain::sampleThreeLimbMagneticCycle(samplingRequest);
-                if (!sampledCycle) {
-                    ++threeLimbFailedFrequencyCount;
-                    const QString failure = tr("%1 Hz: %2")
+            if (!sampledCycle) {
+                ++threeLimbFailedFrequencyCount;
+                const QString failure = tr("%1 Hz: %2")
+                    .arg(point.frequency.si(), 0, 'g', 6)
+                    .arg(QString::fromStdString(sampledCycle.error().message));
+                if (firstThreeLimbSweepFailure.isEmpty())
+                    firstThreeLimbSweepFailure = failure;
+                threeLimbSamplingMetadata.push_back({
+                    point.frequency.si(), 0.0, 0.0, 0.0, 0.0
+                });
+            } else if (!sampledCycle.value().converged) {
+                ++threeLimbFailedFrequencyCount;
+                if (firstThreeLimbSweepFailure.isEmpty()) {
+                    firstThreeLimbSweepFailure = tr("%1 Hz: peak |B| did not converge to 0.1%% by %2 samples (last relative change %3%%).")
                         .arg(point.frequency.si(), 0, 'g', 6)
-                        .arg(QString::fromStdString(sampledCycle.error().message));
-                    if (firstThreeLimbSweepFailure.isEmpty())
-                        firstThreeLimbSweepFailure = failure;
-                    threeLimbSamplingMetadata.push_back({
-                        point.frequency.si(), 0.0, 0.0, 0.0, 0.0
-                    });
-                } else if (!sampledCycle.value().converged) {
-                    ++threeLimbFailedFrequencyCount;
-                    if (firstThreeLimbSweepFailure.isEmpty()) {
-                        firstThreeLimbSweepFailure = tr("%1 Hz: peak |B| did not converge to 0.1%% by %2 samples (last relative change %3%%).")
-                            .arg(point.frequency.si(), 0, 'g', 6)
-                            .arg(static_cast<qulonglong>(sampledCycle.value().samplesUsed))
-                            .arg(sampledCycle.value().relativePeakChange * 100.0, 0, 'g', 5);
-                    }
-                    threeLimbSamplingMetadata.push_back({
-                        point.frequency.si(),
-                        static_cast<double>(sampledCycle.value().samplesUsed),
-                        sampledCycle.value().relativePeakChange,
-                        0.0,
-                        sampledCycle.value().withinBhCurveRange ? 1.0 : 0.0
-                    });
-                } else {
+                        .arg(static_cast<qulonglong>(sampledCycle.value().samplesUsed))
+                        .arg(sampledCycle.value().relativePeakChange * 100.0, 0, 'g', 5);
+                }
+                threeLimbSamplingMetadata.push_back({
+                    point.frequency.si(),
+                    static_cast<double>(sampledCycle.value().samplesUsed),
+                    sampledCycle.value().relativePeakChange,
+                    0.0,
+                    sampledCycle.value().withinBhCurveRange ? 1.0 : 0.0
+                });
+            } else {
                 std::array<double, 8> peakDensities{};
                 peakDensities[0] = point.frequency.si();
                 for (std::size_t branch = 0; branch < 7; ++branch)
