@@ -30,6 +30,23 @@ The equation returns `VolumetricCoreLossDensity` in W/m3. This is intentionally 
 - The imported DC-bias permeability and initial-magnetization equations are retained in the material catalog as manufacturer data; they are not yet coupled into the nonlinear magnetic-circuit solver.
 - No design-release claim is made from this import alone.
 
+
+## Initial magnetization and nonlinear solver input
+
+The Mix-2 datasheet also publishes an initial-magnetization equation:
+
+```text
+Bpk [gauss] = mu_i /
+  (1/(H + a*H^b) + 1/(c*H^d) + 1/e)
+
+H in Oe; mu_i=10; a=1.50e-3; b=1.96;
+c=1.97e4; d=9.18e-4; e=1.48e3
+```
+
+`evaluateInitialMagnetization()` accepts SI magnetic field strength and returns tesla. It rejects field strengths outside 0–4000 Oe. `sampleInitialMagnetizationCurve()` creates an explicitly model-generated positive B-H branch in SI units. That vector can be assigned to `CoreMaterial::bhCurve` and passed to the existing `analyzeMagneticCircuit()` or `analyzeThreeLimbMagneticCircuit()` APIs. These solvers therefore remain the single nonlinear solving path; no parallel magnetic-circuit solver is introduced.
+
+The generated curve is a fit/equation sample, not a set of measured points. Its 0–4000 Oe range is the declared equation domain, not a promise of accuracy outside the datasheet's characterization conditions. The caller must preserve manufacturer provenance and keep the operating point inside the curve. The helper does not silently set material density or other catalog properties.
+
 ## Source
 
 Micrometals, Mix-02 Powder Core Solutions datasheet, revision 2023-12-15:
