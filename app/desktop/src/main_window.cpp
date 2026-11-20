@@ -1970,12 +1970,12 @@ QWidget* MainWindow::createCadPage()
 
     const auto addGroup = [tree](const QString& name,
                                  const QStringList& children) {
-        auto* group = new QTreeWidgetItem(tree, {name, tr("Pending")});
+        auto* group = new QTreeWidgetItem(tree, {name, QStringLiteral("NOT_PROVIDED")});
         group->setToolTip(1, QObject::tr(
             "This assembly group is defined by the CAD workspace specification; physical geometry has not yet been supplied."));
         group->setExpanded(true);
         for (const auto& childName : children) {
-            auto* child = new QTreeWidgetItem(group, {childName, QObject::tr("Not generated")});
+            auto* child = new QTreeWidgetItem(group, {childName, QStringLiteral("NOT_GENERATED")});
             child->setToolTip(1, QObject::tr(
                 "No verified mechanical dimensions or B-Rep shape are available for this component."));
             child->setFlags(child->flags() & ~Qt::ItemIsUserCheckable);
