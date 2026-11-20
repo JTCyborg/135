@@ -1352,12 +1352,197 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(sourceWarning);
     layout->addWidget(advanced);
 
+    // Stable identifiers for the principal filter-definition inputs and editable tables.
+    nominalVoltage_->setObjectName(QStringLiteral("filterNominalVoltageV"));
+    fundamentalFrequency_->setObjectName(QStringLiteral("filterFundamentalFrequencyHz"));
+    filterConnection_->setObjectName(QStringLiteral("filterConnection"));
+    targetReactivePower_->setObjectName(QStringLiteral("filterTargetReactivePowerKvar"));
+    tuningHarmonicOrder_->setObjectName(QStringLiteral("filterTuningHarmonicOrder"));
+    qualityFactor_->setObjectName(QStringLiteral("filterQualityFactor"));
+    harmonicSpectrumTable_->setObjectName(QStringLiteral("filterVoltageHarmonics"));
+    harmonicCurrentTable_->setObjectName(QStringLiteral("filterLoadCurrentHarmonics"));
+
     auto* calculate = new QPushButton(tr("Synthesize LC branch"));
     connect(calculate, &QPushButton::clicked, this, [this] {
         calculateFilter();
         tabs_->setCurrentIndex(2);
     });
     layout->addWidget(calculate);
+
+    auto* confirmationRow = new QHBoxLayout;
+    auto* confirmationStatus = new QLabel(tr("Filter definition has not been confirmed."));
+    confirmationStatus->setObjectName(QStringLiteral("filterDefinitionConfirmationStatus"));
+    confirmationStatus->setWordWrap(true);
+    auto* confirmFilter = new QPushButton(tr("Confirm filter definition and continue"));
+    confirmFilter->setObjectName(QStringLiteral("confirmFilterDefinitionAndContinue"));
+    confirmationRow->addWidget(confirmationStatus, 1);
+    confirmationRow->addWidget(confirmFilter);
+    layout->addLayout(confirmationRow);
+
+    connect(confirmFilter, &QPushButton::clicked, this,
+        [this, page, confirmationStatus, nominalVoltage, fundamentalFrequency,
+         targetReactivePower, tuningHarmonicOrder, qualityFactor] {
+        const auto validPositive = [](double value) {
+            return std::isfinite(value) && value > 0.0;
+        };
+        if (!validPositive(nominalVoltage->value())) {
+            QMessageBox::warning(this, tr("Invalid nominal voltage"),
+                tr("Enter a nominal line-to-line voltage greater than zero."));
+            nominalVoltage->setFocus();
+            return;
+        }
+        if (!validPositive(fundamentalFrequency->value())) {
+            QMessageBox::warning(this, tr("Invalid fundamental frequency"),
+                tr("Enter a fundamental frequency greater than zero."));
+            fundamentalFrequency->setFocus();
+            return;
+        }
+        if (!validPositive(targetReactivePower->value())) {
+            QMessageBox::warning(this, tr("Invalid target reactive power"),
+                tr("Enter a target reactive power greater than zero."));
+            targetReactivePower->setFocus();
+            return;
+        }
+        if (!validPositive(tuningHarmonicOrder->value()) ||
+            tuningHarmonicOrder->value() < 2.0) {
+            QMessageBox::warning(this, tr("Invalid tuning order"),
+                tr("Enter a tuning harmonic order of at least 2."));
+            tuningHarmonicOrder->setFocus();
+            return;
+        }
+        if (!validPositive(qualityFactor->value())) {
+            QMessageBox::warning(this, tr("Invalid quality factor"),
+                tr("Enter a series-branch quality factor greater than zero."));
+            qualityFactor->setFocus();
+            return;
+        }
+        if (filterConnection_->currentIndex() < 0) {
+            QMessageBox::warning(this, tr("Missing branch connection"),
+                tr("Select Wye or Delta connection."));
+            filterConnection_->setFocus();
+            return;
+        }
+
+        QJsonObject fields;
+        QJsonObject fieldLabels;
+        QJsonObject fieldUnits;
+        const QHash<QString, QString> labels{
+            {QStringLiteral("filterNominalVoltageV"), tr("Nominal line voltage")},
+            {QStringLiteral("filterFundamentalFrequencyHz"), tr("Fundamental frequency")},
+            {QStringLiteral("filterConnection"), tr("Branch connection")},
+            {QStringLiteral("filterTargetReactivePowerKvar"), tr("Target reactive power")},
+            {QStringLiteral("filterTuningHarmonicOrder"), tr("Tuning harmonic order")},
+            {QStringLiteral("filterQualityFactor"), tr("Series-branch quality factor")},
+            {QStringLiteral("filterVoltageHarmonics"), tr("Voltage-source harmonic spectrum")},
+            {QStringLiteral("filterLoadCurrentHarmonics"), tr("Load-current harmonic injections")}
+        };
+        const QHash<QString, QString> units{
+            {QStringLiteral("filterNominalVoltageV"), QStringLiteral("V line-to-line")},
+            {QStringLiteral("filterFundamentalFrequencyHz"), QStringLiteral("Hz")},
+            {QStringLiteral("filterTargetReactivePowerKvar"), QStringLiteral("kvar total")},
+            {QStringLiteral("filterTuningHarmonicOrder"), QStringLiteral("order")},
+            {QStringLiteral("filterQualityFactor"), QStringLiteral("dimensionless")}
+        };
+        int generatedField = 0;
+        for (QWidget* widget : page->findChildren<QWidget*>()) {
+            QString key = widget->objectName();
+            if (key.isEmpty() || key.startsWith(QStringLiteral("qt_"))) {
+                // Preserve every otherwise-unlabelled input in a deterministic traversal order.
+                if (qobject_cast<QDoubleSpinBox*>(widget) || qobject_cast<QSpinBox*>(widget) ||
+                    qobject_cast<QComboBox*>(widget) || qobject_cast<QLineEdit*>(widget) ||
+                    qobject_cast<QCheckBox*>(widget) || qobject_cast<QPlainTextEdit*>(widget) ||
+                    qobject_cast<QTableWidget*>(widget)) {
+                    key = QStringLiteral("filterAdditionalField_%1")
+                        .arg(++generatedField, 3, 10, QLatin1Char('0'));
+                } else {
+                    continue;
+                }
+            }
+            bool captured = false;
+            if (const auto* line = qobject_cast<const QLineEdit*>(widget)) {
+                fields.insert(key, line->text());
+                captured = true;
+            } else if (const auto* combo = qobject_cast<const QComboBox*>(widget)) {
+                QJsonObject value;
+                value.insert(QStringLiteral("text"), combo->currentText());
+                value.insert(QStringLiteral("index"), combo->currentIndex());
+                value.insert(QStringLiteral("data"), QJsonValue::fromVariant(combo->currentData()));
+                fields.insert(key, value);
+                captured = true;
+            } else if (const auto* number = qobject_cast<const QDoubleSpinBox*>(widget)) {
+                fields.insert(key, number->value());
+                captured = true;
+            } else if (const auto* integer = qobject_cast<const QSpinBox*>(widget)) {
+                fields.insert(key, integer->value());
+                captured = true;
+            } else if (const auto* check = qobject_cast<const QCheckBox*>(widget)) {
+                fields.insert(key, check->isChecked());
+                captured = true;
+            } else if (const auto* textEdit = qobject_cast<const QPlainTextEdit*>(widget)) {
+                fields.insert(key, textEdit->toPlainText());
+                captured = true;
+            } else if (const auto* table = qobject_cast<const QTableWidget*>(widget)) {
+                QJsonArray rows;
+                for (int row = 0; row < table->rowCount(); ++row) {
+                    QJsonArray cells;
+                    for (int column = 0; column < table->columnCount(); ++column) {
+                        const auto* item = table->item(row, column);
+                        cells.append(item ? QJsonValue(item->text()) : QJsonValue(QJsonValue::Null));
+                    }
+                    rows.append(cells);
+                }
+                fields.insert(key, rows);
+                captured = true;
+            }
+            if (captured && labels.contains(key)) fieldLabels.insert(key, labels.value(key));
+            if (captured && units.contains(key)) fieldUnits.insert(key, units.value(key));
+        }
+
+        QJsonObject snapshot;
+        snapshot.insert(QStringLiteral("schemaVersion"), 1);
+        snapshot.insert(QStringLiteral("tabId"), QStringLiteral("filter_definition"));
+        snapshot.insert(QStringLiteral("tabTitle"), QStringLiteral("Filter definition"));
+        snapshot.insert(QStringLiteral("projectId"), projectId_);
+        snapshot.insert(QStringLiteral("confirmedAtUtc"),
+            QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+        snapshot.insert(QStringLiteral("buildConfiguration"),
+#ifdef _DEBUG
+            QStringLiteral("Debug")
+#else
+            QStringLiteral("Release")
+#endif
+        );
+        snapshot.insert(QStringLiteral("fields"), fields);
+        snapshot.insert(QStringLiteral("fieldLabels"), fieldLabels);
+        snapshot.insert(QStringLiteral("fieldUnits"), fieldUnits);
+
+#ifdef _DEBUG
+        const QString outputDirectory = QStringLiteral("C:/Temp/trdos/135");
+        if (!QDir().mkpath(outputDirectory)) {
+            QMessageBox::critical(this, tr("Cannot save filter snapshot"),
+                tr("Cannot create the project output directory: %1").arg(outputDirectory));
+            return;
+        }
+        QSaveFile output(QDir(outputDirectory).filePath(QStringLiteral("02_filter_definition.json")));
+        if (!output.open(QIODevice::WriteOnly)) {
+            QMessageBox::critical(this, tr("Cannot save filter snapshot"), output.errorString());
+            return;
+        }
+        const QByteArray json = QJsonDocument(snapshot).toJson(QJsonDocument::Indented);
+        if (output.write(json) != json.size() || !output.commit()) {
+            QMessageBox::critical(this, tr("Cannot save filter snapshot"),
+                tr("Writing the filter snapshot failed: %1").arg(output.errorString()));
+            return;
+        }
+        confirmationStatus->setText(tr("Confirmed. Debug snapshot saved: C:/Temp/trdos/135/02_filter_definition.json"));
+        appendLog(tr("Filter definition tab confirmed; snapshot saved to C:/Temp/trdos/135/02_filter_definition.json."));
+#else
+        confirmationStatus->setText(tr("Filter definition confirmed."));
+        appendLog(tr("Filter definition tab confirmed (Release build; debug snapshot is disabled)."));
+#endif
+        tabs_->setCurrentIndex(2);
+    });
+
     layout->addStretch();
     auto* scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
