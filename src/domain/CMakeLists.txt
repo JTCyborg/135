@@ -1,4 +1,5 @@
 add_library(Project135Domain
+    src/design_dependency.cpp
     src/design_parameter.cpp
     src/mechanical_geometry.cpp
     src/magnetic_product.cpp
