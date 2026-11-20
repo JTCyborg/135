@@ -186,6 +186,24 @@ int main(int argc, char** argv)
     assert(baosteel50A800.value().supplementaryGraphSources.front().sourceReference ==
            "https://esales.baosteel.com/portal/eleSteel/cn/download/B50A800.pdf");
 
+    auto invalidGraphPayload = nlohmann::json::parse(originalLossRevision.value()->payload);
+    invalidGraphPayload["supplementaryGraphSources"][0]["captureStatus"] = "SOLVER_READY";
+    const auto invalidGraphCanonical = canonicalizeJson(invalidGraphPayload.dump());
+    assert(invalidGraphCanonical);
+    const auto invalidGraphHash = sha256Hex(invalidGraphCanonical.value());
+    assert(invalidGraphHash);
+    auto invalidGraphRevision = *originalLossRevision.value();
+    invalidGraphRevision.revisionId = "TEST-BAOSTEEL-B35A300-INVALID-GRAPH-STATUS";
+    invalidGraphRevision.materialId = "TEST-BAOSTEEL-B35A300-INVALID-GRAPH";
+    invalidGraphRevision.revisionNumber = 1;
+    invalidGraphRevision.payload = invalidGraphCanonical.value();
+    invalidGraphRevision.contentHash = invalidGraphHash.value();
+    assert(store.appendRevision(invalidGraphRevision));
+    const auto invalidGraphDataset = loadCoreLossReferenceDataset(
+        store, invalidGraphRevision.revisionId);
+    assert(!invalidGraphDataset);
+    assert(invalidGraphDataset.error().code == ErrorCode::InvalidInput);
+
     const auto wrongLossRecord = loadCoreLossReferenceDataset(store, "SEED-TDK-N87-R1");
     assert(!wrongLossRecord);
     assert(wrongLossRecord.error().code == ErrorCode::InvalidInput);
