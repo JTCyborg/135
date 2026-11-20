@@ -29,6 +29,8 @@ struct ReactorDesignInputs {
     std::optional<double> stackingFactor;
     /// User-selected laminated-core stack depth; never inferred from EI outline size.
     std::optional<double> coreStackDepthM;
+    /// Explicit physical yoke thickness; not inferred from ambiguous catalogue dimensions.
+    std::optional<double> coreYokeThicknessM;
     std::optional<double> ambientTemperatureK;
     std::optional<double> maximumWindingTemperatureK;
 
