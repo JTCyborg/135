@@ -1,12 +1,33 @@
 {
     "buildConfiguration": "Debug",
-    "confirmedAtUtc": "2026-11-20T22:47:59.120Z",
+    "confirmedAtUtc": "2026-11-20T22:53:09.275Z",
+    "fieldLabels": {
+        "projectAirflowM3h": "Forced-air volume flow",
+        "projectAltitudeM": "Installation altitude",
+        "projectAmbientC": "Maximum ambient temperature",
+        "projectCoolingMethod": "Cooling method",
+        "projectCustomer": "Customer",
+        "projectDate": "Project date",
+        "projectEngineer": "Design engineer",
+        "projectInsulationClass": "Insulation thermal class",
+        "projectIpRating": "Enclosure protection",
+        "projectName": "Project name",
+        "projectNumber": "Project number",
+        "projectProductFamily": "Product family",
+        "projectRevision": "Revision"
+    },
+    "fieldUnits": {
+        "projectAirflowM3h": "m³/h",
+        "projectAltitudeM": "m above sea level",
+        "projectAmbientC": "°C"
+    },
     "fields": {
         "projectAirflowM3h": 0,
         "projectAltitudeM": 0,
         "projectAmbientC": 40,
         "projectCoolingMethod": {
             "data": "AN",
+            "index": 0,
             "text": "AN — natural air cooling"
         },
         "projectCustomer": "",
@@ -14,23 +35,26 @@
         "projectEngineer": "",
         "projectInsulationClass": {
             "data": null,
+            "index": 0,
             "text": "F (155 °C)"
         },
         "projectIpRating": {
             "data": null,
+            "index": 0,
             "text": "IP00"
         },
         "projectName": "TEST-01 — Industrial detuned LC filter 5th harmonic, 100 kVAr / 400 V",
         "projectNumber": "",
         "projectProductFamily": {
             "data": null,
+            "index": 0,
             "text": "Shunt passive harmonic filter"
         },
-        "projectRevision": "A",
-        "qt_spinbox_lineedit": "NOT SET"
+        "projectRevision": "A"
     },
     "projectId": "8eaf90c7-5e4a-4d22-b8d7-202611201120",
     "schemaVersion": 1,
     "tabId": "project",
-    "tabTitle": "Project"
+    "tabTitle": "Project",
+    "topologyPreview": "Three-phase shunt branch: series-tuned R-L-C, termination Wye (Y)"
 }
