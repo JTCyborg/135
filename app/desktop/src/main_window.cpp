@@ -808,9 +808,12 @@ QWidget* MainWindow::createFilterPage()
     filterConnection_->addItem(tr("Wye (Y)"), static_cast<int>(p135::filter::Connection::Wye));
     filterConnection_->addItem(tr("Delta (Δ)"), static_cast<int>(p135::filter::Connection::Delta));
 
-    tuningHarmonicOrder_ = new QSpinBox;
-    tuningHarmonicOrder_->setRange(2, 100);
-    tuningHarmonicOrder_->setValue(5);
+    tuningHarmonicOrder_ = new QDoubleSpinBox;
+    tuningHarmonicOrder_->setRange(2.0, 100.0);
+    tuningHarmonicOrder_->setDecimals(3);
+    tuningHarmonicOrder_->setSingleStep(0.05);
+    tuningHarmonicOrder_->setValue(5.0);
+    tuningHarmonicOrder_->setToolTip(tr("Fractional tuning order is supported, e.g. 4.75 for a filter tuned below the 5th harmonic."));
 
     qualityFactor_ = new QDoubleSpinBox;
     qualityFactor_->setRange(0.1, 10000.0);
@@ -1850,7 +1853,7 @@ void MainWindow::loadCalculationInputs(int row)
     setNumber("capacitorThermalResistance_K_per_W", capacitorThermalResistance_);
     setNumber("resistorThermalResistance_K_per_W", resistorThermalResistance_);
     if (tuningHarmonicOrder_ && input.value(QStringLiteral("tuningHarmonicOrder")).isDouble())
-        tuningHarmonicOrder_->setValue(input.value(QStringLiteral("tuningHarmonicOrder")).toInt());
+        tuningHarmonicOrder_->setValue(input.value(QStringLiteral("tuningHarmonicOrder")).toDouble());
     if (filterConnection_) {
         const int index = filterConnection_->findText(input.value(QStringLiteral("connection")).toString());
         if (index >= 0) filterConnection_->setCurrentIndex(index);
@@ -1972,7 +1975,7 @@ void MainWindow::calculateFilter()
     specification.branches.push_back(p135::filter::SingleTunedBranchSpecification{
         1,
         "Single-tuned branch",
-        static_cast<std::uint32_t>(tuningHarmonicOrder_->value()),
+        tuningHarmonicOrder_->value(),
         p135::units::Power{targetReactivePower_->value() * 1000.0},
         qualityFactor_->value()
     });
@@ -3331,7 +3334,7 @@ void MainWindow::calculateFilter()
         : tr("Calculation completed with NOT_VERIFIED inputs — review warnings"));
     appendLog(tr("Single-tuned branch synthesized: %1 kvar, h=%2, connection=%3.")
         .arg(targetReactivePower_->value())
-        .arg(tuningHarmonicOrder_->value())
+        .arg(tuningHarmonicOrder_->value(), 0, 'f', 3)
         .arg(filterConnection_->currentText()));
 }
 
