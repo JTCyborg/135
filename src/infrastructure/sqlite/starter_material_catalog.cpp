@@ -706,6 +706,67 @@ std::vector<SeedRecord> starterRecords()
         });
     }
 
+    // Measured DC initial-magnetization points published in Kobe Steel
+    // Engineering Reports, Vol. 71 No. 2 (July 2022), Table 2, p. 19.
+    // These are research measurements for the stated JIS grades, not a
+    // manufacturer guarantee and not an AC loss model.
+    const std::string kobelcoBhSource =
+        "https://www.kobelco.co.jp/r-d/technology-review/dumm/__icsFiles/afieldfile/2025/03/19/247_018-021.pdf";
+    const auto measuredDcSteel = [&](const std::string& grade,
+                                     double thicknessMm,
+                                     const std::vector<std::pair<double, double>>& points) {
+        const std::string id = "MAT-RESEARCH-" + grade + "-DC";
+        const json payload = {
+            {"schemaVersion", 1},
+            {"material", {
+                {"id", id},
+                {"manufacturer", "Specimen producer not identified in publication"},
+                {"grade", grade + " non-oriented electrical steel"},
+                {"family", "fully finished non-grain-oriented electrical steel"},
+                {"standard", "JIS grade designation; exact edition not stated"},
+                {"laminationThickness_m", thicknessMm * 1.0e-3},
+                {"density_kg_per_m3", 7650.0},
+                {"densityStatus", "NOMINAL_ASSUMPTION_7650_KG_PER_M3_NOT_REPORTED_IN_KOBE_STEEL_TABLE"}
+            }},
+            {"bhCurve", {
+                {"curveType", "DC initial magnetization curve"},
+                {"frequency_Hz", 0.0},
+                {"temperature_K", 0.0},
+                {"points", coreCurve(points)}
+            }},
+            {"coreLossData", {{"points", json::array()}}},
+            {"bhCurveProvenance", {
+                {"sourceDocument", "Kobe Steel Engineering Reports, Vol. 71 No. 2, July 2022"},
+                {"sourcePage", "19, Table 2"},
+                {"measurementMethod", "Initial magnetization curve measured in accordance with JIS C 2556; 60 mm square single sheet specimen"},
+                {"sampleDirection", "NOT_STATED_IN_PUBLICATION"},
+                {"captureMethod", "MEASURED_TABULAR_VALUES_TRANSCRIBED_FROM_TABLE_2"},
+                {"notes", "Specimens were magnetically annealed in hydrogen at 850 C for 3 h before measurement. Table reports B at H=100, 200, 300, 500, 1000, 2000, 5000 and 20000 A/m. Measurement temperature and rolling-direction orientation are not stated. These DC points do not provide AC core-loss data or a hysteresis-loop model."}
+            }},
+            {"dataQuality", {
+                {"sourceStatus", "MEASURED_RESEARCH_DATASET"},
+                {"bhCurveStatus", "MEASURED_TABULAR"},
+                {"coreLossStatus", "NOT_PUBLISHED"},
+                {"densityStatus", "ASSUMED_NOT_SOURCE_MEASURED"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "The measured DC initial-magnetization points may support magnetic operating-point analysis within the tabulated H range. AC core loss, hysteresis, rolling-direction dependence and specimen-to-production processing transfer remain NOT_VERIFIED. Density is a nominal placeholder required by the current material value object and is not taken from Table 2."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "core-material", kobelcoBhSource,
+            "Kobe Steel Engineering Reports Vol.71 No.2 (2022), Table 2; " + grade,
+            payload
+        });
+    };
+    measuredDcSteel("35A300", 0.35, {
+        {100.0, 1.20}, {200.0, 1.36}, {300.0, 1.42}, {500.0, 1.47},
+        {1000.0, 1.53}, {2000.0, 1.59}, {5000.0, 1.70}, {20000.0, 1.93}
+    });
+    measuredDcSteel("50A800", 0.50, {
+        {100.0, 0.22}, {200.0, 0.99}, {300.0, 1.28}, {500.0, 1.45},
+        {1000.0, 1.56}, {2000.0, 1.63}, {5000.0, 1.74}, {20000.0, 1.97}
+    });
+
     // Manufacturer-listed grain-oriented powercore grades for transformer cores.
     // Losses are maximum values at 1.7 T / 50 Hz; do not infer a full loss map.
     const std::vector<std::tuple<std::string, std::string, double, double, double>> tkGrainOriented{
