@@ -412,4 +412,121 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
     return Result<TopoDS_Shape>::success(assembly);
 }
 
+Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
+    const domain::ReactorPhysicalGeometry& geometry)
+{
+    const auto validation = domain::validate(geometry);
+    if (!validation) return Result<TopoDS_Shape>::failure(validation.error());
+
+    const auto core = buildThreeLimbCoreShape(geometry);
+    if (!core) return Result<TopoDS_Shape>::failure(core.error());
+
+    const auto& g = geometry.core;
+    const double limbA = g.limbWidths[0].si();
+    const double limbB = g.limbWidths[1].si();
+    const double windowAB = g.windowWidths[0].si();
+    const double windowBC = g.windowWidths[1].si();
+    const std::array<double, 3> limbCentersX{
+        0.5 * limbA,
+        limbA + windowAB + 0.5 * limbB,
+        limbA + windowAB + limbB + windowBC + 0.5 * g.limbWidths[2].si()
+    };
+    const double bottomYoke = 0.5 *
+        (g.yokeThicknesses[2].si() + g.yokeThicknesses[3].si());
+    const std::array<double, 3> windowHeights{
+        g.windowHeights[0].si(),
+        std::min(g.windowHeights[0].si(), g.windowHeights[1].si()),
+        g.windowHeights[1].si()
+    };
+
+    std::size_t expectedCoreSolids = 0;
+    for (TopExp_Explorer it(core.value(), TopAbs_SOLID); it.More(); it.Next())
+        ++expectedCoreSolids;
+
+    BRep_Builder builder;
+    TopoDS_Compound assembly;
+    builder.MakeCompound(assembly);
+    builder.Add(assembly, core.value());
+
+    for (std::size_t i = 0; i < geometry.bobbins.size(); ++i) {
+        const auto& bobbinGeometry = geometry.bobbins[i];
+        const auto& windingGeometry = geometry.windingPacks[i];
+        const double flangeThickness = bobbinGeometry.flangeThickness.si();
+        const double endClearance = windingGeometry.endClearance.si();
+        const double axialHeight = windingGeometry.axialHeight.si();
+        const double availableAxialLength =
+            bobbinGeometry.axialLength.si() - 2.0 * (flangeThickness + endClearance);
+        const double tolerance = std::max(1.0e-9, bobbinGeometry.axialLength.si() * 1.0e-6);
+        if (availableAxialLength <= 0.0 || axialHeight > availableAxialLength + tolerance)
+            return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                "Winding pack must fit between both bobbin flanges with the specified end clearances.",
+                "windingPacks[" + std::to_string(i) + "].axialHeight");
+
+        const auto bobbin = buildBobbinShape(bobbinGeometry);
+        if (!bobbin) return Result<TopoDS_Shape>::failure(bobbin.error());
+        const auto winding = buildWindingPackEnvelopeShape(bobbinGeometry, windingGeometry);
+        if (!winding) return Result<TopoDS_Shape>::failure(winding.error());
+
+        const double bobbinLength = bobbinGeometry.axialLength.si();
+        const double bobbinY = bottomYoke + 0.5 * (windowHeights[i] - bobbinLength);
+        const double z = 0.5 * g.limbDepths[i].si();
+        const double x = limbCentersX[i];
+        const double windingY = bobbinY + flangeThickness + endClearance;
+
+        gp_Trsf bobbinPlacement;
+        bobbinPlacement.SetTranslation(gp_Vec(x * 1000.0, bobbinY * 1000.0, z * 1000.0));
+        BRepBuilderAPI_Transform locatedBobbin(bobbin.value(), bobbinPlacement, true);
+        if (!locatedBobbin.IsDone() || locatedBobbin.Shape().IsNull())
+            return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                "OCCT failed to position a bobbin on its core limb.",
+                "bobbins[" + std::to_string(i) + "].placement");
+
+        gp_Trsf windingPlacement;
+        windingPlacement.SetTranslation(gp_Vec(x * 1000.0, windingY * 1000.0, z * 1000.0));
+        BRepBuilderAPI_Transform locatedWinding(winding.value(), windingPlacement, true);
+        if (!locatedWinding.IsDone() || locatedWinding.Shape().IsNull())
+            return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                "OCCT failed to position a winding-pack envelope around its bobbin.",
+                "windingPacks[" + std::to_string(i) + "].placement");
+
+        builder.Add(assembly, locatedBobbin.Shape());
+        builder.Add(assembly, locatedWinding.Shape());
+    }
+
+    if (assembly.IsNull() || !BRepCheck_Analyzer(assembly).IsValid())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "OCCT failed to create a valid core, bobbin and winding-envelope assembly.",
+            "assembly");
+
+    std::size_t solids = 0;
+    for (TopExp_Explorer it(assembly, TopAbs_SOLID); it.More(); it.Next()) ++solids;
+    if (solids != expectedCoreSolids + 2 * geometry.bobbins.size())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "The assembly must retain every core solid, all three bobbins and all three winding envelopes.",
+            "assembly");
+
+    // Reject any unintended volumetric overlap. Face/edge contact is allowed.
+    std::vector<TopoDS_Shape> members;
+    for (TopExp_Explorer it(assembly, TopAbs_SOLID); it.More(); it.Next())
+        members.push_back(it.Current());
+    for (std::size_t i = 0; i < members.size(); ++i) {
+        for (std::size_t j = i + 1; j < members.size(); ++j) {
+            BRepAlgoAPI_Common common(members[i], members[j]);
+            common.Build();
+            if (!common.IsDone())
+                return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                    "OCCT failed while checking pairwise intersections in the reactor assembly.",
+                    "assembly.intersections");
+            GProp_GProps commonVolume;
+            BRepGProp::VolumeProperties(common.Shape(), commonVolume);
+            const double volume = commonVolume.Mass();
+            if (!std::isfinite(volume) || std::abs(volume) > 1.0e-8)
+                return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                    "Reactor assembly members have an unintended volumetric intersection.",
+                    "assembly.intersections");
+        }
+    }
+    return Result<TopoDS_Shape>::success(assembly);
+}
+
 } // namespace p135::cad
