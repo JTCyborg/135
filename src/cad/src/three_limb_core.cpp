@@ -149,8 +149,16 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
     for (std::size_t i = 0; i < 4; ++i) {
         const auto a = adjacent[i][0];
         const auto b = adjacent[i][1];
-        const double x0 = centers[a] - 0.5 * g.limbWidths[a].si();
-        const double x1 = centers[b] + 0.5 * g.limbWidths[b].si();
+        // Split each horizontal yoke at the centre plane of the middle
+        // limb. AB owns the left half of B; BC owns the right half. This
+        // avoids overlapping yoke solids while retaining both limb contacts.
+        const bool isLeftHalf = (i % 2) == 0;
+        const double x0 = isLeftHalf
+            ? centers[a] - 0.5 * g.limbWidths[a].si()
+            : centers[a];
+        const double x1 = isLeftHalf
+            ? centers[b]
+            : centers[b] + 0.5 * g.limbWidths[b].si();
         const double yokeHeight = g.yokeThicknesses[i].si();
         const double y = i < 2 ? height - yokeHeight : 0.0;
         const double depth = g.yokeDepths[i].si();
