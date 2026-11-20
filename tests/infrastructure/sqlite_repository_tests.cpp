@@ -313,6 +313,10 @@ int main(int argc, char** argv)
         const auto mix2 = store.latestRevision("MAT-MICROMETALS-MIX-2");
         assert(mix2 && mix2.value());
         assert(mix2.value()->payload.find("18000") != std::string::npos);
+        assert(mix2.value()->payload.find("coreLossEquation") != std::string::npos);
+        assert(mix2.value()->payload.find("dcBiasPermeabilityEquation") != std::string::npos);
+        assert(mix2.value()->payload.find("initialMagnetizationEquation") != std::string::npos);
+        assert(mix2.value()->payload.find("1.48") != std::string::npos);
         const auto koolMu = store.latestRevision("MAT-MAGNETICS-KOOL-MU-14U");
         assert(koolMu && koolMu.value());
         assert(koolMu.value()->payload.find("1.05") != std::string::npos);
