@@ -254,7 +254,7 @@ int main(int argc, char** argv)
         const auto goSteel = store.latestRevision("MAT-TK-POWERCORE-H080-23");
         assert(goSteel && goSteel.value());
         assert(goSteel.value()->payload.find("0.00023") != std::string::npos);
-        assert(goSteel.value()->payload.find("1.7") != std::string::npos);
+        assert(goSteel.value()->payload.find("50Hz_1p7T") != std::string::npos);
         const auto steel = store.latestRevision("MAT-TK-POWERCORE-M235-35A");
         assert(steel && steel.value());
         assert(steel.value()->payload.find("2.35") != std::string::npos);
