@@ -28,6 +28,8 @@ struct ThreeLimbMagneticGeometry {
     std::array<std::optional<units::Area>, 3> limbEffectiveAreas{};
     std::array<std::optional<units::Length>, 3> limbMeanPaths{};
     std::array<std::optional<units::Length>, 3> limbAirGaps{};
+    /// Effective gap areas A/B/C; unset entries use each limb core area (no fringing).
+    std::array<std::optional<units::Area>, 3> limbGapEffectiveAreas{};
     std::array<std::optional<units::Area>, 4> yokeEffectiveAreas{};
     std::array<std::optional<units::Length>, 4> yokeSegmentPaths{};
 };
