@@ -25,16 +25,14 @@
                 "capacitorThermalSource": "",
                 "connection": "Wye (Y)",
                 "coreAirGap_mm": 0,
-                "coreBhCurve": [
-                ],
+                "coreBhCurve": [],
                 "coreBhSource": "",
                 "coreEffectiveArea_mm2": 0,
                 "coreMeanPath_mm": 0,
                 "coreYokeEffectiveArea_mm2": 0,
                 "coreYokeSegmentPath_mm": 0,
                 "fundamentalFrequency_Hz": 50,
-                "harmonicSpectrum": [
-                ],
+                "harmonicSpectrum": [],
                 "inductorSaturationCurrent_A_peak": 0,
                 "inductorSaturationSource": "",
                 "inductorTurns": 0,
@@ -131,8 +129,7 @@
                     }
                 ]
             },
-            "materialLinks": [
-            ],
+            "materialLinks": [],
             "productFamily": "Shunt passive harmonic filter",
             "projectId": "2339cf4c-3305-45ec-8f1a-f897c88b0445",
             "projectName": "New engineering project",
@@ -744,12 +741,10 @@
                         "phasePeakCurrent_A": 367.41950676870186
                     }
                 ],
-                "impedanceScan": [
-                ],
+                "impedanceScan": [],
                 "magneticKneeCurrent_A_peak": 0,
                 "magneticKneeFluxDensity_T": 0,
-                "magneticSweep": [
-                ],
+                "magneticSweep": [],
                 "results": [
                     {
                         "name": "Phase RMS voltage",
@@ -822,10 +817,8 @@
                         "value": "151"
                     }
                 ],
-                "threeLimbMagneticSweep": [
-                ],
-                "threeLimbSampling": [
-                ]
+                "threeLimbMagneticSweep": [],
+                "threeLimbSampling": []
             }
         },
         {
@@ -853,16 +846,14 @@
                 "capacitorThermalSource": "",
                 "connection": "Wye (Y)",
                 "coreAirGap_mm": 0,
-                "coreBhCurve": [
-                ],
+                "coreBhCurve": [],
                 "coreBhSource": "",
                 "coreEffectiveArea_mm2": 0,
                 "coreMeanPath_mm": 0,
                 "coreYokeEffectiveArea_mm2": 0,
                 "coreYokeSegmentPath_mm": 0,
                 "fundamentalFrequency_Hz": 50,
-                "harmonicSpectrum": [
-                ],
+                "harmonicSpectrum": [],
                 "inductorSaturationCurrent_A_peak": 0,
                 "inductorSaturationSource": "",
                 "inductorTurns": 0,
@@ -959,8 +950,7 @@
                     }
                 ]
             },
-            "materialLinks": [
-            ],
+            "materialLinks": [],
             "productFamily": "Shunt passive harmonic filter",
             "projectId": "2339cf4c-3305-45ec-8f1a-f897c88b0445",
             "projectName": "New engineering project",
@@ -1572,12 +1562,10 @@
                         "phasePeakCurrent_A": 367.41950676870186
                     }
                 ],
-                "impedanceScan": [
-                ],
+                "impedanceScan": [],
                 "magneticKneeCurrent_A_peak": 0,
                 "magneticKneeFluxDensity_T": 0,
-                "magneticSweep": [
-                ],
+                "magneticSweep": [],
                 "results": [
                     {
                         "name": "Phase RMS voltage",
@@ -1650,10 +1638,8 @@
                         "value": "151"
                     }
                 ],
-                "threeLimbMagneticSweep": [
-                ],
-                "threeLimbSampling": [
-                ]
+                "threeLimbMagneticSweep": [],
+                "threeLimbSampling": []
             }
         },
         {
@@ -1681,16 +1667,14 @@
                 "capacitorThermalSource": "",
                 "connection": "Wye (Y)",
                 "coreAirGap_mm": 8.5,
-                "coreBhCurve": [
-                ],
+                "coreBhCurve": [],
                 "coreBhSource": "",
                 "coreEffectiveArea_mm2": 4200,
                 "coreMeanPath_mm": 680,
                 "coreYokeEffectiveArea_mm2": 4200,
                 "coreYokeSegmentPath_mm": 220,
                 "fundamentalFrequency_Hz": 50,
-                "harmonicSpectrum": [
-                ],
+                "harmonicSpectrum": [],
                 "inductorSaturationCurrent_A_peak": 350,
                 "inductorSaturationSource": "",
                 "inductorTurns": 26,
@@ -1746,7 +1730,7 @@
                 "resistorRevisionId": "",
                 "resistorThermalResistance_K_per_W": 0,
                 "resistorThermalSource": "",
-                "sourceInductance_H": 3.05e-05,
+                "sourceInductance_H": 0.0000305,
                 "sourceResistance_ohm": 0.0016,
                 "targetReactivePower_var": 100000,
                 "tuningHarmonicOrder": 5,
@@ -1787,8 +1771,7 @@
                     }
                 ]
             },
-            "materialLinks": [
-            ],
+            "materialLinks": [],
             "productFamily": "Shunt passive harmonic filter",
             "projectId": "2339cf4c-3305-45ec-8f1a-f897c88b0445",
             "projectName": "New engineering project",
@@ -5410,8 +5393,7 @@
                 ],
                 "magneticKneeCurrent_A_peak": 0,
                 "magneticKneeFluxDensity_T": 0,
-                "magneticSweep": [
-                ],
+                "magneticSweep": [],
                 "results": [
                     {
                         "name": "Phase RMS voltage",
@@ -5519,10 +5501,8 @@
                         "value": "0.2754861256"
                     }
                 ],
-                "threeLimbMagneticSweep": [
-                ],
-                "threeLimbSampling": [
-                ]
+                "threeLimbMagneticSweep": [],
+                "threeLimbSampling": []
             }
         },
         {
@@ -5550,16 +5530,14 @@
                 "capacitorThermalSource": "",
                 "connection": "Wye (Y)",
                 "coreAirGap_mm": 0,
-                "coreBhCurve": [
-                ],
+                "coreBhCurve": [],
                 "coreBhSource": "",
                 "coreEffectiveArea_mm2": 0,
                 "coreMeanPath_mm": 0,
                 "coreYokeEffectiveArea_mm2": 0,
                 "coreYokeSegmentPath_mm": 0,
                 "fundamentalFrequency_Hz": 50,
-                "harmonicSpectrum": [
-                ],
+                "harmonicSpectrum": [],
                 "inductorSaturationCurrent_A_peak": 0,
                 "inductorSaturationSource": "",
                 "inductorTurns": 0,
@@ -5656,8 +5634,7 @@
                     }
                 ]
             },
-            "materialLinks": [
-            ],
+            "materialLinks": [],
             "productFamily": "Shunt passive harmonic filter",
             "projectId": "9a79dadb-e161-4dff-8c6b-b6e9d5a69f13",
             "projectName": "Untitled",
@@ -6269,12 +6246,10 @@
                         "phasePeakCurrent_A": 367.41950676870186
                     }
                 ],
-                "impedanceScan": [
-                ],
+                "impedanceScan": [],
                 "magneticKneeCurrent_A_peak": 0,
                 "magneticKneeFluxDensity_T": 0,
-                "magneticSweep": [
-                ],
+                "magneticSweep": [],
                 "results": [
                     {
                         "name": "Phase RMS voltage",
@@ -6357,10 +6332,8 @@
                         "value": "252.5704057"
                     }
                 ],
-                "threeLimbMagneticSweep": [
-                ],
-                "threeLimbSampling": [
-                ]
+                "threeLimbMagneticSweep": [],
+                "threeLimbSampling": []
             }
         },
         {
@@ -6388,8 +6361,7 @@
                 "capacitorThermalSource": "",
                 "connection": "Wye (Y)",
                 "coreAirGap_mm": 0,
-                "coreBhCurve": [
-                ],
+                "coreBhCurve": [],
                 "coreBhSource": "",
                 "coreEffectiveArea_mm2": 0,
                 "coreMeanPath_mm": 0,
@@ -7121,12 +7093,10 @@
                         "phasePeakCurrent_A": 367.41950676870186
                     }
                 ],
-                "impedanceScan": [
-                ],
+                "impedanceScan": [],
                 "magneticKneeCurrent_A_peak": 0,
                 "magneticKneeFluxDensity_T": 0,
-                "magneticSweep": [
-                ],
+                "magneticSweep": [],
                 "results": [
                     {
                         "name": "Phase RMS voltage",
@@ -7209,10 +7179,8 @@
                         "value": "252.5704057"
                     }
                 ],
-                "threeLimbMagneticSweep": [
-                ],
-                "threeLimbSampling": [
-                ]
+                "threeLimbMagneticSweep": [],
+                "threeLimbSampling": []
             }
         },
         {
@@ -7240,16 +7208,14 @@
                 "capacitorThermalSource": "",
                 "connection": "Wye (Y)",
                 "coreAirGap_mm": 0,
-                "coreBhCurve": [
-                ],
+                "coreBhCurve": [],
                 "coreBhSource": "",
                 "coreEffectiveArea_mm2": 0,
                 "coreMeanPath_mm": 0,
                 "coreYokeEffectiveArea_mm2": 0,
                 "coreYokeSegmentPath_mm": 0,
                 "fundamentalFrequency_Hz": 50,
-                "harmonicSpectrum": [
-                ],
+                "harmonicSpectrum": [],
                 "inductorSaturationCurrent_A_peak": 0,
                 "inductorSaturationSource": "",
                 "inductorTurns": 0,
@@ -7346,8 +7312,7 @@
                     }
                 ]
             },
-            "materialLinks": [
-            ],
+            "materialLinks": [],
             "productFamily": "Shunt passive harmonic filter",
             "projectId": "513bdc3e-bcfa-4553-9b8e-22769ff40684",
             "projectName": "New engineering project",
@@ -7959,12 +7924,10 @@
                         "phasePeakCurrent_A": 367.41950676870186
                     }
                 ],
-                "impedanceScan": [
-                ],
+                "impedanceScan": [],
                 "magneticKneeCurrent_A_peak": 0,
                 "magneticKneeFluxDensity_T": 0,
-                "magneticSweep": [
-                ],
+                "magneticSweep": [],
                 "results": [
                     {
                         "name": "Phase RMS voltage",
@@ -8047,14 +8010,205 @@
                         "value": "252.5704057"
                     }
                 ],
-                "threeLimbMagneticSweep": [
-                ],
-                "threeLimbSampling": [
-                ]
+                "threeLimbMagneticSweep": [],
+                "threeLimbSampling": []
             }
+        },
+        {
+            "calculationId": "7b8d2b16-5b2e-4f2c-9c61-202611201120",
+            "projectId": "8eaf90c7-5e4a-4d22-b8d7-202611201120",
+            "projectName": "TEST-01 — Industrial detuned LC filter 5th harmonic, 100 kVAr / 400 V",
+            "productFamily": "Shunt passive harmonic filter",
+            "input": {
+                "ambientTemperature_C": 25,
+                "capacitorRevisionId": "",
+                "capacitorThermalResistance_K_per_W": 0,
+                "capacitorThermalSource": "",
+                "connection": "Wye (Y)",
+                "coreAirGap_mm": 8.5,
+                "coreBhCurve": [
+                    {
+                        "H_A_per_m": 0,
+                        "B_T": 0
+                    },
+                    {
+                        "H_A_per_m": 50,
+                        "B_T": 0.8
+                    },
+                    {
+                        "H_A_per_m": 100,
+                        "B_T": 1.2
+                    },
+                    {
+                        "H_A_per_m": 250,
+                        "B_T": 1.45
+                    },
+                    {
+                        "H_A_per_m": 1000,
+                        "B_T": 1.65
+                    },
+                    {
+                        "H_A_per_m": 5000,
+                        "B_T": 1.82
+                    }
+                ],
+                "coreBhSource": "M4 / 3408 typical cold-rolled electrical steel curve; user-supplied approximate data, not a manufacturer-certified dataset",
+                "coreEffectiveArea_mm2": 4200,
+                "coreMeanPath_mm": 680,
+                "coreYokeEffectiveArea_mm2": 4200,
+                "coreYokeSegmentPath_mm": 220,
+                "fundamentalFrequency_Hz": 50,
+                "harmonicSpectrum": [
+                    {
+                        "order": 5,
+                        "sequence": "Negative",
+                        "voltageRms_V": 4.6,
+                        "phase_deg": 0
+                    }
+                ],
+                "inductorSaturationCurrent_A_peak": 350,
+                "inductorSaturationSource": "Test scenario #1: user-supplied reference, 350 A peak/phase",
+                "inductorTurns": 26,
+                "limbAreaOverrides": [
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    }
+                ],
+                "limbGapOverrides": [
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    }
+                ],
+                "limbPathOverrides": [
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    }
+                ],
+                "nominalLineVoltage_V": 400,
+                "phaseDcBiasCurrent_A": [
+                    0,
+                    0,
+                    0
+                ],
+                "qualityFactor": 60,
+                "resistorRevisionId": "",
+                "resistorThermalResistance_K_per_W": 0,
+                "resistorThermalSource": "",
+                "sourceInductance_H": 0.0000305,
+                "sourceResistance_ohm": 0.0016,
+                "targetReactivePower_var": 100000,
+                "tuningHarmonicOrder": 5,
+                "yokeAreaOverrides": [
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    }
+                ],
+                "yokePathOverrides": [
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    },
+                    {
+                        "enabled": false,
+                        "value": 0
+                    }
+                ],
+                "coreGapEffectiveArea_mm2": 4800,
+                "harmonicCurrentInjections": [
+                    {
+                        "sourceId": "VFD_1",
+                        "order": 5,
+                        "sequence": "Negative",
+                        "currentRms_A": 80,
+                        "phase_deg": 180
+                    },
+                    {
+                        "sourceId": "VFD_1",
+                        "order": 7,
+                        "sequence": "Positive",
+                        "currentRms_A": 45,
+                        "phase_deg": 0
+                    }
+                ]
+            },
+            "result": {
+                "calculationSummary": "INPUT_ONLY_NOT_SOLVED. Test scenario #1 inputs were archived exactly as supplied. No solver was executed for this record; numerical results and plots are intentionally absent. Tuning harmonic order is 5 because the current desktop input control accepts integers only (4.75 cannot currently be represented). The B-H curve is approximate user-supplied data for M4 / 3408 and is not a certified manufacturer dataset.",
+                "calculationStatus": "INPUT_ONLY_NOT_SOLVED",
+                "frequencySweep": [],
+                "impedanceScan": [],
+                "magneticSweep": [],
+                "threeLimbMagneticSweep": [],
+                "threeLimbSampling": [],
+                "results": []
+            },
+            "engineVersions": {
+                "application": "Project135-0.1.0",
+                "circuitSolver": "circuit-ac-mna-v1",
+                "filterSynthesis": "filter-synthesis-v1",
+                "frequencyPlotSchema": "frequency-response-v4-three-limb-magnetic-network-v1",
+                "harmonics": "harmonics-v1",
+                "magneticDcBias": "per-phase-dc-offset-cycle-sampling-v1",
+                "magneticGeometryInput": "independent-limb-yoke-overrides-v1",
+                "magneticSinglePath": "nonlinear-magnetic-circuit-v1",
+                "magneticThreeLimb": "three-limb-reluctance-network-v1",
+                "magneticTimeSampling": "adaptive-72-144-288-peak-B-1e-3-v2",
+                "thermal": "thermal-steady-v1"
+            },
+            "contentHash": "51485169d761078e14da4b3816f7d75fbce12b3da07cf9674e2ef563c23d9d8b",
+            "author": "test-scenario",
+            "createdAtUtc": "2026-11-20T11:20:00.000Z",
+            "materialLinks": []
         }
     ],
-    "exportedAtUtc": "2026-11-20T11:11:22.172Z",
+    "exportedAtUtc": "2026-11-20T11:20:00.000Z",
     "format": "Project135.CalculationHistory",
     "formatVersion": 1
 }
