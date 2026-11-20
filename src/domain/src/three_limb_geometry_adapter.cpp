@@ -131,8 +131,16 @@ Result<ThreeLimbMagneticGeometry> buildThreeLimbMagneticGeometry(
                            "airGaps[" + std::to_string(index) + "].length");
     }
 
-    for (std::size_t limb = 0; limb < 3; ++limb)
+    for (std::size_t limb = 0; limb < 3; ++limb) {
+        const double physicalPath = result.limbMeanPaths[limb]->si();
+        const double ironPath = physicalPath - totalLimbGap[limb];
+        if (!std::isfinite(ironPath) || ironPath <= 0.0)
+            return invalid(
+                "Total air-gap length must be smaller than the physical limb centre-line path.",
+                "airGaps.limb[" + std::to_string(limb) + "]");
+        result.limbMeanPaths[limb] = units::Length{ironPath};
         result.limbAirGaps[limb] = units::Length{totalLimbGap[limb]};
+    }
 
     return Result<ThreeLimbMagneticGeometry>::success(std::move(result));
 }
