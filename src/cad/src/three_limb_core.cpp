@@ -42,7 +42,10 @@ Result<TopoDS_Compound> makeSegmentedBox(
     builder.MakeCompound(component);
     double cursor = 0.0;
     const auto addPiece = [&](double start, double end) -> bool {
-        if (end - start <= 1.0e-12) return false;
+        // Adjacent air-gap intervals may leave an empty material span
+        // between them. Treat that span as a no-op rather than a failed solid.
+        if (end < start - 1.0e-12) return false;
+        if (end - start <= 1.0e-12) return true;
         const gp_Pnt point(
             (origin.X() + (splitAlongX ? start : 0.0)) * toMillimetres,
             (origin.Y() + (splitAlongX ? 0.0 : start)) * toMillimetres,
