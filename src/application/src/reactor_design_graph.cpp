@@ -7,6 +7,19 @@ namespace p135::application {
 const std::vector<std::string>& reactorDesignParameterIds()
 {
     static const std::vector<std::string> ids{
+        "input.filter.excitation",
+        "input.core.material",
+        "input.core.geometry",
+        "input.core.stacking_factor",
+        "input.winding.conductor_material",
+        "input.winding.conductor_geometry",
+        "input.winding.turns",
+        "input.winding.insulation",
+        "input.winding.technology",
+        "input.winding.bobbin",
+        "input.thermal.cooling",
+        "input.thermal.ambient",
+        "input.thermal.maximum_winding_temperature",
         "filter.excitation",
         "core.material",
         "core.geometry",
@@ -35,6 +48,19 @@ const std::vector<std::string>& reactorDesignDependencyPairs()
     // Encoded as "dependent|dependency" to keep the public graph representation
     // simple while preserving the domain layer's explicit edge semantics.
     static const std::vector<std::string> pairs{
+        "core.material|input.core.material",
+        "core.geometry|input.core.geometry",
+        "core.stacking_factor|input.core.stacking_factor",
+        "winding.conductor_material|input.winding.conductor_material",
+        "winding.conductor_geometry|input.winding.conductor_geometry",
+        "winding.turns|input.winding.turns",
+        "winding.insulation|input.winding.insulation",
+        "winding.geometry|input.winding.technology",
+        "winding.geometry|input.winding.bobbin",
+        "thermal.cooling|input.thermal.cooling",
+        "thermal.ambient|input.thermal.ambient",
+        "design.verification|input.thermal.maximum_winding_temperature",
+        "filter.excitation|input.filter.excitation",
         "core.magnetic_properties|core.material",
         "core.magnetic_properties|core.geometry",
         "core.magnetic_properties|core.stacking_factor",
