@@ -611,6 +611,49 @@ int main()
     assert(!p135::cad::buildWindingPackEnvelopeShape(
         geometry.bobbins[0], overlongWindingEnvelope));
 
+    // Full assembly adds three winding envelopes without changing the
+    // existing core-and-bobbin assembly contract.
+    const auto woundAssembly =
+        p135::cad::buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(geometry);
+    assert(woundAssembly);
+    assert(BRepCheck_Analyzer(woundAssembly.value()).IsValid());
+    std::vector<TopoDS_Shape> woundAssemblySolids;
+    for (TopExp_Explorer it(woundAssembly.value(), TopAbs_SOLID); it.More(); it.Next())
+        woundAssemblySolids.push_back(it.Current());
+    assert(woundAssemblySolids.size() == 13);
+
+    Bnd_Box woundAssemblyBounds;
+    BRepBndLib::Add(woundAssembly.value(), woundAssemblyBounds);
+    double wax0 = 0.0, way0 = 0.0, waz0 = 0.0;
+    double wax1 = 0.0, way1 = 0.0, waz1 = 0.0;
+    woundAssemblyBounds.Get(wax0, way0, waz0, wax1, way1, waz1);
+    assert(std::abs(wax0 - (-14.0)) < 1.0e-6);
+    assert(std::abs(wax1 - 254.0) < 1.0e-6);
+    assert(std::abs(way0) < 1.0e-6);
+    assert(std::abs(way1 - 200.0) < 1.0e-6);
+    assert(std::abs(waz0 - (-29.0)) < 1.0e-6);
+    assert(std::abs(waz1 - 109.0) < 1.0e-6);
+
+    for (std::size_t i = 0; i < woundAssemblySolids.size(); ++i) {
+        for (std::size_t j = i + 1; j < woundAssemblySolids.size(); ++j) {
+            BRepAlgoAPI_Common common(woundAssemblySolids[i], woundAssemblySolids[j]);
+            common.Build();
+            assert(common.IsDone());
+            GProp_GProps commonVolume;
+            BRepGProp::VolumeProperties(common.Shape(), commonVolume);
+            assert(std::abs(commonVolume.Mass()) < 1.0e-8);
+        }
+    }
+
+    // Domain-level axial fit passes (104 + 2*5 <= 115 mm), but the
+    // CAD assembly must additionally reserve the two 2 mm bobbin flanges.
+    auto windingTooCloseToFlanges = geometry;
+    for (auto& winding : windingTooCloseToFlanges.windingPacks)
+        winding.axialHeight = units::Length{0.104};
+    assert(domain::validate(windingTooCloseToFlanges));
+    assert(!p135::cad::buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
+        windingTooCloseToFlanges));
+
     auto invalidBobbin = geometry.bobbins[0];
     invalidBobbin.flangeOuterWidth = units::Length{0.001};
     assert(!p135::cad::buildBobbinShape(invalidBobbin));
