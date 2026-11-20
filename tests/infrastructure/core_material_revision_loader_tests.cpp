@@ -34,6 +34,7 @@ int main(int argc, char** argv)
     const auto n87 = loadCoreMaterialRevision(store, "SEED-TDK-N87-R1");
     assert(n87);
     assert(n87.value().material.id == "MAT-TDK-N87");
+    assert(n87.value().sourceMaterialId == "TDK-N87");
     assert(n87.value().material.grade == "N87");
     assert(n87.value().material.family == domain::CoreMaterialFamily::Ferrite);
     assert(n87.value().material.bhCurve.size() == 8);
