@@ -4,6 +4,7 @@
 #include <QString>
 
 #include <array>
+#include <cstdint>
 
 #include "p135/infrastructure/sqlite/sqlite_database.hpp"
 #include "p135/application/reactor_design_inputs.hpp"
