@@ -2156,6 +2156,7 @@ void MainWindow::calculateFilter()
     std::vector<std::array<double, 8>> threeLimbFluxDensitySweep;
     std::vector<std::array<double, 5>> threeLimbSamplingMetadata; // frequency, samples, relative change, converged, within measured B-H range
     bool magneticSweepValid = magneticCircuitBase.has_value();
+    bool magneticSweepExtrapolated = false;
     bool threeLimbSweepValid = threeLimbMagneticBase.has_value();
     if (magneticCircuitBase) {
         auto kneeProbe = *magneticCircuitBase;
@@ -2210,7 +2211,8 @@ void MainWindow::calculateFilter()
             } else {
                 magneticFluxDensityPoints.emplace_back(
                     point.frequency.si(), magneticPoint.value().fluxDensity.si());
-
+                magneticSweepExtrapolated = magneticSweepExtrapolated ||
+                    !magneticPoint.value().withinBhCurveRange;
             }
         }
         if (threeLimbMagneticBase && threeLimbSweepValid) {
@@ -2278,6 +2280,8 @@ void MainWindow::calculateFilter()
     }
     if (magneticCircuitBase && !magneticSweepValid)
         magneticFluxDensityPoints.clear();
+    if (magneticSweepExtrapolated)
+        magneticModelWarning = tr("Magnetic B-H sweep EXTRAPOLATED_NOT_VERIFIED: μ0 differential-permeability continuation was used beyond the measured B-H curve.");
     if (threeLimbMagneticBase && !threeLimbSweepValid)
         threeLimbFluxDensitySweep.clear();
 
@@ -3136,6 +3140,8 @@ void MainWindow::calculateFilter()
             }
         }
         resultSnapshot.insert(QStringLiteral("magneticSweep"), magneticSweepSnapshot);
+        resultSnapshot.insert(QStringLiteral("magneticSweepWithinMeasuredBhCurve"),
+            !magneticSweepExtrapolated);
         QJsonArray threeLimbSweepSnapshot;
         if (threeLimbMagneticBase && threeLimbSweepValid) {
             for (const auto& sample : threeLimbFluxDensitySweep) {
