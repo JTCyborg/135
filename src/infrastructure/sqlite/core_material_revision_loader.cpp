@@ -350,4 +350,17 @@ Result<CoreLossReferenceDataset> loadCoreLossReferenceDataset(
     }
 }
 
+std::optional<CoreLossReferencePoint> findExactCoreLossReferencePoint(
+    const CoreLossReferenceDataset& dataset,
+    units::Frequency frequency,
+    units::FluxDensity peakFluxDensity)
+{
+    for (const auto& point : dataset.points) {
+        if (point.frequency.si() == frequency.si() &&
+            point.peakFluxDensity.si() == peakFluxDensity.si())
+            return point;
+    }
+    return std::nullopt;
+}
+
 } // namespace p135::infrastructure::sqlite
