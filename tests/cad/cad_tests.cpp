@@ -1,12 +1,14 @@
 #include "p135/cad/three_limb_core.hpp"
 
-#include <BRepAlgoAPI_Common.hxx>
+#include <BRepAdaptor_Surface.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepGProp.hxx>
 #include <GProp_GProps.hxx>
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
 #include <TopAbs_ShapeEnum.hxx>
+#include <GeomAbs_SurfaceType.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Iterator.hxx>
@@ -79,8 +81,8 @@ int main()
 
     Bnd_Box bounds;
     BRepBndLib::Add(shape.value(), bounds);
-    Standard_Real xMin = 0.0, yMin = 0.0, zMin = 0.0;
-    Standard_Real xMax = 0.0, yMax = 0.0, zMax = 0.0;
+    double xMin = 0.0, yMin = 0.0, zMin = 0.0;
+    double xMax = 0.0, yMax = 0.0, zMax = 0.0;
     bounds.Get(xMin, yMin, zMin, xMax, yMax, zMax);
     assert(std::abs((xMax - xMin) - 240.0) < 1.0e-6);
     assert(std::abs((yMax - yMin) - 200.0) < 1.0e-6);
@@ -101,18 +103,19 @@ int main()
         ++componentIndex;
     }
     assert(componentIndex == componentBounds.size());
-    Standard_Real topAbXMin = 0.0, topAbYMin = 0.0, topAbZMin = 0.0;
-    Standard_Real topAbXMax = 0.0, topAbYMax = 0.0, topAbZMax = 0.0;
-    Standard_Real topBcXMin = 0.0, topBcYMin = 0.0, topBcZMin = 0.0;
-    Standard_Real topBcXMax = 0.0, topBcYMax = 0.0, topBcZMax = 0.0;
+    double topAbXMin = 0.0, topAbYMin = 0.0, topAbZMin = 0.0;
+    double topAbXMax = 0.0, topAbYMax = 0.0, topAbZMax = 0.0;
+    double topBcXMin = 0.0, topBcYMin = 0.0, topBcZMin = 0.0;
+    double topBcXMax = 0.0, topBcYMax = 0.0, topBcZMax = 0.0;
     componentBounds[3].Get(topAbXMin, topAbYMin, topAbZMin, topAbXMax, topAbYMax, topAbZMax);
     componentBounds[4].Get(topBcXMin, topBcYMin, topBcZMin, topBcXMax, topBcYMax, topBcZMax);
     assert(std::abs(topAbXMax - 120.0) < 1.0e-6);
     assert(std::abs(topBcXMin - 120.0) < 1.0e-6);
 
-    // The solid/solid Common operation does not reliably retain a coincident
-    // boundary face in OCCT. Extract the two actual planar boundary faces and
-    // intersect those faces directly to verify the physical contact patch.
+    // Verify the mating Butt-joint faces geometrically. OCCT Boolean Common
+    // on coincident coplanar faces is not a reliable way to obtain their area.
+    // Both faces must be planar, lie on y = 160 mm, and their projected X/Z
+    // overlap must be exactly 40 x 80 mm.
     TopoDS_Shape limbASolid;
     TopoDS_Shape topAbYokeSolid;
     for (TopExp_Explorer it(shape.value(), TopAbs_SOLID); it.More(); it.Next()) {
@@ -135,36 +138,60 @@ int main()
     TopoDS_Face limbTopFace;
     TopoDS_Face yokeBottomFace;
     for (TopExp_Explorer it(limbASolid, TopAbs_FACE); it.More(); it.Next()) {
+        const auto face = TopoDS::Face(it.Current());
+        const BRepAdaptor_Surface surface(face);
+        if (surface.GetType() != GeomAbs_Plane) continue;
         Bnd_Box faceBounds;
-        BRepBndLib::Add(it.Current(), faceBounds);
+        BRepBndLib::Add(face, faceBounds);
         double fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
         double fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
         faceBounds.Get(fx0, fy0, fz0, fx1, fy1, fz1);
         if (std::abs(fy0 - 160.0) < 1.0e-6 && std::abs(fy1 - 160.0) < 1.0e-6 &&
             std::abs((fx1 - fx0) - 40.0) < 1.0e-6 &&
             std::abs((fz1 - fz0) - 80.0) < 1.0e-6)
-            limbTopFace = TopoDS::Face(it.Current());
+            limbTopFace = face;
     }
     for (TopExp_Explorer it(topAbYokeSolid, TopAbs_FACE); it.More(); it.Next()) {
+        const auto face = TopoDS::Face(it.Current());
+        const BRepAdaptor_Surface surface(face);
+        if (surface.GetType() != GeomAbs_Plane) continue;
         Bnd_Box faceBounds;
-        BRepBndLib::Add(it.Current(), faceBounds);
+        BRepBndLib::Add(face, faceBounds);
         double fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
         double fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
         faceBounds.Get(fx0, fy0, fz0, fx1, fy1, fz1);
         if (std::abs(fy0 - 160.0) < 1.0e-6 && std::abs(fy1 - 160.0) < 1.0e-6 &&
             std::abs(fx0 - 0.0) < 1.0e-6 && std::abs(fx1 - 120.0) < 1.0e-6 &&
             std::abs((fz1 - fz0) - 80.0) < 1.0e-6)
-            yokeBottomFace = TopoDS::Face(it.Current());
+            yokeBottomFace = face;
     }
     assert(!limbTopFace.IsNull());
     assert(!yokeBottomFace.IsNull());
 
-    BRepAlgoAPI_Common buttContact(limbTopFace, yokeBottomFace);
-    buttContact.Build();
-    assert(buttContact.IsDone());
-    GProp_GProps contactProperties;
-    BRepGProp::SurfaceProperties(buttContact.Shape(), contactProperties);
-    assert(std::abs(contactProperties.Mass() - 3200.0) < 1.0e-6);
+    GProp_GProps limbFaceProperties;
+    GProp_GProps yokeFaceProperties;
+    BRepGProp::SurfaceProperties(limbTopFace, limbFaceProperties);
+    BRepGProp::SurfaceProperties(yokeBottomFace, yokeFaceProperties);
+    assert(std::abs(limbFaceProperties.Mass() - 3200.0) < 1.0e-6);
+    assert(std::abs(yokeFaceProperties.Mass() - 9600.0) < 1.0e-6);
+
+    Bnd_Box limbFaceBounds;
+    Bnd_Box yokeFaceBounds;
+    BRepBndLib::Add(limbTopFace, limbFaceBounds);
+    BRepBndLib::Add(yokeBottomFace, yokeFaceBounds);
+    double lx0 = 0.0, ly0 = 0.0, lz0 = 0.0;
+    double lx1 = 0.0, ly1 = 0.0, lz1 = 0.0;
+    double yx0 = 0.0, yy0 = 0.0, yz0 = 0.0;
+    double yx1 = 0.0, yy1 = 0.0, yz1 = 0.0;
+    limbFaceBounds.Get(lx0, ly0, lz0, lx1, ly1, lz1);
+    yokeFaceBounds.Get(yx0, yy0, yz0, yx1, yy1, yz1);
+    assert(std::abs(ly0 - yy0) < 1.0e-6);
+    assert(std::abs(ly1 - yy1) < 1.0e-6);
+    const double overlapX = std::min(lx1, yx1) - std::max(lx0, yx0);
+    const double overlapZ = std::min(lz1, yz1) - std::max(lz0, yz0);
+    assert(std::abs(overlapX - 40.0) < 1.0e-6);
+    assert(std::abs(overlapZ - 80.0) < 1.0e-6);
+    assert(std::abs(overlapX * overlapZ - 3200.0) < 1.0e-6);
 
     auto stepLapGeometry = geometry;
     stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
