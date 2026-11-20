@@ -30,6 +30,18 @@ struct CoreComponentGeometrySnapshot {
     std::optional<double> effectiveVolumeM3;
     std::optional<double> coreFactorPerM;
     std::optional<double> nominalAlHPerTurnSquared;
+    /// Outline dimensions for three-phase EI laminations; SI units.
+    std::optional<double> columnWidthM;
+    std::optional<double> overallHeightM;
+    std::optional<double> overallWidthM;
+    std::optional<double> windowHeightM;
+    std::optional<double> windowWidthM;
+    std::optional<double> holePitchM;
+    std::optional<double> holeDiameterM;
+    std::optional<double> dimensionHM;
+    std::optional<double> dimensionNM;
+    std::optional<double> sourceWeightGramsPer10mmStack;
+    std::optional<int> holeCount;
 
     [[nodiscard]] bool hasMagneticGeometry() const noexcept;
     [[nodiscard]] bool hasCompleteCadGeometry() const noexcept;
