@@ -233,3 +233,14 @@ if(MSVC)
 else()
     target_compile_options(Project135ReactorDesignInputsTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135ReactorDesignGraphTests
+    application/reactor_design_graph_tests.cpp
+)
+target_link_libraries(Project135ReactorDesignGraphTests PRIVATE Project135::Application)
+add_test(NAME Project135ReactorDesignGraphTests COMMAND Project135ReactorDesignGraphTests)
+if(MSVC)
+    target_compile_options(Project135ReactorDesignGraphTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135ReactorDesignGraphTests PRIVATE -UNDEBUG)
+endif()
