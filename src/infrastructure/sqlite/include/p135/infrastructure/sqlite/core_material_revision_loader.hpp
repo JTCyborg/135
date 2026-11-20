@@ -13,6 +13,7 @@ namespace p135::infrastructure::sqlite {
 struct CoreMaterialRevisionSnapshot {
     domain::CoreMaterial material;
     std::string revisionId;
+    std::string sourceMaterialId;
     std::string contentHash;
     std::string sourceReference;
     std::string datasetRevision;
