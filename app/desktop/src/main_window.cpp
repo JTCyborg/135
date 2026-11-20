@@ -743,22 +743,21 @@ QWidget* MainWindow::createProjectPage()
     layout->addWidget(note);
     layout->addStretch();
     connect(projectName_, &QLineEdit::textChanged, this, [this] { updateProjectTitle(); saveProjectSettings(); });
-    for (auto* field : findChildren<QLineEdit*>()) {
-        if (field != projectName_ && !field->objectName().isEmpty())
-            connect(field, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
-    }
-    for (auto* field : findChildren<QComboBox*>()) {
-        if (field != productFamily_ && !field->objectName().isEmpty())
-            connect(field, &QComboBox::currentIndexChanged, this, [this] { saveProjectSettings(); });
-    }
-    for (auto* field : findChildren<QSpinBox*>()) {
-        if (!field->objectName().isEmpty())
-            connect(field, qOverload<int>(&QSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
-    }
-    for (auto* field : findChildren<QDoubleSpinBox*>()) {
-        if (!field->objectName().isEmpty())
-            connect(field, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
-    }
+    connect(customer, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
+    connect(projectNumber, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
+    connect(engineer, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
+    connect(projectDate, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
+    connect(revision, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
+    connect(ambient, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
+    connect(altitude, qOverload<int>(&QSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
+    connect(insulationClass, &QComboBox::currentIndexChanged, this, [this] { saveProjectSettings(); });
+    connect(ipRating, &QComboBox::currentIndexChanged, this, [this] { saveProjectSettings(); });
+    connect(coolingMethod, &QComboBox::currentIndexChanged, this, [this, airflow](int index) {
+        airflow->setEnabled(index == 1);
+        if (index == 0) airflow->setValue(0.0);
+        saveProjectSettings();
+    });
+    connect(airflow, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
     connect(productFamily_, &QComboBox::currentTextChanged, this, [this, topologyDiagram](const QString& value) {
         topologyDiagram->setProductFamily(value);
         saveProjectSettings();
