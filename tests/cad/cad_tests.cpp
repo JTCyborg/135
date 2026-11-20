@@ -49,7 +49,7 @@ ReactorPhysicalGeometry validGeometry()
         g.core.joints.push_back({interface, CoreJointType::Butt, {}});
     }
     for (auto& b : g.bobbins) {
-        b.innerWidth = units::Length{0.035}; b.innerHeight = units::Length{0.11};
+        b.innerWidth = units::Length{0.04}; b.innerHeight = units::Length{0.11};
         b.axialLength = units::Length{0.075}; b.wallThickness = units::Length{0.001};
         b.flangeThickness = units::Length{0.002}; b.windingClearance = units::Length{0.001};
         b.material = "test polymer";
@@ -381,6 +381,11 @@ int main()
     asymmetric.core.yokeDepths.fill(units::Length{0.06});
     asymmetric.core.coreOverallWidth = units::Length{0.28};
     asymmetric.core.coreOverallHeight = units::Length{0.22};
+    // Keep the shared test fixture physically compatible with the asymmetric
+    // limb widths; the CAD core test must not fail reactor-level bobbin fit.
+    asymmetric.bobbins[0].innerWidth = units::Length{0.03};
+    asymmetric.bobbins[1].innerWidth = units::Length{0.05};
+    asymmetric.bobbins[2].innerWidth = units::Length{0.04};
     const auto asymmetricShape = p135::cad::buildThreeLimbCoreShape(asymmetric);
     assert(asymmetricShape);
     assert(BRepCheck_Analyzer(asymmetricShape.value()).IsValid());
