@@ -189,30 +189,6 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.bhCurveCaptureMethod = provenanceString(bhProvenance, "captureMethod");
         snapshot.bhCurveNotes = provenanceString(bhProvenance, "notes");
         snapshot.coreLossStatus = requiredString(quality, "coreLossStatus");
-        const json lossReferencePoints = root.value("coreLossReferencePoints", json::array());
-        if (!lossReferencePoints.is_array())
-            throw std::invalid_argument("Core-loss reference points must be an array.");
-        for (const auto& point : lossReferencePoints) {
-            const double temperatureK = point.value("temperature_K", 0.0);
-            if (temperatureK < 0.0)
-                throw std::invalid_argument("Core-loss reference temperature cannot be negative.");
-            snapshot.coreLossReferencePoints.push_back(CoreLossReferencePoint{
-                units::Frequency{requiredNumber(point, "frequency_Hz")},
-                units::FluxDensity{requiredNumber(point, "peakFluxDensity_T")},
-                units::CoreLossDensity{requiredNumber(point, "specificLoss_W_per_kg")},
-                temperatureK > 0.0
-                    ? std::optional<units::TemperatureKelvin>{units::TemperatureKelvin{temperatureK}}
-                    : std::nullopt
-            });
-        }
-        const json lossProvenance = root.value("coreLossProvenance", json::object());
-        snapshot.coreLossSourceDocument = provenanceString(lossProvenance, "sourceDocument");
-        snapshot.coreLossSourcePage = provenanceString(lossProvenance, "sourcePage");
-        snapshot.coreLossMeasurementMethod = provenanceString(lossProvenance, "measurementMethod");
-        snapshot.coreLossSampleDirection = provenanceString(lossProvenance, "sampleDirection");
-        snapshot.coreLossWaveform = provenanceString(lossProvenance, "waveform");
-        snapshot.coreLossTemperatureStatus = provenanceString(lossProvenance, "temperatureStatus");
-        snapshot.coreLossNotes = provenanceString(lossProvenance, "notes");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
         const std::string bhCurveType = requiredString(sourceBh, "curveType");
