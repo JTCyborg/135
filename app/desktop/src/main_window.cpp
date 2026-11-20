@@ -1758,6 +1758,11 @@ void MainWindow::calculateFilter()
             request.geometry.limbAirGap = magneticCircuitBase->core.airGap;
             request.geometry.yokeEffectiveArea = p135::units::Area{yokeArea};
             request.geometry.yokeSegmentPath = p135::units::Length{yokePath};
+            if (coreGapEffectiveAreaMm2_ && coreGapEffectiveAreaMm2_->value() > 0.0) {
+                const p135::units::Area commonEffectiveGapArea{
+                    coreGapEffectiveAreaMm2_->value() * 1.0e-6};
+                request.geometry.limbGapEffectiveAreas.fill(commonEffectiveGapArea);
+            }
             for (std::size_t i = 0; i < 3; ++i) {
                 if (limbAreaOverrideEnabled_[i] && limbAreaOverrideEnabled_[i]->isChecked())
                     request.geometry.limbEffectiveAreas[i] =
