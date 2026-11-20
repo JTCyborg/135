@@ -159,12 +159,11 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
     const double limbLength = g.coreOverallHeight.si() -
         0.5 * (g.yokeThicknesses[0].si() + g.yokeThicknesses[1].si()) -
         0.5 * (g.yokeThicknesses[2].si() + g.yokeThicknesses[3].si());
-    // Yoke CAD solids extend from the outside face of the first limb to
-    // the outside face of the second limb. Air-gap coordinates use that same
-    // physical segment datum, including the portions spanning both limbs.
-    // The two yoke halves meet at the centre plane of the middle limb.
-    // AB starts at the outside face of A and ends at the centre of B;
-    // BC starts at the centre of B and ends at the outside face of C.
+    // Each horizontal yoke is represented by two non-overlapping halves
+    // meeting at the centre plane of the middle limb. AB starts at the
+    // outside face of A and ends at the centre of B; BC starts at the
+    // centre of B and ends at the outside face of C. Air-gap coordinates
+    // use these exact physical CAD segment datums.
     const double yokeABLength = g.limbWidths[0].si() + g.windowWidths[0].si() +
         0.5 * g.limbWidths[1].si();
     const double yokeBCLength = 0.5 * g.limbWidths[1].si() + g.windowWidths[1].si() +
