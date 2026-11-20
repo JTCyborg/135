@@ -66,16 +66,23 @@ struct ThreeLimbCorePhysicalGeometry {
     std::string laminationConstruction; // e.g. packet/step-lap description; no implicit default
 };
 
+// Three-limb reactor CAD datum: X is limb width, Y is the limb/bobbin
+// axis, and Z is the core stack-depth direction. Consequently the bobbin
+// opening is measured in the X-Z plane; axialLength is along Y.
 struct BobbinPhysicalGeometry {
-    units::Length innerWidth;
-    units::Length innerHeight;
-    units::Length axialLength;
+    units::Length innerWidth;  // clear opening along X
+    units::Length innerHeight; // clear opening along Z
+    units::Length axialLength;  // bobbin length along Y
     units::Length wallThickness;
     units::Length flangeThickness;
     units::Length windingClearance;
     std::string material;
 };
 
+// Winding axialHeight is measured along the bobbin Y axis. endClearance is
+// the required free distance at each axial end inside the bobbin. radialBuild
+// remains a separately supplied construction dimension; its detailed
+// distribution around X/Z must be defined before winding solids are generated.
 struct WindingPackPhysicalGeometry {
     units::Length radialBuild;
     units::Length axialHeight;
