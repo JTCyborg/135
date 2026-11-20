@@ -2194,19 +2194,22 @@ void MainWindow::calculateFilter()
     const auto filterBranchCurrent = [&circuitResult](const p135::circuit::ElectricalResult& electrical,
                                                        const std::string& nameSuffix)
         -> std::optional<std::complex<double>> {
-        const auto element = std::find_if(circuitResult.value().elements.begin(),
-            circuitResult.value().elements.end(),
-            [&nameSuffix](const p135::circuit::Element& candidate) {
-                return candidate.kind == p135::circuit::ElementKind::Resistor &&
-                       candidate.name.ends_with(nameSuffix);
-            });
-        if (element == circuitResult.value().elements.end()) return std::nullopt;
-        const auto branch = std::find_if(electrical.branches.begin(), electrical.branches.end(),
-            [element](const p135::circuit::BranchResult& candidate) {
-                return candidate.component == element->id;
-            });
-        if (branch == electrical.branches.end()) return std::nullopt;
-        return branch->rmsCurrent;
+        std::complex<double> totalCurrent{};
+        bool found = false;
+        for (const auto& element : circuitResult.value().elements) {
+            if (element.kind != p135::circuit::ElementKind::Resistor ||
+                !element.name.ends_with(nameSuffix))
+                continue;
+            const auto branch = std::find_if(electrical.branches.begin(), electrical.branches.end(),
+                [&element](const p135::circuit::BranchResult& candidate) {
+                    return candidate.component == element.id;
+                });
+            if (branch == electrical.branches.end()) continue;
+            totalCurrent += branch->rmsCurrent;
+            found = true;
+        }
+        if (!found) return std::nullopt;
+        return totalCurrent;
     };
     const bool isWyeConnection =
         result.value().network.connection == p135::filter::Connection::Wye;
