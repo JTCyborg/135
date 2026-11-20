@@ -1992,7 +1992,11 @@ void MainWindow::calculateFilter()
         return;
     }
 
-    const auto circuitResult = p135::filter::buildCircuit(result.value());
+    const double sourceResistanceOhm = sourceResistance_ ? sourceResistance_->value() : 0.0;
+    const double sourceInductanceH = sourceInductance_ ? sourceInductance_->value() * 1.0e-3 : 0.0;
+    const auto circuitResult = p135::filter::buildCircuit(result.value(),
+        p135::units::Resistance{sourceResistanceOhm},
+        p135::units::Inductance{sourceInductanceH});
     if (!circuitResult) {
         const QString message = QString::fromStdString(circuitResult.error().message);
         resultsNote_->setText(tr("Circuit generation failed: %1").arg(message));
@@ -2158,14 +2162,14 @@ void MainWindow::calculateFilter()
     std::vector<std::pair<double, double>> magneticFluxDensityPoints;
     std::vector<std::array<double, 8>> threeLimbFluxDensitySweep;
     std::vector<std::array<double, 5>> threeLimbSamplingMetadata; // frequency, samples, relative change, converged, within measured B-H range
-    // The electrical frequency sweep is currently built from the filter alone;
-    // source R/L is analyzed separately and is NOT stamped into this sweep.
-    // Never use its ideal-source currents as operating stresses for magnetic checks.
-    bool magneticSweepValid = false;
+    // Thevenin R/L is now stamped in series with each phase source. The sweep
+    // is source-limited, but remains a single-frequency diagnostic, not the
+    // multi-harmonic operating waveform used for equipment stress.
+    bool magneticSweepValid = (sourceResistanceOhm > 0.0 || sourceInductanceH > 0.0) && magneticCircuitBase.has_value();
     bool magneticSweepExtrapolated = false;
-    bool threeLimbSweepValid = false;
-    if (magneticCircuitBase || threeLimbMagneticBase) {
-        magneticModelWarning = tr("Magnetic frequency sweep NOT_VERIFIED: the current sweep is an ideal-source filter-only diagnostic; source impedance is not included in its circuit matrix.");
+    bool threeLimbSweepValid = (sourceResistanceOhm > 0.0 || sourceInductanceH > 0.0) && threeLimbMagneticBase.has_value();
+    if (sourceResistanceOhm <= 0.0 && sourceInductanceH <= 0.0 && (magneticCircuitBase || threeLimbMagneticBase)) {
+        magneticModelWarning = tr("Magnetic frequency sweep NOT_VERIFIED: enter non-zero Thevenin source R or L to obtain a source-limited response.");
         threeLimbModelWarning = magneticModelWarning;
     }
     if (magneticCircuitBase) {
@@ -2298,8 +2302,8 @@ void MainWindow::calculateFilter()
     std::optional<p135::filter::HarmonicAnalysisResult> harmonicResult;
     std::optional<p135::filter::FrequencyResponseResult> impedanceResult;
     QString advancedWarning;
-    const double sourceResistance = sourceResistance_ ? sourceResistance_->value() : 0.0;
-    const double sourceInductance = sourceInductance_
+    const double sourceResistance = sourceResistanceOhm;
+    const double sourceInductance = sourceInductanceH
         ? sourceInductance_->value() * 1.0e-3 : 0.0;
     const bool hasSourceImpedance = sourceResistance > 0.0 || sourceInductance > 0.0;
 
@@ -2656,11 +2660,11 @@ void MainWindow::calculateFilter()
               static_cast<double>(electricalResult.value().solver.matrixOrder), tr("unknowns"));
     addResult(tr("MNA relative residual"),
               electricalResult.value().solver.relativeResidual, tr("—"));
-    addTextResult(tr("Filter-only ideal-source current sweep"),
-        tr("DIAGNOSTIC ONLY — source R/L is not included; peak current is not an operating current and must not be used for Isat or saturation margins."));
-    addResult(tr("Ideal-source sweep peak bank current (diagnostic)"), peakBankCurrent, tr("A RMS"));
+    addTextResult(tr("Thevenin source-limited frequency sweep"),
+        tr("FREQUENCY-RESPONSE DIAGNOSTIC — per-phase source R/L is included. This is not the multi-harmonic operating current and must not be used alone for Isat margins."));
+    addResult(tr("Source-limited sweep peak bank current (diagnostic)"), peakBankCurrent, tr("A RMS"));
     addResult(tr("Frequency at ideal-source sweep peak"), peakBankCurrentFrequency, tr("Hz"));
-    addResult(tr("Ideal-source sweep maximum phase current (diagnostic)"), peakPhasePeakCurrent, tr("A peak"));
+    addResult(tr("Source-limited sweep maximum phase current (diagnostic)"), peakPhasePeakCurrent, tr("A peak"));
     addResult(tr("Frequency at ideal-source phase-current peak"), peakPhasePeakCurrentFrequency, tr("Hz"));
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
     if ((magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) ||
@@ -3095,7 +3099,7 @@ void MainWindow::calculateFilter()
 
         if (resultsBankCurrentPlot_) {
             resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
-                tr("Frequency (Hz, logarithmic)"), tr("Ideal-source diagnostic phase peak current (A)"));
+                tr("Frequency (Hz, logarithmic)"), tr("Source-limited diagnostic phase peak current (A)"));
             resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
         }
         if (resultsBusImpedancePlot_) {
@@ -3309,7 +3313,7 @@ void MainWindow::calculateFilter()
     }
 
     QStringList visibleWarnings;
-    visibleWarnings.push_back(tr("The filter current sweep is an ideal-source diagnostic and does not include source R/L, even when source impedance values are entered. Its peak currents are not operating stresses. Current-based Isat margins and frequency-sweep magnetic results are therefore NOT_VERIFIED; use the separate source-aware harmonic operating-point analysis."));
+    visibleWarnings.push_back(tr("The frequency sweep includes the entered per-phase Thevenin R/L, but is still a single-frequency response. Do not treat its peak as the multi-harmonic operating stress; use the source-aware harmonic operating-point analysis for equipment loading."));
     if (!hasSourceImpedance)
         visibleWarnings.push_back(tr("Source impedance R/L is zero or unset. Resonance, bus-impedance scan and source-limited current response are NOT_VERIFIED."));
     if (!magneticCircuitBase && !threeLimbMagneticBase)
