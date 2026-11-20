@@ -114,8 +114,8 @@ int main()
     assert(std::abs(topBcXMin - 120.0) < 1.0e-6);
 
     // Verify all eight Butt-joint interfaces geometrically. Each limb end
-    // face must mate with the corresponding yoke face over the full limb
-    // cross-section (limb width x stack depth).
+    // face must mate with the corresponding yoke face. Outer limbs contact
+    // over their full width; the middle limb is split at its centre plane.
     const auto findPlanarFace = [](const TopoDS_Shape& solid, double planeY,
                                    double x0, double x1, double z0, double z1) {
         TopoDS_Face result;
@@ -227,7 +227,8 @@ int main()
         assert(std::abs(ly1 - yy1) < 1.0e-6);
         const double overlapX = std::min(lx1, yx1) - std::max(lx0, yx0);
         const double overlapZ = std::min(lz1, yz1) - std::max(lz0, yz0);
-        assert(std::abs(overlapX - 40.0) < 1.0e-6);
+        const double expectedOverlapX = joint.limb == 1 ? 20.0 : 40.0;
+        assert(std::abs(overlapX - expectedOverlapX) < 1.0e-6);
         assert(std::abs(overlapZ - 80.0) < 1.0e-6);
     }
 
