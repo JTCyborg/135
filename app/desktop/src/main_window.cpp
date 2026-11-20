@@ -506,8 +506,9 @@ MainWindow::MainWindow(QWidget* parent)
     auto* newProject = fileMenu->addAction(tr("New project"));
     connect(newProject, &QAction::triggered, this, [this] {
         projectId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
-        projectName_->clear();
-        productFamily_->setCurrentIndex(0);
+        QSettings settings;
+        settings.setValue(QStringLiteral("project/currentId"), projectId_);
+        loadProjectSettings();
         updateProjectTitle();
         appendLog(tr("New project workspace created."));
         tabs_->setCurrentIndex(0);
@@ -531,7 +532,7 @@ MainWindow::MainWindow(QWidget* parent)
         projectId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
         QSettings settings;
         settings.setValue(QStringLiteral("project/currentId"), projectId_);
-        projectName_->clear();
+        loadProjectSettings();
         updateProjectTitle();
         tabs_->setCurrentIndex(0);
     });
@@ -559,10 +560,7 @@ MainWindow::MainWindow(QWidget* parent)
         if (index == 5) refreshCalculationHistory();
     });
 
-    projectName_->setText(settings.value(QStringLiteral("project/name"), projectName_->text()).toString());
-    const int savedFamily = productFamily_->findText(
-        settings.value(QStringLiteral("project/productFamily"), productFamily_->currentText()).toString());
-    if (savedFamily >= 0) productFamily_->setCurrentIndex(savedFamily);
+    loadProjectSettings();
 
     status_ = new QLabel(tr("Ready — filter synthesis available"));
     statusBar()->addPermanentWidget(status_);
@@ -579,6 +577,73 @@ MainWindow::MainWindow(QWidget* parent)
     updateProjectTitle();
 }
 
+
+void MainWindow::saveProjectSettings()
+{
+    if (projectId_.isEmpty() || !projectName_ || !productFamily_) return;
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("projects/") + projectId_);
+    settings.setValue(QStringLiteral("name"), projectName_->text());
+    settings.setValue(QStringLiteral("productFamily"), productFamily_->currentText());
+    const auto saveLine = [this, &settings](const char* objectName, const char* key) {
+        if (const auto* widget = findChild<QLineEdit*>(QString::fromLatin1(objectName)))
+            settings.setValue(QString::fromLatin1(key), widget->text());
+    };
+    saveLine("projectCustomer", "customer");
+    saveLine("projectNumber", "projectNumber");
+    saveLine("projectEngineer", "engineer");
+    saveLine("projectDate", "date");
+    saveLine("projectRevision", "revision");
+    if (const auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAmbientC"))) settings.setValue("ambientC", w->value());
+    if (const auto* w = findChild<QSpinBox*>(QStringLiteral("projectAltitudeM"))) settings.setValue("altitudeM", w->value());
+    if (const auto* w = findChild<QComboBox*>(QStringLiteral("projectInsulationClass"))) settings.setValue("insulationClass", w->currentText());
+    if (const auto* w = findChild<QComboBox*>(QStringLiteral("projectIpRating"))) settings.setValue("ipRating", w->currentText());
+    if (const auto* w = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"))) settings.setValue("coolingMethod", w->currentData().toString());
+    if (const auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) settings.setValue("airflowM3h", w->value());
+    settings.endGroup();
+    settings.setValue(QStringLiteral("project/currentId"), projectId_);
+}
+
+void MainWindow::loadProjectSettings()
+{
+    if (projectId_.isEmpty()) return;
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("projects/") + projectId_);
+    const auto get = [&settings](const char* key, const QVariant& fallback = QVariant{}) {
+        return settings.value(QString::fromLatin1(key), fallback);
+    };
+    if (projectName_) projectName_->setText(get("name", tr("New engineering project")).toString());
+    if (productFamily_) {
+        const int i = productFamily_->findText(get("productFamily", productFamily_->itemText(0)).toString());
+        productFamily_->setCurrentIndex(i < 0 ? 0 : i);
+    }
+    const auto setLine = [this, &get](const char* objectName, const char* key, const QVariant& fallback = QVariant{}) {
+        if (auto* w = findChild<QLineEdit*>(QString::fromLatin1(objectName))) w->setText(get(key, fallback).toString());
+    };
+    setLine("projectCustomer", "customer");
+    setLine("projectNumber", "projectNumber");
+    setLine("projectEngineer", "engineer");
+    setLine("projectDate", "date", QDate::currentDate().toString(Qt::ISODate));
+    setLine("projectRevision", "revision", QStringLiteral("A"));
+    if (auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAmbientC"))) w->setValue(get("ambientC", 40.0).toDouble());
+    if (auto* w = findChild<QSpinBox*>(QStringLiteral("projectAltitudeM"))) w->setValue(get("altitudeM", 0).toInt());
+    if (auto* w = findChild<QComboBox*>(QStringLiteral("projectInsulationClass"))) {
+        const int i = w->findText(get("insulationClass", w->itemText(0)).toString()); w->setCurrentIndex(i < 0 ? 0 : i);
+    }
+    if (auto* w = findChild<QComboBox*>(QStringLiteral("projectIpRating"))) {
+        const int i = w->findText(get("ipRating", w->itemText(0)).toString()); w->setCurrentIndex(i < 0 ? 0 : i);
+    }
+    if (auto* w = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"))) {
+        const int i = w->findData(get("coolingMethod", QStringLiteral("AN"))); w->setCurrentIndex(i < 0 ? 0 : i);
+    }
+    if (auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) w->setValue(get("airflowM3h", 0.0).toDouble());
+    settings.endGroup();
+    if (auto* flow = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) {
+        const auto* method = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"));
+        flow->setEnabled(method && method->currentData().toString() == QStringLiteral("AF"));
+    }
+}
+
 MainWindow::~MainWindow() = default;
 
 QWidget* MainWindow::createProjectPage()
@@ -592,15 +657,22 @@ QWidget* MainWindow::createProjectPage()
     auto* group = new QGroupBox(tr("Project identity"));
     auto* form = new QFormLayout(group);
     projectName_ = new QLineEdit(tr("New engineering project"));
+    projectName_->setObjectName(QStringLiteral("projectName"));
     projectName_->setPlaceholderText(tr("Project name"));
     productFamily_ = new QComboBox;
+    productFamily_->setObjectName(QStringLiteral("projectProductFamily"));
     productFamily_->addItems({tr("Shunt passive harmonic filter"), tr("VFD output filter"),
         tr("Reactor / inductor"), tr("Power transformer"), tr("AFE reactor")});
     auto* customer = new QLineEdit;
+    customer->setObjectName(QStringLiteral("projectCustomer"));
     auto* projectNumber = new QLineEdit;
+    projectNumber->setObjectName(QStringLiteral("projectNumber"));
     auto* engineer = new QLineEdit;
+    engineer->setObjectName(QStringLiteral("projectEngineer"));
     auto* projectDate = new QLineEdit(QDate::currentDate().toString(Qt::ISODate));
+    projectDate->setObjectName(QStringLiteral("projectDate"));
     auto* revision = new QLineEdit("A");
+    revision->setObjectName(QStringLiteral("projectRevision"));
     form->addRow(tr("Project name"), projectName_);
     form->addRow(tr("Product family"), productFamily_);
     form->addRow(tr("Customer"), customer);
@@ -613,28 +685,34 @@ QWidget* MainWindow::createProjectPage()
     auto* environment = new QGroupBox(tr("Installation and environmental conditions"));
     auto* environmentForm = new QFormLayout(environment);
     auto* ambient = new QDoubleSpinBox;
+    ambient->setObjectName(QStringLiteral("projectAmbientC"));
     ambient->setRange(-50.0, 80.0);
     ambient->setDecimals(1);
     ambient->setValue(40.0);
     ambient->setSuffix(tr(" °C"));
     auto* altitude = new QSpinBox;
+    altitude->setObjectName(QStringLiteral("projectAltitudeM"));
     altitude->setRange(0, 6000);
     altitude->setSuffix(tr(" m above sea level"));
     auto* insulationClass = new QComboBox;
+    insulationClass->setObjectName(QStringLiteral("projectInsulationClass"));
     insulationClass->addItems({tr("F (155 °C)"), tr("H (180 °C)"), tr("Not specified")});
     auto* ipRating = new QComboBox;
+    ipRating->setObjectName(QStringLiteral("projectIpRating"));
     ipRating->addItems({"IP00", "IP20", "IP21", "IP23", "IP31", "IP41", "IP54", "IP55", tr("Other / not specified")});
     auto* coolingMethod = new QComboBox;
+    coolingMethod->setObjectName(QStringLiteral("projectCoolingMethod"));
     coolingMethod->addItem(tr("AN — natural air cooling"), "AN");
     coolingMethod->addItem(tr("AF — forced air cooling"), "AF");
     auto* airflow = new QDoubleSpinBox;
+    airflow->setObjectName(QStringLiteral("projectAirflowM3h"));
     airflow->setRange(0.0, 100000.0);
     airflow->setDecimals(2);
     airflow->setSuffix(tr(" m³/h"));
     airflow->setSpecialValueText(tr("NOT SET"));
     airflow->setEnabled(false);
     airflow->setToolTip(tr("Enter the verified total airflow through the equipment enclosure, not the fan free-air rating."));
-    auto* coolingStatus = new QLabel(tr("Cooling method is a UI-level project assumption only; project persistence and thermal-solver integration are pending."));
+    auto* coolingStatus = new QLabel(tr("Project assumptions are saved locally per project. They are not yet part of a portable project file and do not alter the thermal solver."));
     coolingStatus->setWordWrap(true);
     coolingStatus->setStyleSheet("color: #a66b00;");
     environmentForm->addRow(tr("Maximum ambient temperature"), ambient);
@@ -664,11 +742,26 @@ QWidget* MainWindow::createProjectPage()
     note->setStyleSheet("color: palette(mid);");
     layout->addWidget(note);
     layout->addStretch();
-    connect(projectName_, &QLineEdit::textChanged, this, [this] { updateProjectTitle(); });
+    connect(projectName_, &QLineEdit::textChanged, this, [this] { updateProjectTitle(); saveProjectSettings(); });
+    for (auto* field : findChildren<QLineEdit*>()) {
+        if (field != projectName_ && !field->objectName().isEmpty())
+            connect(field, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
+    }
+    for (auto* field : findChildren<QComboBox*>()) {
+        if (field != productFamily_ && !field->objectName().isEmpty())
+            connect(field, &QComboBox::currentIndexChanged, this, [this] { saveProjectSettings(); });
+    }
+    for (auto* field : findChildren<QSpinBox*>()) {
+        if (!field->objectName().isEmpty())
+            connect(field, qOverload<int>(&QSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
+    }
+    for (auto* field : findChildren<QDoubleSpinBox*>()) {
+        if (!field->objectName().isEmpty())
+            connect(field, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
+    }
     connect(productFamily_, &QComboBox::currentTextChanged, this, [this, topologyDiagram](const QString& value) {
         topologyDiagram->setProductFamily(value);
-        QSettings settings;
-        settings.setValue(QStringLiteral("project/productFamily"), value);
+        saveProjectSettings();
         appendLog(tr("Product family selected: %1").arg(value));
     });
     return page;
