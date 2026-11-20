@@ -740,6 +740,23 @@ std::vector<SeedRecord> starterRecords()
                 {{"frequency_Hz", 60.0}, {"peakFluxDensity_T", 1.0}, {"specificLoss_W_per_kg", p10_60}},
                 {{"frequency_Hz", 60.0}, {"peakFluxDensity_T", 1.5}, {"specificLoss_W_per_kg", p15_60}}
             })},
+            {"supplementaryGraphSources", grade == "B35A300"
+                ? json::array({
+                    {{"sourceDocument", "Baosteel B35A300 manufacturer graph PDF"},
+                     {"sourceReference", "https://esales.baosteel.com/portal/eleSteel/cn/download/B35A300.pdf"},
+                     {"graphScope", "50 Hz and 60 Hz specific core loss versus magnetic flux density; DC magnetization and hysteresis plots"},
+                     {"captureStatus", "GRAPH_ONLY_NOT_DIGITIZED"}},
+                    {{"sourceDocument", "Baosteel B35A300 high-frequency manufacturer graph PDF"},
+                     {"sourceReference", "https://ecommerce.ibaosteel.com/portal/eleSteel/cn/download/B35A300.pdf"},
+                     {"graphScope", "Specific core loss versus magnetic flux density at 100, 200, 300, 400, 500, 1000 and 2000 Hz"},
+                     {"captureStatus", "GRAPH_ONLY_NOT_DIGITIZED"}}
+                })
+                : json::array({
+                    {{"sourceDocument", "Baosteel B50A800 manufacturer graph PDF"},
+                     {"sourceReference", "https://esales.baosteel.com/portal/eleSteel/cn/download/B50A800.pdf"},
+                     {"graphScope", "50 Hz and 60 Hz specific core loss versus magnetic flux density; Epstein samples before stress-relief annealing"},
+                     {"captureStatus", "GRAPH_ONLY_NOT_DIGITIZED"}}
+                })},
             {"coreLossSpecificationLimits", {
                 {"maximumSpecificLoss_W_per_kg", {
                     {"frequency_Hz", 50.0}, {"peakFluxDensity_T", 1.5},
