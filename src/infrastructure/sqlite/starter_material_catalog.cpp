@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -395,7 +396,7 @@ std::vector<SeedRecord> starterRecords()
         }}
     };
 
-    return {
+    std::vector<SeedRecord> records{
         {"MAT-DUPONT-KAPTON-HN-25UM", "SEED-DUPONT-KAPTON-HN25-R1", "insulation-material",
          "https://www.dupont.com/content/dam/dupont/amer/us/en/ei-transformation/public/documents/en/EI-10206-Kapton-HN-Data-Sheet.pdf",
          "DuPont Kapton HN datasheet EI-10206 (7/24); nominal 25 µm film",
@@ -463,6 +464,95 @@ std::vector<SeedRecord> starterRecords()
          "thyssenkrupp powercore A product table; M270-35A, DIN EN 10106",
          steelM270},
     };
+
+    // Exact TDK ordering codes and AL data transcribed from the manufacturer's
+    // PQ core search table. Geometry dimensions are intentionally not inferred.
+    const std::vector<std::tuple<std::string, std::string, std::string, double>> tdkPqCores{
+        {"B65877B0000R049", "PQ 26/20", "N49", 3850},
+        {"B65883A0000R049", "PQ 40/40", "N49", 3200},
+        {"B65875A0000R095", "PQ 20/20", "N95", 3300},
+        {"B65879B0000R049", "PQ 32/30", "N49", 3450},
+        {"B65879B0000R087", "PQ 32/30", "N87", 4800},
+        {"B65875A0000R097", "PQ 20/20", "N97", 2750},
+        {"B65883B0000R097", "PQ 40/30", "N97", 5300},
+        {"B65883A0000R087", "PQ 40/40", "N87", 4300},
+        {"B65883A0000R092", "PQ 40/40", "N92", 3200},
+        {"B65879B0000R097", "PQ 32/30", "N97", 5000},
+        {"B65877B0000R087", "PQ 26/20", "N87", 5000},
+        {"B65879B0000R095", "PQ 32/30", "N95", 6100},
+        {"B65883B0000R049", "PQ 40/30", "N49", 3900},
+        {"B65879A0000R095", "PQ 32/20", "N95", 7600},
+        {"B65875B0000R097", "PQ 20/16", "N97", 3200},
+        {"B65883B0000R087", "PQ 40/30", "N87", 5200},
+        {"B65879A0000R049", "PQ 32/20", "N49", 4600},
+        {"B65875B0000R092", "PQ 20/16", "N92", 2400},
+        {"B65875B0000R095", "PQ 20/16", "N95", 3750},
+        {"B65879A0000R087", "PQ 32/20", "N87", 6300},
+        {"B65883B0000R092", "PQ 40/30", "N92", 3900},
+        {"B65875A0000R049", "PQ 20/20", "N49", 2000},
+        {"B65883B0000R095", "PQ 40/30", "N95", 6500},
+        {"B65875A0000R087", "PQ 20/20", "N87", 2650},
+        {"B65879A0000R097", "PQ 32/20", "N97", 6500},
+        {"B65877A0000R097", "PQ 26/25", "N97", 4650},
+        {"B65981B0000R097", "PQ 50/40", "N97", 7800},
+        {"B65881A0000R087", "PQ 35/35", "N87", 4500},
+        {"B65875B0000R049", "PQ 20/16", "N49", 2400},
+        {"B65881A0000R092", "PQ 35/35", "N92", 3300},
+        {"B65885A0000R095", "PQ 16/11.6", "N95", 2750},
+        {"B65877A0000R087", "PQ 26/25", "N87", 4500},
+        {"B65981B0000R092", "PQ 50/40", "N92", 5500},
+        {"B65877A0000R095", "PQ 26/25", "N95", 5700},
+        {"B65885A0000R097", "PQ 16/11.6", "N97", 2450},
+        {"B65981B0000R095", "PQ 50/40", "N95", 9400},
+        {"B65875B0000R087", "PQ 20/16", "N87", 3100},
+        {"B65881A0000R095", "PQ 35/35", "N95", 5700},
+        {"B65881A0000R097", "PQ 35/35", "N97", 4700},
+        {"B65877B0000R097", "PQ 26/20", "N97", 5150},
+        {"B65885A0000R049", "PQ 16/11.6", "N49", 1900},
+        {"B65883A0000R095", "PQ 40/40", "N95", 5500},
+        {"B65877B0000R092", "PQ 26/20", "N92", 3850},
+        {"B65883A0000R097", "PQ 40/40", "N97", 4500},
+        {"B65881A0000R049", "PQ 35/35", "N49", 3300},
+        {"B65877B0000R095", "PQ 26/20", "N95", 6300},
+        {"B65981B0000R087", "PQ 50/40", "N87", 7600},
+        {"B65885A0000R087", "PQ 16/11.6", "N87", 2350},
+        {"B65885A0000R092", "PQ 16/11.6", "N92", 1900},
+        {"B65877A0000R049", "PQ 26/25", "N49", 3300}
+    };
+
+    const std::string tdkPqUrl =
+        "https://www.tdk-electronics.tdk.com/en/529374/products/product-catalog/ferrites-and-accessories/pq-cores-and-accessories/search-results-pq-cores-and-accessories";
+    for (const auto& [orderingCode, shape, material, alValue] : tdkPqCores) {
+        const std::string id = "COMP-TDK-" + orderingCode;
+        const json payload = {
+            {"schemaVersion", 1},
+            {"component", {
+                {"id", id}, {"manufacturer", "TDK Electronics"},
+                {"orderingCode", orderingCode}, {"coreShape", shape},
+                {"ferriteMaterial", material}, {"coreType", "PQ ferrite core"},
+                {"inductanceFactor_AL_nH_per_turn_squared", alValue},
+                {"AL_tolerance_fraction", { -0.20, 0.30 }},
+                {"airGap", "ungapped"},
+                {"turnsSquaredForInductance", "L = AL * N^2"},
+                {"dimensionsImported", false}
+            }},
+            {"sourceDocuments", json::array({tdkPqUrl})},
+            {"dataQuality", {
+                {"sourceStatus", "MANUFACTURER_LIVE_PRODUCT_SEARCH_TABLE"},
+                {"alValueStatus", "MANUFACTURER_LISTED_NOMINAL_AL"},
+                {"toleranceStatus", "MANUFACTURER_LISTED_PLUS_30_MINUS_20_PERCENT"},
+                {"geometryStatus", "DIMENSIONS_NOT_IMPORTED"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Exact TDK ordering code, PQ geometry, ferrite material and AL value are imported from the manufacturer search result. AL tolerance is +30/-20 percent. Mechanical dimensions, effective area, effective path length, volume and loss curves must be loaded from the individual datasheet before CAD/FEM or final magnetic design."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + orderingCode + "-R1", "core-component",
+            tdkPqUrl, "TDK PQ core catalog search; ordering code " + orderingCode,
+            payload
+        });
+    }
+    return records;
 }
 
 } // namespace
