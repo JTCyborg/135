@@ -266,3 +266,19 @@ if(MSVC)
 else()
     target_compile_options(Project135ReactorDesignExecutionTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135PhysicalFilterReactorMagneticTests
+    application/physical_filter_reactor_magnetic_tests.cpp
+)
+target_link_libraries(Project135PhysicalFilterReactorMagneticTests PRIVATE
+    Project135::Application Project135::Domain Project135::Filter
+)
+add_test(
+    NAME Project135PhysicalFilterReactorMagneticTests
+    COMMAND Project135PhysicalFilterReactorMagneticTests
+)
+if(MSVC)
+    target_compile_options(Project135PhysicalFilterReactorMagneticTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135PhysicalFilterReactorMagneticTests PRIVATE -UNDEBUG)
+endif()
