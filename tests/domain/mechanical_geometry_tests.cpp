@@ -37,6 +37,8 @@ ReactorPhysicalGeometry validGeometry()
         b.axialLength = units::Length{0.115};
         b.wallThickness = units::Length{0.001};
         b.flangeThickness = units::Length{0.002};
+        b.flangeOuterWidth = units::Length{0.055};
+        b.flangeOuterHeight = units::Length{0.12};
         b.windingClearance = units::Length{0.001};
         b.material = "PBT";
     }
