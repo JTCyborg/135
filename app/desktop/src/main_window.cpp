@@ -3454,6 +3454,37 @@ void MainWindow::calculateFilter()
         if (const auto* widget = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h")))
             inputSnapshot.insert(QStringLiteral("projectAirflowM3h"), widget->value());
 
+        // Preserve the exact construction configuration alongside this calculation.
+        // This is traceability metadata only: the current filter solver does not consume it.
+        QJsonObject constructionSnapshot;
+        std::vector<std::string> constructionMaterialRevisionIds;
+        for (auto* widget : findChildren<QWidget*>()) {
+            const QString objectName = widget->objectName();
+            if (!objectName.startsWith(QStringLiteral("construction_"))) continue;
+            const QString field = objectName.mid(QStringLiteral("construction_").size());
+            if (const auto* combo = qobject_cast<QComboBox*>(widget)) {
+                constructionSnapshot.insert(field, combo->currentData().toString());
+                if ((field == QStringLiteral("coreMaterial") ||
+                     field == QStringLiteral("conductorMaterial") ||
+                     field == QStringLiteral("insulationMaterial")) &&
+                    !combo->currentData().toString().isEmpty()) {
+                    constructionMaterialRevisionIds.push_back(
+                        combo->currentData().toString().toStdString());
+                }
+            } else if (const auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
+                constructionSnapshot.insert(field, number->value());
+            } else if (const auto* integer = qobject_cast<QSpinBox*>(widget)) {
+                constructionSnapshot.insert(field, integer->value());
+            } else if (const auto* line = qobject_cast<QLineEdit*>(widget)) {
+                constructionSnapshot.insert(field, line->text());
+            } else if (const auto* check = qobject_cast<QCheckBox*>(widget)) {
+                constructionSnapshot.insert(field, check->isChecked());
+            }
+        }
+        inputSnapshot.insert(QStringLiteral("constructionInputs"), constructionSnapshot);
+        inputSnapshot.insert(QStringLiteral("constructionSizingStatus"),
+            QStringLiteral("NOT_CONNECTED_TO_SOLVER"));
+
         inputSnapshot.insert(QStringLiteral("sourceResistance_ohm"), sourceResistance);
         inputSnapshot.insert(QStringLiteral("sourceInductance_H"), sourceInductance);
         inputSnapshot.insert(QStringLiteral("inductorSaturationCurrent_A_peak"),
@@ -3784,6 +3815,12 @@ void MainWindow::calculateFilter()
             };
             addMaterialReference(capacitorComponent_);
             addMaterialReference(resistorComponent_);
+            for (const auto& revisionId : constructionMaterialRevisionIds) {
+                materialReferences.push_back({
+                    QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString(),
+                    revisionId
+                });
+            }
             const auto saved = materialStore_->recordCalculation(snapshot, materialReferences);
             if (saved) {
                 calculationSummary += tr(" Immutable calculation snapshot saved: %1.")
