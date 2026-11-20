@@ -69,6 +69,17 @@ int main()
         [](const std::string& id) { return Result<std::string>::success(id); });
     assert(!duplicate);
 
+    bool inputNodeExecuted = false;
+    const auto inputNode = executeReactorDesignPlan(
+        ReactorRecalculationPlan{{"input.core.material"}},
+        state,
+        [&inputNodeExecuted](const std::string&) {
+            inputNodeExecuted = true;
+            return Result<std::string>::success("should-not-run");
+        });
+    assert(!inputNode);
+    assert(!inputNodeExecuted);
+
     const auto noExecutor = executeReactorDesignPlan(plan, state, {});
     assert(!noExecutor);
     return 0;
