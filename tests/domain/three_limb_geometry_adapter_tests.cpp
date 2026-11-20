@@ -46,6 +46,14 @@ bool near(double lhs, double rhs, double tolerance = 1.0e-12)
 
 int main()
 {
+    const auto laminatedArea = calculateLaminatedLimbEffectiveArea(
+        units::Length{0.04}, units::Length{0.12}, 0.95);
+    assert(laminatedArea);
+    assert(near(laminatedArea.value().si(), 0.04 * 0.12 * 0.95));
+    assert(!calculateLaminatedLimbEffectiveArea(units::Length{}, units::Length{0.12}, 0.95));
+    assert(!calculateLaminatedLimbEffectiveArea(units::Length{0.04}, units::Length{}, 0.95));
+    assert(!calculateLaminatedLimbEffectiveArea(units::Length{0.04}, units::Length{0.12}, 1.01));
+
     const auto physical = validCore();
     const auto converted = buildThreeLimbMagneticGeometry(physical, 0.95);
     assert(converted);
