@@ -59,7 +59,6 @@ struct CoreComponentGeometrySnapshot {
     double stackDepthM,
     double stackingFactor);
 
-//};
 
 /// Decodes a pinned core-component revision. Missing geometry is preserved as
 /// unavailable; malformed or non-positive supplied geometry is rejected.
