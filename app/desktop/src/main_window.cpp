@@ -2777,10 +2777,12 @@ void MainWindow::calculateFilter()
                 worst->at(2) * 100.0, tr("%"));
             const bool allWithinMeasuredCurve = std::all_of(
                 threeLimbSamplingMetadata.begin(), threeLimbSamplingMetadata.end(),
-                [](const auto& item) { return item[4] != 0.0; });
+                [](const auto& item) { return item[3] == 0.0 || item[4] != 0.0; });
             if (!allWithinMeasuredCurve)
                 appendLog(tr("Coupled three-limb frequency sweep EXTRAPOLATED_NOT_VERIFIED: μ0 asymptotic continuation was used beyond the measured B-H curve."));
         }
+        if (!threeLimbModelWarning.isEmpty())
+            appendLog(threeLimbModelWarning);
     } else if (!threeLimbModelWarning.isEmpty()) {
         appendLog(threeLimbModelWarning);
     }
