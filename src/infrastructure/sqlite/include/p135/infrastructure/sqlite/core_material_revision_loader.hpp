@@ -18,6 +18,12 @@ struct CoreMaterialRevisionSnapshot {
     std::string sourceReference;
     std::string datasetRevision;
     std::string bhCurveStatus;
+    std::string bhCurveSourceDocument;
+    std::string bhCurveSourcePage;
+    std::string bhCurveMeasurementMethod;
+    std::string bhCurveSampleDirection;
+    std::string bhCurveCaptureMethod;
+    std::string bhCurveNotes;
     std::string coreLossStatus;
     std::string designReleaseStatus;
     std::string notes;
