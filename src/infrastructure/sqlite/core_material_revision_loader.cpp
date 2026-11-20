@@ -168,6 +168,13 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.sourceReference = revision.sourceReference;
         snapshot.datasetRevision = revision.datasetRevision;
         snapshot.bhCurveStatus = requiredString(quality, "bhCurveStatus");
+        const auto& bhProvenance = root.at("bhCurveProvenance");
+        snapshot.bhCurveSourceDocument = requiredString(bhProvenance, "sourceDocument");
+        snapshot.bhCurveSourcePage = requiredString(bhProvenance, "sourcePage");
+        snapshot.bhCurveMeasurementMethod = requiredString(bhProvenance, "measurementMethod");
+        snapshot.bhCurveSampleDirection = requiredString(bhProvenance, "sampleDirection");
+        snapshot.bhCurveCaptureMethod = requiredString(bhProvenance, "captureMethod");
+        snapshot.bhCurveNotes = requiredString(bhProvenance, "notes");
         snapshot.coreLossStatus = requiredString(quality, "coreLossStatus");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
