@@ -293,9 +293,12 @@ int main()
             units::Current{1000.0}, units::Current{-500.0}, units::Current{-500.0}
         };
         const auto outside = analyzeThreeLimbMagneticCircuit(outsideCurve);
-        assert(!outside);
-        assert(outside.error().code == ErrorCode::ModelOutOfDomain ||
-               outside.error().code == ErrorCode::NonConvergence);
+        assert(outside);
+        assert(!outside.value().withinBhCurveRange);
+        for (const auto density : outside.value().limbFluxDensity)
+            assert(std::isfinite(density.si()));
+        for (const auto density : outside.value().yokeFluxDensity)
+            assert(std::isfinite(density.si()));
     }
 
 
