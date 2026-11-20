@@ -93,6 +93,56 @@ void testDeltaCircuitTopologyAndFundamentalPower()
     assert(solved.value().solver.relativeResidual < 1.0e-10);
 }
 
+void testTheveninSourceImpedanceIsPerPhaseSeriesRL()
+{
+    const auto design = makeDesign(Connection::Wye);
+    const auto circuitResult = buildCircuit(
+        design, units::Resistance{0.0016}, units::Inductance{30.5e-6});
+    assert(circuitResult);
+    const auto& circuit = circuitResult.value();
+    assert(circuit.nodes.size() == 16);
+    assert(circuit.elements.size() == 18);
+
+    const auto solved = solve(Study{
+        circuit, AnalysisKind::AcSteadyState, units::Frequency{50.0}
+    });
+    assert(solved);
+    const auto findCurrent = [&solved](ComponentId id) {
+        const auto it = std::find_if(solved.value().branches.begin(),
+            solved.value().branches.end(),
+            [id](const BranchResult& branch) { return branch.component == id; });
+        assert(it != solved.value().branches.end());
+        return it->rmsCurrent;
+    };
+    // For phase A, voltage source -> R -> L -> filter bus is a true series path.
+    assert(std::abs(findCurrent(1) - findCurrent(4)) < 1.0e-8);
+    assert(std::abs(findCurrent(4) - findCurrent(5)) < 1.0e-8);
+    assert(std::abs(findCurrent(1)) > 0.0);
+    assert(solved.value().solver.relativeResidual < 1.0e-10);
+
+    const auto ideal = buildCircuit(design);
+    assert(ideal);
+    const auto idealSolved = solve(Study{
+        ideal.value(), AnalysisKind::AcSteadyState, units::Frequency{50.0}
+    });
+    assert(idealSolved);
+    const auto busVoltage = [&solved](NodeId id) {
+        const auto it = std::find_if(solved.value().nodeVoltages.begin(),
+            solved.value().nodeVoltages.end(),
+            [id](const NodeVoltage& node) { return node.node == id; });
+        assert(it != solved.value().nodeVoltages.end());
+        return std::abs(it->rmsVoltage);
+    };
+    const auto idealBusVoltage = [&idealSolved](NodeId id) {
+        const auto it = std::find_if(idealSolved.value().nodeVoltages.begin(),
+            idealSolved.value().nodeVoltages.end(),
+            [id](const NodeVoltage& node) { return node.node == id; });
+        assert(it != idealSolved.value().nodeVoltages.end());
+        return std::abs(it->rmsVoltage);
+    };
+    assert(busVoltage(1) < idealBusVoltage(1));
+}
+
 void testBuilderRejectsEmptyDesign()
 {
     FilterDesign design;
@@ -108,6 +158,7 @@ int main()
     testWyeCircuitTopologyAndFundamentalPower();
     testWyeCircuitAtTuningFrequency();
     testDeltaCircuitTopologyAndFundamentalPower();
+    testTheveninSourceImpedanceIsPerPhaseSeriesRL();
     testBuilderRejectsEmptyDesign();
     return 0;
 }
