@@ -33,6 +33,7 @@ public:
 private:
     QWidget* createProjectPage();
     QWidget* createFilterPage();
+    QWidget* createConstructionPage();
     QWidget* createResultsPage();
     QWidget* createCadPage();
     QWidget* createMaterialsPage();
