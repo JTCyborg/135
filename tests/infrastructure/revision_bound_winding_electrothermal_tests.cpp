@@ -58,7 +58,8 @@ int main(int argc, char** argv)
     assert(result);
     assert(result.value().conductorMaterialRevision.revisionId == "SEED-CU-C11000-R1");
     assert(result.value().electrothermal.converged);
-    assert(result.value().electrothermal.status == thermal::AssessmentStatus::Pass);
+    assert(result.value().electrothermal.status == thermal::AssessmentStatus::NotVerified);
+    assert(result.value().electrothermal.explanation.find("not design-released") != std::string::npos);
     assert(result.value().electrothermal.copperLoss.resistanceAtOperatingTemperature.si() > 0.0);
 
     const auto missing = analyzeRevisionBoundWindingElectrothermal(
