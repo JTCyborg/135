@@ -83,6 +83,29 @@ bool setTransparency(
     return false;
 }
 
+void collectDisplayItems(
+    const AssemblyPresentationNode& node,
+    bool ancestorsVisible,
+    double inheritedTransparency,
+    std::vector<AssemblyPresentationDisplayItem>& items)
+{
+    const bool effectiveVisible = ancestorsVisible && node.visible;
+    if (!effectiveVisible) return;
+
+    const double effectiveTransparency =
+        1.0 - (1.0 - inheritedTransparency) * (1.0 - node.transparency);
+
+    if (node.children.empty() && !node.shape.IsNull()) {
+        items.push_back(AssemblyPresentationDisplayItem{
+            node.id, node.shape, effectiveTransparency
+        });
+        return;
+    }
+
+    for (const auto& child : node.children)
+        collectDisplayItems(child, effectiveVisible, effectiveTransparency, items);
+}
+
 } // namespace
 
 Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
@@ -191,6 +214,14 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
     const auto validation = validateAssemblyPresentation(root);
     if (!validation) return Result<AssemblyPresentationNode>::failure(validation.error());
     return Result<AssemblyPresentationNode>::success(std::move(root));
+}
+
+std::vector<AssemblyPresentationDisplayItem>
+collectAssemblyPresentationDisplayItems(const AssemblyPresentationNode& root)
+{
+    std::vector<AssemblyPresentationDisplayItem> items;
+    collectDisplayItems(root, true, 0.0, items);
+    return items;
 }
 
 Result<void> validateAssemblyPresentation(const AssemblyPresentationNode& root)
