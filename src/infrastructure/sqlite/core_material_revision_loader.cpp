@@ -308,6 +308,23 @@ Result<CoreLossReferenceDataset> loadCoreLossReferenceDataset(
             });
         }
 
+        const json graphSources = root.value("supplementaryGraphSources", json::array());
+        if (!graphSources.is_array())
+            throw std::invalid_argument("Supplementary graph sources must be an array when supplied.");
+        for (const auto& source : graphSources) {
+            CoreLossGraphSource graph;
+            graph.sourceDocument = requiredString(source, "sourceDocument");
+            graph.sourceReference = requiredString(source, "sourceReference");
+            graph.graphScope = requiredString(source, "graphScope");
+            graph.captureStatus = requiredString(source, "captureStatus");
+            if (graph.sourceReference.rfind("https://", 0) != 0)
+                throw std::invalid_argument("Supplementary graph source must use an HTTPS reference.");
+            if (graph.captureStatus != "GRAPH_ONLY_NOT_DIGITIZED" &&
+                graph.captureStatus != "APPROXIMATE_DIGITIZATION_NOT_VALIDATED")
+                throw std::invalid_argument("Unsupported supplementary graph capture status.");
+            dataset.supplementaryGraphSources.push_back(std::move(graph));
+        }
+
         const json limits = root.value("coreLossSpecificationLimits", json::object());
         if (limits.contains("maximumSpecificLoss_W_per_kg")) {
             const auto& limit = limits.at("maximumSpecificLoss_W_per_kg");
