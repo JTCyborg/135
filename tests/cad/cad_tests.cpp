@@ -333,9 +333,30 @@ int main()
     for (TopExp_Explorer it(yokeGapShape.value(), TopAbs_SOLID); it.More(); it.Next()) ++yokeGapSolidCount;
     assert(yokeGapSolidCount == 8);
     assert(BRepCheck_Analyzer(yokeGapShape.value()).IsValid());
-    // A 10 mm cut along the yoke length removes 10 x 40 x 80 mm3.
-    assert(std::abs(volumeOf(yokeGapShape.value()) -
-                    (baseVolumeMm3 - 10.0 * 40.0 * 80.0)) < 1.0e-6);
+    // Exercise the air-gap axis and segment-to-builder mapping for every
+    // physical component. Limb gaps cut along Y; yoke gaps cut along X.
+    // Each 1 mm gap removes 40 x 80 x 1 mm3 in this symmetric fixture and
+    // splits exactly one of the seven component groups into two solids.
+    const std::array<CoreSegment, 7> allSegments{{
+        CoreSegment::LimbA, CoreSegment::LimbB, CoreSegment::LimbC,
+        CoreSegment::YokeTopAB, CoreSegment::YokeTopBC,
+        CoreSegment::YokeBottomAB, CoreSegment::YokeBottomBC
+    }};
+    for (const auto segment : allSegments) {
+        auto singleSegmentGap = geometry;
+        singleSegmentGap.core.airGaps = {
+            {segment, units::Length{0.02}, units::Length{0.001}}
+        };
+        const auto segmentGapShape = p135::cad::buildThreeLimbCoreShape(singleSegmentGap);
+        assert(segmentGapShape);
+        std::size_t segmentGapSolidCount = 0;
+        for (TopExp_Explorer it(segmentGapShape.value(), TopAbs_SOLID); it.More(); it.Next())
+            ++segmentGapSolidCount;
+        assert(segmentGapSolidCount == 8);
+        assert(BRepCheck_Analyzer(segmentGapShape.value()).IsValid());
+        assert(std::abs(volumeOf(segmentGapShape.value()) -
+                        (baseVolumeMm3 - 40.0 * 80.0 * 1.0)) < 1.0e-6);
+    }
 
     auto invalidWindowStack = geometry;
     invalidWindowStack.core.windowWidths[0] = units::Length{0.05};
