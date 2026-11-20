@@ -56,6 +56,19 @@ int main()
     assert(!state.accepted.verified);
     assert(state.accepted.stages.at("core.material").payload == "new:core.material");
 
+    const auto reversed = executeReactorDesignPlan(
+        ReactorRecalculationPlan{{"magnetic.operating_point", "core.magnetic_properties"}},
+        state,
+        [](const std::string& id) { return Result<std::string>::success(id); });
+    assert(!reversed);
+    assert(reversed.error().code == ErrorCode::InvalidInput);
+
+    const auto duplicate = executeReactorDesignPlan(
+        ReactorRecalculationPlan{{"core.material", "core.material"}},
+        state,
+        [](const std::string& id) { return Result<std::string>::success(id); });
+    assert(!duplicate);
+
     const auto noExecutor = executeReactorDesignPlan(plan, state, {});
     assert(!noExecutor);
     return 0;
