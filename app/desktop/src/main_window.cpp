@@ -450,12 +450,8 @@ MainWindow::MainWindow(QWidget* parent)
         updateProjectTitle();
         tabs_->setCurrentIndex(0);
     });
-    toolbar->addAction(tr("Project"), this, [this] { tabs_->setCurrentIndex(0); });
-    toolbar->addAction(tr("Materials"), this, [this] { tabs_->setCurrentIndex(4); });
-    toolbar->addAction(tr("History"), this, [this] {
-        tabs_->setCurrentIndex(5);
-        refreshCalculationHistory();
-    });
+    // Page navigation belongs to the tab bar; keep only workflow actions here.
+    toolbar->addSeparator();
     toolbar->addAction(tr("Calculate"), this, [this] {
         calculateFilter();
         tabs_->setCurrentIndex(2);
@@ -565,13 +561,16 @@ QWidget* MainWindow::createFilterPage()
     qualityFactor_->setRange(0.1, 10000.0);
     qualityFactor_->setValue(50.0);
     qualityFactor_->setDecimals(2);
+    qualityFactor_->setToolTip(tr(
+        "Series-branch quality factor Qf = ωt·L/R, evaluated at the tuning angular frequency. "
+        "It determines the series damping resistance; it is not the reactor's standalone Q."));
 
     form->addRow(tr("Nominal line voltage"), nominalVoltage_);
     form->addRow(tr("Fundamental frequency"), fundamentalFrequency_);
     form->addRow(tr("Branch connection"), filterConnection_);
     form->addRow(tr("Target reactive power"), targetReactivePower_);
     form->addRow(tr("Tuning harmonic order"), tuningHarmonicOrder_);
-    form->addRow(tr("Branch quality factor"), qualityFactor_);
+    form->addRow(tr("Series-branch quality factor Qf"), qualityFactor_);
     layout->addWidget(group);
 
     auto* componentGroup = new QGroupBox(tr("Selected components and installation thermal data"));
@@ -587,12 +586,18 @@ QWidget* MainWindow::createFilterPage()
     capacitorThermalResistance_->setRange(0.0, 1000000.0);
     capacitorThermalResistance_->setDecimals(4);
     capacitorThermalResistance_->setSuffix(tr(" K/W"));
+    capacitorThermalResistance_->setSpecialValueText(tr("NOT SET"));
+    capacitorThermalResistance_->setToolTip(tr(
+        "Zero means no verified thermal resistance has been supplied. It must not be interpreted as ideal cooling."));
     capacitorThermalSource_ = new QLineEdit;
     capacitorThermalSource_->setPlaceholderText(tr("Rθ source: assembly datasheet or measurement"));
     resistorThermalResistance_ = new QDoubleSpinBox;
     resistorThermalResistance_->setRange(0.0, 1000000.0);
     resistorThermalResistance_->setDecimals(4);
     resistorThermalResistance_->setSuffix(tr(" K/W"));
+    resistorThermalResistance_->setSpecialValueText(tr("NOT SET"));
+    resistorThermalResistance_->setToolTip(tr(
+        "Zero means no verified thermal resistance has been supplied. It must not be interpreted as ideal cooling."));
     resistorThermalSource_ = new QLineEdit;
     resistorThermalSource_->setPlaceholderText(tr("Rθ source: mounting/heatsink measurement"));
     componentForm->addRow(tr("Thermal ambient temperature"), ambientTemperature_);
@@ -608,7 +613,13 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(componentGroup);
     refreshComponentSelectors();
 
-    auto* note = new QLabel(tr("The target reactive power is the total three-phase fundamental-frequency value for this branch. Synthesis uses ideal C and L and derives a series damping resistor from Q factor. Optional source impedance and harmonic spectrum inputs enable impedance-scan, THD and branch-stress estimates. Entering per-phase equivalent core geometry and a sourced B-H curve enables the nonlinear magnetic sweep and B-H knee-current estimate. Component ratings, thermal derating and standards compliance remain separate assessments."));
+    auto* note = new QLabel(tr(
+        "Target reactive power is the total three-phase fundamental-frequency value for this branch. "
+        "Synthesis uses ideal C and L and derives series damping resistance from Qf = ωt·L/R. "
+        "Source impedance and the positive-/negative-sequence voltage-source spectrum enable the "
+        "balanced impedance and harmonic estimates described below. These inputs do not represent "
+        "harmonic load-current injections. Component ratings, thermal derating and standards compliance "
+        "remain separate assessments."));
     note->setWordWrap(true);
     note->setStyleSheet("color: #a66b00;");
     layout->addWidget(note);
@@ -752,13 +763,18 @@ QWidget* MainWindow::createFilterPage()
     saturationHelp->setWordWrap(true);
     advancedLayout->addWidget(saturationHelp);
 
-    auto* spectrumHelp = new QLabel(tr("Enter measured/calculated harmonic phase-A RMS voltage magnitudes. The fundamental is derived from nominal line voltage; add only non-fundamental orders here. Use Positive or Negative sequence. Zero sequence is not supported."));
+    auto* spectrumHelp = new QLabel(tr(
+        "Voltage-source spectrum: enter measured/calculated phase-A RMS harmonic voltage magnitudes. "
+        "The fundamental positive-sequence voltage is derived from nominal line voltage; add only "
+        "non-fundamental orders here. Use Positive or Negative sequence. Zero sequence is not supported. "
+        "This is not a load-current injection spectrum; harmonic load-current sources and unbalanced "
+        "phase-by-phase spectra are not modelled by this workflow."));
     spectrumHelp->setWordWrap(true);
     advancedLayout->addWidget(spectrumHelp);
 
     harmonicSpectrumTable_ = new QTableWidget(0, 4);
     harmonicSpectrumTable_->setHorizontalHeaderLabels({
-        tr("Order"), tr("Sequence"), tr("RMS voltage (V)"), tr("Phase (°)")
+        tr("Harmonic order"), tr("Sequence"), tr("Phase-A source voltage RMS (V)"), tr("Phase angle (°)")
     });
     harmonicSpectrumTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     harmonicSpectrumTable_->setMinimumHeight(120);
@@ -768,7 +784,7 @@ QWidget* MainWindow::createFilterPage()
     advancedLayout->addWidget(harmonicSpectrumTable_);
 
     auto* spectrumButtons = new QHBoxLayout;
-    auto* addHarmonic = new QPushButton(tr("Add harmonic"));
+    auto* addHarmonic = new QPushButton(tr("Add voltage harmonic"));
     auto* removeHarmonic = new QPushButton(tr("Remove selected"));
     spectrumButtons->addWidget(addHarmonic);
     spectrumButtons->addWidget(removeHarmonic);
