@@ -1476,8 +1476,57 @@ void MainWindow::loadCalculationInputs(int row)
         return;
     }
     const auto input = document.object();
-    if (projectName_) projectName_->setText(QString::fromStdString(record.value()->projectName));
+    if (projectName_) projectName_->setText(
+        input.value(QStringLiteral("projectName")).toString(
+            QString::fromStdString(record.value()->projectName)));
     projectId_ = QString::fromStdString(record.value()->projectId);
+
+    // Restore Project page fields when present. Missing keys are expected in older snapshots.
+    const auto restoreProjectLine = [this, &input](const char* objectName, const char* key) {
+        if (auto* widget = findChild<QLineEdit*>(QString::fromLatin1(objectName))) {
+            const auto value = input.value(QString::fromLatin1(key));
+            if (value.isString()) widget->setText(value.toString());
+        }
+    };
+    restoreProjectLine("projectCustomer", "projectCustomer");
+    restoreProjectLine("projectNumber", "projectNumber");
+    restoreProjectLine("projectEngineer", "projectEngineer");
+    restoreProjectLine("projectDate", "projectDate");
+    restoreProjectLine("projectRevision", "projectRevision");
+    if (const auto value = input.value(QStringLiteral("projectAmbientC")); value.isDouble()) {
+        if (auto* widget = findChild<QDoubleSpinBox*>(QStringLiteral("projectAmbientC")))
+            widget->setValue(value.toDouble());
+    }
+    if (const auto value = input.value(QStringLiteral("projectAltitudeM")); value.isDouble()) {
+        if (auto* widget = findChild<QSpinBox*>(QStringLiteral("projectAltitudeM")))
+            widget->setValue(value.toInt());
+    }
+    const auto restoreProjectCombo = [this, &input](const char* objectName, const char* key) {
+        if (auto* widget = findChild<QComboBox*>(QString::fromLatin1(objectName))) {
+            const auto value = input.value(QString::fromLatin1(key));
+            if (!value.isString()) return;
+            const int index = widget->findText(value.toString());
+            if (index >= 0) widget->setCurrentIndex(index);
+        }
+    };
+    restoreProjectCombo("projectInsulationClass", "projectInsulationClass");
+    restoreProjectCombo("projectIpRating", "projectIpRating");
+    if (const auto value = input.value(QStringLiteral("projectCoolingMethod")); value.isString()) {
+        if (auto* widget = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"))) {
+            const int index = widget->findData(value.toString());
+            if (index >= 0) widget->setCurrentIndex(index);
+        }
+    }
+    if (const auto value = input.value(QStringLiteral("projectAirflowM3h")); value.isDouble()) {
+        if (auto* widget = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h")))
+            widget->setValue(value.toDouble());
+    }
+    if (const auto value = input.value(QStringLiteral("projectProductFamily")); value.isString()) {
+        if (productFamily_) {
+            const int index = productFamily_->findText(value.toString());
+            if (index >= 0) productFamily_->setCurrentIndex(index);
+        }
+    }
     const auto setNumber = [&input](const char* key, QDoubleSpinBox* control, double divisor = 1.0) {
         if (control && input.value(QLatin1String(key)).isDouble())
             control->setValue(input.value(QLatin1String(key)).toDouble() / divisor);
@@ -1496,6 +1545,7 @@ void MainWindow::loadCalculationInputs(int row)
     setNumber("coreEffectiveArea_mm2", coreEffectiveAreaMm2_);
     setNumber("coreMeanPath_mm", coreMeanPathMm_);
     setNumber("coreAirGap_mm", coreAirGapMm_);
+    setNumber("coreGapEffectiveArea_mm2", coreGapEffectiveAreaMm2_);
     setNumber("coreYokeEffectiveArea_mm2", coreYokeEffectiveAreaMm2_);
     setNumber("coreYokeSegmentPath_mm", coreYokeSegmentPathMm_);
     const auto restoreGeometryOverrides = [&input](
@@ -2514,6 +2564,34 @@ void MainWindow::calculateFilter()
         inputSnapshot.insert(QStringLiteral("tuningHarmonicOrder"), tuningHarmonicOrder_->value());
         inputSnapshot.insert(QStringLiteral("qualityFactor"), qualityFactor_->value());
         inputSnapshot.insert(QStringLiteral("connection"), filterConnection_->currentText());
+
+        // Capture the complete Project page state in the immutable calculation snapshot.
+        inputSnapshot.insert(QStringLiteral("projectName"),
+            projectName_ ? projectName_->text() : QString{});
+        inputSnapshot.insert(QStringLiteral("projectProductFamily"),
+            productFamily_ ? productFamily_->currentText() : QString{});
+        const auto saveProjectLine = [this, &inputSnapshot](const char* objectName, const char* key) {
+            if (const auto* widget = findChild<QLineEdit*>(QString::fromLatin1(objectName)))
+                inputSnapshot.insert(QString::fromLatin1(key), widget->text());
+        };
+        saveProjectLine("projectCustomer", "projectCustomer");
+        saveProjectLine("projectNumber", "projectNumber");
+        saveProjectLine("projectEngineer", "projectEngineer");
+        saveProjectLine("projectDate", "projectDate");
+        saveProjectLine("projectRevision", "projectRevision");
+        if (const auto* widget = findChild<QDoubleSpinBox*>(QStringLiteral("projectAmbientC")))
+            inputSnapshot.insert(QStringLiteral("projectAmbientC"), widget->value());
+        if (const auto* widget = findChild<QSpinBox*>(QStringLiteral("projectAltitudeM")))
+            inputSnapshot.insert(QStringLiteral("projectAltitudeM"), widget->value());
+        if (const auto* widget = findChild<QComboBox*>(QStringLiteral("projectInsulationClass")))
+            inputSnapshot.insert(QStringLiteral("projectInsulationClass"), widget->currentText());
+        if (const auto* widget = findChild<QComboBox*>(QStringLiteral("projectIpRating")))
+            inputSnapshot.insert(QStringLiteral("projectIpRating"), widget->currentText());
+        if (const auto* widget = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod")))
+            inputSnapshot.insert(QStringLiteral("projectCoolingMethod"), widget->currentData().toString());
+        if (const auto* widget = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h")))
+            inputSnapshot.insert(QStringLiteral("projectAirflowM3h"), widget->value());
+
         inputSnapshot.insert(QStringLiteral("sourceResistance_ohm"), sourceResistance);
         inputSnapshot.insert(QStringLiteral("sourceInductance_H"), sourceInductance);
         inputSnapshot.insert(QStringLiteral("inductorSaturationCurrent_A_peak"),
@@ -2526,6 +2604,8 @@ void MainWindow::calculateFilter()
             coreMeanPathMm_ ? coreMeanPathMm_->value() : 0.0);
         inputSnapshot.insert(QStringLiteral("coreAirGap_mm"),
             coreAirGapMm_ ? coreAirGapMm_->value() : 0.0);
+        inputSnapshot.insert(QStringLiteral("coreGapEffectiveArea_mm2"),
+            coreGapEffectiveAreaMm2_ ? coreGapEffectiveAreaMm2_->value() : 0.0);
         inputSnapshot.insert(QStringLiteral("coreYokeEffectiveArea_mm2"),
             coreYokeEffectiveAreaMm2_ ? coreYokeEffectiveAreaMm2_->value() : 0.0);
         inputSnapshot.insert(QStringLiteral("coreYokeSegmentPath_mm"),
