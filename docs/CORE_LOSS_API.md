@@ -86,6 +86,8 @@ Baosteel also publishes a B35A300 0.35 mm PDF with plotted 50 Hz and 60 Hz loss-
 
 The immutable dataset loader now rejects duplicate frequency/flux coordinates, non-positive explicitly supplied measurement temperatures, invalid specification limits, missing source/dataset revision identifiers, and incomplete quality/test provenance. This prevents ambiguous anchors from entering later calculations while preserving the exact source values.
 
+`findExactCoreLossReferencePoint()` exposes a safe read-only path for inspecting one of these anchors: both frequency and peak flux density must match an imported coordinate exactly. A nearby point returns no result. This helper is not a loss model and does not authorize use in the thermal solver; the caller must still honor the dataset's quality status, excitation waveform and unknown measurement temperature.
+
 Sources:
 - Baosteel official product performance table: https://esales.baosteel.com/baosteel_products/eleSteel/en/products/products_04_2.jsp
 - Baosteel Q/BQB 480-2023 (test definitions and sampling): https://pdt.static.globalsources.com/IMAGES/PDT/SPEC/829/K1229503829.pdf
