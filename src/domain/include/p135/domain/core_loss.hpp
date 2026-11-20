@@ -4,7 +4,7 @@
 #include "p135/core/units.hpp"
 #include "p135/domain/magnetic_product.hpp"
 
-#include <string>
+#include <array>\n#include <string>
 #include <vector>
 
 namespace p135::domain {
