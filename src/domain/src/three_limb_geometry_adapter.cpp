@@ -87,6 +87,9 @@ Result<ThreeLimbMagneticGeometry> buildThreeLimbMagneticGeometry(
         if (!std::isfinite(path) || path <= 0.0)
             return invalid("Derived limb centre-line path must be finite and positive.",
                            "limbMeanPaths[" + std::to_string(limb) + "]");
+        // Air gaps are represented by a separate reluctance in the magnetic
+        // solver. Keep only the remaining ferromagnetic length in this branch
+        // to avoid counting the same physical gap once as steel and again as air.
         result.limbMeanPaths[limb] = units::Length{path};
     }
 
