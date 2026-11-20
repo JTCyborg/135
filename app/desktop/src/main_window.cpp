@@ -2687,6 +2687,8 @@ void MainWindow::calculateFilter()
     } else if (!magneticModelWarning.isEmpty()) {
         appendLog(magneticModelWarning);
     }
+    if (magneticSweepExtrapolated)
+        appendLog(magneticModelWarning);
 
     if (threeLimbMagneticBase && threeLimbSweepValid &&
         !threeLimbFluxDensitySweep.empty()) {
