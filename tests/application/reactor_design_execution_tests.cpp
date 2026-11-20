@@ -82,5 +82,34 @@ int main()
 
     const auto noExecutor = executeReactorDesignPlan(plan, state, {});
     assert(!noExecutor);
+
+    const auto emptyPlan = executeReactorDesignPlan(
+        ReactorRecalculationPlan{}, state,
+        [](const std::string& id) { return Result<std::string>::success(id); });
+    assert(!emptyPlan);
+    assert(emptyPlan.error().code == ErrorCode::InvalidInput);
+
+    const auto revisionBeforeThrow = state.accepted.number;
+    const auto throwing = executeReactorDesignPlan(
+        ReactorRecalculationPlan{{"core.material"}}, state,
+        [](const std::string&) -> Result<std::string> {
+            throw std::runtime_error("simulated adapter failure");
+        });
+    assert(throwing);
+    assert(!throwing.value().committed);
+    assert(throwing.value().failedStage == "core.material");
+    assert(throwing.value().failureCode == ErrorCode::InternalError);
+    assert(throwing.value().failureMessage.find("simulated adapter failure") != std::string::npos);
+    assert(state.accepted.number == revisionBeforeThrow);
+    assert(!state.candidateInProgress);
+    assert(state.failedStage == "core.material");
+
+    const auto nonStandardThrow = executeReactorDesignPlan(
+        ReactorRecalculationPlan{{"core.material"}}, state,
+        [](const std::string&) -> Result<std::string> { throw 42; });
+    assert(nonStandardThrow);
+    assert(!nonStandardThrow.value().committed);
+    assert(nonStandardThrow.value().failureCode == ErrorCode::InternalError);
+    assert(!state.candidateInProgress);
     return 0;
 }
