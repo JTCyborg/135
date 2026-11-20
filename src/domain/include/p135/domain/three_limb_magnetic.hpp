@@ -82,8 +82,10 @@ struct ThreeLimbMagneticCycleSamplingResult {
 sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& request);
 
 /// Solves the coupled six-node / seven-branch nonlinear reluctance network.
-/// No B-H extrapolation is permitted. Negative excitation uses odd symmetry
-/// of the supplied positive B-H branch; this assumption is explicit.
+/// Above the final measured B point, the solver uses the explicit μ0
+/// differential-permeability asymptote; withinBhCurveRange is false whenever
+/// any solved branch required that extrapolation. Negative excitation uses
+/// odd symmetry of the supplied positive B-H branch.
 [[nodiscard]] Result<ThreeLimbMagneticResult>
 analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request);
 
