@@ -12,6 +12,12 @@ namespace p135::cad {
 [[nodiscard]] Result<TopoDS_Shape> buildBobbinShape(
     const domain::BobbinPhysicalGeometry& geometry);
 
+// Builds a hollow rectangular winding-pack envelope around the bobbin tube.
+// This is a spatial envelope only, not a conductor/layer manufacturing model.
+[[nodiscard]] Result<TopoDS_Shape> buildWindingPackEnvelopeShape(
+    const domain::BobbinPhysicalGeometry& bobbin,
+    const domain::WindingPackPhysicalGeometry& winding);
+
 // Builds a reactor assembly compound containing the seven core components
 // and three positioned bobbin solids. Bobbins are centred on their limbs in X/Z
 // and centred within the corresponding clear window along Y.
