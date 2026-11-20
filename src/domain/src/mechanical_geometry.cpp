@@ -129,11 +129,31 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
             return invalid("Unsupported core joint construction.", field + ".construction");
         if (joint.stepLapPackets.empty())
             return invalid("Step-Lap joints require explicit packet geometry.", field + ".stepLapPackets");
-        const double availableDepth = std::min(
-            jointDepths[interfaceIndex].limb, jointDepths[interfaceIndex].yoke);
-        struct PacketInterval { double start; double end; StepLapPacketDirection direction; };
-        std::vector<PacketInterval> packetIntervals;
-        packetIntervals.reserve(joint.stepLapPackets.size());
+        const double limbDepth = jointDepths[interfaceIndex].limb;
+        const double yokeDepth = jointDepths[interfaceIndex].yoke;
+        const double depthTolerance = std::max(1.0e-9, std::max(limbDepth, yokeDepth) * 1.0e-6);
+        if (std::abs(limbDepth - yokeDepth) > depthTolerance)
+            return invalid("Step-Lap members must share the same physical stack depth; independent depth offsets are not defined by this contract.",
+                field + ".stackDepth");
+        const double availableDepth = limbDepth;
+        const double limbHeight = g.coreOverallHeight.si() -
+            g.yokeThicknesses[interfaceIndex < 4 ? 0 : 2].si() -
+            g.yokeThicknesses[interfaceIndex < 4 ? 2 : 0].si();
+        const std::size_t yokeIndex = interfaceIndex < 2 ? 0 :
+            (interfaceIndex < 4 ? 1 : (interfaceIndex < 6 ? 2 : 3));
+        const std::size_t limbIndex = interfaceIndex == 0 || interfaceIndex == 4 ? 0 :
+            (interfaceIndex == 3 || interfaceIndex == 7 ? 2 : 1);
+        const double yokeLength = g.limbWidths[limbIndex].si() +
+            (limbIndex == 0 ? g.windowWidths[0].si() :
+             (limbIndex == 2 ? g.windowWidths[1].si() :
+              (interfaceIndex == 1 || interfaceIndex == 5
+                   ? g.windowWidths[0].si() : g.windowWidths[1].si()))) +
+            (limbIndex == 1 ? 0.5 * g.limbWidths[1].si() :
+             (limbIndex == 0 ? 0.5 * g.limbWidths[1].si() : 0.5 * g.limbWidths[1].si()));
+        (void)yokeIndex;
+        const double tolerance = std::max(1.0e-9, availableDepth * 1.0e-6);
+        double previousEnd = 0.0;
+        StepLapPacketDirection previousDirection = StepLapPacketDirection::LimbIntoYoke;
         for (std::size_t packetIndex = 0; packetIndex < joint.stepLapPackets.size(); ++packetIndex) {
             const auto& packet = joint.stepLapPackets[packetIndex];
             const std::string packetField = field + ".stepLapPackets[" + std::to_string(packetIndex) + "]";
@@ -142,25 +162,28 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
                 return invalid("Each Step-Lap packet requires a non-negative stack offset, positive stack depth and positive overlaps into both members.", packetField);
             const double start = packet.stackDepthOffset.si();
             const double end = start + packet.stackDepth.si();
-            if (!std::isfinite(end) || end > availableDepth + std::max(1.0e-9, availableDepth * 1.0e-6))
+            if (!std::isfinite(end) || end > availableDepth + tolerance)
                 return invalid("Step-Lap packet exceeds the shared physical stack depth.", packetField);
+            if (packet.overlapIntoLimb.si() > limbHeight + tolerance ||
+                packet.overlapIntoYoke.si() > yokeLength + tolerance)
+                return invalid("Step-Lap overlaps must fit inside the physical limb and yoke extents.", packetField);
             if (packet.direction != StepLapPacketDirection::LimbIntoYoke &&
                 packet.direction != StepLapPacketDirection::YokeIntoLimb)
                 return invalid("Step-Lap packet direction is not supported.", packetField + ".direction");
-            packetIntervals.push_back({start, end, packet.direction});
+            if (packetIndex == 0) {
+                if (std::abs(start) > tolerance)
+                    return invalid("The first Step-Lap packet must start at the common stack-depth datum.", packetField + ".stackDepthOffset");
+            } else {
+                if (std::abs(start - previousEnd) > tolerance)
+                    return invalid("Step-Lap packet intervals must be supplied in depth order and be contiguous without overlap.", packetField + ".stackDepthOffset");
+                if (packet.direction == previousDirection)
+                    return invalid("Adjacent Step-Lap packets must alternate their limb/yoke extension direction.", packetField + ".direction");
+            }
+            previousEnd = end;
+            previousDirection = packet.direction;
         }
-        std::sort(packetIntervals.begin(), packetIntervals.end(),
-            [](const PacketInterval& a, const PacketInterval& b) { return a.start < b.start; });
-        const double tolerance = std::max(1.0e-9, availableDepth * 1.0e-6);
-        if (std::abs(packetIntervals.front().start) > tolerance ||
-            std::abs(packetIntervals.back().end - availableDepth) > tolerance)
+        if (std::abs(previousEnd - availableDepth) > tolerance)
             return invalid("Step-Lap packets must cover the complete shared stack depth.", field + ".stepLapPackets");
-        for (std::size_t packetIndex = 1; packetIndex < packetIntervals.size(); ++packetIndex) {
-            if (std::abs(packetIntervals[packetIndex].start - packetIntervals[packetIndex - 1].end) > tolerance)
-                return invalid("Step-Lap packet depth intervals must be contiguous and non-overlapping.", field + ".stepLapPackets");
-            if (packetIntervals[packetIndex].direction == packetIntervals[packetIndex - 1].direction)
-                return invalid("Adjacent Step-Lap packets must alternate their limb/yoke extension direction.", field + ".stepLapPackets");
-        }
     }
 
     const double limbLength = g.coreOverallHeight.si() -
