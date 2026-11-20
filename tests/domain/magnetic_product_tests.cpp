@@ -452,6 +452,53 @@ int main()
             noSource, units::MagneticFieldStrength{100.0}));
     }
 
+
+    {
+        CoreMaterial measured;
+        measured.id = "CORE-LOSS-GRID";
+        measured.sourceReference = "manufacturer-datasheet";
+        measured.datasetRevision = "R2";
+        measured.lossDataReference = "manufacturer-loss-table";
+        for (const double f : {50.0, 100.0}) {
+            for (const double b : {0.5, 1.0}) {
+                for (const double temp : {293.15, 353.15}) {
+                    const double loss = 2.0 + 0.01 * f + 10.0 * b +
+                                        0.02 * (temp - 293.15);
+                    measured.lossData.push_back({
+                        units::Frequency{f}, units::FluxDensity{b},
+                        units::TemperatureKelvin{temp}, units::CoreLossDensity{loss}});
+                }
+            }
+        }
+        const auto interpolated = evaluateCoreLossData(
+            measured, units::Frequency{75.0}, units::FluxDensity{0.75},
+            units::TemperatureKelvin{323.15});
+        assert(interpolated);
+        const double expected = 2.0 + 0.01 * 75.0 + 10.0 * 0.75 + 0.02 * 30.0;
+        assert(std::abs(interpolated.value().si() - expected) < 1.0e-12);
+
+        const auto outside = evaluateCoreLossData(
+            measured, units::Frequency{101.0}, units::FluxDensity{0.75},
+            units::TemperatureKelvin{323.15});
+        assert(!outside && outside.error().code == ErrorCode::ModelOutOfDomain);
+
+        auto incomplete = measured;
+        incomplete.lossData.pop_back();
+        const auto missingCorner = evaluateCoreLossData(
+            incomplete, units::Frequency{75.0}, units::FluxDensity{0.75},
+            units::TemperatureKelvin{323.15});
+        assert(!missingCorner &&
+               missingCorner.error().code == ErrorCode::MissingMaterialProperty);
+
+        auto missingSource = measured;
+        missingSource.lossDataReference.clear();
+        const auto noProvenance = evaluateCoreLossData(
+            missingSource, units::Frequency{75.0}, units::FluxDensity{0.75},
+            units::TemperatureKelvin{323.15});
+        assert(!noProvenance &&
+               noProvenance.error().code == ErrorCode::MissingRequiredData);
+    }
+
     CoreMaterialCatalog catalog;
     auto material = validProduct().coreMaterial;
     material.lossDataReference = "measured loss fixture";
