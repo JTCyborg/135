@@ -51,6 +51,16 @@ struct CoreComponentGeometrySnapshot {
     [[nodiscard]] bool hasCompleteCadGeometry() const noexcept;
 };
 
+/// Computes net limb area for a three-phase EI lamination from the imported
+/// column width and explicitly supplied stack depth/stacking factor.
+/// Returns NOT_SUPPORTED for component families without this outline model.
+[[nodiscard]] Result<double> calculateThreePhaseEiEffectiveLimbAreaM2(
+    const CoreComponentGeometrySnapshot& geometry,
+    double stackDepthM,
+    double stackingFactor);
+
+//};
+
 /// Decodes a pinned core-component revision. Missing geometry is preserved as
 /// unavailable; malformed or non-positive supplied geometry is rejected.
 [[nodiscard]] Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
