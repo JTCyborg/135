@@ -144,6 +144,15 @@ int main(int argc, char** argv)
     assert(baosteel35A300.value().temperatureStatus == "NOT_STATED_IN_SOURCE");
     assert(baosteel35A300.value().sampleDirection.find("Half horizontal and half vertical") !=
            std::string::npos);
+    assert(baosteel35A300.value().supplementaryGraphSources.size() == 2);
+    assert(baosteel35A300.value().supplementaryGraphSources[0].captureStatus ==
+           "GRAPH_ONLY_NOT_DIGITIZED");
+    assert(baosteel35A300.value().supplementaryGraphSources[0].sourceReference ==
+           "https://esales.baosteel.com/portal/eleSteel/cn/download/B35A300.pdf");
+    assert(baosteel35A300.value().supplementaryGraphSources[1].graphScope.find("2000 Hz") !=
+           std::string::npos);
+    assert(baosteel35A300.value().supplementaryGraphSources[1].captureStatus ==
+           "GRAPH_ONLY_NOT_DIGITIZED");
 
     const auto exactLossAnchor = findExactCoreLossReferencePoint(
         baosteel35A300.value(), units::Frequency{50.0}, units::FluxDensity{1.0});
@@ -171,6 +180,11 @@ int main(int argc, char** argv)
     assert(baosteel50A800.value().points[3].specificLoss.si() == 7.11);
     assert(baosteel50A800.value().specificationLimit.has_value());
     assert(baosteel50A800.value().specificationLimit->maximumSpecificLoss.si() == 8.00);
+    assert(baosteel50A800.value().supplementaryGraphSources.size() == 1);
+    assert(baosteel50A800.value().supplementaryGraphSources.front().captureStatus ==
+           "GRAPH_ONLY_NOT_DIGITIZED");
+    assert(baosteel50A800.value().supplementaryGraphSources.front().sourceReference ==
+           "https://esales.baosteel.com/portal/eleSteel/cn/download/B50A800.pdf");
 
     const auto wrongLossRecord = loadCoreLossReferenceDataset(store, "SEED-TDK-N87-R1");
     assert(!wrongLossRecord);
