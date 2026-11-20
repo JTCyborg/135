@@ -552,6 +552,142 @@ std::vector<SeedRecord> starterRecords()
             payload
         });
     }
+
+    // Manufacturer-listed fully finished non-grain-oriented powercore A grades.
+    // Values are maximum specific losses and minimum polarization from the
+    // thyssenkrupp product-range table; no B-H curve is synthesized.
+    const std::vector<std::tuple<std::string, double, double, double, double,
+                                 double, double, double>> tkElectricalSteels{
+        {"M235-35A", 0.35, 7.6, 2.35, 0.95, 1.49, 1.6, 1.7},
+        {"M250-35A", 0.35, 7.6, 2.5, 1.05, 1.49, 1.6, 1.7},
+        {"M270-35A", 0.35, 7.65, 2.7, 1.1, 1.49, 1.6, 1.7},
+        {"M300-35A", 0.35, 7.65, 3, 1.2, 1.49, 1.6, 1.7},
+        {"M330-35A", 0.35, 7.65, 3.3, 1.3, 1.49, 1.6, 1.7},
+        {"M250-50A", 0.5, 7.6, 2.5, 1.05, 1.49, 1.6, 1.7},
+        {"M270-50A", 0.5, 7.6, 2.7, 1.1, 1.49, 1.6, 1.7},
+        {"M290-50A", 0.5, 7.6, 2.9, 1.15, 1.49, 1.6, 1.7},
+        {"M310-50A", 0.5, 7.65, 3.1, 1.25, 1.49, 1.6, 1.7},
+        {"M330-50A", 0.5, 7.65, 3.3, 1.35, 1.49, 1.6, 1.7},
+        {"M350-50A", 0.5, 7.65, 3.5, 1.5, 1.5, 1.6, 1.7},
+        {"M400-50A", 0.5, 7.7, 4, 1.7, 1.53, 1.63, 1.73},
+        {"M470-50A", 0.5, 7.7, 4.7, 2, 1.54, 1.64, 1.74},
+        {"M530-50A", 0.5, 7.7, 5.3, 2.3, 1.56, 1.65, 1.75},
+        {"M600-50A", 0.5, 7.75, 6, 2.6, 1.57, 1.66, 1.76},
+        {"M700-50A", 0.5, 7.8, 7, 3, 1.6, 1.69, 1.77},
+        {"M800-50A", 0.5, 7.8, 8, 3.6, 1.6, 1.7, 1.78},
+        {"M940-50A", 0.5, 7.85, 9.4, 4.2, 1.62, 1.72, 1.81},
+        {"M310-65A", 0.65, 7.6, 3.1, 1.25, 1.49, 1.6, 1.7},
+        {"M330-65A", 0.65, 7.6, 3.3, 1.35, 1.49, 1.6, 1.7},
+        {"M350-65A", 0.65, 7.6, 3.5, 1.5, 1.49, 1.6, 1.7},
+        {"M400-65A", 0.65, 7.65, 4, 1.7, 1.52, 1.62, 1.72},
+        {"M470-65A", 0.65, 7.65, 4.7, 2, 1.53, 1.63, 1.73},
+        {"M530-65A", 0.65, 7.7, 5.3, 2.3, 1.54, 1.64, 1.74},
+        {"M600-65A", 0.65, 7.75, 6, 2.6, 1.56, 1.66, 1.76},
+        {"M700-65A", 0.65, 7.75, 7, 3, 1.57, 1.67, 1.76},
+        {"M800-65A", 0.65, 7.8, 8, 3.6, 1.6, 1.7, 1.78},
+        {"M1000-65A", 0.65, 7.8, 10, 4.4, 1.61, 1.71, 1.8},
+        {"M600-100A", 1, 7.6, 6, 2.6, 1.53, 1.63, 1.72},
+        {"M700-100A", 1, 7.65, 7, 3, 1.54, 1.64, 1.73},
+        {"M800-100A", 1, 7.7, 8, 3.6, 1.56, 1.66, 1.75},
+        {"940-100A", 1, 7.8, 9.4, 4.2, 1.58, 1.68, 1.78}
+    };
+    const std::string tkSteelUrl =
+        "https://www.thyssenkrupp-steel.com/media/content_1/publikationen/lieferprogramme/thyssenkrupp_product-range_no-electrical-steel_powercore_steel_en.pdf";
+    for (const auto& [grade, thicknessMm, density, loss15, loss10, j2500, j5000, j10000] : tkElectricalSteels) {
+        const std::string id = "MAT-TK-POWERCORE-" + grade;
+        const json payload = {
+            {"schemaVersion", 1},
+            {"material", {
+                {"id", id}, {"manufacturer", "thyssenkrupp Steel"},
+                {"grade", "powercore " + grade},
+                {"family", "fully finished non-grain-oriented electrical steel"},
+                {"standard", "DIN EN 10106"},
+                {"laminationThickness_m", thicknessMm * 1.0e-3},
+                {"density_kg_per_m3", density * 1000.0},
+                {"maximumSpecificCoreLoss_W_per_kg", {
+                    {"50Hz_1p0T", loss10}, {"50Hz_1p5T", loss15}
+                }},
+                {"minimumPolarization_T", {
+                    {"at_2500_A_per_m", j2500}, {"at_5000_A_per_m", j5000},
+                    {"at_10000_A_per_m", j10000}
+                }}
+            }},
+            {"sourceDocuments", json::array({tkSteelUrl})},
+            {"dataQuality", {
+                {"sourceStatus", "MANUFACTURER_PRODUCT_RANGE_TABLE"},
+                {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUES_AT_50HZ"},
+                {"polarizationStatus", "MANUFACTURER_MINIMUM_VALUES"},
+                {"bhCurveStatus", "NOT_PUBLISHED_IN_IMPORTED_DATASET"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Manufacturer maximum specific losses are tabulated at 50 Hz and stated flux density. Minimum polarization is supplied only at the listed field strengths. These points are not interpolated into a fabricated B-H curve; punching, stacking factor, coating and processing effects remain application-specific."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "core-material", tkSteelUrl,
+            "thyssenkrupp powercore A product range; " + grade, payload
+        });
+    }
+
+    // Exact TDK ETD ordering codes, AL values and air gaps from manufacturer
+    // ER/ETD/EQ search tables. Gapped AL tolerance is left unspecified where
+    // the catalog does not publish one.
+    const std::vector<std::tuple<std::string, std::string, std::string, double, double>> tdkEtdCores{
+        {"B66358G0500X187", "ETD 29/16/10", "N87", 201, 0.50},
+        {"B66358G0500X127", "ETD 29/16/10", "N27", 201, 0.50},
+        {"B66358G0200X187", "ETD 29/16/10", "N87", 383, 0.20},
+        {"B66358G0200X127", "ETD 29/16/10", "N27", 383, 0.20},
+        {"B66358G0100X187", "ETD 29/16/10", "N87", 621, 0.10},
+        {"B66358G1000X187", "ETD 29/16/10", "N87", 124, 1.00},
+        {"B66358G1000X127", "ETD 29/16/10", "N27", 124, 1.00},
+        {"B66358G0100X127", "ETD 29/16/10", "N27", 621, 0.10},
+        {"B66358G0000X197", "ETD 29/16/10", "N97", 2250, 0.0},
+        {"B66358G0000X187", "ETD 29/16/10", "N87", 2200, 0.0},
+        {"B66358G0000X127", "ETD 29/16/10", "N27", 2000, 0.0},
+        {"B66363G2000X187", "ETD 39/20/13", "N87", 115, 2.00},
+        {"B66363G1000X187", "ETD 39/20/13", "N87", 196, 1.00},
+        {"B66363G1000X127", "ETD 39/20/13", "N27", 196, 1.00},
+        {"B66363G0500X187", "ETD 39/20/13", "N87", 326, 0.50},
+        {"B66363G0500X127", "ETD 39/20/13", "N27", 326, 0.50},
+        {"B66363G2000X127", "ETD 39/20/13", "N27", 115, 2.00},
+        {"B66363G0000X187", "ETD 39/20/13", "N87", 2700, 0.0},
+        {"B66363G0000X127", "ETD 39/20/13", "N27", 2550, 0.0},
+        {"B66363G0200X127", "ETD 39/20/13", "N27", 639, 0.20},
+        {"B66363G0100X187", "ETD 39/20/13", "N87", 1062, 0.10},
+        {"B66363G0100X127", "ETD 39/20/13", "N27", 1062, 0.10},
+        {"B66363G0000X197", "ETD 39/20/13", "N97", 2800, 0.0},
+        {"B66363G0200X187", "ETD 39/20/13", "N87", 639, 0.20}
+    };
+    const std::string tdkEtdUrl =
+        "https://www.tdk-electronics.tdk.com/en/529378/products/product-catalog/ferrites-and-accessories/er-etd-eq-cores-and-accessories-/search-results-er-etd-eq-cores-and-accessories";
+    for (const auto& [orderingCode, shape, material, alValue, airGapMm] : tdkEtdCores) {
+        const std::string id = "COMP-TDK-" + orderingCode;
+        const bool ungapped = airGapMm == 0.0;
+        const json payload = {
+            {"schemaVersion", 1},
+            {"component", {
+                {"id", id}, {"manufacturer", "TDK Electronics"},
+                {"orderingCode", orderingCode}, {"coreShape", shape},
+                {"ferriteMaterial", material}, {"coreType", "ETD ferrite core"},
+                {"inductanceFactor_AL_nH_per_turn_squared", alValue},
+                {"airGap", ungapped ? json("ungapped") : json(airGapMm)},
+                {"AL_tolerance", ungapped ? json("+30/-20 percent") : json("not specified in source table")},
+                {"dimensionsImported", false}
+            }},
+            {"sourceDocuments", json::array({tdkEtdUrl})},
+            {"dataQuality", {
+                {"sourceStatus", "MANUFACTURER_LIVE_PRODUCT_SEARCH_TABLE"},
+                {"alValueStatus", "MANUFACTURER_LISTED_NOMINAL_AL"},
+                {"airGapStatus", "MANUFACTURER_LISTED"},
+                {"geometryStatus", "DIMENSIONS_NOT_IMPORTED"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Exact ordering code, core shape, material, AL and air gap are manufacturer-listed. For gapped variants the search table does not state AL tolerance. Import dimensions, Ae, le, Ve and loss curves from the individual datasheet before CAD/FEM or release."}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + orderingCode + "-R1", "core-component",
+            tdkEtdUrl, "TDK ER/ETD/EQ catalog search; " + orderingCode, payload
+        });
+    }
     return records;
 }
 
