@@ -259,8 +259,14 @@ Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
             snapshot.effectiveVolumeM3 = optionalPositive(geometry, "effectiveVolume_m3");
             snapshot.coreFactorPerM = optionalPositive(geometry, "coreFactor_per_m");
         }
-        snapshot.nominalAlHPerTurnSquared =
-            optionalPositive(component, "inductanceFactor_AL_H_per_turn_squared");
+        // TDK publishes AL in nH/turn². Convert the source value to SI H/turn²
+        // only after reading the explicitly unit-labelled field. Retain support
+        // for older revisions that already stored SI units.
+        const auto alNanoHenry =
+            optionalPositive(component, "inductanceFactor_AL_nH_per_turn_squared");
+        snapshot.nominalAlHPerTurnSquared = alNanoHenry
+            ? std::optional<double>{*alNanoHenry * 1.0e-9}
+            : optionalPositive(component, "inductanceFactor_AL_H_per_turn_squared");
         snapshot.columnWidthM = optionalPositive(geometryIt != root.end() && geometryIt->is_object()
             ? *geometryIt : json::object(), "columnWidth_m");
         if (geometryIt != root.end() && geometryIt->is_object()) {
