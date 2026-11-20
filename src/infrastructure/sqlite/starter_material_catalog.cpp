@@ -724,16 +724,18 @@ std::vector<SeedRecord> starterRecords()
         "https://www.alleima.com/en/products/wire/ultra-fine-medical-wire/wire-products/fine-wire/conductive-wire/copper-clad-aluminium/";
     const std::string copperSource =
         "https://www.avivametals.com/assets/files/aviva-c11000.pdf";
+    const std::string copperOfhcSource =
+        "https://www.alleima.com/en/products/wire/ultra-fine-medical-wire/wire-products/fine-wire/conductive-wire/copper/";
     records.push_back({"MAT-CU-C10100", "SEED-CU-C10100-R1", "conductor-material",
-        copperSource, "Copper C10100 oxygen-free high conductivity reference",
+        copperOfhcSource, "Copper C10100 oxygen-free high conductivity reference",
         conductorMaterial("CU-C10100", "Copper Development Association / UNS",
             "C10100 OFHC copper", "oxygen-free high conductivity copper",
-            1.707e-8, 8940.0, 0.00393, 101.0, copperSource, "STANDARD_REFERENCE_VALUES")});
+            1.72e-8, 8940.0, 0.00397, 100.0, copperOfhcSource, "MANUFACTURER_DATASHEET")});
     records.push_back({"MAT-CU-C10200", "SEED-CU-C10200-R1", "conductor-material",
-        copperSource, "Copper C10200 oxygen-free copper reference",
+        copperOfhcSource, "Copper C10200 oxygen-free copper reference",
         conductorMaterial("CU-C10200", "UNS C10200", "C10200 OF copper",
-            "oxygen-free copper", 1.724e-8, 8940.0, 0.00393, 100.0,
-            copperSource, "STANDARD_REFERENCE_VALUES")});
+            "oxygen-free copper", 1.72e-8, 8940.0, 0.00397, 100.0,
+            copperOfhcSource, "MANUFACTURER_DATASHEET")});
     records.push_back({"MAT-CU-C11000", "SEED-CU-C11000-R1", "conductor-material",
         copperSource, "Copper C11000 ETP copper reference",
         conductorMaterial("CU-C11000", "UNS C11000", "C11000 ETP copper",
