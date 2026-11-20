@@ -1,6 +1,8 @@
 #include "cad_viewport_widget.hpp"
 
 #include <QHBoxLayout>
+#include <QMouseEvent>
+#include <QWheelEvent>
 #include <QLabel>
 #include <QPushButton>
 #include <QPaintEngine>
@@ -68,6 +70,96 @@ public:
     }
 
 protected:
+    void mousePressEvent(QMouseEvent* event) override
+    {
+        if (view_.IsNull()) return;
+        lastMousePosition_ = event->position().toPoint();
+        if (event->button() == Qt::LeftButton && !items_.empty())
+        {
+            view_->StartRotation(lastMousePosition_.x(), height() - lastMousePosition_.y());
+            rotating_ = true;
+            moved_ = false;
+            event->accept();
+            return;
+        }
+        if (event->button() == Qt::MiddleButton && !items_.empty())
+        {
+            view_->Pan(0, 0, 1.0, Standard_True);
+            panning_ = true;
+            event->accept();
+            return;
+        }
+        QWidget::mousePressEvent(event);
+    }
+
+    void mouseMoveEvent(QMouseEvent* event) override
+    {
+        if (view_.IsNull()) return;
+        const QPoint position = event->position().toPoint();
+        if (rotating_ && (event->buttons() & Qt::LeftButton))
+        {
+            if (position != lastMousePosition_)
+            {
+                view_->Rotation(position.x(), height() - position.y());
+                moved_ = true;
+                lastMousePosition_ = position;
+            }
+            event->accept();
+            return;
+        }
+        if (panning_ && (event->buttons() & Qt::MiddleButton))
+        {
+            view_->Pan(position.x() - lastMousePosition_.x(),
+                       lastMousePosition_.y() - position.y(), 1.0, Standard_False);
+            lastMousePosition_ = position;
+            event->accept();
+            return;
+        }
+        if (!context_.IsNull())
+        {
+            context_->MoveTo(position.x(), height() - position.y(), view_, Standard_True);
+            event->accept();
+            return;
+        }
+        QWidget::mouseMoveEvent(event);
+    }
+
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
+        if (event->button() == Qt::LeftButton && rotating_)
+        {
+            rotating_ = false;
+            if (!moved_ && !context_.IsNull())
+            {
+                const QPoint position = event->position().toPoint();
+                context_->MoveTo(position.x(), height() - position.y(), view_, Standard_True);
+                context_->Select(Standard_True);
+            }
+            event->accept();
+            return;
+        }
+        if (event->button() == Qt::MiddleButton && panning_)
+        {
+            panning_ = false;
+            event->accept();
+            return;
+        }
+        QWidget::mouseReleaseEvent(event);
+    }
+
+    void wheelEvent(QWheelEvent* event) override
+    {
+        if (view_.IsNull() || items_.empty())
+        {
+            QWidget::wheelEvent(event);
+            return;
+        }
+        const double factor = event->angleDelta().y() >= 0 ? 1.12 : 1.0 / 1.12;
+        view_->SetZoom(factor, Standard_True);
+        view_->Redraw();
+        event->accept();
+    }
+
     void showEvent(QShowEvent* event) override
     {
         QWidget::showEvent(event);
@@ -143,6 +235,10 @@ private:
     }
 
     std::vector<p135::cad::AssemblyPresentationDisplayItem> items_;
+    QPoint lastMousePosition_;
+    bool rotating_{false};
+    bool panning_{false};
+    bool moved_{false};
     Handle(Aspect_DisplayConnection) displayConnection_;
     Handle(Graphic3d_GraphicDriver) graphicDriver_;
     Handle(V3d_Viewer) viewer_;
