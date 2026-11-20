@@ -2155,9 +2155,16 @@ void MainWindow::calculateFilter()
     std::vector<std::pair<double, double>> magneticFluxDensityPoints;
     std::vector<std::array<double, 8>> threeLimbFluxDensitySweep;
     std::vector<std::array<double, 5>> threeLimbSamplingMetadata; // frequency, samples, relative change, converged, within measured B-H range
-    bool magneticSweepValid = magneticCircuitBase.has_value();
+    // The electrical frequency sweep is currently built from the filter alone;
+    // source R/L is analyzed separately and is NOT stamped into this sweep.
+    // Never use its ideal-source currents as operating stresses for magnetic checks.
+    bool magneticSweepValid = false;
     bool magneticSweepExtrapolated = false;
-    bool threeLimbSweepValid = threeLimbMagneticBase.has_value();
+    bool threeLimbSweepValid = false;
+    if (magneticCircuitBase || threeLimbMagneticBase) {
+        magneticModelWarning = tr("Magnetic frequency sweep NOT_VERIFIED: the current sweep is an ideal-source filter-only diagnostic; source impedance is not included in its circuit matrix.");
+        threeLimbModelWarning = magneticModelWarning;
+    }
     if (magneticCircuitBase) {
         auto kneeProbe = *magneticCircuitBase;
         kneeProbe.current = p135::units::Current{0.0};
@@ -2645,31 +2652,17 @@ void MainWindow::calculateFilter()
               static_cast<double>(electricalResult.value().solver.matrixOrder), tr("unknowns"));
     addResult(tr("MNA relative residual"),
               electricalResult.value().solver.relativeResidual, tr("—"));
-    if (hasSourceImpedance) {
-        addResult(tr("Peak three-phase bank current in sweep"), peakBankCurrent, tr("A RMS"));
-        addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
-        addResult(tr("Maximum phase peak current"), peakPhasePeakCurrent, tr("A peak"));
-        addResult(tr("Frequency at maximum phase peak current"), peakPhasePeakCurrentFrequency, tr("Hz"));
-    } else {
-        addTextResult(tr("Source-limited current sweep"), tr("NOT_VERIFIED — source R/L is zero or unset"));
-        addTextResult(tr("Peak bank / phase current"), tr("NOT_REPORTED — ideal-source resonance can be unbounded"));
-    }
+    addTextResult(tr("Filter-only ideal-source current sweep"),
+        tr("DIAGNOSTIC ONLY — source R/L is not included; peak current is not an operating current and must not be used for Isat or saturation margins."));
+    addResult(tr("Ideal-source sweep peak bank current (diagnostic)"), peakBankCurrent, tr("A RMS"));
+    addResult(tr("Frequency at ideal-source sweep peak"), peakBankCurrentFrequency, tr("Hz"));
+    addResult(tr("Ideal-source sweep maximum phase current (diagnostic)"), peakPhasePeakCurrent, tr("A peak"));
+    addResult(tr("Frequency at ideal-source phase-current peak"), peakPhasePeakCurrentFrequency, tr("Hz"));
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
-    if (hasSourceImpedance) {
-        if (magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) {
-            const double marginPercent =
-                (*magneticKneeCurrentA - peakPhasePeakCurrent) / *magneticKneeCurrentA * 100.0;
-            addResult(tr("B-H knee current margin"), marginPercent, tr("%"));
-        }
-        if (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0) {
-            const double reference = inductorSaturationCurrent_->value();
-            const double marginPercent = (reference - peakPhasePeakCurrent) / reference * 100.0;
-            addResult(tr("Manufacturer Isat reference margin"), marginPercent, tr("%"));
-        }
-    } else if ((magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) ||
-               (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0)) {
+    if ((magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) ||
+        (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0)) {
         addTextResult(tr("Current-based saturation margins"),
-            tr("NOT_VERIFIED — a source-limited current sweep is required"));
+            tr("NOT_VERIFIED — source impedance is not stamped into the current sweep; no operating-current margin is reported."));
     }
     if (magneticCircuitBase && magneticSweepValid && !magneticFluxDensityPoints.empty()) {
         const auto peak = std::max_element(magneticFluxDensityPoints.begin(),
@@ -3097,10 +3090,9 @@ void MainWindow::calculateFilter()
         }
 
         if (resultsBankCurrentPlot_) {
-            resultsBankCurrentPlot_->setCurves(hasSourceImpedance
-                ? std::vector<PlotCurve>{bankCurrentCurve} : std::vector<PlotCurve>{},
-                tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
-            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference, magneticKneeCurrentA);
+            resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
+                tr("Frequency (Hz, logarithmic)"), tr("Ideal-source diagnostic phase peak current (A)"));
+            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
         }
         if (resultsBusImpedancePlot_) {
             resultsBusImpedancePlot_->setCurves(impedanceResult
@@ -3295,10 +3287,9 @@ void MainWindow::calculateFilter()
             std::sqrt(2.0) * maximumPhaseRmsCurrent);
     }
     if (resultsBankCurrentPlot_) {
-        resultsBankCurrentPlot_->setCurves(hasSourceImpedance
-            ? std::vector<PlotCurve>{liveCurrentCurve} : std::vector<PlotCurve>{},
-            tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
-        resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands, saturationPeakReference);
+        resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
+            tr("Frequency (Hz, logarithmic)"), tr("Ideal-source diagnostic phase peak current (A)"));
+        resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
     }
     PlotCurve liveBusImpedanceCurve{tr("Current calculation"), {}};
     if (impedanceResult) {
@@ -3314,8 +3305,9 @@ void MainWindow::calculateFilter()
     }
 
     QStringList visibleWarnings;
+    visibleWarnings.push_back(tr("The filter current sweep is an ideal-source diagnostic and does not include source R/L, even when source impedance values are entered. Its peak currents are not operating stresses. Current-based Isat margins and frequency-sweep magnetic results are therefore NOT_VERIFIED; use the separate source-aware harmonic operating-point analysis."));
     if (!hasSourceImpedance)
-        visibleWarnings.push_back(tr("Source impedance R/L is zero or unset. Resonance, bus-impedance scan and source-limited current response are NOT_VERIFIED; the ideal-source current sweep is intentionally hidden."));
+        visibleWarnings.push_back(tr("Source impedance R/L is zero or unset. Resonance, bus-impedance scan and source-limited current response are NOT_VERIFIED."));
     if (!magneticCircuitBase && !threeLimbMagneticBase)
         visibleWarnings.push_back(tr("Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED."));
     if (!harmonicResult)
