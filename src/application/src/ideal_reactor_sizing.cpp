@@ -47,7 +47,7 @@ Result<IdealReactorSizingResult> calculateIdealReactorAreaProduct(
     if (!std::isfinite(grossCoreArea) || !std::isfinite(effectiveCoreArea) ||
         !std::isfinite(windowArea) || !std::isfinite(turnsReal) ||
         grossCoreArea <= 0.0 || effectiveCoreArea <= 0.0 || windowArea <= 0.0 ||
-        turnsReal < 1.0 || turnsReal > static_cast<double>(
+        turnsReal < 1.0 || turnsReal >= static_cast<double>(
             std::numeric_limits<std::uint64_t>::max()))
         return invalid("Ideal core area or turn count is outside the representable range.");
 
