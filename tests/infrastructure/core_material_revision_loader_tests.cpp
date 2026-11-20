@@ -43,7 +43,20 @@ int main(int argc, char** argv)
     assert(n87.value().bhCurveFrequency.si() == 10000.0);
     assert(n87.value().bhCurveTemperature.si() == 298.15);
     assert(n87.value().material.lossData.front().specificLoss.si() > 0.0);
-    assert(n87.value().material.lossData.front().specificLoss.si() < 57000.0);
+    assert(n87.value().material.lossData.front().specificLoss.si() == 57000.0 / 4850.0);
+
+    const auto n97 = loadCoreMaterialRevision(store, "SEED-TDK-N97-R1");
+    assert(n97);
+    assert(n97.value().material.id == "MAT-TDK-N97");
+    assert(n97.value().material.bhCurve.size() == 8);
+    assert(n97.value().material.lossData.size() == 4);
+
+    // Published steel seed records do not contain a continuous B-H curve.
+    // They must not be silently converted into solver-ready core materials.
+    const auto incompleteSteel =
+        loadCoreMaterialRevision(store, "SEED-MAT-TK-POWERCORE-M235-35A-R1");
+    assert(!incompleteSteel);
+    assert(incompleteSteel.error().code == ErrorCode::InvalidInput);
 
     const auto missing = loadCoreMaterialRevision(store, "DOES-NOT-EXIST");
     assert(!missing);
