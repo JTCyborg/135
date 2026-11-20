@@ -62,6 +62,7 @@ Result<std::vector<std::string>> designDependencyOrder(
         if (state == Visit::Complete)
             return true;
         visits[id] = Visit::Active;
+        order.push_back(id);
         auto children = dependents.find(id);
         if (children != dependents.end()) {
             for (const auto& child : children->second) {
@@ -70,7 +71,6 @@ Result<std::vector<std::string>> designDependencyOrder(
             }
         }
         visits[id] = Visit::Complete;
-        order.push_back(id);
         return true;
     };
 
