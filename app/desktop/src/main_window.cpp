@@ -2707,6 +2707,23 @@ void MainWindow::calculateFilter()
         appendLog(threeLimbModelWarning);
     }
 
+    if (threeLimbOperatingPoint) {
+        const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
+        addResult(tr("Operating-point peak B — limb A"), peakB[0].si(), tr("T"));
+        addResult(tr("Operating-point peak B — limb B"), peakB[1].si(), tr("T"));
+        addResult(tr("Operating-point peak B — limb C"), peakB[2].si(), tr("T"));
+        addResult(tr("Operating-point peak B — top yoke A-B"), peakB[3].si(), tr("T"));
+        addResult(tr("Operating-point peak B — top yoke B-C"), peakB[4].si(), tr("T"));
+        addResult(tr("Operating-point peak B — bottom yoke A-B"), peakB[5].si(), tr("T"));
+        addResult(tr("Operating-point peak B — bottom yoke B-C"), peakB[6].si(), tr("T"));
+        addResult(tr("Operating-point magnetic samples"),
+            static_cast<double>(threeLimbOperatingPoint->samplesUsed), tr("samples"));
+        addResult(tr("Operating-point peak |B| convergence"),
+            threeLimbOperatingPoint->relativePeakChange * 100.0, tr("%"));
+    } else if (!threeLimbOperatingPointWarning.isEmpty()) {
+        appendLog(threeLimbOperatingPointWarning);
+    }
+
     if (impedanceResult) {
         addResult(tr("Source/filter impedance scan points"),
                   static_cast<double>(impedanceResult->points.size()), tr("points"));
@@ -3122,6 +3139,31 @@ void MainWindow::calculateFilter()
             }
         }
         resultSnapshot.insert(QStringLiteral("threeLimbMagneticSweep"), threeLimbSweepSnapshot);
+        QJsonObject threeLimbOperatingSnapshot;
+        if (threeLimbOperatingPoint) {
+            const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
+            threeLimbOperatingSnapshot.insert(QStringLiteral("status"), QStringLiteral("VERIFIED_CONVERGED"));
+            threeLimbOperatingSnapshot.insert(QStringLiteral("limbA_peak_B_T"), peakB[0].si());
+            threeLimbOperatingSnapshot.insert(QStringLiteral("limbB_peak_B_T"), peakB[1].si());
+            threeLimbOperatingSnapshot.insert(QStringLiteral("limbC_peak_B_T"), peakB[2].si());
+            threeLimbOperatingSnapshot.insert(QStringLiteral("yokeTopAB_peak_B_T"), peakB[3].si());
+            threeLimbOperatingSnapshot.insert(QStringLiteral("yokeTopBC_peak_B_T"), peakB[4].si());
+            threeLimbOperatingSnapshot.insert(QStringLiteral("yokeBottomAB_peak_B_T"), peakB[5].si());
+            threeLimbOperatingSnapshot.insert(QStringLiteral("yokeBottomBC_peak_B_T"), peakB[6].si());
+            threeLimbOperatingSnapshot.insert(QStringLiteral("samplesUsed"),
+                static_cast<qint64>(threeLimbOperatingPoint->samplesUsed));
+            threeLimbOperatingSnapshot.insert(QStringLiteral("relativePeakChange"),
+                threeLimbOperatingPoint->relativePeakChange);
+            threeLimbOperatingSnapshot.insert(QStringLiteral("relativeTolerance"), 1.0e-3);
+            QJsonArray harmonicOrders;
+            for (const auto& harmonic : harmonicResult->points)
+                harmonicOrders.append(static_cast<qint64>(harmonic.order));
+            threeLimbOperatingSnapshot.insert(QStringLiteral("harmonicOrders"), harmonicOrders);
+        } else {
+            threeLimbOperatingSnapshot.insert(QStringLiteral("status"), QStringLiteral("NOT_VERIFIED"));
+            threeLimbOperatingSnapshot.insert(QStringLiteral("warning"), threeLimbOperatingPointWarning);
+        }
+        resultSnapshot.insert(QStringLiteral("threeLimbOperatingPoint"), threeLimbOperatingSnapshot);
         QJsonArray threeLimbSamplingSnapshot;
         for (const auto& metadata : threeLimbSamplingMetadata) {
             QJsonObject sample;
