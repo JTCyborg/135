@@ -8,6 +8,7 @@
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
+#include "p135/application/reactor_design_inputs.hpp"
 #include "p135/filter/synthesis.hpp"
 #include "p135/filter/harmonics.hpp"
 #include "p135/filter/analysis.hpp"
@@ -2414,6 +2415,82 @@ QWidget* MainWindow::createCadPage()
     return page;
 }
 
+p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() const
+{
+    using p135::application::DesignInputOrigin;
+    using p135::application::MaterialRevisionSelection;
+    p135::application::ReactorDesignInputs inputs;
+    inputs.sourceFilterSnapshotId = latestFilterSnapshotId_.toStdString();
+    inputs.filterBranchId = latestFilterBranchId_;
+
+    const auto comboValue = [this](const char* name) -> std::optional<std::string> {
+        const auto* control = findChild<QComboBox*>(QString::fromLatin1(name));
+        if (!control) return std::nullopt;
+        const QString value = control->currentData().toString().trimmed();
+        if (value.isEmpty()) return std::nullopt;
+        return value.toStdString();
+    };
+    const auto material = [&comboValue](const char* name)
+        -> std::optional<MaterialRevisionSelection> {
+        const auto revision = comboValue(name);
+        if (!revision) return std::nullopt;
+        return MaterialRevisionSelection{*revision, DesignInputOrigin::UserSelected};
+    };
+    const auto positiveDouble = [this](const char* name) -> std::optional<double> {
+        const auto* control = findChild<QDoubleSpinBox*>(QString::fromLatin1(name));
+        if (!control || control->value() <= 0.0) return std::nullopt;
+        return control->value();
+    };
+    const auto positiveCount = [this](const char* name) -> std::optional<std::uint32_t> {
+        const auto* control = findChild<QSpinBox*>(QString::fromLatin1(name));
+        if (!control || control->value() <= 0) return std::nullopt;
+        return static_cast<std::uint32_t>(control->value());
+    };
+    const auto lengthMetres = [&positiveDouble](const char* name) -> std::optional<double> {
+        const auto value = positiveDouble(name);
+        return value ? std::optional<double>{*value * 1.0e-3} : std::nullopt;
+    };
+
+    inputs.coreMaterial = material("construction_coreMaterial");
+    inputs.conductorMaterial = material("construction_conductorMaterial");
+    inputs.insulationMaterial = material("construction_insulationMaterial");
+    inputs.coreGeometryFamily = comboValue("construction_coreGeometry");
+    inputs.conductorShape = comboValue("construction_conductorShape");
+    inputs.windingTechnology = comboValue("construction_windingTechnology");
+    inputs.coolingMethod = comboValue("construction_cooling");
+    inputs.stackingFactor = positiveDouble("construction_stackingFactor");
+
+    if (const auto* control = findChild<QDoubleSpinBox*>(QStringLiteral("construction_ambient"));
+        control && control->value() > -50.0)
+        inputs.ambientTemperatureK = control->value() + 273.15;
+    if (const auto* control = findChild<QDoubleSpinBox*>(
+            QStringLiteral("construction_maximumWindingTemperature"));
+        control && control->value() > -50.0)
+        inputs.maximumWindingTemperatureK = control->value() + 273.15;
+
+    if (const auto* control = findChild<QComboBox*>(QStringLiteral("construction_bobbinUsage"));
+        control && control->currentIndex() > 0)
+        inputs.bobbinUsed = control->currentData().toBool();
+    if (const auto* control = findChild<QLineEdit*>(
+            QStringLiteral("construction_bobbinMaterial"))) {
+        const QString value = control->text().trimmed();
+        if (!value.isEmpty()) inputs.bobbinMaterialId = value.toStdString();
+    }
+
+    inputs.turnsPerPhase = positiveCount("construction_turns");
+    inputs.turnsPerLayer = positiveCount("construction_turnsPerLayer");
+    inputs.windingLayers = positiveCount("construction_layers");
+    inputs.parallelConductors = positiveCount("construction_parallelConductors");
+    if (const auto value = positiveDouble("construction_conductorArea"))
+        inputs.conductorCrossSectionM2 = *value * 1.0e-6;
+    inputs.conductorWidthM = lengthMetres("construction_conductorWidth");
+    inputs.conductorThicknessM = lengthMetres("construction_conductorThickness");
+    inputs.turnInsulationBuildM = lengthMetres("construction_turnInsulation");
+    inputs.layerInsulationBuildM = lengthMetres("construction_layerInsulation");
+    inputs.mainInsulationBuildM = lengthMetres("construction_mainInsulation");
+    return inputs;
+}
+
 void MainWindow::calculateFilter()
 {
     if (!nominalVoltage_ || !fundamentalFrequency_ || !targetReactivePower_ ||
@@ -3827,10 +3904,23 @@ void MainWindow::calculateFilter()
             }
             const auto saved = materialStore_->recordCalculation(snapshot, materialReferences);
             if (saved) {
+                latestFilterSnapshotId_ = calculationId;
+                latestFilterBranchId_ = 1;
                 calculationSummary += tr(" Immutable calculation snapshot saved: %1.")
                     .arg(calculationId);
                 appendLog(tr("Calculation snapshot %1 saved with %2 exact material revision links.")
                     .arg(calculationId).arg(materialReferences.size()));
+
+                const auto designInputs = collectReactorDesignInputs();
+                const auto inputStatus = p135::application::validate(designInputs);
+                if (inputStatus) {
+                    appendLog(tr("Construction inputs captured against filter snapshot %1 / branch %2. "
+                                 "Physical sizing remains NOT_CONNECTED_TO_SOLVER.")
+                        .arg(latestFilterSnapshotId_).arg(latestFilterBranchId_));
+                } else {
+                    appendLog(tr("Construction inputs are incomplete or invalid: %1")
+                        .arg(QString::fromStdString(inputStatus.error().message)));
+                }
             } else {
                 calculationSummary += tr(" Calculation snapshot NOT_SAVED: %1.")
                     .arg(QString::fromStdString(saved.error().message));
