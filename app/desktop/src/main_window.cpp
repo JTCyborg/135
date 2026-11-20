@@ -2250,11 +2250,16 @@ void MainWindow::calculateFilter()
               static_cast<double>(electricalResult.value().solver.matrixOrder), tr("unknowns"));
     addResult(tr("MNA relative residual"),
               electricalResult.value().solver.relativeResidual, tr("—"));
-    addResult(tr("Peak three-phase bank current in sweep"), peakBankCurrent, tr("A RMS"));
-    addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
+    if (hasSourceImpedance) {
+        addResult(tr("Peak three-phase bank current in sweep"), peakBankCurrent, tr("A RMS"));
+        addResult(tr("Frequency at peak bank current"), peakBankCurrentFrequency, tr("Hz"));
+        addResult(tr("Maximum phase peak current"), peakPhasePeakCurrent, tr("A peak"));
+        addResult(tr("Frequency at maximum phase peak current"), peakPhasePeakCurrentFrequency, tr("Hz"));
+    } else {
+        addTextResult(tr("Source-limited current sweep"), tr("NOT_VERIFIED — source R/L is zero or unset"));
+        addTextResult(tr("Peak bank / phase current"), tr("NOT_REPORTED — ideal-source resonance can be unbounded"));
+    }
     addResult(tr("Frequency sweep points"), static_cast<double>(sweepResult.value().points.size()), tr("points"));
-    addResult(tr("Maximum phase peak current"), peakPhasePeakCurrent, tr("A peak"));
-    addResult(tr("Frequency at maximum phase peak current"), peakPhasePeakCurrentFrequency, tr("Hz"));
     if (magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) {
         const double marginPercent =
             (*magneticKneeCurrentA - peakPhasePeakCurrent) / *magneticKneeCurrentA * 100.0;
