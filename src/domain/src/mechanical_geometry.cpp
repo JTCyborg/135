@@ -149,12 +149,16 @@ Result<void> validate(const ThreeLimbCorePhysicalGeometry& g)
     const double limbLength = g.coreOverallHeight.si() -
         0.5 * (g.yokeThicknesses[0].si() + g.yokeThicknesses[1].si()) -
         0.5 * (g.yokeThicknesses[2].si() + g.yokeThicknesses[3].si());
+    // Yoke CAD solids extend from the outside face of the first limb to
+    // the outside face of the second limb. Air-gap coordinates use that same
+    // physical segment datum, including the portions spanning both limbs.
+    const double yokeABLength = g.limbWidths[0].si() + g.windowWidths[0].si() +
+        g.limbWidths[1].si();
+    const double yokeBCLength = g.limbWidths[1].si() + g.windowWidths[1].si() +
+        g.limbWidths[2].si();
     const std::array<double, 7> segmentLengths{{
         limbLength, limbLength, limbLength,
-        0.5 * (g.limbWidths[0].si() + g.limbWidths[1].si()) + g.windowWidths[0].si(),
-        0.5 * (g.limbWidths[1].si() + g.limbWidths[2].si()) + g.windowWidths[1].si(),
-        0.5 * (g.limbWidths[0].si() + g.limbWidths[1].si()) + g.windowWidths[0].si(),
-        0.5 * (g.limbWidths[1].si() + g.limbWidths[2].si()) + g.windowWidths[1].si()
+        yokeABLength, yokeBCLength, yokeABLength, yokeBCLength
     }};
     std::array<std::vector<std::pair<double, double>>, 7> intervals;
     for (std::size_t i = 0; i < g.airGaps.size(); ++i) {
