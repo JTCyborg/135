@@ -2191,6 +2191,8 @@ void MainWindow::calculateFilter()
     double peakBankCurrentFrequency = 0.0;
     double peakPhasePeakCurrent = 0.0;
     double peakPhasePeakCurrentFrequency = 0.0;
+    std::size_t threeLimbFailedFrequencyCount = 0;
+    QString firstThreeLimbSweepFailure;
     const auto filterBranchCurrent = [&circuitResult](const p135::circuit::ElectricalResult& electrical,
                                                        const std::string& nameSuffix)
         -> std::optional<std::complex<double>> {
@@ -2284,11 +2286,23 @@ void MainWindow::calculateFilter()
             const auto sampledCycle =
                 p135::domain::sampleThreeLimbMagneticCycle(samplingRequest);
                 if (!sampledCycle) {
-                    threeLimbSweepValid = false;
-                    threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz: %2")
+                    ++threeLimbFailedFrequencyCount;
+                    const QString failure = tr("%1 Hz: %2")
                         .arg(point.frequency.si(), 0, 'g', 6)
                         .arg(QString::fromStdString(sampledCycle.error().message));
+                    if (firstThreeLimbSweepFailure.isEmpty())
+                        firstThreeLimbSweepFailure = failure;
+                    threeLimbSamplingMetadata.push_back({
+                        point.frequency.si(), 0.0, 0.0, 0.0, 0.0
+                    });
                 } else if (!sampledCycle.value().converged) {
+                    ++threeLimbFailedFrequencyCount;
+                    if (firstThreeLimbSweepFailure.isEmpty()) {
+                        firstThreeLimbSweepFailure = tr("%1 Hz: peak |B| did not converge to 0.1%% by %2 samples (last relative change %3%%).")
+                            .arg(point.frequency.si(), 0, 'g', 6)
+                            .arg(static_cast<qulonglong>(sampledCycle.value().samplesUsed))
+                            .arg(sampledCycle.value().relativePeakChange * 100.0, 0, 'g', 5);
+                    }
                     threeLimbSamplingMetadata.push_back({
                         point.frequency.si(),
                         static_cast<double>(sampledCycle.value().samplesUsed),
@@ -2296,12 +2310,7 @@ void MainWindow::calculateFilter()
                         0.0,
                         sampledCycle.value().withinBhCurveRange ? 1.0 : 0.0
                     });
-                    threeLimbSweepValid = false;
-                    threeLimbModelWarning = tr("Coupled three-limb B-H sweep NOT_VERIFIED at %1 Hz: peak |B| did not converge to 0.1%% by %2 samples (last relative change %3%%).")
-                        .arg(point.frequency.si(), 0, 'g', 6)
-                        .arg(static_cast<qulonglong>(sampledCycle.value().samplesUsed))
-                        .arg(sampledCycle.value().relativePeakChange * 100.0, 0, 'g', 5);
-            } else {
+                } else {
                 std::array<double, 8> peakDensities{};
                 peakDensities[0] = point.frequency.si();
                 for (std::size_t branch = 0; branch < 7; ++branch)
@@ -2322,6 +2331,20 @@ void MainWindow::calculateFilter()
         magneticFluxDensityPoints.clear();
     if (magneticSweepExtrapolated)
         magneticModelWarning = tr("Magnetic B-H sweep EXTRAPOLATED_NOT_VERIFIED: μ0 differential-permeability continuation was used beyond the measured B-H curve.");
+    if (threeLimbMagneticBase && threeLimbSweepValid &&
+        threeLimbFluxDensitySweep.empty()) {
+        threeLimbSweepValid = false;
+        threeLimbModelWarning = threeLimbFailedFrequencyCount > 0
+            ? tr("Coupled three-limb B-H sweep NOT_VERIFIED: all %1 frequency points failed; first failure: %2")
+                .arg(static_cast<qulonglong>(threeLimbFailedFrequencyCount))
+                .arg(firstThreeLimbSweepFailure)
+            : tr("Coupled three-limb B-H sweep NOT_VERIFIED: no frequency points were produced.");
+    } else if (threeLimbMagneticBase && threeLimbFailedFrequencyCount > 0) {
+        threeLimbModelWarning = tr("Coupled three-limb B-H sweep PARTIAL: %1 frequency points failed; %2 successful points retained. First failure: %3")
+            .arg(static_cast<qulonglong>(threeLimbFailedFrequencyCount))
+            .arg(static_cast<qulonglong>(threeLimbFluxDensitySweep.size()))
+            .arg(firstThreeLimbSweepFailure);
+    }
     if (threeLimbMagneticBase && !threeLimbSweepValid)
         threeLimbFluxDensitySweep.clear();
 
