@@ -53,6 +53,7 @@ private:
     void calculateFilter();
     [[nodiscard]] p135::application::ReactorDesignInputs collectReactorDesignInputs() const;
     void refreshComponentSelectors();
+    void markConstructionInputsChanged();
 
     QLineEdit* projectName_{};
     QComboBox* productFamily_{};
@@ -117,4 +118,5 @@ private:
     bool loadingProjectSettings_{};
     QString latestFilterSnapshotId_;
     std::uint32_t latestFilterBranchId_{};
+    bool constructionInputsDirty_{true};
 };
