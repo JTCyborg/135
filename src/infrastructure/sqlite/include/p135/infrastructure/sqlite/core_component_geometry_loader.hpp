@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace p135::infrastructure::sqlite {
 
@@ -42,6 +43,9 @@ struct CoreComponentGeometrySnapshot {
     std::optional<double> dimensionNM;
     std::optional<double> sourceWeightGramsPer10mmStack;
     std::optional<int> holeCount;
+    std::optional<double> stackDepthM;
+    std::string stackDepthStatus;
+    std::vector<double> laminationThicknessOptionsM;
 
     [[nodiscard]] bool hasMagneticGeometry() const noexcept;
     [[nodiscard]] bool hasCompleteCadGeometry() const noexcept;
