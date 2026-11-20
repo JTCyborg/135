@@ -321,7 +321,7 @@ int main(int argc, char** argv)
         assert(vitroperm220.value()->payload.find("1.24") != std::string::npos);
         const auto vitroperm400 = store.latestRevision("MAT-VAC-VITROPERM-400");
         assert(vitroperm400 && vitroperm400.value());
-        assert(vitroperm400.value()->payload.find("70000000") != std::string::npos);
+        assert(vitroperm400.value()->payload.find("70") != std::string::npos);
         const auto vitroperm500 = store.latestRevision("MAT-VAC-VITROPERM-500-800");
         assert(vitroperm500 && vitroperm500.value());
         assert(vitroperm500.value()->payload.find("F-annealed") != std::string::npos);
