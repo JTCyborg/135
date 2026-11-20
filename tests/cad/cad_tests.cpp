@@ -675,16 +675,15 @@ int main()
     assert(presentation.children[0].children[6].id == "core.yoke.bottom.BC");
 
     const double originalPresentationVolume = volumeOf(presentation.shape);
+    assert(!p135::cad::setAssemblyComponentVisibility(
+        presentation, "winding.L2", false)); // Unknown IDs are rejected.
     assert(p135::cad::setAssemblyComponentVisibility(
-        presentation, "winding.L2.envelope", false) == false); // Unknown IDs are rejected.
+        presentation, "winding.L2.envelope", false));
+    assert(!presentation.children[1].children[1].children[1].visible);
     assert(p135::cad::setAssemblyComponentVisibility(
-        presentation, "winding.L2", false) == false); // Phase groups are named phase.L2.
+        presentation, "winding.L2.envelope", true));
     assert(p135::cad::setAssemblyComponentVisibility(
-        presentation, "winding.L2.envelope", false) == false);
-    assert(p135::cad::setAssemblyComponentVisibility(
-        presentation, "winding.L2.envelope", true) == false);
-    assert(p135::cad::setAssemblyComponentVisibility(
-        presentation, "bobbin.L2", false) == true);
+        presentation, "bobbin.L2", false));
     assert(!presentation.children[1].children[1].children[0].visible);
     assert(p135::cad::setAssemblyComponentTransparency(
         presentation, "winding.L2.envelope", 0.35));
