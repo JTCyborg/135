@@ -53,7 +53,7 @@ private:
     QLineEdit* projectName_{};
     QComboBox* productFamily_{};
     QComboBox* filterConnection_{};
-    QSpinBox* tuningHarmonicOrder_{};
+    QDoubleSpinBox* tuningHarmonicOrder_{};
     QDoubleSpinBox* qualityFactor_{};
     QDoubleSpinBox* nominalVoltage_{};
     QDoubleSpinBox* fundamentalFrequency_{};
