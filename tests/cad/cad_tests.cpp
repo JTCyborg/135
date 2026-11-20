@@ -567,6 +567,37 @@ int main()
         }
     }
 
+    // The winding CAD solid is deliberately an envelope, not a guessed
+    // conductor/turn layout. Its cavity clears the bobbin tube by the
+    // explicit windingClearance and its radial build is applied on X/Z.
+    const auto windingEnvelope = p135::cad::buildWindingPackEnvelopeShape(
+        geometry.bobbins[0], geometry.windingPacks[0]);
+    assert(windingEnvelope);
+    assert(BRepCheck_Analyzer(windingEnvelope.value()).IsValid());
+    std::size_t windingEnvelopeSolids = 0;
+    for (TopExp_Explorer it(windingEnvelope.value(), TopAbs_SOLID); it.More(); it.Next())
+        ++windingEnvelopeSolids;
+    assert(windingEnvelopeSolids == 1);
+    Bnd_Box windingBounds;
+    BRepBndLib::Add(windingEnvelope.value(), windingBounds);
+    double wx0 = 0.0, wy0 = 0.0, wz0 = 0.0;
+    double wx1 = 0.0, wy1 = 0.0, wz1 = 0.0;
+    windingBounds.Get(wx0, wy0, wz0, wx1, wy1, wz1);
+    assert(std::abs(wx0 + 34.0) < 1.0e-6);
+    assert(std::abs(wx1 - 34.0) < 1.0e-6);
+    assert(std::abs(wy0) < 1.0e-6);
+    assert(std::abs(wy1 - 100.0) < 1.0e-6);
+    assert(std::abs(wz0 + 69.0) < 1.0e-6);
+    assert(std::abs(wz1 - 69.0) < 1.0e-6);
+    constexpr double expectedWindingEnvelopeVolume = (68.0 * 138.0 - 44.0 * 114.0) * 100.0;
+    assert(std::abs(volumeOf(windingEnvelope.value()) -
+                    expectedWindingEnvelopeVolume) < 1.0e-5);
+
+    auto invalidWindingEnvelope = geometry.windingPacks[0];
+    invalidWindingEnvelope.radialBuild = units::Length{0.0};
+    assert(!p135::cad::buildWindingPackEnvelopeShape(
+        geometry.bobbins[0], invalidWindingEnvelope));
+
     auto invalidBobbin = geometry.bobbins[0];
     invalidBobbin.flangeOuterWidth = units::Length{0.001};
     assert(!p135::cad::buildBobbinShape(invalidBobbin));
