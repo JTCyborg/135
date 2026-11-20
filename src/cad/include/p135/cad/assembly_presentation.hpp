@@ -27,6 +27,18 @@ enum class AssemblyComponentKind {
     WindingEnvelope
 };
 
+struct AssemblyPresentationDisplayItem {
+    std::string id;
+    TopoDS_Shape shape;
+    double transparency{0.0};
+};
+
+// Flatten the semantic tree into renderable leaf solids. Parent visibility
+// suppresses descendants; parent and child transparency are composited.
+// Group compounds are intentionally excluded to prevent duplicate rendering.
+[[nodiscard]] std::vector<AssemblyPresentationDisplayItem>
+collectAssemblyPresentationDisplayItems(const AssemblyPresentationNode& root);
+
 struct AssemblyPresentationNode {
     std::string id;                 // Stable machine identity; never translated.
     std::string displayName;        // Localizable UI label.
