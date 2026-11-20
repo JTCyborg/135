@@ -48,4 +48,28 @@ struct CoreLossEquation {
     units::FluxDensity peakFluxDensity,
     units::TemperatureKelvin temperature);
 
+
+/// Converts measured specific core loss (W/kg) to total core loss (W)
+/// using an explicitly supplied core mass and its source reference.
+/// Core mass is not inferred from magnetic path dimensions.
+struct CoreLossPowerRequest {
+    units::Frequency frequency;
+    units::FluxDensity peakFluxDensity;
+    units::TemperatureKelvin temperature;
+    units::Mass coreMass;
+    std::string coreMassSourceReference;
+};
+
+struct CoreLossPowerResult {
+    units::CoreLossDensity specificLoss;
+    units::Mass coreMass;
+    units::Power totalLoss;
+    std::string lossDataReference;
+    std::string coreMassSourceReference;
+};
+
+[[nodiscard]] Result<CoreLossPowerResult> calculateCoreLossPower(
+    const CoreMaterial& material,
+    const CoreLossPowerRequest& request);
+
 } // namespace p135::domain
