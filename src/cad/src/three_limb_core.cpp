@@ -181,9 +181,9 @@ Result<TopoDS_Shape> buildThreeLimbCoreShape(const domain::ReactorPhysicalGeomet
     // Each of the seven physical components is represented by a sub-compound.
     // A gap splits only its referenced component; no artificial material is
     // inserted into the gap and the component grouping remains explicit.
-    if (compound.IsNull())
+    if (compound.IsNull() || !BRepCheck_Analyzer(compound).IsValid())
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-            "OCCT failed to create the core assembly compound.", "core");
+            "OCCT failed to create a topologically valid core assembly compound.", "core");
     return Result<TopoDS_Shape>::success(compound);
 }
 
