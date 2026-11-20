@@ -20,6 +20,7 @@ struct Edge {
     double area{};
     double path{};
     double gap{};
+    double gapArea{};
     double mmf{};
 };
 
@@ -68,7 +69,7 @@ double requiredMmf(const CoreMaterial& material, const Edge& edge,
 {
     const auto point = bhAtFluxDensity(material, fluxDensity);
     if (!point) return std::numeric_limits<double>::quiet_NaN();
-    return point->first * edge.path + fluxDensity * edge.gap / vacuumPermeability;
+    return point->first * edge.path + fluxDensity * edge.area * edge.gap / (vacuumPermeability * edge.gapArea);
 }
 
 std::optional<EdgeState> evaluateEdge(const CoreMaterial& material,
@@ -94,7 +95,7 @@ std::optional<EdgeState> evaluateEdge(const CoreMaterial& material,
     const auto point = bhAtFluxDensity(material, b);
     if (!point) return std::nullopt;
     const double differentialReluctance =
-        edge.path * point->second + edge.gap / vacuumPermeability;
+        edge.path * point->second + edge.gap * edge.area / (vacuumPermeability * edge.gapArea);
     if (!std::isfinite(differentialReluctance) || differentialReluctance <= 0.0)
         return std::nullopt;
     const double sign = drive < 0.0 ? -1.0 : 1.0;
@@ -271,6 +272,7 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
     std::array<double, 3> limbAreas{};
     std::array<double, 3> limbPaths{};
     std::array<double, 3> limbGaps{};
+    std::array<double, 3> limbGapAreas{};
     std::array<double, 4> yokeAreas{};
     std::array<double, 4> yokePaths{};
     for (std::size_t i = 0; i < limbAreas.size(); ++i) {
@@ -283,6 +285,7 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
         limbAreas[i] = area;
         limbPaths[i] = path;
         limbGaps[i] = gap;
+        limbGapAreas[i] = g.limbGapEffectiveAreas[i] ? g.limbGapEffectiveAreas[i]->si() : area;
     }
     for (std::size_t i = 0; i < yokeAreas.size(); ++i) {
         yokeAreas[i] = g.yokeEffectiveAreas[i]
@@ -296,13 +299,17 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
         std::all_of(limbPaths.begin(), limbPaths.end(),
             [](double value) { return std::isfinite(value) && value > 0.0; }) &&
         std::all_of(limbGaps.begin(), limbGaps.end(),
-            [](double value) { return std::isfinite(value) && value >= 0.0; });
+            [](double value) { return std::isfinite(value) && value >= 0.0; }) &&
+        std::all_of(limbGapAreas.begin(), limbGapAreas.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; });
+    const bool validGapAreas = limbGapAreas[0] >= limbAreas[0] &&
+        limbGapAreas[1] >= limbAreas[1] && limbGapAreas[2] >= limbAreas[2];
     const bool validYokes =
         std::all_of(yokeAreas.begin(), yokeAreas.end(),
             [](double value) { return std::isfinite(value) && value > 0.0; }) &&
         std::all_of(yokePaths.begin(), yokePaths.end(),
             [](double value) { return std::isfinite(value) && value > 0.0; });
-    if (!validLimbs || !validYokes ||
+    if (!validLimbs || !validGapAreas || !validYokes ||
         request.maximumIterations == 0 ||
         !std::isfinite(request.relativeFluxTolerance) ||
         request.relativeFluxTolerance <= 0.0 ||
@@ -351,14 +358,14 @@ analyzeThreeLimbMagneticCircuit(const ThreeLimbMagneticRequest& request)
             return fail(ErrorCode::InvalidInput,
                 "Phase currents must be finite.", "phaseCurrents");
         edges[phase] = Edge{
-            3U + phase, phase, limbAreas[phase], limbPaths[phase], limbGaps[phase],
+            3U + phase, phase, limbAreas[phase], limbPaths[phase], limbGaps[phase], limbGapAreas[phase],
             static_cast<double>(request.turns[phase]) * current
         };
     }
-    edges[3] = Edge{0, 1, yokeAreas[0], yokePaths[0], 0.0, 0.0};
-    edges[4] = Edge{1, 2, yokeAreas[1], yokePaths[1], 0.0, 0.0};
-    edges[5] = Edge{3, 4, yokeAreas[2], yokePaths[2], 0.0, 0.0};
-    edges[6] = Edge{4, 5, yokeAreas[3], yokePaths[3], 0.0, 0.0};
+    edges[3] = Edge{0, 1, yokeAreas[0], yokePaths[0], 0.0, yokeAreas[0], 0.0};
+    edges[4] = Edge{1, 2, yokeAreas[1], yokePaths[1], 0.0, yokeAreas[1], 0.0};
+    edges[5] = Edge{3, 4, yokeAreas[2], yokePaths[2], 0.0, yokeAreas[2], 0.0};
+    edges[6] = Edge{4, 5, yokeAreas[3], yokePaths[3], 0.0, yokeAreas[3], 0.0};
 
     std::array<double, nodeCount> potential{};
     // Seed each top-limb node with its winding MMF. This removes most of the
