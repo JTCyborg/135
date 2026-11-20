@@ -348,3 +348,21 @@ if(MSVC)
 else()
     target_compile_options(Project135WindingElectricalTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135RevisionBoundWindingCopperLossTests
+    infrastructure/revision_bound_winding_copper_loss_tests.cpp
+)
+target_link_libraries(Project135RevisionBoundWindingCopperLossTests PRIVATE
+    Project135::InfrastructureSqlite
+)
+add_test(
+    NAME Project135RevisionBoundWindingCopperLossTests
+    COMMAND Project135RevisionBoundWindingCopperLossTests
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql
+        ${CMAKE_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql
+)
+if(MSVC)
+    target_compile_options(Project135RevisionBoundWindingCopperLossTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135RevisionBoundWindingCopperLossTests PRIVATE -UNDEBUG)
+endif()
