@@ -114,17 +114,17 @@ int main()
     };
     assert(validate(locatedGap));
 
-    // Yoke segment datum follows the CAD solid from the outer face of limb A
-    // to the outer face of limb B: 40 mm + 60 mm + 40 mm = 140 mm.
+    // The AB yoke half runs from the outside face of A to the centre
+    // plane of B: 40 mm + 60 mm + 20 mm = 120 mm.
     auto yokeGapNearPhysicalEnd = valid;
     yokeGapNearPhysicalEnd.core.airGaps = {
-        {CoreSegment::YokeTopAB, units::Length{0.12}, units::Length{0.01}}
+        {CoreSegment::YokeTopAB, units::Length{0.10}, units::Length{0.01}}
     };
     assert(validate(yokeGapNearPhysicalEnd));
 
     auto yokeGapBeyondPhysicalEnd = valid;
     yokeGapBeyondPhysicalEnd.core.airGaps = {
-        {CoreSegment::YokeTopAB, units::Length{0.139}, units::Length{0.002}}
+        {CoreSegment::YokeTopAB, units::Length{0.119}, units::Length{0.002}}
     };
     assert(!validate(yokeGapBeyondPhysicalEnd));
 
@@ -134,6 +134,14 @@ int main()
         {CoreSegment::LimbB, units::Length{0.025}, units::Length{0.01}}
     };
     assert(!validate(overlappingGaps));
+
+    auto mismatchedButtDepth = valid;
+    mismatchedButtDepth.core.yokeDepths[0] = units::Length{0.07};
+    assert(!validate(mismatchedButtDepth));
+
+    auto mismatchedTopYokeThickness = valid;
+    mismatchedTopYokeThickness.core.yokeThicknesses[1] = units::Length{0.045};
+    assert(!validate(mismatchedTopYokeThickness));
 
     auto invalidSpacing = valid;
     invalidSpacing.core.limbCenterSpacings[2] = units::Length{0.15};
