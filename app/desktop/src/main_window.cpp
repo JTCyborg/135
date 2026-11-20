@@ -2643,8 +2643,13 @@ void MainWindow::calculateFilter()
         // carrying manufacturer maximum-loss points explicitly at 50 Hz.
         // It has no continuous B-H curve, so this is a material candidate,
         // not a verified magnetic design release.
-        selectDatabaseCandidate("construction_coreMaterial", "core-material",
-            "MAT-TK-POWERCORE-M235-35A", tr("Core material candidate"));
+        if (std::abs(fundamentalFrequency_->value() - 50.0) < 1.0e-6) {
+            selectDatabaseCandidate("construction_coreMaterial", "core-material",
+                "MAT-TK-POWERCORE-M235-35A", tr("50 Hz electrical-steel candidate"));
+        } else {
+            automaticMaterialNotes.push_back(tr("Core material candidate: no starter steel revision has a loss rating at %1 Hz; no 50 Hz data reused.")
+                .arg(fundamentalFrequency_->value(), 0, 'g', 6));
+        }
         selectDatabaseCandidate("construction_conductorMaterial", "conductor-material",
             "MAT-CU-C11000", tr("Conductor material candidate"));
         selectDatabaseCandidate("construction_insulationMaterial", "insulation-material",
