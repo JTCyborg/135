@@ -111,7 +111,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
     root.shape = assembly.value();
 
     AssemblyPresentationNode core;
-    core.id = "core";
+    core.id = "core.laminations";
     core.displayName = "Core (simplified physical segments)";
     core.kind = AssemblyComponentKind::CoreGroup;
     core.representation = AssemblyGeometryRepresentation::SimplifiedCoreSegment;
