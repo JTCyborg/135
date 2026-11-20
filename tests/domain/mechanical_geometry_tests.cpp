@@ -114,6 +114,20 @@ int main()
     };
     assert(validate(locatedGap));
 
+    // Yoke segment datum follows the CAD solid from the outer face of limb A
+    // to the outer face of limb B: 40 mm + 60 mm + 40 mm = 140 mm.
+    auto yokeGapNearPhysicalEnd = valid;
+    yokeGapNearPhysicalEnd.core.airGaps = {
+        {CoreSegment::YokeTopAB, units::Length{0.12}, units::Length{0.01}}
+    };
+    assert(validate(yokeGapNearPhysicalEnd));
+
+    auto yokeGapBeyondPhysicalEnd = valid;
+    yokeGapBeyondPhysicalEnd.core.airGaps = {
+        {CoreSegment::YokeTopAB, units::Length{0.139}, units::Length{0.002}}
+    };
+    assert(!validate(yokeGapBeyondPhysicalEnd));
+
     auto overlappingGaps = valid;
     overlappingGaps.core.airGaps = {
         {CoreSegment::LimbB, units::Length{0.02}, units::Length{0.01}},
