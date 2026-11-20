@@ -188,10 +188,10 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
     if (!std::isfinite(request.relativePeakTolerance) ||
         request.relativePeakTolerance <= 0.0 ||
         request.relativePeakTolerance >= 1.0 ||
-        (request.maximumSamples != 144 && request.maximumSamples != 288)) {
+        (request.maximumSamples != 144 && request.maximumSamples != 288 && request.maximumSamples != 576)) {
         Error error;
         error.code = ErrorCode::InvalidInput;
-        error.message = "Adaptive sampling requires tolerance in (0,1) and maximumSamples of 144 or 288.";
+        error.message = "Adaptive sampling requires tolerance in (0,1) and maximumSamples of 144, 288 or 576.";
         error.diagnostics.push_back(Diagnostic{
             Severity::Error, "THREE_LIMB_SAMPLING_INVALID", error.message,
             "sampling", std::nullopt, std::nullopt
