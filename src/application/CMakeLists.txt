@@ -1,6 +1,7 @@
 add_library(Project135Application
     src/filter_reactor_magnetic.cpp
     src/material_revision_use_cases.cpp
+    src/reactor_design_inputs.cpp
 )
 add_library(Project135::Application ALIAS Project135Application)
 
