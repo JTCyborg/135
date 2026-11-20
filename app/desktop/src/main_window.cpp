@@ -531,11 +531,12 @@ MainWindow::MainWindow(QWidget* parent)
     auto* viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(tr("Project"), this, [this] { tabs_->setCurrentIndex(0); });
     viewMenu->addAction(tr("Filter definition"), this, [this] { tabs_->setCurrentIndex(1); });
-    viewMenu->addAction(tr("Calculation & design"), this, [this] { tabs_->setCurrentIndex(2); });
-    viewMenu->addAction(tr("CAD"), this, [this] { tabs_->setCurrentIndex(3); });
-    viewMenu->addAction(tr("Material database"), this, [this] { tabs_->setCurrentIndex(4); });
+    viewMenu->addAction(tr("Construction"), this, [this] { tabs_->setCurrentIndex(2); });
+    viewMenu->addAction(tr("Calculation & design"), this, [this] { tabs_->setCurrentIndex(3); });
+    viewMenu->addAction(tr("CAD"), this, [this] { tabs_->setCurrentIndex(4); });
+    viewMenu->addAction(tr("Material database"), this, [this] { tabs_->setCurrentIndex(5); });
     viewMenu->addAction(tr("Calculation history"), this, [this] {
-        tabs_->setCurrentIndex(5);
+        tabs_->setCurrentIndex(6);
         refreshCalculationHistory();
     });
 
@@ -615,6 +616,22 @@ void MainWindow::saveProjectSettings()
     if (const auto* w = findChild<QComboBox*>(QStringLiteral("projectIpRating"))) settings.setValue("ipRating", w->currentText());
     if (const auto* w = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"))) settings.setValue("coolingMethod", w->currentData().toString());
     if (const auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) settings.setValue("airflowM3h", w->value());
+    settings.beginGroup(QStringLiteral("construction"));
+    for (auto* widget : findChildren<QWidget*>()) {
+        const QString key = widget->objectName();
+        if (!key.startsWith(QStringLiteral("construction_"))) continue;
+        if (const auto* combo = qobject_cast<QComboBox*>(widget))
+            settings.setValue(key, combo->currentData());
+        else if (const auto* number = qobject_cast<QDoubleSpinBox*>(widget))
+            settings.setValue(key, number->value());
+        else if (const auto* integer = qobject_cast<QSpinBox*>(widget))
+            settings.setValue(key, integer->value());
+        else if (const auto* line = qobject_cast<QLineEdit*>(widget))
+            settings.setValue(key, line->text());
+        else if (const auto* check = qobject_cast<QCheckBox*>(widget))
+            settings.setValue(key, check->isChecked());
+    }
+    settings.endGroup();
     settings.endGroup();
     settings.setValue(QStringLiteral("project/currentId"), projectId_);
 }
@@ -653,6 +670,24 @@ void MainWindow::loadProjectSettings()
         const int i = w->findData(get("coolingMethod", QStringLiteral("AN"))); w->setCurrentIndex(i < 0 ? 0 : i);
     }
     if (auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) w->setValue(get("airflowM3h", 0.0).toDouble());
+    settings.endGroup();
+    settings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/construction"));
+    for (auto* widget : findChildren<QWidget*>()) {
+        const QString key = widget->objectName();
+        if (!key.startsWith(QStringLiteral("construction_")) || !settings.contains(key)) continue;
+        if (auto* combo = qobject_cast<QComboBox*>(widget)) {
+            const int index = combo->findData(settings.value(key));
+            if (index >= 0) combo->setCurrentIndex(index);
+        } else if (auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
+            number->setValue(settings.value(key).toDouble());
+        } else if (auto* integer = qobject_cast<QSpinBox*>(widget)) {
+            integer->setValue(settings.value(key).toInt());
+        } else if (auto* line = qobject_cast<QLineEdit*>(widget)) {
+            line->setText(settings.value(key).toString());
+        } else if (auto* check = qobject_cast<QCheckBox*>(widget)) {
+            check->setChecked(settings.value(key).toBool());
+        }
+    }
     settings.endGroup();
     if (auto* flow = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) {
         const auto* method = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"));
@@ -1157,8 +1192,10 @@ QWidget* MainWindow::createConstructionPage()
     auto* coreGroup = new QGroupBox(tr("1. Magnetic core"));
     auto* coreForm = new QFormLayout(coreGroup);
     auto* coreMaterial = new QComboBox;
+    coreMaterial->setObjectName(QStringLiteral("construction_coreMaterial"));
     coreMaterial->setObjectName(QStringLiteral("constructionCoreMaterial"));
     auto* coreGeometry = new QComboBox;
+    coreGeometry->setObjectName(QStringLiteral("construction_coreGeometry"));
     coreGeometry->addItem(tr("Three-limb core"), QStringLiteral("three-limb"));
     coreGeometry->addItem(tr("Three single-phase cores"), QStringLiteral("three-single-phase"));
     coreGeometry->addItem(tr("EI core"), QStringLiteral("ei"));
@@ -1167,6 +1204,7 @@ QWidget* MainWindow::createConstructionPage()
     coreGeometry->addItem(tr("Strip-wound"), QStringLiteral("strip-wound"));
     coreGeometry->addItem(tr("Custom"), QStringLiteral("custom"));
     auto* stackingFactor = new QDoubleSpinBox;
+    stackingFactor->setObjectName(QStringLiteral("construction_stackingFactor"));
     stackingFactor->setRange(0.0, 1.0);
     stackingFactor->setDecimals(4);
     stackingFactor->setSpecialValueText(tr("NOT_PROVIDED"));
@@ -1179,14 +1217,17 @@ QWidget* MainWindow::createConstructionPage()
     auto* windingGroup = new QGroupBox(tr("2. Winding and conductor"));
     auto* windingForm = new QFormLayout(windingGroup);
     auto* conductorMaterial = new QComboBox;
+    conductorMaterial->setObjectName(QStringLiteral("construction_conductorMaterial"));
     conductorMaterial->setObjectName(QStringLiteral("constructionConductorMaterial"));
     auto* conductorShape = new QComboBox;
+    conductorShape->setObjectName(QStringLiteral("construction_conductorShape"));
     conductorShape->addItem(tr("Round wire"), QStringLiteral("round"));
     conductorShape->addItem(tr("Rectangular wire"), QStringLiteral("rectangular"));
     conductorShape->addItem(tr("Foil"), QStringLiteral("foil"));
     conductorShape->addItem(tr("Litz wire"), QStringLiteral("litz"));
     conductorShape->addItem(tr("Busbar"), QStringLiteral("busbar"));
     auto* windingTechnology = new QComboBox;
+    windingTechnology->setObjectName(QStringLiteral("construction_windingTechnology"));
     windingTechnology->addItem(tr("Layer"), QStringLiteral("layer"));
     windingTechnology->addItem(tr("Sectional"), QStringLiteral("sectional"));
     windingTechnology->addItem(tr("Disc"), QStringLiteral("disc"));
@@ -1194,28 +1235,35 @@ QWidget* MainWindow::createConstructionPage()
     windingTechnology->addItem(tr("Multilayer"), QStringLiteral("multilayer"));
     windingTechnology->addItem(tr("Litz"), QStringLiteral("litz"));
     auto* turns = new QSpinBox;
+    turns->setObjectName(QStringLiteral("construction_turns"));
     turns->setRange(0, 1000000);
     turns->setSpecialValueText(tr("AUTO / NOT CALCULATED"));
     auto* turnsPerLayer = new QSpinBox;
+    turnsPerLayer->setObjectName(QStringLiteral("construction_turnsPerLayer"));
     turnsPerLayer->setRange(0, 1000000);
     turnsPerLayer->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* layers = new QSpinBox;
+    layers->setObjectName(QStringLiteral("construction_layers"));
     layers->setRange(0, 100000);
     layers->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* parallelConductors = new QSpinBox;
+    parallelConductors->setObjectName(QStringLiteral("construction_parallelConductors"));
     parallelConductors->setRange(1, 10000);
     parallelConductors->setValue(1);
     auto* conductorArea = new QDoubleSpinBox;
+    conductorArea->setObjectName(QStringLiteral("construction_conductorArea"));
     conductorArea->setRange(0.0, 1000000.0);
     conductorArea->setDecimals(4);
     conductorArea->setSuffix(tr(" mm²"));
     conductorArea->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* conductorWidth = new QDoubleSpinBox;
+    conductorWidth->setObjectName(QStringLiteral("construction_conductorWidth"));
     conductorWidth->setRange(0.0, 100000.0);
     conductorWidth->setDecimals(4);
     conductorWidth->setSuffix(tr(" mm"));
     conductorWidth->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* conductorThickness = new QDoubleSpinBox;
+    conductorThickness->setObjectName(QStringLiteral("construction_conductorThickness"));
     conductorThickness->setRange(0.0, 100000.0);
     conductorThickness->setDecimals(4);
     conductorThickness->setSuffix(tr(" mm"));
@@ -1241,22 +1289,28 @@ QWidget* MainWindow::createConstructionPage()
     auto* insulationGroup = new QGroupBox(tr("3. Insulation and bobbin"));
     auto* insulationForm = new QFormLayout(insulationGroup);
     auto* insulationMaterial = new QComboBox;
+    insulationMaterial->setObjectName(QStringLiteral("construction_insulationMaterial"));
     insulationMaterial->setObjectName(QStringLiteral("constructionInsulationMaterial"));
     auto* bobbinMaterial = new QLineEdit;
+    bobbinMaterial->setObjectName(QStringLiteral("construction_bobbinMaterial"));
     bobbinMaterial->setPlaceholderText(tr("Material ID / grade — NOT_PROVIDED until selected"));
     auto* bobbinEnabled = new QCheckBox(tr("Bobbin is used"));
+    bobbinEnabled->setObjectName(QStringLiteral("construction_bobbinEnabled"));
     bobbinEnabled->setChecked(true);
     auto* turnInsulation = new QDoubleSpinBox;
+    turnInsulation->setObjectName(QStringLiteral("construction_turnInsulation"));
     turnInsulation->setRange(0.0, 10000.0);
     turnInsulation->setDecimals(4);
     turnInsulation->setSuffix(tr(" mm"));
     turnInsulation->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* layerInsulation = new QDoubleSpinBox;
+    layerInsulation->setObjectName(QStringLiteral("construction_layerInsulation"));
     layerInsulation->setRange(0.0, 10000.0);
     layerInsulation->setDecimals(4);
     layerInsulation->setSuffix(tr(" mm"));
     layerInsulation->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* mainInsulation = new QDoubleSpinBox;
+    mainInsulation->setObjectName(QStringLiteral("construction_mainInsulation"));
     mainInsulation->setRange(0.0, 10000.0);
     mainInsulation->setDecimals(4);
     mainInsulation->setSuffix(tr(" mm"));
@@ -1272,16 +1326,19 @@ QWidget* MainWindow::createConstructionPage()
     auto* thermalGroup = new QGroupBox(tr("4. Cooling and thermal limits"));
     auto* thermalForm = new QFormLayout(thermalGroup);
     auto* cooling = new QComboBox;
+    cooling->setObjectName(QStringLiteral("construction_cooling"));
     cooling->addItem(tr("Natural air"), QStringLiteral("natural-air"));
     cooling->addItem(tr("Forced air"), QStringLiteral("forced-air"));
     cooling->addItem(tr("Liquid"), QStringLiteral("liquid"));
     auto* ambient = new QDoubleSpinBox;
+    ambient->setObjectName(QStringLiteral("construction_ambient"));
     ambient->setRange(-50.0, 200.0);
     ambient->setDecimals(2);
     ambient->setSuffix(tr(" °C"));
     ambient->setSpecialValueText(tr("NOT_PROVIDED"));
     ambient->setValue(-50.0);
     auto* maximumWindingTemperature = new QDoubleSpinBox;
+    maximumWindingTemperature->setObjectName(QStringLiteral("construction_maximumWindingTemperature"));
     maximumWindingTemperature->setRange(-50.0, 300.0);
     maximumWindingTemperature->setDecimals(2);
     maximumWindingTemperature->setSuffix(tr(" °C"));
@@ -1335,6 +1392,26 @@ QWidget* MainWindow::createConstructionPage()
         if (tabs_) tabs_->setCurrentIndex(5);
     });
     refreshChoices();
+
+    // Persist construction inputs per project. Material selectors store immutable revision IDs.
+    for (auto* widget : page->findChildren<QWidget*>()) {
+        if (auto* combo = qobject_cast<QComboBox*>(widget)) {
+            connect(combo, qOverload<int>(&QComboBox::currentIndexChanged), this,
+                    [this](int) { saveProjectSettings(); });
+        } else if (auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
+            connect(number, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+                    [this](double) { saveProjectSettings(); });
+        } else if (auto* integer = qobject_cast<QSpinBox*>(widget)) {
+            connect(integer, qOverload<int>(&QSpinBox::valueChanged), this,
+                    [this](int) { saveProjectSettings(); });
+        } else if (auto* line = qobject_cast<QLineEdit*>(widget)) {
+            connect(line, &QLineEdit::textChanged, this,
+                    [this](const QString&) { saveProjectSettings(); });
+        } else if (auto* check = qobject_cast<QCheckBox*>(widget)) {
+            connect(check, &QCheckBox::toggled, this,
+                    [this](bool) { saveProjectSettings(); });
+        }
+    }
 
     auto* scope = new QLabel(tr(
         "Important: this tab captures the construction specification. It does not yet create a verified ReactorSizingRequest "
