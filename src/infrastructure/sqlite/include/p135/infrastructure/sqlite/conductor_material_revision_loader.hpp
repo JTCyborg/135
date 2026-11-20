@@ -1,6 +1,7 @@
 #pragma once
 
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
+#include "p135/domain/material_catalog.hpp"
 
 #include <string>
 
