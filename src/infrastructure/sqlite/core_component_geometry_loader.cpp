@@ -151,6 +151,27 @@ Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
         }
         snapshot.nominalAlHPerTurnSquared =
             optionalPositive(component, "inductanceFactor_AL_H_per_turn_squared");
+        snapshot.columnWidthM = optionalPositive(geometryIt != root.end() && geometryIt->is_object()
+            ? *geometryIt : json::object(), "columnWidth_m");
+        if (geometryIt != root.end() && geometryIt->is_object()) {
+            const auto& geometry = *geometryIt;
+            snapshot.overallHeightM = optionalPositive(geometry, "overallHeight_m");
+            snapshot.overallWidthM = optionalPositive(geometry, "overallWidth_m");
+            snapshot.windowHeightM = optionalPositive(geometry, "windowHeight_m");
+            snapshot.windowWidthM = optionalPositive(geometry, "windowWidth_m");
+            snapshot.holePitchM = optionalPositive(geometry, "holePitch_m");
+            snapshot.holeDiameterM = optionalPositive(geometry, "holeDiameter_m");
+            snapshot.dimensionHM = optionalPositive(geometry, "dimension_h_m");
+            snapshot.dimensionNM = optionalPositive(geometry, "dimension_n_m");
+            snapshot.sourceWeightGramsPer10mmStack =
+                optionalPositive(geometry, "sourceWeight_g_per_10mm_stack");
+            const auto holes = geometry.find("holeCount");
+            if (holes != geometry.end()) {
+                if (!holes->is_number_integer() || holes->get<int>() <= 0)
+                    throw std::invalid_argument("holeCount must be a positive integer.");
+                snapshot.holeCount = holes->get<int>();
+            }
+        }
 
         if (snapshot.hasMagneticGeometry()) {
             const double areaFromVolume = *snapshot.effectiveVolumeM3 /
