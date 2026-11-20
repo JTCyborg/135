@@ -23,6 +23,7 @@ add_library(Project135InfrastructureSqlite
     sqlite/sqlite_material_revision_store.cpp
     sqlite/core_material_revision_loader.cpp
     sqlite/conductor_material_revision_loader.cpp
+    sqlite/revision_bound_winding_copper_loss.cpp
     sqlite/revision_bound_physical_filter_magnetic.cpp
     sqlite/starter_material_catalog.cpp
 )
