@@ -104,4 +104,5 @@ private:
     std::unique_ptr<p135::infrastructure::sqlite::SqliteMaterialRevisionStore> materialStore_;
     QString databaseError_;
     QString projectId_;
+    bool loadingProjectSettings_{};
 };
