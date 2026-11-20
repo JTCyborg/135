@@ -1210,9 +1210,10 @@ QWidget* MainWindow::createConstructionPage()
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     root->addWidget(heading);
     auto* intro = new QLabel(tr(
-        "Select physical materials and winding technology here. These are construction inputs, not calculated results. "
-        "A material is selectable only when a revision exists in the material database. Missing data stays NOT_PROVIDED; "
-        "no material, dimensions or thermal properties are assumed."));
+        "This page is populated from the ideal design calculation using exact revisions in the material database. "
+        "A value is marked AUTO only when the available electrical and material data support it. "
+        "Calculated values can then be overridden; missing geometry, ratings or thermal data remain NOT_PROVIDED "
+        "instead of being replaced with guessed defaults."));
     intro->setWordWrap(true);
     root->addWidget(intro);
 
@@ -1437,7 +1438,7 @@ QWidget* MainWindow::createConstructionPage()
     });
     refreshChoices();
 
-    auto* constructionState = new QLabel(tr("CONSTRUCTION INPUTS: NOT YET CAPTURED"));
+    auto* constructionState = new QLabel(tr("AWAITING IDEAL DESIGN CALCULATION — material and physical parameters will be populated from the calculation and database."));
     constructionState->setObjectName(QStringLiteral("constructionInputState"));
     constructionState->setWordWrap(true);
     constructionState->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -1465,8 +1466,9 @@ QWidget* MainWindow::createConstructionPage()
     }
 
     auto* scope = new QLabel(tr(
-        "Important: construction settings are saved locally per project, including exact material revision IDs. "
-        "They are not yet part of a portable project snapshot or connected to the physical sizing solver."));
+        "Material selections are pinned to exact immutable database revisions. The calculation currently selects "
+        "compatible material candidates automatically; complete physical sizing is withheld wherever the database "
+        "does not contain the required geometry, B-H, thermal or insulation-system evidence."));
     scope->setWordWrap(true);
     scope->setStyleSheet("color: palette(mid);");
     root->addWidget(scope);
