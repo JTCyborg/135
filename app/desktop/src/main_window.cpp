@@ -2614,7 +2614,12 @@ void MainWindow::calculateFilter()
         for (int row = 0; row < table->rowCount(); ++row) {
             const auto* parameter = table->item(row, 0);
             if (parameter && (parameter->text() == tr("Minimum gross area product Ae×Aw") ||
-                              parameter->text() == tr("Equivalent square area scale"))) {
+                              parameter->text() == tr("Equivalent square area scale") ||
+                              parameter->text() == tr("Estimated gross core area Ae") ||
+                              parameter->text() == tr("Estimated effective core area") ||
+                              parameter->text() == tr("Estimated window area Aw") ||
+                              parameter->text() == tr("Ideal minimum turns per reactor") ||
+                              parameter->text() == tr("Ideal total equivalent air gap"))) {
                 table->setItem(row, 1, new QTableWidgetItem(tr("NOT CALCULATED")));
                 table->setItem(row, 3, new QTableWidgetItem(tr("NOT_VERIFIED")));
             }
