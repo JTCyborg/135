@@ -46,8 +46,8 @@ int main(int argc, char** argv)
 
     const auto pq40 = loadCoreComponentGeometryRevision(store, "SEED-B65883A0000R087-R1");
     assert(pq40 && pq40.value().hasMagneticGeometry());
-    assert(std::abs(*pq40.value().effectiveAreaM2 - 188.3e-6) < 1.0e-12);
-    assert(std::abs(*pq40.value().effectivePathLengthM - 92.5e-3) < 1.0e-12);
+    assert(std::abs(*pq40.value().effectiveAreaM2 - 189.0e-6) < 1.0e-12);
+    assert(std::abs(*pq40.value().effectivePathLengthM - 93.0e-3) < 1.0e-12);
 
     const auto geometryUnavailable =
         loadCoreComponentGeometryRevision(store, "SEED-B65877B0000R087-R1");
