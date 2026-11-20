@@ -27,7 +27,7 @@ struct MagneticCircuitResult {
     units::MagneticFieldStrength coreFieldStrength;
     units::MagneticFieldStrength gapFieldStrength;
     units::MagneticFlux flux;
-    units::Area physicalGapArea;
+    units::Area coreAreaAtGap;
     units::Area effectiveGapArea;
     double gapFringingFactor{1.0};
     units::Inductance secantInductance;
