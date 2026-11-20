@@ -77,6 +77,22 @@ std::vector<SeedRecord> starterRecords()
                 {{"frequency_Hz", 500000.0}, {"peakFluxDensity_T", 0.050}, {"temperature_K", 373.15}, {"specificLoss_W_per_m3", 215000.0}}
             })}
         }},
+        {"bhCurveProvenance", {
+            {"sourceDocument", "TDK FAL0599-4"},
+            {"sourcePage", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"measurementMethod", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"sampleDirection", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"captureMethod", "APPROXIMATE_DIGITIZATION_FROM_MANUFACTURER_GRAPH"},
+            {"notes", "Typical dynamic magnetization graph digitized approximately; source does not provide raw tabular B-H measurements. Curve is exploratory only."}
+        }},
+        {"bhCurveProvenance", {
+            {"sourceDocument", "TDK FAL0619-M"},
+            {"sourcePage", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"measurementMethod", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"sampleDirection", "NOT_STATED_IN_IMPORTED_REFERENCE"},
+            {"captureMethod", "APPROXIMATE_DIGITIZATION_FROM_MANUFACTURER_GRAPH"},
+            {"notes", "Typical dynamic magnetization graph digitized approximately; source does not provide raw tabular B-H measurements. Curve is exploratory only."}
+        }},
         {"dataQuality", {
             {"bhCurveStatus", "APPROXIMATE_DIGITIZATION"},
             {"coreLossStatus", "MANUFACTURER_TYPICAL_VALUES"},
@@ -281,6 +297,14 @@ std::vector<SeedRecord> starterRecords()
                 {"at_10000_A_per_m", 1.70}
             }}
         }},
+        {"bhCurveProvenance", {
+            {"sourceDocument", "thyssenkrupp powercore A official M235-35A product table"},
+            {"sourcePage", "HTML product table; no page number"},
+            {"measurementMethod", "NOT_STATED_IN_IMPORTED_SOURCE"},
+            {"sampleDirection", "NOT_STATED_IN_IMPORTED_SOURCE"},
+            {"captureMethod", "MANUFACTURER_MINIMUM_POLARIZATION_ANCHORS_ONLY_NOT_CONTINUOUS_BH"},
+            {"notes", "Manufacturer lists minimum polarization at peak H=2500, 5000 and 10000 A/m at 50 Hz. These minimum anchor values are not a continuous B-H curve and are not solver input."}
+        }},
         {"dataQuality", {
             {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUES"},
             {"bhCurveStatus", "NOT_PUBLISHED_IN_IMPORTED_DATASET"},
@@ -303,6 +327,14 @@ std::vector<SeedRecord> starterRecords()
                 {"at_10000_A_per_m", 1.70}
             }}
         }},
+        {"bhCurveProvenance", {
+            {"sourceDocument", "thyssenkrupp powercore A official M235-35A product table"},
+            {"sourcePage", "HTML product table; no page number"},
+            {"measurementMethod", "NOT_STATED_IN_IMPORTED_SOURCE"},
+            {"sampleDirection", "NOT_STATED_IN_IMPORTED_SOURCE"},
+            {"captureMethod", "MANUFACTURER_MINIMUM_POLARIZATION_ANCHORS_ONLY_NOT_CONTINUOUS_BH"},
+            {"notes", "Manufacturer lists minimum polarization at peak H=2500, 5000 and 10000 A/m at 50 Hz. These minimum anchor values are not a continuous B-H curve and are not solver input."}
+        }},
         {"dataQuality", {
             {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUES"},
             {"bhCurveStatus", "NOT_PUBLISHED_IN_IMPORTED_DATASET"},
@@ -324,6 +356,14 @@ std::vector<SeedRecord> starterRecords()
                 {"at_2500_A_per_m", 1.49}, {"at_5000_A_per_m", 1.60},
                 {"at_10000_A_per_m", 1.70}
             }}
+        }},
+        {"bhCurveProvenance", {
+            {"sourceDocument", "thyssenkrupp powercore A official M235-35A product table"},
+            {"sourcePage", "HTML product table; no page number"},
+            {"measurementMethod", "NOT_STATED_IN_IMPORTED_SOURCE"},
+            {"sampleDirection", "NOT_STATED_IN_IMPORTED_SOURCE"},
+            {"captureMethod", "MANUFACTURER_MINIMUM_POLARIZATION_ANCHORS_ONLY_NOT_CONTINUOUS_BH"},
+            {"notes", "Manufacturer lists minimum polarization at peak H=2500, 5000 and 10000 A/m at 50 Hz. These minimum anchor values are not a continuous B-H curve and are not solver input."}
         }},
         {"dataQuality", {
             {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUES"},
