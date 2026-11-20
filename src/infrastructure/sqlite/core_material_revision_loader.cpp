@@ -241,4 +241,114 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
     }
 }
 
+
+Result<CoreLossReferenceDataset> loadCoreLossReferenceDataset(
+    const SqliteMaterialRevisionStore& store,
+    const std::string& revisionId)
+{
+    if (revisionId.empty())
+        return Result<CoreLossReferenceDataset>::failure(loaderError(
+            ErrorCode::MissingRequiredData, "An exact core-loss dataset revision ID is required.",
+            "revisionId"));
+
+    const auto stored = store.findRevision(revisionId);
+    if (!stored)
+        return Result<CoreLossReferenceDataset>::failure(stored.error());
+    if (!stored.value())
+        return Result<CoreLossReferenceDataset>::failure(loaderError(
+            ErrorCode::MissingRequiredData, "The requested core-loss dataset does not exist.",
+            "revisionId"));
+
+    const auto& revision = *stored.value();
+    if (revision.recordType != "core-loss-reference")
+        return Result<CoreLossReferenceDataset>::failure(loaderError(
+            ErrorCode::InvalidInput, "The requested revision is not a core-loss-reference record.",
+            "recordType"));
+
+    const auto canonical = canonicalizeJson(revision.payload);
+    if (!canonical)
+        return Result<CoreLossReferenceDataset>::failure(canonical.error());
+    if (canonical.value() != revision.payload)
+        return Result<CoreLossReferenceDataset>::failure(loaderError(
+            ErrorCode::InvalidInput, "Stored core-loss payload is not canonical JSON.", "payload"));
+    const auto hash = sha256Hex(revision.payload);
+    if (!hash)
+        return Result<CoreLossReferenceDataset>::failure(hash.error());
+    if (hash.value() != revision.contentHash)
+        return Result<CoreLossReferenceDataset>::failure(loaderError(
+            ErrorCode::InvalidInput, "Stored core-loss payload hash does not match its revision.",
+            "contentHash"));
+
+    try {
+        const auto root = json::parse(revision.payload);
+        if (!root.is_object() || requiredNumber(root, "schemaVersion") != 1.0)
+            throw std::invalid_argument("Unsupported core-loss reference schema version.");
+        const auto& material = root.at("material");
+        CoreLossReferenceDataset dataset;
+        dataset.revisionId = revision.revisionId;
+        dataset.materialId = requiredString(material, "id");
+        dataset.manufacturer = requiredString(material, "manufacturer");
+        dataset.grade = requiredString(material, "grade");
+        dataset.sourceReference = revision.sourceReference;
+        dataset.datasetRevision = revision.datasetRevision;
+        dataset.contentHash = revision.contentHash;
+        dataset.laminationThickness = units::Length{requiredNumber(material, "laminationThickness_m")};
+        dataset.density = units::Density{requiredNumber(material, "density_kg_per_m3")};
+        dataset.minimumStackingFactor = requiredNumber(material, "minimumLaminationFactor");
+        if (dataset.laminationThickness.si() <= 0.0 ||
+            dataset.density.si() <= 0.0 ||
+            dataset.minimumStackingFactor <= 0.0 ||
+            dataset.minimumStackingFactor > 1.0)
+            throw std::invalid_argument("Core-loss dataset material properties are outside valid ranges.");
+
+        const auto& points = root.at("coreLossReferencePoints");
+        if (!points.is_array() || points.empty())
+            throw std::invalid_argument("At least one AC core-loss reference point is required.");
+        for (const auto& point : points) {
+            const double frequency = requiredNumber(point, "frequency_Hz");
+            const double flux = requiredNumber(point, "peakFluxDensity_T");
+            const double loss = requiredNumber(point, "specificLoss_W_per_kg");
+            const double temperature = point.value("temperature_K", 0.0);
+            if (frequency <= 0.0 || flux <= 0.0 || loss < 0.0 || temperature < 0.0)
+                throw std::invalid_argument("AC core-loss reference point contains an invalid value.");
+            dataset.points.push_back(CoreLossReferencePoint{
+                units::Frequency{frequency},
+                units::FluxDensity{flux},
+                units::CoreLossDensity{loss},
+                temperature > 0.0
+                    ? std::optional<units::TemperatureKelvin>{units::TemperatureKelvin{temperature}}
+                    : std::nullopt
+            });
+        }
+
+        const json limits = root.value("coreLossSpecificationLimits", json::object());
+        if (limits.contains("maximumSpecificLoss_W_per_kg")) {
+            const auto& limit = limits.at("maximumSpecificLoss_W_per_kg");
+            dataset.specificationLimit = CoreLossSpecificationLimit{
+                units::Frequency{requiredNumber(limit, "frequency_Hz")},
+                units::FluxDensity{requiredNumber(limit, "peakFluxDensity_T")},
+                units::CoreLossDensity{requiredNumber(limit, "value")},
+                requiredString(limit, "limitType")
+            };
+        }
+
+        const json provenance = root.value("coreLossProvenance", json::object());
+        const json quality = root.value("dataQuality", json::object());
+        dataset.qualityStatus = provenanceString(quality, "coreLossStatus");
+        dataset.sourceDocument = provenanceString(provenance, "sourceDocument");
+        dataset.sourcePage = provenanceString(provenance, "sourcePage");
+        dataset.measurementMethod = provenanceString(provenance, "measurementMethod");
+        dataset.sampleDirection = provenanceString(provenance, "sampleDirection");
+        dataset.waveform = provenanceString(provenance, "waveform");
+        dataset.temperatureStatus = provenanceString(provenance, "temperatureStatus");
+        dataset.notes = provenanceString(provenance, "notes");
+        return Result<CoreLossReferenceDataset>::success(std::move(dataset));
+    } catch (const std::exception& exception) {
+        return Result<CoreLossReferenceDataset>::failure(loaderError(
+            ErrorCode::InvalidInput,
+            std::string("Cannot decode core-loss reference dataset: ") + exception.what(),
+            "payload"));
+    }
+}
+
 } // namespace p135::infrastructure::sqlite
