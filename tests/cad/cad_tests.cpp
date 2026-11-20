@@ -674,6 +674,32 @@ int main()
     assert(presentation.children[0].children[0].id == "core.limb.A");
     assert(presentation.children[0].children[6].id == "core.yoke.bottom.BC");
 
+    auto displayItems = p135::cad::collectAssemblyPresentationDisplayItems(presentation);
+    assert(displayItems.size() == 13); // Seven core segments + six bobbin/winding solids.
+    assert(displayItems.front().id == "core.limb.A");
+    assert(displayItems.back().id == "winding.L3.envelope");
+
+    assert(p135::cad::setAssemblyComponentTransparency(
+        presentation, "phase.L1", 0.20));
+    assert(p135::cad::setAssemblyComponentTransparency(
+        presentation, "winding.L1.envelope", 0.35));
+    displayItems = p135::cad::collectAssemblyPresentationDisplayItems(presentation);
+    const auto l1Winding = std::find_if(displayItems.begin(), displayItems.end(),
+        [](const auto& item) { return item.id == "winding.L1.envelope"; });
+    assert(l1Winding != displayItems.end());
+    assert(std::abs(l1Winding->transparency - 0.48) < 1.0e-12);
+
+    assert(p135::cad::setAssemblyComponentVisibility(
+        presentation, "core.laminations", false));
+    displayItems = p135::cad::collectAssemblyPresentationDisplayItems(presentation);
+    assert(displayItems.size() == 6);
+    assert(std::none_of(displayItems.begin(), displayItems.end(),
+        [](const auto& item) { return item.id.starts_with("core."); }));
+    assert(p135::cad::setAssemblyComponentVisibility(
+        presentation, "core.laminations", true));
+    displayItems = p135::cad::collectAssemblyPresentationDisplayItems(presentation);
+    assert(displayItems.size() == 13);
+
     const double originalPresentationVolume = volumeOf(presentation.shape);
     assert(!p135::cad::setAssemblyComponentVisibility(
         presentation, "winding.L2", false)); // Unknown IDs are rejected.
