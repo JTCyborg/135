@@ -1441,7 +1441,7 @@ void MainWindow::importCalculationHistory()
         return;
     }
 
-    int imported = 0, duplicates = 0;
+    int imported = 0, duplicates = 0, repairedHashes = 0;
     std::size_t calculationIndex = 0;
     for (const auto& value : archive.value("calculations").toArray()) {
         const auto itemJson = archiveJson.at("calculations").at(calculationIndex++);
@@ -1476,10 +1476,25 @@ void MainWindow::importCalculationHistory()
         const auto canonical = p135::infrastructure::sqlite::canonicalizeJson(envelope);
         const auto hash = canonical ? p135::infrastructure::sqlite::sha256Hex(canonical.value())
                                    : p135::Result<std::string>::failure(canonical.error());
-        if (!hash || hash.value() != requiredString("contentHash").toStdString()) {
+        if (!hash) {
             QMessageBox::warning(this, tr("Import history"),
-                tr("SHA-256 validation failed for calculation %1.").arg(id));
+                tr("Cannot calculate SHA-256 for calculation %1: %2")
+                    .arg(id, QString::fromStdString(hash.error().message)));
             return;
+        }
+        const std::string archivedHash = requiredString("contentHash").toStdString();
+        if (hash.value() != archivedHash) {
+            const auto answer = QMessageBox::warning(this, tr("History checksum mismatch"),
+                tr("The SHA-256 checksum stored in the archive does not match calculation %1.\\n\\n"
+                   "Stored: %2\\nCalculated from the imported data: %3\\n\\n"
+                   "Recalculate the checksum and import this record?\\n"
+                   "Choose No to stop the import.")
+                    .arg(id, QString::fromStdString(archivedHash),
+                         QString::fromStdString(hash.value())),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            if (answer != QMessageBox::Yes)
+                return;
+            ++repairedHashes;
         }
         const auto existing = materialStore_->findCalculation(id.toStdString());
         if (!existing) {
@@ -1518,7 +1533,8 @@ void MainWindow::importCalculationHistory()
     }
     refreshCalculationHistory();
     QMessageBox::information(this, tr("Import history"),
-        tr("Imported %1 calculation(s); skipped %2 duplicate(s).").arg(imported).arg(duplicates));
+        tr("Imported %1 calculation(s); skipped %2 duplicate(s); repaired %3 checksum(s).")
+            .arg(imported).arg(duplicates).arg(repairedHashes));
 }
 
 void MainWindow::refreshCalculationHistory()
