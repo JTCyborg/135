@@ -32,9 +32,9 @@ ReactorPhysicalGeometry validGeometry()
         g.core.joints.push_back({interface, CoreJointType::Butt, {}});
     }
     for (auto& b : g.bobbins) {
-        b.innerWidth = units::Length{0.035};
+        b.innerWidth = units::Length{0.045};
         b.innerHeight = units::Length{0.11};
-        b.axialLength = units::Length{0.075};
+        b.axialLength = units::Length{0.115};
         b.wallThickness = units::Length{0.001};
         b.flangeThickness = units::Length{0.002};
         b.windingClearance = units::Length{0.001};
@@ -201,5 +201,31 @@ int main()
     auto missingWindingBuild = valid;
     missingWindingBuild.windingPacks[1].radialBuild = units::Length{};
     assert(!validate(missingWindingBuild));
+
+    auto bobbinTooNarrowForLimb = valid;
+    bobbinTooNarrowForLimb.bobbins[0].innerWidth = units::Length{0.039};
+    assert(!validate(bobbinTooNarrowForLimb));
+
+    auto bobbinTooShallowForStack = valid;
+    bobbinTooShallowForStack.bobbins[2].innerHeight = units::Length{0.079};
+    assert(!validate(bobbinTooShallowForStack));
+
+    auto bobbinTooLongForWindow = valid;
+    bobbinTooLongForWindow.bobbins[1].axialLength = units::Length{0.121};
+    assert(!validate(bobbinTooLongForWindow));
+
+    auto middleBobbinMustFitBothWindows = valid;
+    middleBobbinMustFitBothWindows.core.windowHeights[1] = units::Length{0.10};
+    middleBobbinMustFitBothWindows.core.coreOverallHeight = units::Length{0.18};
+    middleBobbinMustFitBothWindows.bobbins[1].axialLength = units::Length{0.105};
+    assert(!validate(middleBobbinMustFitBothWindows));
+
+    auto windingExceedsBobbinAxialLength = valid;
+    windingExceedsBobbinAxialLength.windingPacks[0].axialHeight = units::Length{0.106};
+    assert(!validate(windingExceedsBobbinAxialLength));
+
+    auto windingFitsBobbinAxialLength = valid;
+    windingFitsBobbinAxialLength.windingPacks[0].axialHeight = units::Length{0.105};
+    assert(validate(windingFitsBobbinAxialLength));
     return 0;
 }
