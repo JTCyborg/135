@@ -2600,6 +2600,20 @@ void MainWindow::calculateFilter()
         return;
     }
 
+    if (auto* output = findChild<QLabel*>(QStringLiteral("idealSizingResult"))) {
+        output->setText(tr("Ideal area-product estimate: awaiting a successful calculation."));
+    }
+    if (auto* table = findChild<QTableWidget*>(QStringLiteral("constructionDesignTable"))) {
+        for (int row = 0; row < table->rowCount(); ++row) {
+            const auto* parameter = table->item(row, 0);
+            if (parameter && (parameter->text() == tr("Minimum gross area product Ae×Aw") ||
+                              parameter->text() == tr("Equivalent square area scale"))) {
+                table->setItem(row, 1, new QTableWidgetItem(tr("NOT CALCULATED")));
+                table->setItem(row, 3, new QTableWidgetItem(tr("NOT_VERIFIED")));
+            }
+        }
+    }
+
     if (productFamily_ && productFamily_->currentIndex() != 0) {
         const QString message = tr("Calculation is currently implemented only for Shunt Passive Harmonic Filter.");
         resultsNote_->setText(message);
