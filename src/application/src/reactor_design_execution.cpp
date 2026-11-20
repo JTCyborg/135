@@ -3,6 +3,7 @@
 #include "p135/domain/design_dependency.hpp"
 
 #include <algorithm>
+#include <exception>
 #include <unordered_set>
 #include <utility>
 
