@@ -175,14 +175,14 @@ int main(int argc, char** argv)
         const auto restoredHistory = store.revisionHistory("MAT-TEST");
         assert(restoredHistory && restoredHistory.value().size() == 3);
         const auto seeded = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:00Z");
-        assert(seeded && seeded.value() == 7);
+        assert(seeded && seeded.value() == 16);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
         MaterialCatalogFilter coreMaterials;
         coreMaterials.recordType = "core-material";
         const auto coreCatalog = store.searchLatestRevisions(coreMaterials);
-        // MAT-TEST was inserted above; the two starter ferrites make three records total.
-        assert(coreCatalog && coreCatalog.value().size() == 3);
+        // MAT-TEST plus two ferrites and three electrical-steel grades.
+        assert(coreCatalog && coreCatalog.value().size() == 6);
         const auto n87 = store.latestRevision("MAT-TDK-N87");
         assert(n87 && n87.value());
         assert(n87.value()->payload.find("APPROXIMATE_DIGITIZATION") != std::string::npos);
@@ -190,7 +190,23 @@ int main(int argc, char** argv)
         assert(n97 && n97.value());
         const auto copper = store.latestRevision("MAT-CU-C11000-ETP");
         assert(copper && copper.value());
+
         assert(copper.value()->payload.find("1.707e-08") != std::string::npos);
+        const auto p180 = store.latestRevision("MAT-ELEKTRISOLA-POLYSOL-180");
+        assert(p180 && p180.value());
+        assert(p180.value()->payload.find("thermalClass_C") != std::string::npos);
+        assert(p180.value()->payload.find("0.0005") != std::string::npos);
+        const auto ai210 = store.latestRevision("MAT-ELEKTRISOLA-AMIDESTER-AI210");
+        assert(ai210 && ai210.value());
+        assert(ai210.value()->payload.find("polyamideimide") != std::string::npos);
+        const auto steel = store.latestRevision("MAT-TK-POWERCORE-M235-35A");
+        assert(steel && steel.value());
+        assert(steel.value()->payload.find("2.35") != std::string::npos);
+        assert(steel.value()->payload.find("NOT_PUBLISHED_IN_IMPORTED_DATASET") != std::string::npos);
+        MaterialCatalogFilter conductors;
+        conductors.recordType = "conductor-material";
+        const auto conductorCatalog = store.searchLatestRevisions(conductors);
+        assert(conductorCatalog && conductorCatalog.value().size() == 7);
         MaterialCatalogFilter capacitors;
         capacitors.recordType = "capacitor";
         const auto capacitorCatalog = store.searchLatestRevisions(capacitors);
