@@ -60,6 +60,43 @@ bool CoreComponentGeometrySnapshot::hasCompleteCadGeometry() const noexcept
     return cadGeometryStatus == "COMPLETE_PARAMETRIC_PROFILE";
 }
 
+Result<double> calculateThreePhaseEiEffectiveLimbAreaM2(
+    const CoreComponentGeometrySnapshot& geometry,
+    double stackDepthM,
+    double stackingFactor)
+{
+    const auto fail = [](ErrorCode code, std::string message, std::string field) {
+        Error error;
+        error.code = code;
+        error.message = std::move(message);
+        error.diagnostics.push_back(Diagnostic{
+            Severity::Error, "THREE_PHASE_EI_AREA_UNAVAILABLE", error.message,
+            std::move(field), std::nullopt, std::nullopt
+        });
+        return Result<double>::failure(std::move(error));
+    };
+    if (geometry.coreShape != "3PH EI laminated core" ||
+        geometry.magneticMaterialFamily != "electrical-steel-lamination")
+        return fail(ErrorCode::UnsupportedConfiguration,
+                    "Effective limb area calculation requires a three-phase EI electrical-steel lamination record.",
+                    "coreShape");
+    if (!geometry.columnWidthM || !std::isfinite(*geometry.columnWidthM) ||
+        *geometry.columnWidthM <= 0.0)
+        return fail(ErrorCode::MissingRequiredData,
+                    "Manufacturer column width is missing or invalid.", "columnWidthM");
+    if (!std::isfinite(stackDepthM) || stackDepthM <= 0.0)
+        return fail(ErrorCode::InvalidInput,
+                    "Stack depth must be finite and greater than zero.", "stackDepthM");
+    if (!std::isfinite(stackingFactor) || stackingFactor <= 0.0 || stackingFactor > 1.0)
+        return fail(ErrorCode::InvalidInput,
+                    "Stacking factor must be finite and in the interval (0, 1].", "stackingFactor");
+    const double area = *geometry.columnWidthM * stackDepthM * stackingFactor;
+    if (!std::isfinite(area) || area <= 0.0)
+        return fail(ErrorCode::InvalidInput,
+                    "Calculated net limb area is not finite and positive.", "effectiveAreaM2");
+    return Result<double>::success(area);
+}
+
 Result<CoreComponentGeometrySnapshot> loadCoreComponentGeometryRevision(
     const SqliteMaterialRevisionStore& store,
     const std::string& revisionId)
