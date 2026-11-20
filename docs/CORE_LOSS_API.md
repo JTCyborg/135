@@ -65,3 +65,10 @@ P_core [W] = p_specific [W/kg] * m_core [kg]
 The core mass must be supplied explicitly with a non-empty source reference (for example, a weighing record or a controlled manufacturing drawing/BOM). It is deliberately not inferred from Ae, le, magnetic path length or a partially specified CAD model. The result preserves both the loss-data reference and the core-mass source reference for downstream thermal accounting.
 
 This API calculates the material loss at one supplied operating point. It does not yet derive a cycle-equivalent loss from the seven branch peak flux densities, sum spatially varying limb/yoke losses, or automatically populate a reactor thermal network. Those require local flux waveforms/material data and an explicit mapping of core regions and masses; a single peak-B value must not be treated as a complete loss calculation for a nonsinusoidal waveform.
+
+
+## Three-limb region-resolved loss accounting
+
+`ThreeLimbCoreLossRequest` and `calculateThreeLimbCoreLossPower()` account for seven independently specified regions in the magnetic solver's fixed order: limb A, limb B, limb C, top yoke AB, top yoke BC, bottom yoke AB, bottom yoke BC. Each region receives its own peak flux density, temperature, physical mass and mass-source reference. The function evaluates each region against the same exact material loss dataset and returns seven auditable power results plus their sum. If any region is missing mass provenance or lies outside the measured loss-data domain, the aggregate calculation fails rather than silently omitting that region.
+
+This is region-resolved accounting, not yet a waveform-loss solver. The current measured-data schema represents loss against frequency, peak flux density and temperature; it does not encode arbitrary flux waveforms, minor loops, DC bias or rotational flux. Therefore the caller must only use this model where the material data's excitation conditions are applicable. A sampled nonsinusoidal magnetic cycle does not by itself make sinusoidal material loss data valid for that waveform.
