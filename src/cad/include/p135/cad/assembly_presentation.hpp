@@ -27,6 +27,8 @@ enum class AssemblyComponentKind {
     WindingEnvelope
 };
 
+struct AssemblyPresentationNode;
+
 struct AssemblyPresentationDisplayItem {
     std::string id;
     TopoDS_Shape shape;
