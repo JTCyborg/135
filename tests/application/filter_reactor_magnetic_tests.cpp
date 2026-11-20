@@ -21,7 +21,7 @@ int main()
 
     request.harmonicAnalysis.branchPoints.push_back(filter::BranchHarmonicPoint{
         7, 1, units::Frequency{50.0}, 1.0,
-        {{{1.0, 0.0}, {-0.5, -0.8660254037844386}, {-0.5, 0.8660254037844386}}}
+        std::array<std::complex<double>, 3>{ {1.0, 0.0}, {-0.5, -0.8660254037844386}, {-0.5, 0.8660254037844386} }
     });
     request.harmonicAnalysis.branchPoints.push_back(filter::BranchHarmonicPoint{
         7, 5, units::Frequency{250.0}, 0.1,
