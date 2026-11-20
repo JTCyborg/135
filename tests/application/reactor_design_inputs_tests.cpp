@@ -1,6 +1,7 @@
 #include "p135/application/reactor_design_inputs.hpp"
 
 #include <cassert>
+#include <limits>
 
 using namespace p135::application;
 
@@ -19,6 +20,21 @@ int main()
     inputs.stackingFactor = 0.95;
     inputs.ambientTemperatureK = 298.15;
     inputs.maximumWindingTemperatureK = 393.15;
+    inputs.coreGeometryFamily = "three-limb";
+    inputs.conductorShape = "rectangular";
+    inputs.windingTechnology = "layer";
+    inputs.coolingMethod = "natural-air";
+    inputs.bobbinUsed = false;
+    inputs.turnsPerPhase = 120;
+    inputs.turnsPerLayer = 12;
+    inputs.windingLayers = 10;
+    inputs.parallelConductors = 2;
+    inputs.conductorCrossSectionM2 = 2.5e-6;
+    inputs.conductorWidthM = 2.0e-3;
+    inputs.conductorThicknessM = 1.25e-3;
+    inputs.turnInsulationBuildM = 0.1e-3;
+    inputs.layerInsulationBuildM = 0.2e-3;
+    inputs.mainInsulationBuildM = 1.0e-3;
     assert(validate(inputs));
 
     const auto accepted = inputs;
@@ -32,6 +48,12 @@ int main()
     assert(!validate(inputs));
     inputs.stackingFactor = 0.95;
     inputs.maximumWindingTemperatureK = 290.0;
+    assert(!validate(inputs));
+    inputs.maximumWindingTemperatureK = 393.15;
+    inputs.turnsPerLayer = 0;
+    assert(!validate(inputs));
+    inputs.turnsPerLayer = 12;
+    inputs.conductorWidthM = std::numeric_limits<double>::quiet_NaN();
     assert(!validate(inputs));
 
     MaterialRecommendationSet recommendations;
