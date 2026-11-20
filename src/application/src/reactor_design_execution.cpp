@@ -1,5 +1,9 @@
 #include "p135/application/reactor_design_execution.hpp"
 
+#include "p135/domain/design_dependency.hpp"
+
+#include <algorithm>
+#include <unordered_set>
 #include <utility>
 
 namespace p135::application {
@@ -18,6 +22,38 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
     if (!executor)
         return Result<ReactorDesignExecutionReport>::failure(
             executionError(ErrorCode::InvalidInput, "A reactor stage executor is required."));
+
+    std::vector<domain::DesignDependency> dependencies;
+    dependencies.reserve(reactorDesignDependencyPairs().size());
+    for (const auto& pair : reactorDesignDependencyPairs()) {
+        const auto separator = pair.find('|');
+        if (separator == std::string::npos)
+            return Result<ReactorDesignExecutionReport>::failure(
+                executionError(ErrorCode::InternalError, "Malformed reactor dependency graph."));
+        dependencies.push_back({pair.substr(0, separator), pair.substr(separator + 1)});
+    }
+    const auto graphOrder = domain::designDependencyOrder(reactorDesignParameterIds(), dependencies);
+    if (!graphOrder)
+        return Result<ReactorDesignExecutionReport>::failure(graphOrder.error());
+
+    std::unordered_set<std::string> seen;
+    std::size_t previousPosition = 0;
+    bool firstStage = true;
+    for (const auto& stageId : plan.orderedStages) {
+        const auto it = std::find(graphOrder.value().begin(), graphOrder.value().end(), stageId);
+        if (stageId.empty() || it == graphOrder.value().end() || !seen.insert(stageId).second)
+            return Result<ReactorDesignExecutionReport>::failure(
+                executionError(ErrorCode::InvalidInput,
+                    "Recalculation plan contains an empty, unknown or duplicate stage ID."));
+        const auto position = static_cast<std::size_t>(
+            std::distance(graphOrder.value().begin(), it));
+        if (!firstStage && position <= previousPosition)
+            return Result<ReactorDesignExecutionReport>::failure(
+                executionError(ErrorCode::InvalidInput,
+                    "Recalculation plan violates dependency order."));
+        firstStage = false;
+        previousPosition = position;
+    }
 
     state.candidateInProgress = true;
     state.failedStage.clear();
