@@ -908,6 +908,151 @@ std::vector<SeedRecord> starterRecords()
             payload
         });
     }
+    // Flexible insulation products with thickness-specific manufacturer data.
+    // Short-term dielectric strength is never treated as a continuous design stress.
+    const auto addInsulationFilm = [&records](
+        const std::string& id, const std::string& manufacturer,
+        const std::string& grade, const std::string& family,
+        const std::string& source, double thicknessM,
+        double shortTermDielectricStrengthVPerM,
+        const std::string& dielectricTest, const std::string& thermalClass,
+        const std::string& sourceStatus, const std::string& notes) {
+        const json payload = {
+            {"schemaVersion", 1},
+            {"material", {
+                {"id", id}, {"manufacturer", manufacturer}, {"grade", grade},
+                {"family", family}, {"nominalThickness_m", thicknessM},
+                {"typicalShortTermDielectricStrength_V_per_m", shortTermDielectricStrengthVPerM},
+                {"dielectricTestMethod", dielectricTest},
+                {"thermalClass", thermalClass.empty() ? json(nullptr) : json(thermalClass)}
+            }},
+            {"sourceDocuments", json::array({source})},
+            {"dataQuality", {
+                {"sourceStatus", sourceStatus},
+                {"dielectricStrengthStatus", "TYPICAL_SHORT_TERM_MANUFACTURER_TEST_VALUE"},
+                {"continuousDesignStressStatus", "NOT_PUBLISHED_DO_NOT_INFER"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", notes}
+            }}
+        };
+        records.push_back(SeedRecord{
+            id, "SEED-" + id + "-R1", "insulation-material",
+            source, manufacturer + " " + grade + " " + std::to_string(thicknessM * 1.0e6) + " um",
+            payload
+        });
+    };
+    const std::string nomex410Source =
+        "https://www.dupont.com/content/dam/dupont/amer/us/en/safety/public/documents/en/Nomex_410_Datasheet_2025.pdf";
+    const std::string kaptonHnSource =
+        "https://www.dupont.com/content/dam/electronics/amer/us/en/electronics/public/documents/en/EI-10206-Kapton-HN-Data-Sheet.pdf";
+    addInsulationFilm(
+        "MAT-DUPONT-NOMEX-410-50UM", "DuPont", "Nomex 410", "aramid insulation paper",
+        nomex410Source, 50.0e-6, 18.0e6, "ASTM D149 AC rapid rise", "220 C (UL insulation recognition)",
+        "MANUFACTURER_DATASHEET_THICKNESS_ROW",
+        "0.05 mm grade. 18 kV/mm is a typical short-term AC rapid-rise value, not a continuous working stress. DuPont's dry-type continuous-stress recommendation is a separate system-level limit; verify exact construction, humidity and application.");
+    addInsulationFilm(
+        "MAT-DUPONT-NOMEX-410-130UM", "DuPont", "Nomex 410", "aramid insulation paper",
+        nomex410Source, 130.0e-6, 28.0e6, "ASTM D149 AC rapid rise", "220 C (UL insulation recognition)",
+        "MANUFACTURER_DATASHEET_THICKNESS_ROW",
+        "0.13 mm grade. 28 kV/mm is a typical short-term AC rapid-rise value, not a continuous working stress. Verify paper direction, moisture conditioning, insulation system and production tolerance.");
+    addInsulationFilm(
+        "MAT-DUPONT-NOMEX-410-380UM", "DuPont", "Nomex 410", "aramid insulation paper",
+        nomex410Source, 380.0e-6, 33.0e6, "ASTM D149 AC rapid rise", "220 C (UL insulation recognition)",
+        "MANUFACTURER_DATASHEET_THICKNESS_ROW",
+        "0.38 mm grade. 33 kV/mm is a typical short-term AC rapid-rise value, not a continuous working stress. Verify paper direction, moisture conditioning, insulation system and production tolerance.");
+    addInsulationFilm(
+        "MAT-DUPONT-KAPTON-HN-125UM", "DuPont", "Kapton HN", "polyimide film",
+        kaptonHnSource, 12.5e-6, 315.0e6, "ASTM D149 at 60 Hz", "",
+        "MANUFACTURER_DATASHEET_THICKNESS_ROW",
+        "12.7 um nominal gauge (0.5 mil). 315 V/um is typical short-term dielectric strength at the stated test conditions; not a continuous design field or guaranteed minimum. Thermal service limit depends on the complete construction and application.");
+    addInsulationFilm(
+        "MAT-DUPONT-KAPTON-HN-50UM", "DuPont", "Kapton HN", "polyimide film",
+        kaptonHnSource, 50.0e-6, 240.0e6, "ASTM D149 at 60 Hz", "",
+        "MANUFACTURER_DATASHEET_THICKNESS_ROW",
+        "50 um nominal gauge (2 mil). 240 V/um is typical short-term dielectric strength at the stated test conditions; not a continuous design field or guaranteed minimum. Thermal service limit depends on the complete construction and application.");
+
+    const std::string alleimaIsomidSource =
+        "https://www.alleima.com/en/technical-center/material-datasheets/wire-insulations-and-coatings/isomid/";
+    const json isomid = {
+        {"schemaVersion", 1},
+        {"material", {
+            {"id", "ALLEIMA-ISOMID"}, {"manufacturer", "Alleima"},
+            {"grade", "Isomid"}, {"family", "THEIC-modified polyesterimide wire enamel"},
+            {"thermalClass_C", 200},
+            {"standards", json::array({"NEMA MW 30", "NEMA MW 74"})},
+            {"dielectricStrengthAt25C_V", {{"MW30_18AWG", 13000.0}, {"MW74_18AWG", 13000.0}}},
+            {"cutThroughTemperature_C", 370.0},
+            {"testWireGauge", "18 AWG"}
+        }},
+        {"sourceDocuments", json::array({alleimaIsomidSource})},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_DATASHEET"},
+            {"dielectricStrengthStatus", "TEST_VALUE_FOR_SPECIFIED_18AWG_WIRE_CONSTRUCTION"},
+            {"wireSizeStatus", "NOT_A_GENERAL_FILM_THICKNESS_VALUE"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "Isomid is a thermal class 200 basecoat enamel. The 13 kV breakdown value applies to the specified 18 AWG wire construction and must not be converted to a generic dielectric field. Not directly solderable; enamel removal is required for connections. Topcoat combinations change friction and electrical properties."}
+        }}
+    };
+    records.push_back(SeedRecord{
+        "MAT-ALLEIMA-ISOMID", "SEED-MAT-ALLEIMA-ISOMID-R1", "insulation-material",
+        alleimaIsomidSource, "Alleima Isomid thermal class 200 wire enamel", isomid
+    });
+
+    const std::string elantasPowerGenSource =
+        "https://elantascomcdn.azureedge.net/fileadmin/elantas/press_news/Download-Center-ELANTAS-Europe/2025/PowerGenerationImpregnation_CastingPotting/Power_Generation_Impregnation_Casting_Potting.pdf";
+    const json up142 = {
+        {"schemaVersion", 1},
+        {"material", {
+            {"id", "ELANTAS-ELAN-PROTECT-UP142-TX"},
+            {"manufacturer", "ELANTAS"}, {"grade", "ELAN-protect UP142 TX"},
+            {"family", "impregnating resin"}, {"chemistry", "unsaturated polyester resin"},
+            {"thermalIndex_C_at_20000h", 200.0},
+            {"viscosityAt23C_mPa_s", {{"minimum", 600.0}, {"maximum", 1400.0}}},
+            {"process", "V(P)I"}
+        }},
+        {"sourceDocuments", json::array({elantasPowerGenSource})},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_POWER_GENERATION_PRODUCT_GUIDE"},
+            {"thermalIndexStatus", "MANUFACTURER_TI_20000H"},
+            {"viscosityStatus", "MANUFACTURER_RANGE_AT_23C"},
+            {"dielectricPropertiesStatus", "NOT_IMPORTED"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "Thermal index and viscosity are product-guide values, not a complete cured-resin property set. Obtain current TDS/SDS, cure schedule, compatibility and electrical test data for the selected production batch before design release."}
+        }}
+    };
+    records.push_back(SeedRecord{
+        "MAT-ELANTAS-UP142-TX", "SEED-MAT-ELANTAS-UP142-TX-R1", "insulation-material",
+        elantasPowerGenSource, "ELANTAS ELAN-protect UP142 TX VPI impregnating resin", up142
+    });
+
+    const std::string elmoglasSource =
+        "https://pt.elantas.com/fileadmin/elantas/companies/elantas_beck_india/products/4867_elantas_electrical_resins___varnishes_bro_sep_17.pdf";
+    const json elmoglas = {
+        {"schemaVersion", 1},
+        {"material", {
+            {"id", "ELANTAS-ELMOGLAS-H69A"},
+            {"manufacturer", "ELANTAS"}, {"grade", "Elmoglas H 69 A"},
+            {"family", "polyesterimide binder varnish"},
+            {"thermalClass_C", 180},
+            {"application", "binder varnish for polyester-film / glass / mica tapes and GFCC"},
+            {"curingTemperature_C", {300.0, 400.0}},
+            {"curingTime_minutes", 3.0}
+        }},
+        {"sourceDocuments", json::array({elmoglasSource})},
+        {"dataQuality", {
+            {"sourceStatus", "MANUFACTURER_PRODUCT_SELECTION_GUIDE"},
+            {"thermalClassStatus", "MANUFACTURER_LISTED_CLASS_180"},
+            {"cureStatus", "MANUFACTURER_LISTED_GUIDE_VALUE"},
+            {"dielectricPropertiesStatus", "NOT_IMPORTED"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "Binder varnish guide entry for composite insulation tapes. Cure line conditions must be confirmed against current product TDS and actual conductor thermal mass; no dielectric strength or continuous field is inferred."}
+        }}
+    };
+    records.push_back(SeedRecord{
+        "MAT-ELANTAS-ELMOGLAS-H69A", "SEED-MAT-ELANTAS-ELMOGLAS-H69A-R1", "insulation-material",
+        elmoglasSource, "ELANTAS Elmoglas H 69 A polyesterimide binder varnish", elmoglas
+    });
+
     // Construction templates describe strand arrangements, not new bulk materials.
     // Electrical properties are deliberately inherited from the selected strand grade
     // and must account for transposition, insulation, proximity and skin effects.
