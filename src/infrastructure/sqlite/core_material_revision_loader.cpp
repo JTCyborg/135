@@ -140,17 +140,27 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         material.sourceReference = revision.sourceReference;
         material.datasetRevision = revision.datasetRevision;
 
-        const auto& sourceBh = root.at("bhCurve");
-        const double bhFrequency = requiredNumber(sourceBh, "frequency_Hz");
-        const double bhTemperature = requiredNumber(sourceBh, "temperature_K");
-        const auto& bhPoints = sourceBh.at("points");
-        if (!bhPoints.is_array() || bhPoints.size() < 2)
-            throw std::invalid_argument("At least two source B-H points are required.");
-        for (const auto& point : bhPoints) {
-            material.bhCurve.push_back(domain::BHPoint{
-                units::MagneticFieldStrength{requiredNumber(point, "fieldStrength_A_per_m")},
-                units::FluxDensity{requiredNumber(point, "fluxDensity_T")}
-            });
+        // A material revision may legitimately publish physical properties while
+        // omitting a solver-ready B-H curve. Preserve that incomplete record so
+        // the revision-bound analysis can reject it by bhCurveStatus with the
+        // domain-level MissingMaterialProperty diagnostic. Never synthesize points.
+        const auto bhIt = root.find("bhCurve");
+        double bhFrequency = 0.0;
+        double bhTemperature = 0.0;
+        if (bhIt != root.end()) {
+            const auto& sourceBh = *bhIt;
+            bhFrequency = requiredNumber(sourceBh, "frequency_Hz");
+            bhTemperature = requiredNumber(sourceBh, "temperature_K");
+            const auto pointsIt = sourceBh.find("points");
+            if (pointsIt == sourceBh.end() || !pointsIt->is_array() ||
+                pointsIt->size() < 2)
+                throw std::invalid_argument("At least two source B-H points are required when a B-H curve is supplied.");
+            for (const auto& point : *pointsIt) {
+                material.bhCurve.push_back(domain::BHPoint{
+                    units::MagneticFieldStrength{requiredNumber(point, "fieldStrength_A_per_m")},
+                    units::FluxDensity{requiredNumber(point, "fluxDensity_T")}
+                });
+            }
         }
 
         const json sourceLoss = root.value("coreLossData", json::object());
@@ -192,21 +202,31 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.coreLossStatus = requiredString(quality, "coreLossStatus");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
-        const std::string bhCurveType = requiredString(sourceBh, "curveType");
-        if (bhCurveType == "DC initial magnetization curve") {
-            if (bhFrequency != 0.0)
-                throw std::invalid_argument("A DC B-H curve must declare frequency_Hz as zero.");
-        } else if (bhFrequency <= 0.0) {
-            throw std::invalid_argument("A non-DC B-H curve must declare a positive frequency.");
+        if (bhIt != root.end()) {
+            const std::string bhCurveType = requiredString(*bhIt, "curveType");
+            if (bhCurveType == "DC initial magnetization curve") {
+                if (bhFrequency != 0.0)
+                    throw std::invalid_argument("A DC B-H curve must declare frequency_Hz as zero.");
+            } else if (bhFrequency <= 0.0) {
+                throw std::invalid_argument("A non-DC B-H curve must declare a positive frequency.");
+            }
         }
         snapshot.bhCurveFrequency = units::Frequency{bhFrequency};
         snapshot.bhCurveTemperature = bhTemperature > 0.0
             ? std::optional<units::TemperatureKelvin>{units::TemperatureKelvin{bhTemperature}}
             : std::nullopt;
 
-        const auto validated = domain::validate(snapshot.material);
-        if (!validated)
-            return Result<CoreMaterialRevisionSnapshot>::failure(validated.error());
+        if (!snapshot.material.bhCurve.empty()) {
+            const auto validated = domain::validate(snapshot.material);
+            if (!validated)
+                return Result<CoreMaterialRevisionSnapshot>::failure(validated.error());
+        } else if (!std::isfinite(snapshot.material.density.si()) ||
+                   snapshot.material.density.si() <= 0.0) {
+            return Result<CoreMaterialRevisionSnapshot>::failure(loaderError(
+                ErrorCode::MissingMaterialProperty,
+                "Material density must be positive even when no B-H curve is published.",
+                "material.density"));
+        }
         if (bhTemperature < 0.0)
             throw std::invalid_argument("B-H curve temperature cannot be negative.");
         return Result<CoreMaterialRevisionSnapshot>::success(std::move(snapshot));
