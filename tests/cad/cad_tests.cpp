@@ -387,6 +387,11 @@ int main()
     asymmetric.bobbins[0].innerWidth = units::Length{0.03};
     asymmetric.bobbins[1].innerWidth = units::Length{0.05};
     asymmetric.bobbins[2].innerWidth = units::Length{0.04};
+    // Preserve the explicit flange envelope around each tube after changing
+    // the bobbin openings for the asymmetric limb widths.
+    asymmetric.bobbins[0].flangeOuterWidth = units::Length{0.05};
+    asymmetric.bobbins[1].flangeOuterWidth = units::Length{0.055};
+    asymmetric.bobbins[2].flangeOuterWidth = units::Length{0.05};
     const auto asymmetricShape = p135::cad::buildThreeLimbCoreShape(asymmetric);
     assert(asymmetricShape);
     assert(BRepCheck_Analyzer(asymmetricShape.value()).IsValid());
