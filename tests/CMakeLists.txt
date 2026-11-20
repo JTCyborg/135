@@ -97,6 +97,17 @@ else()
     target_compile_options(Project135DesignParameterTests PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135DesignDependencyTests
+    domain/design_dependency_tests.cpp
+)
+target_link_libraries(Project135DesignDependencyTests PRIVATE Project135::Domain)
+add_test(NAME Project135DesignDependencyTests COMMAND Project135DesignDependencyTests)
+if(MSVC)
+    target_compile_options(Project135DesignDependencyTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135DesignDependencyTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135DomainTests
     domain/magnetic_product_tests.cpp
 )
