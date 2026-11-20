@@ -1,6 +1,7 @@
 #include "p135/filter/network.hpp"
 
 #include <cmath>
+#include <array>
 #include <complex>
 #include <cstdint>
 #include <string>
@@ -24,10 +25,18 @@ bool finitePositive(double value)
 
 } // namespace
 
-Result<circuit::Circuit> buildCircuit(const FilterDesign& design)
+Result<circuit::Circuit> buildCircuit(const FilterDesign& design,
+                                      units::Resistance sourceResistance,
+                                      units::Inductance sourceInductance)
 {
     const double lineVoltage = design.network.lineToLineVoltage.si();
     const double frequency = design.network.fundamentalFrequency.si();
+    const double sourceR = sourceResistance.si();
+    const double sourceL = sourceInductance.si();
+    if (!std::isfinite(sourceR) || sourceR < 0.0 ||
+        !std::isfinite(sourceL) || sourceL < 0.0)
+        return Result<circuit::Circuit>::failure(
+            invalid("Thevenin source resistance and inductance must be finite and non-negative."));
     if (!finitePositive(lineVoltage) || !finitePositive(frequency))
         return Result<circuit::Circuit>::failure(
             invalid("Filter design must contain finite positive line voltage and frequency."));
@@ -52,15 +61,37 @@ Result<circuit::Circuit> buildCircuit(const FilterDesign& design)
     };
 
     const double phaseVoltage = lineVoltage / std::sqrt(3.0);
-    result.elements.push_back(circuit::Element::makeVoltageSource(
-        1, phaseA, neutral, std::polar(phaseVoltage, 0.0), "Source L1"));
-    result.elements.push_back(circuit::Element::makeVoltageSource(
-        2, phaseB, neutral, std::polar(phaseVoltage, -2.0 * kPi / 3.0), "Source L2"));
-    result.elements.push_back(circuit::Element::makeVoltageSource(
-        3, phaseC, neutral, std::polar(phaseVoltage, 2.0 * kPi / 3.0), "Source L3"));
+    const bool hasSourceImpedance = sourceR > 0.0 || sourceL > 0.0;
+    const std::array<circuit::NodeId, 3> phaseNodes{phaseA, phaseB, phaseC};
+    const std::array<circuit::NodeId, 3> sourceNodes{4, 5, 6};
+    const std::array<double, 3> sourceAngles{0.0, -2.0 * kPi / 3.0, 2.0 * kPi / 3.0};
+    for (std::size_t phase = 0; phase < 3; ++phase) {
+        const auto sourceNode = hasSourceImpedance ? sourceNodes[phase] : phaseNodes[phase];
+        if (hasSourceImpedance)
+            result.nodes.push_back({sourceNode, "Thevenin source L" + std::to_string(phase + 1)});
+        result.elements.push_back(circuit::Element::makeVoltageSource(
+            static_cast<circuit::ComponentId>(phase + 1), sourceNode, neutral,
+            std::polar(phaseVoltage, sourceAngles[phase]),
+            "Thevenin voltage source L" + std::to_string(phase + 1)));
+    }
 
     circuit::ComponentId nextComponent = 4;
-    circuit::NodeId nextNode = 4;
+    circuit::NodeId nextNode = hasSourceImpedance ? 7 : 4;
+    if (hasSourceImpedance) {
+        for (std::size_t phase = 0; phase < 3; ++phase) {
+            const auto sourceNode = sourceNodes[phase];
+            const auto busNode = phaseNodes[phase];
+            const std::string suffix = " L" + std::to_string(phase + 1);
+            if (sourceR > 0.0)
+                result.elements.push_back(circuit::Element::makeResistor(
+                    nextComponent++, sourceNode, busNode, sourceResistance,
+                    "Thevenin resistance" + suffix));
+            if (sourceL > 0.0)
+                result.elements.push_back(circuit::Element::makeInductor(
+                    nextComponent++, sourceNode, busNode, sourceInductance,
+                    "Thevenin inductance" + suffix));
+        }
+    }
 
     const auto addSeriesBranch = [&](circuit::NodeId start, circuit::NodeId finish,
                                      const SingleTunedBranchDesign& branch,
