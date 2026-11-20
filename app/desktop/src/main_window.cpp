@@ -1017,8 +1017,8 @@ QWidget* MainWindow::createFilterPage()
         "Voltage-source spectrum: enter measured/calculated phase-A RMS harmonic voltage magnitudes. "
         "The fundamental positive-sequence voltage is derived from nominal line voltage; add only "
         "non-fundamental orders here. Use Positive or Negative sequence. Zero sequence is not supported. "
-        "This is not a load-current injection spectrum; harmonic load-current sources and unbalanced "
-        "phase-by-phase spectra are not modelled by this workflow."));
+        "This voltage spectrum is distinct from the nonlinear-load current injection table below. "
+        "Zero sequence and unbalanced phase-by-phase spectra are not supported."));
     spectrumHelp->setWordWrap(true);
     advancedLayout->addWidget(spectrumHelp);
 
@@ -1052,6 +1052,48 @@ QWidget* MainWindow::createFilterPage()
         const int row = harmonicSpectrumTable_->currentRow();
         if (row >= 0)
             harmonicSpectrumTable_->removeRow(row);
+    });
+
+    auto* currentInjectionHelp = new QLabel(tr(
+        "Nonlinear-load current injection: add one row per source and harmonic. "
+        "Rows with the same source ID represent the same load at different orders. "
+        "Current phasors are RMS phase-A values; angles are referenced to the phase-A voltage. "
+        "Multiple source phasors at the same order and sequence are summed as complex currents."));
+    currentInjectionHelp->setWordWrap(true);
+    advancedLayout->addWidget(currentInjectionHelp);
+
+    harmonicCurrentTable_ = new QTableWidget(0, 5);
+    harmonicCurrentTable_->setHorizontalHeaderLabels({
+        tr("Load source ID"), tr("Harmonic order"), tr("Sequence"),
+        tr("Phase-A load current RMS (A)"), tr("Phase angle (°)")
+    });
+    harmonicCurrentTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    harmonicCurrentTable_->setMinimumHeight(120);
+    harmonicCurrentTable_->setEditTriggers(QAbstractItemView::DoubleClicked |
+                                            QAbstractItemView::EditKeyPressed |
+                                            QAbstractItemView::AnyKeyPressed);
+    advancedLayout->addWidget(harmonicCurrentTable_);
+
+    auto* injectionButtons = new QHBoxLayout;
+    auto* addInjection = new QPushButton(tr("Add load-current harmonic"));
+    auto* removeInjection = new QPushButton(tr("Remove selected load harmonic"));
+    injectionButtons->addWidget(addInjection);
+    injectionButtons->addWidget(removeInjection);
+    injectionButtons->addStretch();
+    advancedLayout->addLayout(injectionButtons);
+    connect(addInjection, &QPushButton::clicked, this, [this] {
+        const int row = harmonicCurrentTable_->rowCount();
+        harmonicCurrentTable_->insertRow(row);
+        harmonicCurrentTable_->setItem(row, 0, new QTableWidgetItem(QStringLiteral("LOAD-1")));
+        harmonicCurrentTable_->setItem(row, 1, new QTableWidgetItem(QStringLiteral("5")));
+        harmonicCurrentTable_->setItem(row, 2, new QTableWidgetItem(QStringLiteral("Negative")));
+        harmonicCurrentTable_->setItem(row, 3, new QTableWidgetItem(QStringLiteral("0")));
+        harmonicCurrentTable_->setItem(row, 4, new QTableWidgetItem(QStringLiteral("0")));
+    });
+    connect(removeInjection, &QPushButton::clicked, this, [this] {
+        const int row = harmonicCurrentTable_->currentRow();
+        if (row >= 0)
+            harmonicCurrentTable_->removeRow(row);
     });
 
     auto* sourceWarning = new QLabel(tr("Source impedance is deliberately unset by default. Enter values from a short-circuit study or measurement before running resonance and harmonic calculations; zero/zero leaves these analyses NOT_VERIFIED."));
@@ -1957,6 +1999,53 @@ void MainWindow::calculateFilter()
                 std::polar(magnitude, phaseDegrees * pi / 180.0)
             });
             ++suppliedHarmonics;
+        }
+    }
+
+    if (harmonicCurrentTable_) {
+        for (int row = 0; row < harmonicCurrentTable_->rowCount(); ++row) {
+            const auto* sourceItem = harmonicCurrentTable_->item(row, 0);
+            const auto* orderItem = harmonicCurrentTable_->item(row, 1);
+            const auto* sequenceItem = harmonicCurrentTable_->item(row, 2);
+            const auto* magnitudeItem = harmonicCurrentTable_->item(row, 3);
+            const auto* phaseItem = harmonicCurrentTable_->item(row, 4);
+            if (!sourceItem || !orderItem || !sequenceItem || !magnitudeItem || !phaseItem) {
+                advancedWarning = tr("Load-current injection row %1 is incomplete.").arg(row + 1);
+                spectrumValid = false;
+                break;
+            }
+            bool orderOk = false;
+            bool magnitudeOk = false;
+            bool phaseOk = false;
+            const auto order = orderItem->text().toUInt(&orderOk);
+            const double magnitude = magnitudeItem->text().toDouble(&magnitudeOk);
+            const double phaseDegrees = phaseItem->text().toDouble(&phaseOk);
+            const QString sourceId = sourceItem->text().trimmed();
+            if (sourceId.isEmpty() || !orderOk || order == 0 || !magnitudeOk ||
+                !phaseOk || !std::isfinite(magnitude) || magnitude < 0.0 ||
+                !std::isfinite(phaseDegrees)) {
+                advancedWarning = tr("Load-current injection row %1 has invalid source ID, order, RMS current or phase.")
+                    .arg(row + 1);
+                spectrumValid = false;
+                break;
+            }
+            if (magnitude == 0.0)
+                continue;
+            p135::filter::HarmonicSequence sequence;
+            if (sequenceItem->text().compare(tr("Positive"), Qt::CaseInsensitive) == 0)
+                sequence = p135::filter::HarmonicSequence::Positive;
+            else if (sequenceItem->text().compare(tr("Negative"), Qt::CaseInsensitive) == 0)
+                sequence = p135::filter::HarmonicSequence::Negative;
+            else {
+                advancedWarning = tr("Load-current injection row %1 sequence must be Positive or Negative.")
+                    .arg(row + 1);
+                spectrumValid = false;
+                break;
+            }
+            harmonicRequest.loadCurrentInjections.push_back({
+                sourceId.toStdString(), static_cast<std::uint32_t>(order), sequence,
+                std::polar(magnitude, phaseDegrees * pi / 180.0)
+            });
         }
     }
 
