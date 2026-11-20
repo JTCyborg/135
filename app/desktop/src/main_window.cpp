@@ -55,6 +55,8 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollArea>
+#include <QSplitter>
+#include <QTreeWidget>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStringList>
@@ -1938,16 +1940,105 @@ QWidget* MainWindow::createCadPage()
 {
     auto* page = new QWidget;
     auto* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(10, 10, 10, 10);
+    layout->setSpacing(8);
+
     auto* heading = new QLabel(tr("3D CAD workspace"));
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
 
-    auto* viewport = new CadViewportWidget(page);
-    layout->addWidget(viewport, 1);
+    auto* workspace = new QSplitter(Qt::Horizontal, page);
+    workspace->setChildrenCollapsible(false);
+
+    auto* structurePanel = new QWidget(workspace);
+    structurePanel->setMinimumWidth(250);
+    structurePanel->setMaximumWidth(360);
+    auto* structureLayout = new QVBoxLayout(structurePanel);
+    structureLayout->setContentsMargins(0, 0, 8, 0);
+
+    auto* structureTitle = new QLabel(tr("Assembly structure"), structurePanel);
+    structureTitle->setStyleSheet("font-weight: 600;");
+    structureLayout->addWidget(structureTitle);
+
+    auto* tree = new QTreeWidget(structurePanel);
+    tree->setColumnCount(2);
+    tree->setHeaderLabels({tr("Component"), tr("State")});
+    tree->setRootIsDecorated(true);
+    tree->setAlternatingRowColors(true);
+    tree->setMinimumHeight(240);
+    structureLayout->addWidget(tree, 1);
+
+    const auto addGroup = [tree](const QString& name,
+                                 const QStringList& children) {
+        auto* group = new QTreeWidgetItem(tree, {name, tr("Pending")});
+        group->setToolTip(1, QObject::tr(
+            "This assembly group is defined by the CAD workspace specification; physical geometry has not yet been supplied."));
+        group->setExpanded(true);
+        for (const auto& childName : children) {
+            auto* child = new QTreeWidgetItem(group, {childName, QObject::tr("Not generated")});
+            child->setToolTip(1, QObject::tr(
+                "No verified mechanical dimensions or B-Rep shape are available for this component."));
+            child->setFlags(child->flags() & ~Qt::ItemIsUserCheckable);
+        }
+        return group;
+    };
+
+    addGroup(tr("Core laminations"), {
+        tr("Limb A"), tr("Limb B"), tr("Limb C"),
+        tr("Top yoke A-B"), tr("Top yoke B-C"),
+        tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
+    });
+    addGroup(tr("Non-magnetic gaps / spacers"), {
+        tr("Gap and spacer geometry not supplied")
+    });
+    addGroup(tr("Bobbin / insulation"), {
+        tr("Bobbin L1"), tr("Bobbin L2"), tr("Bobbin L3")
+    });
+    addGroup(tr("Windings"), {
+        tr("Winding L1"), tr("Winding L2"), tr("Winding L3")
+    });
+    addGroup(tr("Clamping brackets & terminals"), {
+        tr("Mechanical details not supplied")
+    });
+    tree->expandAll();
+
+    auto* propertiesTitle = new QLabel(tr("Component properties"), structurePanel);
+    propertiesTitle->setStyleSheet("font-weight: 600;");
+    structureLayout->addWidget(propertiesTitle);
+    auto* properties = new QLabel(tr(
+        "Select a component to inspect its model status. Visibility, transparency and dimensions become editable when verified geometry is connected."));
+    properties->setWordWrap(true);
+    properties->setMinimumHeight(64);
+    properties->setFrameShape(QFrame::StyledPanel);
+    properties->setMargin(8);
+    structureLayout->addWidget(properties);
+
+    connect(tree, &QTreeWidget::currentItemChanged, page,
+        [properties](QTreeWidgetItem* current, QTreeWidgetItem*) {
+            if (!current) {
+                properties->setText(QObject::tr("Select a component."));
+                return;
+            }
+            properties->setText(QObject::tr("%1\nStatus: %2\nPhysical geometry: NOT_PROVIDED")
+                .arg(current->text(0), current->text(1)));
+        });
+
+    auto* viewportPanel = new QWidget(workspace);
+    auto* viewportLayout = new QVBoxLayout(viewportPanel);
+    viewportLayout->setContentsMargins(0, 0, 0, 0);
+    auto* viewport = new CadViewportWidget(viewportPanel);
+    viewportLayout->addWidget(viewport, 1);
+
+    workspace->addWidget(structurePanel);
+    workspace->addWidget(viewportPanel);
+    workspace->setStretchFactor(0, 0);
+    workspace->setStretchFactor(1, 1);
+    workspace->setSizes({300, 900});
+    layout->addWidget(workspace, 1);
 
     auto* geometryNote = new QLabel(tr(
-        "The current engineering inputs contain magnetic effective dimensions, not the complete physical core, bobbin and winding geometry. "
-        "No physical dimensions are inferred from Ae, le or other magnetic values; the viewport will remain empty until verified mechanical geometry is supplied."));
+        "CAD geometry is intentionally not fabricated: magnetic effective dimensions (Ae, le) do not define the mechanical core, bobbins or winding build. "
+        "The viewport remains empty until verified physical dimensions and material data are provided."));
     geometryNote->setWordWrap(true);
     geometryNote->setStyleSheet("color: palette(mid);");
     layout->addWidget(geometryNote);
