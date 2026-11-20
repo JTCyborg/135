@@ -2918,7 +2918,7 @@ void MainWindow::calculateFilter()
                     continue;
                 QJsonObject point;
                 point.insert(QStringLiteral("sourceId"), sourceItem->text());
-                point.insert(QStringLiteral("order"), orderItem->text().toUInt());
+                point.insert(QStringLiteral("order"), static_cast<int>(orderItem->text().toUInt()));
                 point.insert(QStringLiteral("sequence"), sequenceItem->text());
                 point.insert(QStringLiteral("currentRms_A"), magnitudeItem->text().toDouble());
                 point.insert(QStringLiteral("phase_deg"), phaseItem->text().toDouble());
