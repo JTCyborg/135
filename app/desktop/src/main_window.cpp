@@ -2825,7 +2825,7 @@ void MainWindow::calculateFilter()
     if ((magneticKneeCurrentA && *magneticKneeCurrentA > 0.0) ||
         (inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0)) {
         addTextResult(tr("Current-based saturation margins"),
-            tr("NOT_VERIFIED — source impedance is not stamped into the current sweep; no operating-current margin is reported."));
+            tr("NOT_VERIFIED — the source-limited frequency sweep is diagnostic, not the multi-harmonic operating-current result; no Isat margin is inferred from it."));
     }
     if (magneticCircuitBase && magneticSweepValid && !magneticFluxDensityPoints.empty()) {
         const auto peak = std::max_element(magneticFluxDensityPoints.begin(),
