@@ -13,22 +13,31 @@
 
 namespace p135::thermal {
 
-struct ReactorThermalNetworkRequest {
-    domain::ThreeLimbCoreLossResult coreLosses;
-    domain::WindingCopperLossResult windingCopperLosses;
+/// Thermal boundary conditions and explicit network topology. No values are
+/// inferred from material, geometry, or a nominal cooling method.
+struct ReactorThermalNetworkConfiguration {
     units::TemperatureKelvin ambientTemperature{293.15};
-
     std::array<std::optional<units::TemperatureKelvin>, 7> coreMaximumTemperatures{};
     std::array<std::string, 7> coreTemperatureLimitSourceReferences{};
     std::array<std::optional<units::TemperatureKelvin>, 3> windingMaximumTemperatures{};
     std::array<std::string, 3> windingTemperatureLimitSourceReferences{};
-
-    std::string windingLossSourceReference;
-    std::string coreMaterialDesignReleaseStatus;
-    std::string conductorMaterialDesignReleaseStatus;
-
     std::vector<ThermalConductanceLink> links;
     std::vector<ThermalAmbientLink> ambientLinks;
+};
+
+struct ReactorThermalNetworkRequest : ReactorThermalNetworkConfiguration {
+    domain::ThreeLimbCoreLossResult coreLosses;
+    domain::WindingCopperLossResult windingCopperLosses;
+
+    /// Source reference for the exact copper-loss calculation/revision.
+    std::string windingLossSourceReference;
+    /// Exact immutable material revision references in the form revisionId#SHA256.
+    /// These are provenance labels; callers should prefer the revision-bound
+    /// infrastructure adapter, which loads them from the revision store.
+    std::string coreMaterialRevisionReference;
+    std::string conductorMaterialRevisionReference;
+    std::string coreMaterialDesignReleaseStatus;
+    std::string conductorMaterialDesignReleaseStatus;
 };
 
 struct ReactorThermalNetworkResult {
