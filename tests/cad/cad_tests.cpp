@@ -268,6 +268,21 @@ int main()
     assert(gappedSolidCount == 10);
     assert(BRepCheck_Analyzer(gappedShape.value()).IsValid());
 
+    // Adjacent air-gap intervals are a single continuous cut. They must not
+    // make the CAD segmenter attempt to create a zero-length intermediate solid.
+    auto adjacentGaps = geometry;
+    adjacentGaps.core.airGaps = {
+        {CoreSegment::LimbA, units::Length{0.02}, units::Length{0.001}},
+        {CoreSegment::LimbA, units::Length{0.021}, units::Length{0.002}}
+    };
+    const auto adjacentGapShape = p135::cad::buildThreeLimbCoreShape(adjacentGaps);
+    assert(adjacentGapShape);
+    std::size_t adjacentGapSolidCount = 0;
+    for (TopExp_Explorer it(adjacentGapShape.value(), TopAbs_SOLID); it.More(); it.Next())
+        ++adjacentGapSolidCount;
+    assert(adjacentGapSolidCount == 8);
+    assert(BRepCheck_Analyzer(adjacentGapShape.value()).IsValid());
+
     // The top AB yoke half spans 120 mm from the outside face of limb A
     // to the centre plane of limb B. This gap is near its right-hand end.
     auto yokeGapNearEnd = geometry;
