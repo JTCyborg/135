@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <numbers>
 
 using namespace p135;
 using namespace p135::filter;
@@ -45,7 +46,10 @@ int main()
         assert(result.value().points.front().frequency.si() == 50.0);
         assert(std::abs(result.value().points.back().frequency.si() - 1000.0) < 1.0e-9);
         assert(result.value().points.front().filterImpedanceMagnitudeOhm > 0.0);
-        assert(result.value().points.front().sourceImpedanceMagnitudeOhm > 0.0);
+        const double expectedSourceMagnitude = std::hypot(
+            0.08, 2.0 * std::numbers::pi * 50.0 * 0.001);
+        assert(std::abs(result.value().points.front().sourceImpedanceMagnitudeOhm -
+                        expectedSourceMagnitude) < 1.0e-12);
         assert(result.value().points.front().busImpedanceMagnitudeOhm > 0.0);
         assert(std::isfinite(result.value().points.front().busImpedancePhaseRadians));
         assert(!result.value().resonancePeaks.empty());
@@ -85,6 +89,26 @@ int main()
         assert(std::abs(result.value().points[50].frequency.si() - 525.0) < 1.0e-9);
     }
 
+    {
+        // Source R and L are independently represented in the frequency scan.
+        auto resistiveRequest = validRequest();
+        resistiveRequest.source = {units::Resistance{0.08}, units::Inductance{0.0}};
+        const auto resistive = analyzeFrequencyResponse(resistiveRequest);
+        assert(resistive);
+        assert(std::abs(resistive.value().points.front().sourceImpedanceMagnitudeOhm -
+                        0.08) < 1.0e-12);
+
+        auto inductiveRequest = validRequest();
+        inductiveRequest.source = {units::Resistance{0.0}, units::Inductance{0.001}};
+        const auto inductive = analyzeFrequencyResponse(inductiveRequest);
+        assert(inductive);
+        const double expectedInductiveMagnitude =
+            2.0 * std::numbers::pi * 50.0 * 0.001;
+        assert(std::abs(inductive.value().points.front().sourceImpedanceMagnitudeOhm -
+                        expectedInductiveMagnitude) < 1.0e-12);
+        assert(std::abs(resistive.value().points.front().busImpedanceMagnitudeOhm -
+                        inductive.value().points.front().busImpedanceMagnitudeOhm) > 1.0e-9);
+    }
     {
         auto request = validRequest();
         request.source = {units::Resistance{0.0}, units::Inductance{0.0}};
