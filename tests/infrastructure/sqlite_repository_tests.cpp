@@ -178,10 +178,11 @@ int main(int argc, char** argv)
         assert(seeded && seeded.value() > 0);
         const auto seededAgain = seedStarterMaterialCatalog(store, "integration-test", "2026-11-19T00:00:01Z");
         assert(seededAgain && seededAgain.value() == 0);
-        MaterialCatalogFilter ferriteCoreComponents;
-        ferriteCoreComponents.recordType = "core-component";
-        const auto ferriteCoreCatalog = store.searchLatestRevisions(ferriteCoreComponents);
-        assert(ferriteCoreCatalog && ferriteCoreCatalog.value().size() == 74);
+        MaterialCatalogFilter coreComponents;
+        coreComponents.recordType = "core-component";
+        const auto coreComponentCatalog = store.searchLatestRevisions(coreComponents);
+        // 50 PQ + 24 ETD + 20 three-phase EI manufacturer component records.
+        assert(coreComponentCatalog && coreComponentCatalog.value().size() == 94);
         const auto pqCore = store.latestRevision("COMP-TDK-B65879B0000R087");
         assert(pqCore && pqCore.value());
         assert(pqCore.value()->payload.find("PQ 32/30") != std::string::npos);
