@@ -227,6 +227,111 @@ std::vector<SeedRecord> starterRecords()
         }}
     };
 
+
+    const auto enamelledCopper = [](const std::string& id, const std::string& grade,
+                                    const std::string& enamel, const std::string& baseCoat,
+                                    const std::string& topCoat, int thermalClass,
+                                    double minDiameterMm, double maxDiameterMm,
+                                    const std::string& ansiType) {
+        return json{
+            {"schemaVersion", 1},
+            {"material", {
+                {"id", id}, {"manufacturer", "ELEKTRISOLA"},
+                {"grade", grade}, {"family", "enameled copper magnet wire"},
+                {"conductorMaterial", "Cu-ETP, 99.95% copper"},
+                {"resistivityAt20C_ohm_m", 1.71e-8},
+                {"temperatureCoefficientAt20C_per_K", 0.00393},
+                {"density_kg_per_m3", 8900.0},
+                {"conductivity_S_per_m", 58.5e6},
+                {"enamelSystem", enamel}, {"baseCoat", baseCoat},
+                {"topCoat", topCoat}, {"thermalClass_C", thermalClass},
+                {"ansiMWType", ansiType},
+                {"availableBareConductorDiameterRange_m",
+                    {minDiameterMm * 1.0e-3, maxDiameterMm * 1.0e-3}},
+                {"diameterRangeIsCatalogAvailabilityNotSelectedWireSize", true}
+            }},
+            {"sourceDocuments", json::array({
+                "https://www.elektrisola.com/en-us/Products/Enamelled-Wire/Types",
+                "https://www.elektrisola.com/Attachments/UL/OBMW2.E331840_-_Magnet_Wire_USA.pdf",
+                "https://elektrisoladev.com/Attachments/Metals/ELEKTRISOLA_Datasheet_Cu.pdf"
+            })},
+            {"dataQuality", {
+                {"sourceStatus", "MANUFACTURER_PRODUCT_RANGE_AND_UL_COMPONENT_LISTING"},
+                {"resistivityStatus", "MANUFACTURER_COPPER_DATASHEET_TYPICAL"},
+                {"wireSizeStatus", "RANGE_ONLY_NO_NOMINAL_DIAMETER_SELECTED"},
+                {"designReleaseStatus", "NOT_VERIFIED"},
+                {"notes", "Thermal class is the listed magnet-wire component class, not a complete insulation-system temperature rating. Select an exact IEC 60317 wire size and grade before winding geometry or dielectric design."}
+            }}
+        };
+    };
+
+    const json steelM235 = {
+        {"schemaVersion", 1},
+        {"material", {
+            {"id", "TK-POWERCORE-M235-35A"}, {"manufacturer", "thyssenkrupp Electrical Steel"},
+            {"grade", "powercore M235-35A"}, {"family", "non-grain-oriented electrical steel"},
+            {"standard", "DIN EN 10106"}, {"laminationThickness_m", 0.00035},
+            {"density_kg_per_m3", 7600.0},
+            {"maximumSpecificCoreLoss_W_per_kg", {
+                {"50Hz_1p0T", 0.95}, {"50Hz_1p5T", 2.35}
+            }},
+            {"minimumPolarization_T", {
+                {"at_2500_A_per_m", 1.49}, {"at_5000_A_per_m", 1.60},
+                {"at_10000_A_per_m", 1.70}
+            }}
+        }},
+        {"dataQuality", {
+            {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUES"},
+            {"bhCurveStatus", "NOT_PUBLISHED_IN_IMPORTED_DATASET"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "Manufacturer table gives maximum specific losses and minimum polarization points. No continuous B-H curve or loss map versus frequency, flux density and temperature is inferred."}
+        }}
+    };
+    const json steelM250 = {
+        {"schemaVersion", 1},
+        {"material", {
+            {"id", "TK-POWERCORE-M250-35A"}, {"manufacturer", "thyssenkrupp Electrical Steel"},
+            {"grade", "powercore M250-35A"}, {"family", "non-grain-oriented electrical steel"},
+            {"standard", "DIN EN 10106"}, {"laminationThickness_m", 0.00035},
+            {"density_kg_per_m3", 7600.0},
+            {"maximumSpecificCoreLoss_W_per_kg", {
+                {"50Hz_1p0T", 1.05}, {"50Hz_1p5T", 2.50}
+            }},
+            {"minimumPolarization_T", {
+                {"at_2500_A_per_m", 1.49}, {"at_5000_A_per_m", 1.60},
+                {"at_10000_A_per_m", 1.70}
+            }}
+        }},
+        {"dataQuality", {
+            {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUES"},
+            {"bhCurveStatus", "NOT_PUBLISHED_IN_IMPORTED_DATASET"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "Manufacturer table gives maximum specific losses and minimum polarization points. No continuous B-H curve or loss map versus frequency, flux density and temperature is inferred."}
+        }}
+    };
+    const json steelM270 = {
+        {"schemaVersion", 1},
+        {"material", {
+            {"id", "TK-POWERCORE-M270-35A"}, {"manufacturer", "thyssenkrupp Electrical Steel"},
+            {"grade", "powercore M270-35A"}, {"family", "non-grain-oriented electrical steel"},
+            {"standard", "DIN EN 10106"}, {"laminationThickness_m", 0.00035},
+            {"density_kg_per_m3", 7650.0},
+            {"maximumSpecificCoreLoss_W_per_kg", {
+                {"50Hz_1p0T", 1.10}, {"50Hz_1p5T", 2.70}
+            }},
+            {"minimumPolarization_T", {
+                {"at_2500_A_per_m", 1.49}, {"at_5000_A_per_m", 1.60},
+                {"at_10000_A_per_m", 1.70}
+            }}
+        }},
+        {"dataQuality", {
+            {"coreLossStatus", "MANUFACTURER_MAXIMUM_VALUES"},
+            {"bhCurveStatus", "NOT_PUBLISHED_IN_IMPORTED_DATASET"},
+            {"designReleaseStatus", "NOT_VERIFIED"},
+            {"notes", "Manufacturer table gives maximum specific losses and minimum polarization points. No continuous B-H curve or loss map versus frequency, flux density and temperature is inferred."}
+        }}
+    };
+
     return {
         {"MAT-TDK-N87", "SEED-TDK-N87-R1", "core-material",
          "https://www.tdk-electronics.tdk.com/download/187238/990c299b916e9f3eb7e44ad563b7f0b9/pdf-n87.pdf",
@@ -248,7 +353,44 @@ std::vector<SeedRecord> starterRecords()
          "TDK ordering-code catalog listing; B32778G4177K000", tdkCapLarge},
         {"COMP-VISHAY-RH50", "SEED-VISHAY-RH50-R1", "resistor",
          "https://www.vishay.com/docs/50013/rh.pdf",
-         "Vishay RH series datasheet; RH50 series specifications", vishayRh50}
+         "Vishay RH series datasheet; RH50 series specifications", vishayRh50},
+
+        {"MAT-ELEKTRISOLA-POLYSOL-180", "SEED-ELEKTRISOLA-P180-R1", "conductor-material",
+         "https://www.elektrisola.com/en-us/Products/Enamelled-Wire/Types",
+         "ELEKTRISOLA product type table and UL component listing; Polysol 180, MW 82-C, thermal class 180", 
+         enamelledCopper("ELEKTRISOLA-POLYSOL-180", "Polysol 180", "modified polyurethane", "modified polyurethane", "none", 180, 0.010, 0.500, "MW 82-C")},
+        {"MAT-ELEKTRISOLA-ESTERSOL-180", "SEED-ELEKTRISOLA-E180-R1", "conductor-material",
+         "https://www.elektrisola.com/en-us/Products/Enamelled-Wire/Types",
+         "ELEKTRISOLA product type table and UL component listing; Estersol 180, MW 77-C, thermal class 180",
+         enamelledCopper("ELEKTRISOLA-ESTERSOL-180", "Estersol 180", "solderable polyesterimide", "solderable polyesterimide", "none", 180, 0.010, 0.500, "MW 77-C")},
+        {"MAT-ELEKTRISOLA-AMIDESTER-200", "SEED-ELEKTRISOLA-A200-R1", "conductor-material",
+         "https://www.elektrisola.com/en-us/Products/Enamelled-Wire/Types",
+         "ELEKTRISOLA product type table and UL component listing; Amidester 200, MW 74-C, thermal class 200",
+         enamelledCopper("ELEKTRISOLA-AMIDESTER-200", "Amidester 200", "THEIC-modified polyesterimide", "THEIC-modified polyesterimide", "none", 200, 0.010, 0.500, "MW 74-C")},
+        {"MAT-ELEKTRISOLA-AMIDESTER-AI210", "SEED-ELEKTRISOLA-AI210-R1", "conductor-material",
+         "https://www.elektrisola.com/en-us/Products/Enamelled-Wire/Types",
+         "ELEKTRISOLA product type table and UL component listing; Amidester AI210, MW 35-C, UL thermal class 200",
+         enamelledCopper("ELEKTRISOLA-AMIDESTER-AI210", "Amidester AI210", "polyesterimide plus polyamideimide overcoat", "polyesterimide", "polyamideimide", 200, 0.015, 0.500, "MW 35-C")},
+        {"MAT-ELEKTRISOLA-AMIDIMIDE-220", "SEED-ELEKTRISOLA-I220-R1", "conductor-material",
+         "https://www.elektrisola.com/en-us/Products/Enamelled-Wire/Types",
+         "ELEKTRISOLA product type table and UL component listing; Amidimide 220, MW 81-C, thermal class 220",
+         enamelledCopper("ELEKTRISOLA-AMIDIMIDE-220", "Amidimide 220", "polyamideimide", "polyamideimide", "none", 220, 0.020, 0.500, "MW 81-C")},
+        {"MAT-ELEKTRISOLA-POLYIMIDE-240", "SEED-ELEKTRISOLA-ML240-R1", "conductor-material",
+         "https://www.elektrisola.com/en-us/Products/Enamelled-Wire/Types",
+         "ELEKTRISOLA product type table and UL component listing; Polyimide 240, MW 16-C, thermal class 240",
+         enamelledCopper("ELEKTRISOLA-POLYIMIDE-240", "Polyimide 240 (ML 240)", "aromatic polyimide", "aromatic polyimide", "none", 240, 0.015, 0.500, "MW 16-C")},
+        {"MAT-TK-POWERCORE-M235-35A", "SEED-TK-M235-35A-R1", "core-material",
+         "https://www.thyssenkrupp-steel.com/en/products/electrical-steel/electrical-steel-non-grain-oriented/powercore-a/powercore-a.html",
+         "thyssenkrupp powercore A product table; M235-35A, DIN EN 10106",
+         steelM235},
+        {"MAT-TK-POWERCORE-M250-35A", "SEED-TK-M250-35A-R1", "core-material",
+         "https://www.thyssenkrupp-steel.com/en/products/electrical-steel/electrical-steel-non-grain-oriented/powercore-a/powercore-a.html",
+         "thyssenkrupp powercore A product table; M250-35A, DIN EN 10106",
+         steelM250},
+        {"MAT-TK-POWERCORE-M270-35A", "SEED-TK-M270-35A-R1", "core-material",
+         "https://www.thyssenkrupp-steel.com/en/products/electrical-steel/electrical-steel-non-grain-oriented/powercore-a/powercore-a.html",
+         "thyssenkrupp powercore A product table; M270-35A, DIN EN 10106",
+         steelM270},
     };
 }
 
