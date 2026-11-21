@@ -104,6 +104,7 @@
 - [x] Подключить buildThreeLimbReactorPresentation() и collectAssemblyPresentationDisplayItems() к CAD вкладке.
 - [x] Отображать семь сегментов сердечника, три каркаса и три winding-pack envelopes; статус PRELIMINARY / NOT_VERIFIED и ограничения детализации показаны в UI.
 - [x] Показать semantic component tree, свойства выбранного компонента и статусы; visibility/transparency управляются по стабильным component IDs. До генерации показывается только placeholder, без вымышленных компонентов.
+- [ ] Добавить материал-ориентированное оформление 3D viewport: цвет и параметры визуального материала привязывать к подтверждённым material revision IDs (core steel, conductor copper, insulation, bobbin); не выводить физический материал из одного только component ID. Для каждой B-Rep поверхности использовать независимое освещение/Phong shading по нормали поверхности с контролируемыми diffuse/specular/roughness параметрами, сохраняя общий базовый цвет material role; selection highlight и transparency не должны уничтожать исходную палитру. Если material revision отсутствует — нейтральный NOT_VERIFIED стиль и явная легенда, без выдуманного назначения.
 - [x] Добавить экспорт STEP после валидации B-Rep.
 - [ ] Не называть упрощённые оболочки производственной геометрией.
 
