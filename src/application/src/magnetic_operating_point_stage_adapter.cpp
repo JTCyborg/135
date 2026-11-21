@@ -26,12 +26,12 @@ bool finiteNonNegative(double value)
 
 bool singleLine(const std::string& value)
 {
-    return !value.empty() && value.find_first_of("=\\r\\n") == std::string::npos;
+    return !value.empty() && value.find_first_of("=\r\n") == std::string::npos;
 }
 
 bool singleLineOrEmpty(const std::string& value)
 {
-    return value.find_first_of("=\\r\\n") == std::string::npos;
+    return value.find_first_of("=\r\n") == std::string::npos;
 }
 }
 
