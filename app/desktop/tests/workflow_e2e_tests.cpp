@@ -24,6 +24,9 @@
 #include <QWidget>
 
 #include <optional>
+#include <fstream>
+#include <iterator>
+#include <string>
 
 #include <BRepCheck_Analyzer.hxx>
 #include <IFSelect_ReturnStatus.hxx>
@@ -479,15 +482,47 @@ private slots:
 
         QVERIFY2(cadStatus->text().contains(QStringLiteral("exported to")),
             qPrintable(QStringLiteral("Unexpected STEP export status: ") + cadStatus->text()));
+
+        // Generate the 2D drawing through the actual CAD page action. The
+        // DXF must contain the three orthographic views and revision disclaimer.
+        auto* drawingAction = window_->findChild<QPushButton*>(
+            QStringLiteral("generateCadDrawings"));
+        QVERIFY(drawingAction);
+        QVERIFY(drawingAction->isEnabled());
+        const QString dxfPath = exportDirectory.filePath(QStringLiteral("TEST-01-synthetic.dxf"));
+        QTimer::singleShot(0, [dxfPath] {
+            for (QWidget* widget : QApplication::topLevelWidgets()) {
+                auto* dialog = qobject_cast<QFileDialog*>(widget);
+                if (!dialog || !dialog->isVisible()) continue;
+                dialog->selectFile(dxfPath);
+                QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
+                return;
+            }
+        });
+        QTest::mouseClick(drawingAction, Qt::LeftButton);
+        const QFileInfo dxfFile(dxfPath);
+        QVERIFY2(dxfFile.exists(), "2D drawing action did not create the requested DXF file");
+        QVERIFY2(dxfFile.size() > 0, "2D drawing export produced an empty DXF file");
+        std::ifstream dxfStream(dxfPath.toStdString(), std::ios::binary);
+        QVERIFY(dxfStream.good());
+        const std::string dxfContent(
+            (std::istreambuf_iterator<char>(dxfStream)), std::istreambuf_iterator<char>());
+        QVERIFY(dxfContent.find("PROJECT135 - THREE-PHASE REACTOR") != std::string::npos);
+        QVERIFY(dxfContent.find("A - FRONT ELEVATION") != std::string::npos);
+        QVERIFY(dxfContent.find("B - PLAN VIEW") != std::string::npos);
+        QVERIFY(dxfContent.find("C - SIDE ELEVATION") != std::string::npos);
+        QVERIFY(dxfContent.find("PRELIMINARY / NOT VERIFIED") != std::string::npos);
+        QVERIFY(dxfContent.find("TEST-01-SYNTHETIC-GEOMETRY-R1") != std::string::npos);
+        QVERIFY(cadStatus->text().contains(QStringLiteral("DXF")));
     }
 
     void twoDimensionalDrawingStageIsPresent()
     {
         const auto* drawingAction = window_->findChild<QPushButton*>(
             QStringLiteral("generateCadDrawings"));
-        QEXPECT_FAIL("", "The 2D drawing generator/export is not implemented yet.", Continue);
         QVERIFY2(drawingAction,
             "Expected a 2D drawing generation action on the CAD page.");
+        QVERIFY(!drawingAction->isEnabled());
     }
 };
 
