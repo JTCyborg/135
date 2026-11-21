@@ -62,6 +62,9 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
 
     domain::ReactorPhysicalGeometry out;
     out.productId = productId;
+    if (in.coreMaterial) out.coreMaterialRevisionId = in.coreMaterial->revisionId;
+    if (in.conductorMaterial) out.conductorMaterialRevisionId = in.conductorMaterial->revisionId;
+    if (in.insulationMaterial) out.insulationMaterialRevisionId = in.insulationMaterial->revisionId;
     out.dimensionalSource = *in.dimensionalSource;
     out.dimensionalRevision = *in.dimensionalRevision;
     auto& core = out.core;
