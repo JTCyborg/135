@@ -129,7 +129,7 @@
 - [ ] Добавить отдельные листы/файлы деталей сердечника, каркасов и обмоточных пакетов только в пределах реально моделируемой геометрии; не детализировать проводник или пакет Step-Lap без соответствующих физических моделей.
 - [ ] Формировать BOM только из компонентной модели с подтверждёнными материалами, количеством и единицами; неизвестные массы/марки/покупные позиции оставлять NOT_PROVIDED.
 - [x] Пользователь подтвердил Windows/MSVC Debug E2E для одного ненулевого зазора Limb A: DXF schedule (position 80 mm, length 2 mm), STEP round-trip и UI export; 9 passed, CTest 1/1, 14 solids.
-- [ ] Проверить Windows/MSVC Debug E2E нового сценария с двумя зазорами: Limb A (80/2 mm) и Top Yoke AB (40/2 mm); ожидаются DXF schedule (2), STEP round-trip с 15 solids и корректное отображение cut faces в front/plan projections.
+- [x] Пользователь подтвердил Windows/MSVC Debug E2E сценария с двумя зазорами: Limb A (80/2 mm) и Top Yoke AB (40/2 mm); DXF schedule (2), STEP round-trip с 15 solids (файл 9848 entities), QtTest 9 passed / 0 failed / 0 skipped, CTest 1/1 passed (37.82 s). Это подтверждает UI/export pipeline и состав STEP, но не координатную точность DXF cut-face projections; она остаётся отдельным пунктом геометрического аудита.
 - [ ] Проверить инвалидацию: геометрия → магнитные/тепловые/CAD/drawing результаты; материал → зависимые расчёты.
 - [ ] Проверить Debug и Release, сохранение/загрузку проекта, immutable snapshots.
 - [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: пользователь подтвердил commit `2d7e4bd`, сборка target успешна, CTest 1/1 passed (36.52 s; QtTest 9 passed, 0 failed; STEP round-trip и DXF UI export проверки PASS).
