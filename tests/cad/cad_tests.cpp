@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <filesystem>
 
 using namespace p135;
 using namespace p135::domain;
@@ -659,6 +660,19 @@ int main()
     // assembly without claiming that envelope solids are detailed windings.
     const auto presentationResult =
         p135::cad::buildThreeLimbReactorPresentation(geometry);
+    const auto stepTestPath = std::filesystem::temp_directory_path() /
+        "project135_cad_assembly_export_test.step";
+    std::error_code stepFileError;
+    std::filesystem::remove(stepTestPath, stepFileError);
+    const auto stepExport = p135::cad::exportAssemblyStep(
+        presentationResult ? presentationResult.value() : p135::cad::AssemblyPresentationNode{},
+        stepTestPath.string());
+    assert(presentationResult);
+    assert(stepExport);
+    assert(std::filesystem::exists(stepTestPath));
+    assert(std::filesystem::file_size(stepTestPath) > 0);
+    std::filesystem::remove(stepTestPath, stepFileError);
+
     assert(presentationResult);
     auto presentation = presentationResult.value();
     assert(p135::cad::validateAssemblyPresentation(presentation));
