@@ -2033,6 +2033,10 @@ QWidget* MainWindow::createConstructionPage()
             QStringLiteral("step-lap"));
         coreForm->addRow(tr("Joint %1 construction").arg(jointLabels[joint]), construction);
     }
+    auto* laminationConstruction = new QLineEdit;
+    laminationConstruction->setObjectName(QStringLiteral("construction_laminationConstruction"));
+    laminationConstruction->setPlaceholderText(tr("Packet / lamination construction description — NOT_PROVIDED"));
+    coreForm->addRow(tr("Lamination construction description"), laminationConstruction);
     auto* jointNote = new QLabel(tr("Step-Lap selection is recorded as an input but cannot yet produce CAD: explicit packet-by-packet overlap geometry is still required."));
     jointNote->setWordWrap(true);
     coreForm->addRow(jointNote);
@@ -2071,6 +2075,10 @@ QWidget* MainWindow::createConstructionPage()
     layers->setObjectName(QStringLiteral("construction_layers"));
     layers->setRange(0, 100000);
     layers->setSpecialValueText(tr("NOT_PROVIDED"));
+    auto* sections = new QSpinBox;
+    sections->setObjectName(QStringLiteral("construction_sections"));
+    sections->setRange(0, 10000);
+    sections->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* parallelConductors = new QSpinBox;
     parallelConductors->setObjectName(QStringLiteral("construction_parallelConductors"));
     parallelConductors->setRange(0, 10000);
@@ -2100,6 +2108,7 @@ QWidget* MainWindow::createConstructionPage()
     windingForm->addRow(tr("Turns per phase"), turns);
     windingForm->addRow(tr("Turns per layer"), turnsPerLayer);
     windingForm->addRow(tr("Number of layers"), layers);
+    windingForm->addRow(tr("Number of sections"), sections);
     windingForm->addRow(tr("Parallel conductors"), parallelConductors);
     windingForm->addRow(tr("Bare conductor area"), conductorArea);
     windingForm->addRow(tr("Bare width (rectangular / foil)"), conductorWidth);
@@ -2202,6 +2211,12 @@ QWidget* MainWindow::createConstructionPage()
             tr("Bobbin %1 axial length").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_bobbinWallThickness_") + suffix,
             tr("Bobbin %1 wall thickness").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_bobbinFlangeThickness_") + suffix,
+            tr("Bobbin %1 flange thickness").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_bobbinFlangeOuterWidth_") + suffix,
+            tr("Bobbin %1 flange outer width").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_bobbinFlangeOuterHeight_") + suffix,
+            tr("Bobbin %1 flange outer height").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_windingRadialBuild_") + suffix,
             tr("Winding %1 radial build").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_windingAxialHeight_") + suffix,
@@ -3745,6 +3760,9 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.conductorMaterial = material("construction_conductorMaterial");
     inputs.insulationMaterial = material("construction_insulationMaterial");
     inputs.coreGeometryFamily = comboValue("construction_coreGeometry");
+    if (const auto* lamination = findChild<QLineEdit*>(QStringLiteral("construction_laminationConstruction"));
+        lamination && !lamination->text().trimmed().isEmpty())
+        inputs.coreLaminationConstruction = lamination->text().trimmed().toStdString();
     inputs.conductorShape = comboValue("construction_conductorShape");
     inputs.windingTechnology = comboValue("construction_windingTechnology");
     inputs.coolingMethod = comboValue("construction_cooling");
@@ -3770,6 +3788,7 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.turnsPerPhase = positiveCount("construction_turns");
     inputs.turnsPerLayer = positiveCount("construction_turnsPerLayer");
     inputs.windingLayers = positiveCount("construction_layers");
+    inputs.windingSections = positiveCount("construction_sections");
     inputs.parallelConductors = positiveCount("construction_parallelConductors");
     if (const auto value = positiveDouble("construction_conductorArea"))
         inputs.conductorCrossSectionM2 = *value * 1.0e-6;
@@ -3871,6 +3890,9 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.bobbinInnerHeightsM = collectPhaseArray(QStringLiteral("construction_bobbinInnerHeight_"));
     inputs.bobbinAxialLengthsM = collectPhaseArray(QStringLiteral("construction_bobbinAxialLength_"));
     inputs.bobbinWallThicknessesM = collectPhaseArray(QStringLiteral("construction_bobbinWallThickness_"));
+    inputs.bobbinFlangeThicknessesM = collectPhaseArray(QStringLiteral("construction_bobbinFlangeThickness_"));
+    inputs.bobbinFlangeOuterWidthsM = collectPhaseArray(QStringLiteral("construction_bobbinFlangeOuterWidth_"));
+    inputs.bobbinFlangeOuterHeightsM = collectPhaseArray(QStringLiteral("construction_bobbinFlangeOuterHeight_"));
     inputs.windingRadialBuildsM = collectPhaseArray(QStringLiteral("construction_windingRadialBuild_"));
     inputs.windingAxialHeightsM = collectPhaseArray(QStringLiteral("construction_windingAxialHeight_"));
     inputs.windingEndClearancesM = collectPhaseArray(QStringLiteral("construction_windingEndClearance_"));
