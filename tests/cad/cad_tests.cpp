@@ -15,6 +15,7 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Iterator.hxx>
 #include <STEPControl_Reader.hxx>
+#include <IFSelect_ReturnStatus.hxx>
 
 #include <algorithm>
 #include <array>
