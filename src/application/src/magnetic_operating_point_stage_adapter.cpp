@@ -18,6 +18,11 @@ bool positiveFinite(double value)
     return std::isfinite(value) && value > 0.0;
 }
 
+bool finiteNonNegative(double value)
+{
+    return std::isfinite(value) && value >= 0.0;
+}
+
 bool singleLine(const std::string& value)
 {
     return !value.empty() && value.find_first_of("\\r\\n") == std::string::npos;
@@ -86,9 +91,9 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
     }
     for (std::size_t i = 0; i < cycle.peakAbsoluteFluxDensity.size(); ++i) {
         const double peak = cycle.peakAbsoluteFluxDensity[i].si();
-        if (!positiveFinite(peak))
+        if (!finiteNonNegative(peak))
             return Result<std::string>::failure(invalidArtifact(
-                "Magnetic operating point contains a non-positive or non-finite peak flux density."));
+                "Magnetic operating point contains a negative or non-finite peak flux density."));
         output << "peak_absolute_flux_density_" << i << "_T=" << peak << '\n';
     }
     return Result<std::string>::success(output.str());
