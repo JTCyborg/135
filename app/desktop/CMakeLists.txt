@@ -87,3 +87,40 @@ if(WIN32)
         )
     endif()
 endif()
+
+
+if(P135_BUILD_TESTS)
+    find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
+
+    qt_add_executable(Project135DesktopWorkflowE2ETests
+        tests/desktop/workflow_e2e_tests.cpp
+    )
+    target_link_libraries(Project135DesktopWorkflowE2ETests
+        PRIVATE
+            Project135DesktopUi
+            Qt6::Test
+    )
+    target_compile_features(Project135DesktopWorkflowE2ETests PRIVATE cxx_std_20)
+    set_target_properties(Project135DesktopWorkflowE2ETests PROPERTIES
+        AUTOMOC ON
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/tests"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/tests"
+    )
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests/migrations")
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/src/infrastructure/sqlite/migrations/001_initial_schema.sql"
+        "${CMAKE_BINARY_DIR}/bin/tests/migrations/001_initial_schema.sql"
+        COPYONLY
+    )
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/src/infrastructure/sqlite/migrations/002_calculation_snapshots.sql"
+        "${CMAKE_BINARY_DIR}/bin/tests/migrations/002_calculation_snapshots.sql"
+        COPYONLY
+    )
+    add_test(NAME Project135DesktopWorkflowE2ETests
+        COMMAND Project135DesktopWorkflowE2ETests)
+    set_tests_properties(Project135DesktopWorkflowE2ETests PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+endif()
