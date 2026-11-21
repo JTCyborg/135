@@ -1,5 +1,6 @@
 #include "main_window.hpp"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDoubleSpinBox>
@@ -90,6 +91,8 @@ private slots:
                     qobject_cast<QComboBox*>(control) ||
                     qobject_cast<QDoubleSpinBox*>(control) ||
                     qobject_cast<QSpinBox*>(control) ||
+                    qobject_cast<QCheckBox*>(control) ||
+                    qobject_cast<QTableWidget*>(control) ||
                     (qobject_cast<QPlainTextEdit*>(control) &&
                      !qobject_cast<QPlainTextEdit*>(control)->isReadOnly());
                 if (!editable) continue;
