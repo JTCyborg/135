@@ -3853,8 +3853,8 @@ QWidget* MainWindow::createCadPage()
                 item->setExpanded(true);
             };
             appendNode(*assemblyModel, nullptr);
-            tree->setCurrentItem(tree->topLevelItem(0));
         }
+        tree->setCurrentItem(tree->topLevelItem(0));
         const auto items = p135::cad::collectAssemblyPresentationDisplayItems(*assemblyModel);
         if (items.empty()) {
             status->setText(tr("CAD generation returned no displayable solids."));
