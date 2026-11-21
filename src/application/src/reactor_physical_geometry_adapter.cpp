@@ -90,12 +90,36 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
     };
     for (std::size_t i = 0; i < interfaces.size(); ++i) {
         const auto& type = (*in.coreJointConstructions)[i];
-        if (type == "step-lap")
-            return geometryFailure("Step-Lap CAD is blocked until packet-by-packet overlap geometry is entered.",
-                "core.joints[" + std::to_string(i) + "].stepLapPackets");
-        if (type != "butt")
+        if (type == "butt") {
+            if (!in.coreJointStepLapPackets[i].empty())
+                return geometryFailure("Butt joints cannot contain Step-Lap packet records.",
+                    "core.joints[" + std::to_string(i) + "].stepLapPackets");
+            core.joints.push_back(CoreJointPhysicalGeometry{interfaces[i], CoreJointType::Butt, {}});
+            continue;
+        }
+        if (type != "step-lap")
             return geometryFailure("Unsupported or missing core joint construction.", "core.joints[" + std::to_string(i) + "]");
-        core.joints.push_back(CoreJointPhysicalGeometry{interfaces[i], CoreJointType::Butt, {}});
+        std::vector<domain::StepLapPacketPhysicalGeometry> packets;
+        for (std::size_t packetIndex = 0; packetIndex < in.coreJointStepLapPackets[i].size(); ++packetIndex) {
+            const auto& packet = in.coreJointStepLapPackets[i][packetIndex];
+            domain::StepLapPacketDirection direction;
+            if (packet.direction == "limb-into-yoke")
+                direction = domain::StepLapPacketDirection::LimbIntoYoke;
+            else if (packet.direction == "yoke-into-limb")
+                direction = domain::StepLapPacketDirection::YokeIntoLimb;
+            else
+                return geometryFailure("Step-Lap packet direction must be explicitly selected.",
+                    "core.joints[" + std::to_string(i) + "].stepLapPackets[" + std::to_string(packetIndex) + "].direction");
+            packets.push_back({
+                Length(packet.stackDepthOffsetM), Length(packet.stackDepthM),
+                Length(packet.overlapIntoLimbM), Length(packet.overlapIntoYokeM), direction
+            });
+        }
+        if (packets.empty())
+            return geometryFailure("Step-Lap joint requires an explicit packet schedule.",
+                "core.joints[" + std::to_string(i) + "].stepLapPackets");
+        core.joints.push_back(CoreJointPhysicalGeometry{
+            interfaces[i], CoreJointType::StepLap, std::move(packets)});
     }
 
     for (const auto& gap : in.airGaps) {
