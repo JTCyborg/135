@@ -57,84 +57,25 @@ if exist "%OCCT_ARCHIVE%" (
     echo [VCPKG] OCCT archive not found in cache: %OCCT_ARCHIVE%>>"%LOG%"
 )
 
-rem Refresh the vcpkg checkout itself: the version database files must match
-rem the current registry, not merely have the baseline commit object available.
-echo.
-echo [VCPKG] Updating vcpkg registry checkout...
-set "VCPKG_REMOTE="
-for /f "delims=" %%R in ('git -C "%VCPKG_ROOT%" remote get-url origin 2^>nul') do set "VCPKG_REMOTE=%%R"
-echo %VCPKG_REMOTE% | findstr /i "microsoft/vcpkg" >nul
-if errorlevel 1 (
-    echo ERROR: VCPKG_ROOT origin is not microsoft/vcpkg. No update was attempted.
-    echo [FATAL] Unexpected vcpkg origin: %VCPKG_REMOTE%>>"%LOG%"
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
-set "VCPKG_DIRTY="
-for /f "delims=" %%S in ('git -C "%VCPKG_ROOT%" status --porcelain') do set "VCPKG_DIRTY=1"
-if defined VCPKG_DIRTY (
-    echo ERROR: vcpkg checkout has local changes. Commit or stash them before validation.
-    echo [FATAL] vcpkg checkout is not clean; update aborted.>>"%LOG%"
-    git -C "%VCPKG_ROOT%" status --short >>"%LOG%" 2>&1
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
-git -C "%VCPKG_ROOT%" fetch origin master >>"%LOG%" 2>&1
-if errorlevel 1 (
-    echo ERROR: Could not fetch microsoft/vcpkg master.
-    echo [FATAL] vcpkg master fetch failed.>>"%LOG%"
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
-git -C "%VCPKG_ROOT%" checkout --detach origin/master >>"%LOG%" 2>&1
-if errorlevel 1 (
-    echo ERROR: Could not update vcpkg checkout to origin/master.
-    echo [FATAL] vcpkg checkout update failed.>>"%LOG%"
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
-if not exist "%VCPKG_ROOT%\bootstrap-vcpkg.bat" (
-    echo ERROR: bootstrap-vcpkg.bat is missing.
-    echo [FATAL] vcpkg bootstrap script missing.>>"%LOG%"
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
-call "%VCPKG_ROOT%\bootstrap-vcpkg.bat" -disableMetrics >>"%LOG%" 2>&1
-if errorlevel 1 (
-    echo ERROR: vcpkg bootstrap failed.
-    echo [FATAL] vcpkg bootstrap failed.>>"%LOG%"
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
-echo [VCPKG] Registry checkout and executable updated.>>"%LOG%"
-
-rem Ensure the vcpkg baseline commit and its tree are present locally.
-echo.
-echo [VCPKG] Fetching complete vcpkg Git history required by manifest baseline...
-git -C "%VCPKG_ROOT%" rev-parse --is-shallow-repository > "BuildReports\vcpkg_shallow_%STAMP%.tmp" 2>&1
-set "VCPKG_SHALLOW="
-set /p VCPKG_SHALLOW=<"BuildReports\vcpkg_shallow_%STAMP%.tmp"
-del "BuildReports\vcpkg_shallow_%STAMP%.tmp" 2>nul
-if /i "%VCPKG_SHALLOW%"=="true" (
-    git -C "%VCPKG_ROOT%" fetch --unshallow origin >>"%LOG%" 2>&1
-) else (
-    git -C "%VCPKG_ROOT%" fetch origin >>"%LOG%" 2>&1
-)
-if errorlevel 1 (
-    echo ERROR: Could not fetch vcpkg repository history. See log.
-    echo [FATAL] vcpkg Git history fetch failed.>>"%LOG%"
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
+rem Do not update/bootstrap vcpkg on every validation run.
+rem Moving the vcpkg checkout can change tool/port ABI and force expensive OCCT rebuilds.
+rem The project manifest pins its registry baseline; verify that exact baseline instead.
 for /f %%H in ('powershell -NoProfile -Command "(Get-Content -Raw 'vcpkg.json' | ConvertFrom-Json).'builtin-baseline'"') do set "VCPKG_BASELINE=%%H"
 git -C "%VCPKG_ROOT%" cat-file -e "%VCPKG_BASELINE%:versions/baseline.json" 2>nul
 if errorlevel 1 (
-    echo ERROR: vcpkg baseline %VCPKG_BASELINE% is not available locally.
+    echo ERROR: vcpkg baseline %VCPKG_BASELINE% is not available in the local checkout.
     echo [FATAL] vcpkg baseline tree is missing: %VCPKG_BASELINE%>>"%LOG%"
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
-echo [VCPKG] Baseline %VCPKG_BASELINE% verified.>>"%LOG%"
+echo [VCPKG] Using existing checkout and pinned baseline %VCPKG_BASELINE%.>>"%LOG%"
+
+rem Persist completed dependency binaries between runs. Do not clear this cache.
+set "VCPKG_BINARY_CACHE=%VCPKG_ROOT%\binary-cache"
+if not exist "%VCPKG_BINARY_CACHE%" mkdir "%VCPKG_BINARY_CACHE%"
+set "VCPKG_BINARY_SOURCES=clear;files,%VCPKG_BINARY_CACHE%,readwrite"
+echo [VCPKG] Binary cache: %VCPKG_BINARY_CACHE%>>"%LOG%"
+echo [VCPKG] Cached OCCT source archive and buildtrees are left untouched.>>"%LOG%"
 
 where git >nul 2>&1
 if errorlevel 1 (
