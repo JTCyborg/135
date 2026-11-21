@@ -136,7 +136,8 @@ protected:
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.fillRect(rect(), palette().base());
-        const QRectF area(76.0, 18.0, std::max(80, width() - 112), std::max(80, height() - 68));
+        // Reserve a wider left gutter for both the rotated Y-axis title and tick labels.
+        const QRectF area(86.0, 18.0, std::max(80, width() - 122), std::max(80, height() - 68));
         painter.setPen(palette().color(QPalette::Mid));
         painter.drawRect(area);
 
@@ -192,7 +193,7 @@ protected:
             const double fraction = static_cast<double>(tick) / 4.0;
             const double y = area.bottom() - fraction * area.height();
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
-            painter.drawText(QRectF(4, y - 9, 64, 18), Qt::AlignRight | Qt::AlignVCenter,
+            painter.drawText(QRectF(26, y - 9, 56, 18), Qt::AlignRight | Qt::AlignVCenter,
                 QString::number(yMax * fraction, 'g', 4));
             const double xValue = std::pow(10.0, logMin + (logMax - logMin) * fraction);
             const double x = area.left() + fraction * area.width();
@@ -252,7 +253,7 @@ protected:
         painter.setPen(palette().color(QPalette::Text));
         painter.drawText(QRectF(0, height() - 22, width(), 20), Qt::AlignCenter, xLabel_);
         painter.save();
-        painter.translate(16, area.center().y());
+        painter.translate(12, area.center().y());
         painter.rotate(-90);
         painter.drawText(QRectF(-area.height() / 2, -10, area.height(), 20),
             Qt::AlignCenter, yLabel_);
@@ -570,6 +571,27 @@ MainWindow::MainWindow(QWidget* parent)
     tabs_->addTab(createCadPage(), tr("3D CAD"));
     tabs_->addTab(createMaterialsPage(), tr("Materials database"));
     tabs_->addTab(createHistoryPage(), tr("Calculation history"));
+
+    // Stacking factor is a single engineering input exposed in two workflow contexts.
+    // Construction stores Ks as a fraction; first-pass criteria displays it as percent.
+    auto* constructionKs = findChild<QDoubleSpinBox*>(QStringLiteral("construction_stackingFactor"));
+    auto* sizingKs = findChild<QDoubleSpinBox*>(QStringLiteral("idealSizing_Ks"));
+    if (constructionKs && sizingKs) {
+        if (constructionKs->value() > 0.0)
+            sizingKs->setValue(constructionKs->value() * 100.0);
+        else if (sizingKs->value() > 0.0)
+            constructionKs->setValue(sizingKs->value() / 100.0);
+        connect(constructionKs, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+            [sizingKs](double value) {
+                const QSignalBlocker blocker(sizingKs);
+                sizingKs->setValue(value * 100.0);
+            });
+        connect(sizingKs, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+            [constructionKs](double value) {
+                const QSignalBlocker blocker(constructionKs);
+                constructionKs->setValue(value / 100.0);
+            });
+    }
     if (auto* topologyContainer = findChild<QWidget*>(QStringLiteral("productTopologyDiagram"))) {
         if (auto* topology = dynamic_cast<ProductTopologyWidget*>(topologyContainer)) {
             topology->setConnection(filterConnection_->currentText());
