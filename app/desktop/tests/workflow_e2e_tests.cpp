@@ -24,6 +24,8 @@
 #include <QWidget>
 
 #include <optional>
+#include <complex>
+#include <cmath>
 #include <fstream>
 #include <iterator>
 #include <string>
@@ -404,6 +406,17 @@ private slots:
         QVERIFY(confirmationStatus);
         QVERIFY(confirmationStatus->text().contains(QStringLiteral("Confirmed")));
 
+        // Exercise the current plot with a non-zero Thevenin model. This changes
+        // circuit element ordering and catches accidental fixed-index current reads.
+        auto* sourceResistance = window_->findChild<QDoubleSpinBox*>(
+            QStringLiteral("filterSourceTheveninResistanceOhm"));
+        auto* sourceInductance = window_->findChild<QDoubleSpinBox*>(
+            QStringLiteral("filterSourceTheveninInductanceMh"));
+        QVERIFY(sourceResistance);
+        QVERIFY(sourceInductance);
+        sourceResistance->setValue(0.25);
+        sourceInductance->setValue(1.2);
+
         auto* recalculate = window_->findChild<QPushButton*>(
             QStringLiteral("recalculateProjectButton"));
         QVERIFY(recalculate);
@@ -412,6 +425,54 @@ private slots:
             QStringLiteral("calculationResultsTable"));
         QVERIFY(results);
         QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
+
+        auto* currentPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsBankCurrentPlot"));
+        QVERIFY(currentPlot);
+        const auto currentCurves = currentPlot->property("plotCurves").toList();
+        QCOMPARE(currentCurves.size(), 1);
+        const auto currentPoints = currentCurves.front().toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(currentPoints.size(), 151);
+        const double sourceR = 0.25;
+        const double sourceL = 1.2e-3;
+        const double phaseVoltage = 400.0 / std::sqrt(3.0);
+        const double branchR = 0.00666655092793528;
+        const double branchL = 0.0002122029067109523;
+        const double branchC = 0.0019098924743825543;
+        const auto expectedBranchPeak = [&](double frequencyHz) {
+            const double omega = 2.0 * std::acos(-1.0) * frequencyHz;
+            const std::complex<double> totalImpedance{
+                sourceR + branchR,
+                omega * (sourceL + branchL) - 1.0 / (omega * branchC)
+            };
+            return std::sqrt(2.0) * phaseVoltage / std::abs(totalImpedance);
+        };
+        for (const auto& pointValue : currentPoints) {
+            const auto point = pointValue.toList();
+            QCOMPARE(point.size(), 2);
+            const double frequencyHz = point[0].toDouble();
+            const double plottedPeakA = point[1].toDouble();
+            QVERIFY(std::isfinite(frequencyHz) && frequencyHz > 0.0);
+            QVERIFY(std::isfinite(plottedPeakA) && plottedPeakA >= 0.0);
+            QVERIFY(qAbs(plottedPeakA - expectedBranchPeak(frequencyHz)) < 1.0e-6);
+        }
+
+        auto* impedancePlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsBusImpedancePlot"));
+        QVERIFY(impedancePlot);
+        const auto impedanceCurves = impedancePlot->property("plotCurves").toList();
+        QCOMPARE(impedanceCurves.size(), 1);
+        QCOMPARE(impedanceCurves.front().toMap()
+            .value(QStringLiteral("points")).toList().size(), 501);
+
+        auto* coreFluxPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsCoreFluxPlot"));
+        QVERIFY(coreFluxPlot);
+        const auto fluxCurves = coreFluxPlot->property("plotCurves").toList();
+        QCOMPARE(fluxCurves.size(), 4);
+        for (const auto& curve : fluxCurves)
+            QVERIFY(curve.toMap().value(QStringLiteral("points")).toList().isEmpty());
 
         auto* confirmCalculation = window_->findChild<QPushButton*>(
             QStringLiteral("confirmCalculationDesign"));
