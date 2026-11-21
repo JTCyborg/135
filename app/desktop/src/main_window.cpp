@@ -42,6 +42,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QSaveFile>
+#include <QShowEvent>
 #include <QDate>
 #include <QCoreApplication>
 #include <QStandardPaths>
@@ -434,13 +435,21 @@ private:
 #endif
 
 protected:
+    void showEvent(QShowEvent* event) override
+    {
+        QWidget::showEvent(event);
+#if defined(_DEBUG) || !defined(NDEBUG)
+        // Results/history pages are initially hidden behind the workflow tabs.
+        // Their first capture may be skipped before they receive a usable size;
+        // retry as soon as the containing page becomes visible.
+        scheduleDebugImageSave();
+#endif
+    }
+
     void resizeEvent(QResizeEvent* event) override
     {
         QWidget::resizeEvent(event);
 #if defined(_DEBUG) || !defined(NDEBUG)
-        // Plot widgets are laid out after their initial data is assigned.
-        // Save again at the final on-screen size so the artifact is not a
-        // stale first-layout placeholder.
         scheduleDebugImageSave();
 #endif
     }
