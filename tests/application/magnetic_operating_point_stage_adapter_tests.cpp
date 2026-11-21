@@ -67,6 +67,11 @@ int main()
     assert(artifact.value().find("bh_dataset_revision=BH-REV-3") != std::string::npos);
     assert(artifact.value().find("peak_absolute_flux_density_6_T=") != std::string::npos);
 
+    auto zeroFluxBranch = result;
+    zeroFluxBranch.magneticAnalysis.magneticCycle.peakAbsoluteFluxDensity[3] =
+        units::FluxDensity{0.0};
+    assert(makeMagneticOperatingPointStageArtifact(request, zeroFluxBranch));
+
     auto unconverged = result;
     unconverged.magneticAnalysis.magneticCycle.converged = false;
     assert(!makeMagneticOperatingPointStageArtifact(request, unconverged));
