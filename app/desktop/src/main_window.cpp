@@ -188,10 +188,10 @@ protected:
             logMin -= 0.5;
             logMax += 0.5;
         }
-        const double yMax = std::max({maxY * 1.08,
+        const double dataYMax = maxY > 0.0 ? maxY * 1.08 : 1.0;
+        const double yMax = std::max({dataYMax,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
-            magneticKneeCurrentA_.value_or(0.0) * 1.08,
-            1.0});
+            magneticKneeCurrentA_.value_or(0.0) * 1.08});
         const auto xPixel = [&area, logMin, logMax](double frequency) {
             return area.left() + (std::log10(frequency) - logMin) /
                 (logMax - logMin) * area.width();
