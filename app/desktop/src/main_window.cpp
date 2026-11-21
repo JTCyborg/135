@@ -933,6 +933,15 @@ QWidget* MainWindow::createProjectPage()
         QJsonObject fields;
         QJsonObject fieldLabels;
         QJsonObject fieldUnits;
+        const auto* dimensionSource = findChild<QLineEdit*>(QStringLiteral("construction_dimensionalSource"));
+        const auto* dimensionRevision = findChild<QLineEdit*>(QStringLiteral("construction_dimensionalRevision"));
+        const bool hasDimensionSource = dimensionSource && !dimensionSource->text().trimmed().isEmpty();
+        const bool hasDimensionRevision = dimensionRevision && !dimensionRevision->text().trimmed().isEmpty();
+        if (hasDimensionSource != hasDimensionRevision) {
+            QMessageBox::warning(this, tr("Incomplete dimensional provenance"),
+                tr("Enter both the physical-dimensions source and its revision, or leave both empty."));
+            return;
+        }
         const QHash<QString, QString> labels{
             {QStringLiteral("projectName"), tr("Project name")},
             {QStringLiteral("projectProductFamily"), tr("Product family")},
@@ -2037,6 +2046,14 @@ QWidget* MainWindow::createConstructionPage()
     laminationConstruction->setObjectName(QStringLiteral("construction_laminationConstruction"));
     laminationConstruction->setPlaceholderText(tr("Packet / lamination construction description — NOT_PROVIDED"));
     coreForm->addRow(tr("Lamination construction description"), laminationConstruction);
+    auto* dimensionalSource = new QLineEdit;
+    dimensionalSource->setObjectName(QStringLiteral("construction_dimensionalSource"));
+    dimensionalSource->setPlaceholderText(tr("Drawing / datasheet / measurement reference — NOT_PROVIDED"));
+    coreForm->addRow(tr("Physical dimensions source"), dimensionalSource);
+    auto* dimensionalRevision = new QLineEdit;
+    dimensionalRevision->setObjectName(QStringLiteral("construction_dimensionalRevision"));
+    dimensionalRevision->setPlaceholderText(tr("Document revision / measurement issue — NOT_PROVIDED"));
+    coreForm->addRow(tr("Physical dimensions revision"), dimensionalRevision);
     auto* jointNote = new QLabel(tr("Step-Lap selection is recorded as an input but cannot yet produce CAD: explicit packet-by-packet overlap geometry is still required."));
     jointNote->setWordWrap(true);
     coreForm->addRow(jointNote);
@@ -3772,6 +3789,12 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     if (const auto* lamination = findChild<QLineEdit*>(QStringLiteral("construction_laminationConstruction"));
         lamination && !lamination->text().trimmed().isEmpty())
         inputs.coreLaminationConstruction = lamination->text().trimmed().toStdString();
+    if (const auto* source = findChild<QLineEdit*>(QStringLiteral("construction_dimensionalSource"));
+        source && !source->text().trimmed().isEmpty())
+        inputs.dimensionalSource = source->text().trimmed().toStdString();
+    if (const auto* revision = findChild<QLineEdit*>(QStringLiteral("construction_dimensionalRevision"));
+        revision && !revision->text().trimmed().isEmpty())
+        inputs.dimensionalRevision = revision->text().trimmed().toStdString();
     inputs.conductorShape = comboValue("construction_conductorShape");
     inputs.windingTechnology = comboValue("construction_windingTechnology");
     inputs.coolingMethod = comboValue("construction_cooling");
