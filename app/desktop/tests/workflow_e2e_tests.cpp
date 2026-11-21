@@ -503,10 +503,14 @@ private slots:
             artifactProjectId + QStringLiteral("_reactor_current.png")));
         const QFileInfo impedancePng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_bus_impedance.png")));
+        const QFileInfo coreFluxPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_core_flux.png")));
         QVERIFY2(currentPng.exists() && currentPng.size() > 100,
             "Debug reactor-current graph PNG was not automatically saved.");
         QVERIFY2(impedancePng.exists() && impedancePng.size() > 100,
             "Debug bus-impedance graph PNG was not automatically saved.");
+        QVERIFY2(coreFluxPng.exists() && coreFluxPng.size() > 100,
+            "Debug core-flux graph PNG was not automatically saved.");
         QFile currentImage(currentPng.absoluteFilePath());
         QVERIFY(currentImage.open(QIODevice::ReadOnly));
         QCOMPARE(currentImage.read(8).toHex(),
