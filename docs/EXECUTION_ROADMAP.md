@@ -76,6 +76,10 @@
 - Добавлен typed adapter `makeMagneticOperatingPointStageArtifact()` поверх существующего `analyzePhysicalFilterReactorMagneticCycle()`: он принимает фактический результат нелинейного трёхстержневого магнитного решателя, требует совпадающий filter branch, явные source/revision физических размеров и ревизию B-H данных, а также отклоняет неконвергентный или вышедший за измеренную B-H кривую operating point.
 - Добавлены regression tests для успешной сериализации, отсутствующей ревизии геометрии, несовпадающего branch, отсутствия сходимости и B-H extrapolation.
 - Это пока adapter, а не подключённая desktop pipeline stage: `magnetic.operating_point` не должна считаться VALID до интеграции с реальным desktop calculation result и проверки upstream revision lineage.
+- Adapter дополнительно допускает физически корректный нулевой поток в отдельной ветви; отрицательные и неfinite peak |B| отклоняются. Provenance-поля ограничены одной строкой, чтобы сериализованный key/value artifact нельзя было расширить внедрёнными строками.
+- Проверка desktop integration выявила, почему нельзя напрямую передать существующий `threeLimbMagneticBase` в новый adapter: текущий `MainWindow::calculateFilter()` строит его из legacy полей Ae/le/air gap/yoke и пользовательской B-H таблицы, а не из подтверждённого `ReactorDesignInputs → ReactorPhysicalGeometry`. Ветка частотного sweep также является source-limited single-frequency diagnostic, не multi-harmonic harmonic operating point. Автоматически переиспользовать её как физическую ревизию запрещено.
+- Следующая обязательная работа перед desktop stage: собрать immutable stage context из подтверждённого Construction snapshot, точной ревизии CoreMaterial и уже рассчитанного harmonic branch result; затем вызвать `analyzePhysicalFilterReactorMagneticCycle()` ровно один раз и адаптировать тот же результат. Если snapshot/material/turns/harmonic spectrum отсутствуют, stage должна остаться NOT_VERIFIED с конкретной причиной.
+
 
 - [ ] Построить input fingerprint и dependency plan из изменённых входов.
 - [ ] Подключить реальные stage adapters к существующим магнитным, winding, loss и thermal use cases.
