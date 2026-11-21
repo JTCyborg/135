@@ -4,6 +4,11 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDoubleSpinBox>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QApplication>
+#include <QTemporaryDir>
+#include <QTimer>
 #include <QLineEdit>
 #include <QLabel>
 #include <QPlainTextEdit>
@@ -19,6 +24,12 @@
 #include <QWidget>
 
 #include <optional>
+
+#include <BRepCheck_Analyzer.hxx>
+#include <IFSelect_ReturnStatus.hxx>
+#include <STEPControl_Reader.hxx>
+#include <TopAbs_ShapeEnum.hxx>
+#include <TopExp_Explorer.hxx>
 
 class DesktopWorkflowE2ETests final : public QObject
 {
@@ -431,6 +442,46 @@ private slots:
             QStringLiteral("exportCadStep"));
         QVERIFY(exportStep);
         QVERIFY(exportStep->isEnabled());
+
+        // Exercise the real UI export action. The timer accepts the native
+        // save dialog with a deterministic temporary path; the export itself
+        // still runs through MainWindow's production click handler.
+        QTemporaryDir exportDirectory;
+        QVERIFY2(exportDirectory.isValid(), "Could not create temporary STEP export directory");
+        const QString stepPath = exportDirectory.filePath(QStringLiteral("TEST-01-synthetic.step"));
+        QTimer::singleShot(0, [stepPath] {
+            for (QWidget* widget : QApplication::topLevelWidgets()) {
+                auto* dialog = qobject_cast<QFileDialog*>(widget);
+                if (!dialog || !dialog->isVisible()) continue;
+                dialog->selectFile(stepPath);
+                dialog->accept();
+                return;
+            }
+        });
+        QTest::mouseClick(exportStep, Qt::LeftButton);
+
+        const QFileInfo stepFile(stepPath);
+        QVERIFY2(stepFile.exists(), "STEP export action did not create the requested file");
+        QVERIFY2(stepFile.size() > 0, "STEP export produced an empty file");
+
+        STEPControl_Reader stepReader;
+        QCOMPARE(stepReader.ReadFile(stepPath.toStdString().c_str()), IFSelect_RetDone);
+        QVERIFY(stepReader.TransferRoots() > 0);
+        const TopoDS_Shape importedAssembly = stepReader.OneShape();
+        QVERIFY(!importedAssembly.IsNull());
+        QVERIFY2(BRepCheck_Analyzer(importedAssembly).IsValid(),
+            "STEP round-trip produced an invalid B-Rep");
+
+        std::size_t importedSolidCount = 0;
+        for (TopExp_Explorer it(importedAssembly, TopAbs_SOLID); it.More(); it.Next())
+            ++importedSolidCount;
+        QCOMPARE(importedSolidCount, std::size_t(13)); // 7 core + 3 bobbins + 3 winding envelopes.
+
+        auto* cadStatus = window_->findChild<QLabel*>(
+            QStringLiteral("cadGenerationStatus"));
+        QVERIFY(cadStatus);
+        QVERIFY2(cadStatus->text().contains(QStringLiteral("exported to")),
+            qPrintable(QStringLiteral("Unexpected STEP export status: ") + cadStatus->text()));
     }
 
     void twoDimensionalDrawingStageIsPresent()
