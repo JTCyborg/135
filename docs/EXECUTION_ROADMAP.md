@@ -147,7 +147,7 @@
 
 ## 5. Текущий технический вывод
 
-- [x] Расширен сериализуемый артефакт `magnetic.operating_point`: теперь сохраняет исходные физические размеры сердечника, соединения/Step-Lap пакеты, положения зазоров, эффективную магнитную геометрию, витки по фазам, B-H-кривую, loss-data, частоту каждой гармоники и параметры сходимости. Адаптер отклоняет отсутствующие витки/B-H-данные и небезопасные key-value строки; unit tests расширены на provenance и negative paths. Требуется локальная Windows Debug/Release проверка.
+- [x] Расширен сериализуемый артефакт `magnetic.operating_point`: теперь сохраняет исходные физические размеры сердечника, соединения/Step-Lap пакеты, положения зазоров, эффективную магнитную геометрию, витки по фазам, B-H-кривую, loss-data, частоту каждой гармоники и параметры сходимости. Адаптер отклоняет отсутствующие витки/B-H-данные, небезопасные key-value строки и несовпадение физических размеров/гармонических phasors между запросом и результатом; unit tests расширены на provenance и negative paths. Требуется локальная Windows Debug/Release проверка.
 
 В репозитории уже существуют application dependency graph/execution API, domain physical geometry, OCCT three-limb core/assembly builders и Qt CAD viewport. Desktop UI пока не вызывает полный application execution pipeline и не формирует согласованный магнитный/тепловой result snapshot. При этом предварительный CAD-путь уже подключён от Construction inputs через строгий physical-geometry adapter к OCCT presentation, semantic component tree и STEP B-Rep export. Следующая работа — закрыть недостающие физические входы/модели, подключить реальное выполнение стадий расчёта и проверить весь путь сборкой и тестами.
 
