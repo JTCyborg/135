@@ -123,8 +123,8 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
     }
 
     for (const auto& gap : in.airGaps) {
-        if (gap.limbIndex >= 3)
-            return geometryFailure("Air-gap limb index must be A, B or C.", "core.airGaps");
+        if (gap.limbIndex >= 7)
+            return geometryFailure("Air-gap segment index must identify one of the three limbs or four yoke segments.", "core.airGaps");
         const auto segment = static_cast<CoreSegment>(
             static_cast<std::size_t>(CoreSegment::LimbA) + gap.limbIndex);
         core.airGaps.push_back(AirGapPhysicalGeometry{
