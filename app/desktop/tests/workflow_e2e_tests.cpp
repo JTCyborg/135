@@ -382,6 +382,8 @@ private slots:
         QVERIFY(setDouble(QStringLiteral("construction_totalAirGap_1"), 2.0));
         QVERIFY(setDouble(QStringLiteral("construction_airGapPosition_1_1"), 80.0));
         QVERIFY(setDouble(QStringLiteral("construction_airGapLength_1_1"), 2.0));
+        QVERIFY(setDouble(QStringLiteral("construction_yokeAirGapPosition_1_1"), 40.0));
+        QVERIFY(setDouble(QStringLiteral("construction_yokeAirGapLength_1_1"), 2.0));
 
         // Explicit thermal metadata; no cooling ducts or other air gaps are
         // invented. The single limb-A gap above is part of this synthetic fixture.
@@ -485,7 +487,7 @@ private slots:
         std::size_t importedSolidCount = 0;
         for (TopExp_Explorer it(importedAssembly, TopAbs_SOLID); it.More(); it.Next())
             ++importedSolidCount;
-        QCOMPARE(importedSolidCount, std::size_t(14)); // 8 core solids (limb A split by one gap) + 3 bobbins + 3 winding envelopes.
+        QCOMPARE(importedSolidCount, std::size_t(15)); // 9 core solids (limb A and top yoke AB each split once) + 3 bobbins + 3 winding envelopes.
 
         QVERIFY2(cadStatus->text().contains(QStringLiteral("exported to")),
             qPrintable(QStringLiteral("Unexpected STEP export status: ") + cadStatus->text()));
@@ -531,8 +533,9 @@ private slots:
         QVERIFY(dxfContent.find("YOKE TOP BC PLAN") != std::string::npos);
         QVERIFY(dxfContent.find("YOKE BOTTOM AB PLAN") != std::string::npos);
         QVERIFY(dxfContent.find("YOKE BOTTOM BC PLAN") != std::string::npos);
-        QVERIFY(dxfContent.find("AIR GAP SCHEDULE (1)") != std::string::npos);
+        QVERIFY(dxfContent.find("AIR GAP SCHEDULE (2)") != std::string::npos);
         QVERIFY(dxfContent.find("LIMB A - position 80.000000 mm; length 2.000000 mm") != std::string::npos);
+        QVERIFY(dxfContent.find("YOKE TOP AB - position 40.000000 mm; length 2.000000 mm") != std::string::npos);
         QVERIFY(dxfContent.find("Limb stack depths A/B/C") != std::string::npos);
         QVERIFY(dxfContent.find("BOBBIN B AXIAL LENGTH") != std::string::npos);
         QVERIFY(dxfContent.find("BOBBIN B DEPTH") != std::string::npos);
