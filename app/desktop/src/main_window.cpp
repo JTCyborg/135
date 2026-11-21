@@ -1122,6 +1122,7 @@ QWidget* MainWindow::createFilterPage()
     auto* tuningPreview = new QLabel;
     tuningPreview->setObjectName(QStringLiteral("filterTuningPreview"));
     tuningPreview->setStyleSheet(QStringLiteral("color: #26734d; font-weight: 600;"));
+    tuningPreview->setToolTip(tr("For a series reactor, p = 1 / h² × 100%%. The tuning frequency is h × f₁."));
     const auto updateTuningPreview = [this, tuningPreview] {
         const double order = tuningHarmonicOrder_->value();
         const double frequency = order * fundamentalFrequency_->value();
