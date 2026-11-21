@@ -94,6 +94,9 @@ struct ReactorDesignInputs {
     // Explicit construction for the eight limb-to-yoke interfaces in domain enum order.
     std::optional<std::array<std::string, 8>> coreJointConstructions;
     std::optional<std::string> coreLaminationConstruction;
+    // Provenance for the physical dimensions used to construct CAD; both are required together.
+    std::optional<std::string> dimensionalSource;
+    std::optional<std::string> dimensionalRevision;
 
     // Gap count and total gap length are distinct from individual gap positions.
     std::optional<std::array<std::uint32_t, 3>> airGapCountPerLimb;
