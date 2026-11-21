@@ -3643,11 +3643,7 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     if (const auto values = collectLengthArray(QStringLiteral("construction_yokeDepth_"), 4))
         inputs.yokeDepthsM = std::array<double, 4>{(*values)[0], (*values)[1], (*values)[2], (*values)[3]};
 
-    const auto collectFixedArray = [&coreLength](const QString& prefix, std::size_t count)
-        -> std::optional<std::vector<double>> {
-        return collectLengthArray(prefix, count);
-    };
-    if (const auto values = collectFixedArray(QStringLiteral("construction_limbCenterSpacing_"), 3))
+    if (const auto values = collectLengthArray(QStringLiteral("construction_limbCenterSpacing_"), 3))
         inputs.limbCenterSpacingsM = std::array<double, 3>{(*values)[0], (*values)[1], (*values)[2]};
     inputs.coreOverallHeightM = coreLength(QStringLiteral("construction_coreOverallHeight"));
     inputs.coreOverallWidthM = coreLength(QStringLiteral("construction_coreOverallWidth"));
