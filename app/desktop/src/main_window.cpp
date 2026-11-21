@@ -1143,9 +1143,7 @@ QWidget* MainWindow::createFilterPage()
     auto* componentGroup = new QGroupBox(tr("Selected components and installation thermal data"));
     auto* componentForm = new QFormLayout(componentGroup);
     capacitorComponent_ = new QComboBox;
-    capacitorComponent_->setObjectName(QStringLiteral("capacitorComponent"));
     resistorComponent_ = new QComboBox;
-    resistorComponent_->setObjectName(QStringLiteral("resistorComponent"));
     ambientTemperature_ = new QDoubleSpinBox;
     ambientTemperature_->setRange(-50.0, 150.0);
     ambientTemperature_->setDecimals(2);
@@ -2497,8 +2495,8 @@ QWidget* MainWindow::createResultsPage()
         appendRevision(QStringLiteral("construction_coreMaterial"), QStringLiteral("core"));
         appendRevision(QStringLiteral("construction_conductorMaterial"), QStringLiteral("conductor"));
         appendRevision(QStringLiteral("construction_insulationMaterial"), QStringLiteral("insulation"));
-        appendRevision(QStringLiteral("capacitorComponent"), QStringLiteral("capacitor"));
-        appendRevision(QStringLiteral("resistorComponent"), QStringLiteral("damping_resistor"));
+        appendRevision(QStringLiteral("filterCapacitorRevision"), QStringLiteral("capacitor"));
+        appendRevision(QStringLiteral("filterDampingResistorRevision"), QStringLiteral("damping_resistor"));
         lineage.insert(QStringLiteral("materialRevisions"), materialRevisions);
         snapshot.insert(QStringLiteral("lineage"), lineage);
 #ifdef _DEBUG
