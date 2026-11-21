@@ -376,7 +376,7 @@ public:
         magneticKneeCurrentA_ = magneticKneeCurrentA;
         update();
 #if defined(_DEBUG) || !defined(NDEBUG)
-        saveDebugImage();
+        scheduleDebugImageSave();
 #endif
     }
 
