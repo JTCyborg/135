@@ -45,6 +45,35 @@ struct DxfWriter {
         pair(40, height); pair(1, value);
     }
 
+    void horizontalDimension(double x1, double x2, double baseY, double dimensionY,
+        const std::string& label)
+    {
+        line(x1, baseY, x1, dimensionY, "DIMENSIONS");
+        line(x2, baseY, x2, dimensionY, "DIMENSIONS");
+        line(x1, dimensionY, x2, dimensionY, "DIMENSIONS");
+        constexpr double arrow = 2.0;
+        line(x1, dimensionY, x1 + arrow, dimensionY + 1.0, "DIMENSIONS");
+        line(x1, dimensionY, x1 + arrow, dimensionY - 1.0, "DIMENSIONS");
+        line(x2, dimensionY, x2 - arrow, dimensionY + 1.0, "DIMENSIONS");
+        line(x2, dimensionY, x2 - arrow, dimensionY - 1.0, "DIMENSIONS");
+        text(0.5 * (x1 + x2) - 0.5 * static_cast<double>(label.size()) * 1.2,
+            dimensionY + 2.0, 2.2, label, "DIMENSIONS");
+    }
+
+    void verticalDimension(double baseX, double y1, double y2, double dimensionX,
+        const std::string& label)
+    {
+        line(baseX, y1, dimensionX, y1, "DIMENSIONS");
+        line(baseX, y2, dimensionX, y2, "DIMENSIONS");
+        line(dimensionX, y1, dimensionX, y2, "DIMENSIONS");
+        constexpr double arrow = 2.0;
+        line(dimensionX, y1, dimensionX + 1.0, y1 + arrow, "DIMENSIONS");
+        line(dimensionX, y1, dimensionX - 1.0, y1 + arrow, "DIMENSIONS");
+        line(dimensionX, y2, dimensionX + 1.0, y2 - arrow, "DIMENSIONS");
+        line(dimensionX, y2, dimensionX - 1.0, y2 - arrow, "DIMENSIONS");
+        text(dimensionX - 5.0, 0.5 * (y1 + y2), 2.2, label, "DIMENSIONS");
+    }
+
     void begin()
     {
         pair(0, "SECTION"); pair(2, "HEADER");
@@ -174,7 +203,11 @@ Result<void> exportReactorAssemblyDxf(
         (void)flangeH;
         (void)bobbinOuterDepth;
     }
-    dxf.text(frontX, frontY - 12.0, 2.5,
+    dxf.horizontalDimension(frontX, frontX + totalWidth, frontY, frontY - 20.0,
+        "OVERALL WIDTH " + std::to_string(totalWidth) + " mm");
+    dxf.verticalDimension(frontX, frontY, frontY + totalHeight, frontX - 18.0,
+        "OVERALL HEIGHT " + std::to_string(totalHeight) + " mm");
+    dxf.text(frontX, frontY - 30.0, 2.5,
         "Core overall: " + std::to_string(totalWidth) + " x " + std::to_string(totalHeight) + " mm", "DIMENSIONS");
 
     // Plan view: core stack depths and the explicit bobbin/winding cross-sections.
