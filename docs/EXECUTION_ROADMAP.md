@@ -81,7 +81,10 @@
 - Следующая обязательная работа перед desktop stage: собрать immutable stage context из подтверждённого Construction snapshot, точной ревизии CoreMaterial и уже рассчитанного harmonic branch result; затем вызвать `analyzePhysicalFilterReactorMagneticCycle()` ровно один раз и адаптировать тот же результат. Если snapshot/material/turns/harmonic spectrum отсутствуют, stage должна остаться NOT_VERIFIED с конкретной причиной.
 
 
-- [x] Desktop сохраняет типизированный `ReactorDesignInputs` как принятую Construction-ревизию после подтверждения; CAD использует именно этот захваченный набор, а не повторно читает изменяемые UI-контролы. Любое изменение Construction или загрузка другого проекта сбрасывает принятую ревизию. Магнитный stage bridge ещё не подключён.
+- [x] Desktop сохраняет типизированный `ReactorDesignInputs` как принятую Construction-ревизию после подтверждения; CAD использует именно этот захваченный набор. Любое изменение Construction или загрузка другого проекта сбрасывает принятую ревизию.
+- [x] Добавлен core-only adapter: магнитная модель получает `ThreeLimbCorePhysicalGeometry` из принятых Construction размеров, joint/Step-Lap и air-gap записей без зависимости от CAD-only bobbin/winding envelope.
+- [x] Desktop вызывает revision-bound magnetic-cycle bridge для принятой ревизии и точного `coreMaterial.revisionId`, используя harmonic currents выбранной filter branch и `turnsPerPhase`. Отсутствующая/неподтверждённая B-H кривая и выход за её диапазон явно дают `NOT_VERIFIED`; ручные legacy Ae/le поля не используются в этом новом пути.
+- [ ] Windows build/E2E и сценарий UI с выбранным материалом/Construction ещё должны быть подтверждены пользователем.
 - [ ] Построить input fingerprint и dependency plan из изменённых входов.
 - [ ] Подключить реальные stage adapters к существующим магнитным, winding, loss и thermal use cases.
 - [ ] Не отмечать stage Valid, если он вернул placeholder или отсутствуют обязательные источники.
