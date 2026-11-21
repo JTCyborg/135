@@ -50,6 +50,8 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
         return geometryFailure("All three bobbin and winding-pack dimension sets are required.", "windings.dimensions");
     if (!in.bobbinMaterialId || in.bobbinMaterialId->empty())
         return geometryFailure("An explicit bobbin material identifier is required.", "bobbins.material");
+    if (!in.coolingDucts.empty())
+        return geometryFailure("Cooling-duct CAD representation is not implemented; duct inputs cannot be silently omitted.", "coolingDucts");
     if (!in.conductorInsulationBuildM || !in.layerInsulationBuildM || !in.mainInsulationBuildM)
         return geometryFailure("Conductor, layer and main insulation builds must be explicitly supplied (zero is allowed only when explicitly entered).", "windings.insulationBuilds");
     if (!in.windingTechnology || in.windingTechnology->empty() ||
@@ -106,6 +108,8 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
     }
 
     for (std::size_t i = 0; i < 3; ++i) {
+        if ((*in.bobbinFlangeThicknessesM)[i] <= 0.0)
+            return geometryFailure("The current OCCT bobbin builder requires explicitly dimensioned positive flanges.", "bobbins[" + std::to_string(i) + "].flangeThickness");
         out.bobbins[i] = BobbinPhysicalGeometry{
             Length((*in.bobbinInnerWidthsM)[i]), Length((*in.bobbinInnerHeightsM)[i]),
             Length((*in.bobbinAxialLengthsM)[i]), Length((*in.bobbinWallThicknessesM)[i]),
