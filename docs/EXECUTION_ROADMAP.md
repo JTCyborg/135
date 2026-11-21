@@ -199,3 +199,14 @@
 - [x] Extend desktop workflow E2E to assert automatic STEP/PDF creation, PDF signature, and Debug current/impedance PNG creation/signature under the requested root.
 - [ ] User Windows/MSVC Debug build and E2E execution pending. Do not claim file generation is verified until the user confirms the test result.
 - [ ] Add PDF page rendering inspection and compare its three projections against the physical OCCT B-Rep; the current PDF is preliminary and not a manufacturing drawing.
+
+
+### Winding construction input integrity (2026-11-21)
+
+- [x] Extend the revision-bound physical winding model to retain turns per phase, turns per layer, parallel conductors, conductor cross-section type and explicit bare/insulated conductor dimensions.
+- [x] Propagate round and rectangular/foil conductor dimensions from `ReactorDesignInputs` through the physical-geometry adapter instead of dropping them before CAD.
+- [x] Validate conductor metadata as an all-or-nothing set; reject inconsistent turn count/layer stack, missing cross-section dimensions, unsupported shapes and invalid round-wire insulation build.
+- [x] Preserve source compatibility for existing envelope-only callers and existing aggregate initialization; conductor-level fields remain optional until explicitly supplied.
+- [x] Add domain negative-path tests and application adapter propagation tests.
+- [ ] Run the updated domain/application/CAD and desktop E2E targets in Windows/MSVC Debug and Release. These commits have not yet been built locally.
+- [ ] Implement actual conductor solids only after a winding path definition is present (corner/bend radius, winding start/end routing, section transitions and lead exits). The current Construction schema has conductor size and turn counts but does not yet fully define these path features; do not infer them.
