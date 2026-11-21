@@ -29,6 +29,7 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
 
     if (!positiveFinite(request.stackingFactor) || request.stackingFactor > 1.0 ||
         request.filterMagnetic.filterBranchId == 0 ||
+        request.dimensionalSource.empty() || request.dimensionalRevision.empty() ||
         result.magneticAnalysis.filterBranchId != request.filterMagnetic.filterBranchId ||
         request.filterMagnetic.magnetic.material.id.empty() ||
         request.filterMagnetic.magnetic.material.sourceReference.empty() ||
@@ -47,8 +48,8 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
     output << std::setprecision(std::numeric_limits<double>::max_digits10);
     output << "schema=project135.magnetic-operating-point.v1\n";
     output << "filter_branch_id=" << result.magneticAnalysis.filterBranchId << '\n';
-    output << "dimensional_source=" << request.physicalCore.dimensionalSource << '\n';
-    output << "dimensional_revision=" << request.physicalCore.dimensionalRevision << '\n';
+    output << "dimensional_source=" << request.dimensionalSource << '\n';
+    output << "dimensional_revision=" << request.dimensionalRevision << '\n';
     output << "stacking_factor=" << request.stackingFactor << '\n';
     output << "core_material_id=" << request.filterMagnetic.magnetic.material.id << '\n';
     output << "bh_source_reference=" << request.filterMagnetic.magnetic.material.sourceReference << '\n';
