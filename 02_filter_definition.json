@@ -1,6 +1,6 @@
 {
     "buildConfiguration": "Debug",
-    "confirmedAtUtc": "2026-11-21T08:08:01.583Z",
+    "confirmedAtUtc": "2026-11-21T08:39:52.266Z",
     "fieldLabels": {
         "coreBhCurveEvidence": "B-H curve source/evidence",
         "coreBhCurvePoints": "Core material B-H curve points",
@@ -229,7 +229,7 @@
         "filterSourceTheveninInductanceMh": 0,
         "filterSourceTheveninResistanceOhm": 0,
         "filterTargetReactivePowerKvar": 100,
-        "filterThermalAmbientTemperatureC": 25,
+        "filterThermalAmbientTemperatureC": 40,
         "filterTuningHarmonicOrder": 5,
         "filterVoltageHarmonics": [
         ]
@@ -238,7 +238,10 @@
         "loadCurrentHarmonicSpectrum": "NOT_PROVIDED",
         "voltageHarmonicSpectrum": "NOT_PROVIDED"
     },
-    "projectId": "8eaf90c7-5e4a-4d22-b8d7-202611201120",
+    "lineage": {
+        "thermalAmbientTemperatureSource": "INHERITED_FROM_PROJECT: Project.ambientC"
+    },
+    "projectId": "5469ef97-1956-40d2-8555-a8968bfe7af7",
     "schemaVersion": 1,
     "tabId": "filter_definition",
     "tabTitle": "Filter definition"
