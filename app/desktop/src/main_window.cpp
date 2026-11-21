@@ -1879,6 +1879,28 @@ QWidget* MainWindow::createConstructionPage()
         addCoreLength(QStringLiteral("construction_yokeDepth_") + suffix,
             tr("Yoke segment %1 stack depth").arg(yoke + 1));
     }
+    for (int spacing = 0; spacing < 3; ++spacing) {
+        const QString suffix = QString::number(spacing + 1);
+        const QString pair = spacing == 0 ? tr("A-B") : spacing == 1 ? tr("B-C") : tr("A-C");
+        addCoreLength(QStringLiteral("construction_limbCenterSpacing_") + suffix,
+            tr("Limb center spacing %1").arg(pair));
+    }
+    addCoreLength(QStringLiteral("construction_coreOverallHeight"), tr("Overall core height"));
+    addCoreLength(QStringLiteral("construction_coreOverallWidth"), tr("Overall core width"));
+
+    for (int limb = 0; limb < 3; ++limb) {
+        const QString limbSuffix = QString::number(limb + 1);
+        for (int gap = 0; gap < 3; ++gap) {
+            const QString gapSuffix = QString::number(gap + 1);
+            addCoreLength(QStringLiteral("construction_airGapPosition_") + limbSuffix +
+                QStringLiteral("_") + gapSuffix,
+                tr("Limb %1 air gap %2 position from lower end").arg(QChar('A' + limb)).arg(gap + 1));
+            addCoreLength(QStringLiteral("construction_airGapLength_") + limbSuffix +
+                QStringLiteral("_") + gapSuffix,
+                tr("Limb %1 air gap %2 length").arg(QChar('A' + limb)).arg(gap + 1));
+        }
+    }
+
     for (int limb = 0; limb < 3; ++limb) {
         auto* count = new QSpinBox;
         count->setObjectName(QStringLiteral("construction_airGapCount_") + QString::number(limb + 1));
@@ -2033,6 +2055,34 @@ QWidget* MainWindow::createConstructionPage()
     insulationForm->addRow(tr("Main insulation build"), mainInsulation);
     insulationForm->addRow(tr("Bobbin used"), bobbinUsage);
     insulationForm->addRow(tr("Bobbin material"), bobbinMaterial);
+    const auto addBobbinLength = [insulationForm](const QString& objectName, const QString& label) {
+        auto* field = new QDoubleSpinBox;
+        field->setObjectName(objectName);
+        field->setRange(0.0, 10000.0);
+        field->setDecimals(3);
+        field->setSuffix(QObject::tr(" mm"));
+        field->setSpecialValueText(QObject::tr("NOT_PROVIDED"));
+        insulationForm->addRow(label, field);
+        return field;
+    };
+    for (int phase = 0; phase < 3; ++phase) {
+        const QString suffix = QString::number(phase + 1);
+        const QString phaseName = QString(QChar('A' + phase));
+        addBobbinLength(QStringLiteral("construction_bobbinInnerWidth_") + suffix,
+            tr("Bobbin %1 inner width").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_bobbinInnerHeight_") + suffix,
+            tr("Bobbin %1 inner height").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_bobbinAxialLength_") + suffix,
+            tr("Bobbin %1 axial length").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_bobbinWallThickness_") + suffix,
+            tr("Bobbin %1 wall thickness").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_windingRadialBuild_") + suffix,
+            tr("Winding %1 radial build").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_windingAxialHeight_") + suffix,
+            tr("Winding %1 axial height").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_windingEndClearance_") + suffix,
+            tr("Winding %1 end clearance").arg(phaseName));
+    }
     root->addWidget(insulationGroup);
 
     auto* thermalGroup = new QGroupBox(tr("4. Cooling and thermal limits"));
@@ -2050,6 +2100,23 @@ QWidget* MainWindow::createConstructionPage()
     ambient->setSuffix(tr(" °C"));
     ambient->setSpecialValueText(tr("NOT_PROVIDED"));
     ambient->setValue(-50.0);
+    auto* thermalClass = new QComboBox;
+    thermalClass->setObjectName(QStringLiteral("construction_insulationThermalClass"));
+    thermalClass->addItem(tr("— NOT_PROVIDED —"), QString{});
+    thermalClass->addItem(QStringLiteral("A"), QStringLiteral("A"));
+    thermalClass->addItem(QStringLiteral("E"), QStringLiteral("E"));
+    thermalClass->addItem(QStringLiteral("B"), QStringLiteral("B"));
+    thermalClass->addItem(QStringLiteral("F"), QStringLiteral("F"));
+    thermalClass->addItem(QStringLiteral("H"), QStringLiteral("H"));
+    auto* thermalStandard = new QLineEdit;
+    thermalStandard->setObjectName(QStringLiteral("construction_insulationThermalStandard"));
+    thermalStandard->setPlaceholderText(tr("Standard reference — NOT_PROVIDED"));
+    auto* thermalSafetyMargin = new QDoubleSpinBox;
+    thermalSafetyMargin->setObjectName(QStringLiteral("construction_insulationSafetyMargin"));
+    thermalSafetyMargin->setRange(0.0, 200.0);
+    thermalSafetyMargin->setDecimals(2);
+    thermalSafetyMargin->setSuffix(tr(" K"));
+    thermalSafetyMargin->setSpecialValueText(tr("NOT_PROVIDED"));
     auto* maximumWindingTemperature = new QDoubleSpinBox;
     maximumWindingTemperature->setObjectName(QStringLiteral("construction_maximumWindingTemperature"));
     maximumWindingTemperature->setRange(-50.0, 300.0);
@@ -2059,7 +2126,10 @@ QWidget* MainWindow::createConstructionPage()
     maximumWindingTemperature->setValue(-50.0);
     thermalForm->addRow(tr("Cooling method"), cooling);
     thermalForm->addRow(tr("Ambient temperature"), ambient);
-    thermalForm->addRow(tr("Maximum winding temperature"), maximumWindingTemperature);
+    thermalForm->addRow(tr("Insulation thermal class reference"), thermalClass);
+    thermalForm->addRow(tr("Thermal class standard"), thermalStandard);
+    thermalForm->addRow(tr("Thermal design safety margin"), thermalSafetyMargin);
+    thermalForm->addRow(tr("Maximum winding temperature (design limit)"), maximumWindingTemperature);
     root->addWidget(thermalGroup);
 
     auto* catalogStatus = new QLabel;
@@ -3529,6 +3599,20 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.turnInsulationBuildM = lengthMetres("construction_turnInsulation");
     inputs.layerInsulationBuildM = lengthMetres("construction_layerInsulation");
     inputs.mainInsulationBuildM = lengthMetres("construction_mainInsulation");
+    if (const auto* classControl = findChild<QComboBox*>(QStringLiteral("construction_insulationThermalClass"));
+        classControl && !classControl->currentData().toString().isEmpty()) {
+        p135::application::InsulationTemperatureReference reference;
+        reference.thermalClass = classControl->currentData().toString().toStdString();
+        if (const auto* standard = findChild<QLineEdit*>(QStringLiteral("construction_insulationThermalStandard")))
+            reference.standardReference = standard->text().trimmed().toStdString();
+        if (const auto* margin = findChild<QDoubleSpinBox*>(QStringLiteral("construction_insulationSafetyMargin")))
+            reference.safetyMarginK = margin->value();
+        if (const auto* maxTemp = findChild<QDoubleSpinBox*>(QStringLiteral("construction_maximumWindingTemperature"));
+            maxTemp && maxTemp->value() > -50.0)
+            reference.maximumDesignWindingTemperatureK = maxTemp->value() + 273.15;
+        reference.origin = DesignInputOrigin::UserSelected;
+        inputs.insulationTemperatureReference = std::move(reference);
+    }
 
     const auto coreLength = [this](const QString& name) -> std::optional<double> {
         const auto* field = findChild<QDoubleSpinBox*>(name);
@@ -3558,6 +3642,40 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
         inputs.yokeThicknessesM = std::array<double, 4>{(*values)[0], (*values)[1], (*values)[2], (*values)[3]};
     if (const auto values = collectLengthArray(QStringLiteral("construction_yokeDepth_"), 4))
         inputs.yokeDepthsM = std::array<double, 4>{(*values)[0], (*values)[1], (*values)[2], (*values)[3]};
+
+    const auto collectFixedArray = [&coreLength](const QString& prefix, std::size_t count)
+        -> std::optional<std::vector<double>> {
+        return collectLengthArray(prefix, count);
+    };
+    if (const auto values = collectFixedArray(QStringLiteral("construction_limbCenterSpacing_"), 3))
+        inputs.limbCenterSpacingsM = std::array<double, 3>{(*values)[0], (*values)[1], (*values)[2]};
+    inputs.coreOverallHeightM = coreLength(QStringLiteral("construction_coreOverallHeight"));
+    inputs.coreOverallWidthM = coreLength(QStringLiteral("construction_coreOverallWidth"));
+
+    for (std::uint32_t limb = 0; limb < 3; ++limb) {
+        for (std::uint32_t gap = 0; gap < 3; ++gap) {
+            const QString suffix = QString::number(limb + 1) + QStringLiteral("_") + QString::number(gap + 1);
+            const auto position = coreLength(QStringLiteral("construction_airGapPosition_") + suffix);
+            const auto length = coreLength(QStringLiteral("construction_airGapLength_") + suffix);
+            if (position.has_value() != length.has_value()) continue;
+            if (position && length)
+                inputs.airGaps.push_back({limb, *position, *length});
+        }
+    }
+
+    const auto collectPhaseArray = [&coreLength](const QString& prefix)
+        -> std::optional<std::array<double, 3>> {
+        const auto values = collectLengthArray(prefix, 3);
+        if (!values) return std::nullopt;
+        return std::array<double, 3>{(*values)[0], (*values)[1], (*values)[2]};
+    };
+    inputs.bobbinInnerWidthsM = collectPhaseArray(QStringLiteral("construction_bobbinInnerWidth_"));
+    inputs.bobbinInnerHeightsM = collectPhaseArray(QStringLiteral("construction_bobbinInnerHeight_"));
+    inputs.bobbinAxialLengthsM = collectPhaseArray(QStringLiteral("construction_bobbinAxialLength_"));
+    inputs.bobbinWallThicknessesM = collectPhaseArray(QStringLiteral("construction_bobbinWallThickness_"));
+    inputs.windingRadialBuildsM = collectPhaseArray(QStringLiteral("construction_windingRadialBuild_"));
+    inputs.windingAxialHeightsM = collectPhaseArray(QStringLiteral("construction_windingAxialHeight_"));
+    inputs.windingEndClearancesM = collectPhaseArray(QStringLiteral("construction_windingEndClearance_"));
 
     std::array<std::uint32_t, 3> gapCounts{};
     std::array<double, 3> totalGaps{};
