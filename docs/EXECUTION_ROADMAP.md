@@ -172,3 +172,18 @@
 - [x] Propagated explicitly selected core, conductor and insulation material revision IDs from Construction inputs into the physical geometry model; bobbin material identifier remains attached to each bobbin.
 - [x] CAD display items now carry material-revision provenance. Known seeded revisions resolve to their corresponding steel, copper and Nomex preview palette; unrecognized or absent revisions retain the semantic fallback palette and are not guessed.
 - [ ] Insulation currently has no independent physical solid in the simplified winding-envelope CAD builder, so its revision is preserved as provenance but cannot yet be rendered as a separate visible material layer.
+
+
+### Engineering plot correctness audit (2026-11-21)
+
+- [x] Frequency-sweep current plotting now resolves the three filter winding resistor components by stable component IDs/names. It no longer assumes result-vector offsets 3/6/9, which were wrong when Thevenin source R/L elements changed circuit element ordering.
+- [x] The plotted quantity is explicitly named **reactor branch peak current** (maximum branch RMS current × √2). This is winding current for the selected filter branch, not a network line-current label; the diagnostic-only/source-impedance warning remains visible.
+- [x] Current history snapshots now store `reactorBranchPeakCurrent_A` under plot-data version 2. Older snapshots without this corrected series are deliberately not silently reused for current-graph comparison; recalculate them before comparing this metric.
+- [x] Bus-impedance graph remains the per-phase driving-point magnitude from the source/filter parallel equivalent; resonance candidate bands are displayed on both impedance and current frequency plots.
+- [x] Entered Isat reference and Wye-comparable B-H knee-current reference are now passed to the current plot. The legacy knee current is not overlaid on Delta branch-current plots because its current basis is not equivalent there.
+- [x] Plot rendering accepts all-zero series and a single valid frequency point, draws a marker for a single point, breaks line segments across invalid samples, and clips data curves without clipping the legend.
+- [x] The core-flux frequency graph is explicitly identified as the legacy manual Ae/le/B-H diagnostic sweep. Construction-revision-bound harmonic operating-point B values are not misrepresented as frequency-sweep samples.
+- [x] Desktop E2E now inspects the exact current/impedance series and independently checks each plotted sample against the Wye series-RLC + Thevenin equations; it also asserts that no core-flux series is fabricated when the selected steel revision has no verified B-H curve.
+- [ ] User Windows/MSVC Debug build and DesktopWorkflowE2E confirmation pending.
+- [ ] Add a separate segment-based visualization for the Construction-revision-bound magnetic operating point (three limbs and four yoke segments); it must not reuse the frequency axis.
+- [ ] Add direct rendering tests for all-zero and single-point plots, plus a visual/manual Windows check of legend, axis ticks and reference-guide readability.
