@@ -3919,7 +3919,7 @@ QWidget* MainWindow::createCadPage()
     });
 
     connect(generateCad, &QPushButton::clicked, this,
-        [this, status, properties, viewport, generateCad, exportStep, tree, transparency, assemblyModel] {
+        [this, status, properties, viewport, generateCad, exportStep, exportDrawing, tree, transparency, assemblyModel] {
         if (constructionInputsDirty_) {
             status->setText(tr("CAD is blocked: confirm Construction again after the latest input change."));
             return;
@@ -4333,6 +4333,8 @@ void MainWindow::markConstructionInputsChanged()
         generate->setEnabled(true);
     if (auto* exportStep = findChild<QPushButton*>(QStringLiteral("exportCadStep")))
         exportStep->setEnabled(false);
+    if (auto* exportDrawing = findChild<QPushButton*>(QStringLiteral("generateCadDrawings")))
+        exportDrawing->setEnabled(false);
     if (auto* viewport = findChild<CadViewportWidget*>(QStringLiteral("cadViewportWidget")))
         viewport->setDisplayItems({});
     if (auto* cadStatus = findChild<QLabel*>(QStringLiteral("cadGenerationStatus")))
