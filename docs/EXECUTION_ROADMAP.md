@@ -114,18 +114,18 @@
 - [x] Добавлен Qt Test target `Project135DesktopWorkflowE2ETests` с запуском в offscreen-режиме и отдельной копией SQLite migrations.
 - [x] Добавлены проверки порядка семи вкладок, явного переключения на каждую вкладку, наличия основных workflow actions и стабильных objectName у редактируемых контролов Project / Filter definition / Construction.
 - [x] Добавлен UI-путь подтверждений Project → Filter definition → Construction и запуска расчёта с подтверждением Calculation & design.
-- [x] Добавлен явный ожидаемый пробел для 2D: тест проверяет наличие `generateCadDrawings`, но отмечен как expected failure (XFAIL), так как в приложении отсутствуют 2D drawing generator и экспорт. Windows/MSVC Debug подтверждён пользователем на commit `75816ce`.
+- [x] Проверка 2D drawing action переведена с XFAIL на PASS: кнопка `generateCadDrawings` присутствует и до создания актуальной CAD-геометрии остаётся отключённой. Windows/MSVC Debug подтверждён пользователем на commit `2d7e4bd`.
 - [ ] Заполнить все поля всех вкладок детерминированным TEST-01 UI fixture; для каждого snapshot сверять полный набор control IDs и сохранённых значений. Новый тест покрывает CAD-обязательные Construction поля и часть электрических/тепловых полей; полный перебор всех полей вкладок и snapshot round-trip остаётся TODO.
 - [ ] Проверить численные значения TEST-01 через UI, включая C, L, R и токи, а не только факт появления строк результатов.
 - [x] Добавить в desktop E2E численные regression assertions для фазного напряжения, C, L и R TEST-01 с допусками; пользователь подтвердил успешный Windows/MSVC Debug CTest 1/1 (16.71 s).
-- [ ] Подготовить согласованный физический TEST-01 fixture с source/revision и точными material revision IDs; пройти через CAD UI до реальной генерации и проверки 3D B-Rep. Добавлен отдельный synthetic CAD regression fixture в `syntheticTest01ConstructionBuildsOcctAssembly`: точные seeded material revision IDs, явная геометрическая provenance, восемь Butt joints, все размеры core/bobbin/winding и проверки OCCT assembly tree. Геометрия помечена как синтетическая и NOT manufacturing-approved; Windows запуск этого нового теста ещё не подтверждён.
-- [x] Добавить E2E negative-path assertion: при неполных Construction inputs CAD generation обязана отказать, оставить placeholder assembly tree и не разрешать STEP export. Изменение опубликовано, Windows-проверка ожидается.
+- [x] Подготовить и прогнать через CAD UI синтетический TEST-01 CAD regression fixture: точные seeded material revision IDs, явная геометрическая provenance, восемь Butt joints, все размеры core/bobbin/winding, OCCT assembly tree и STEP round-trip (B-Rep validity, 13 solids). Windows/MSVC Debug подтверждён пользователем на commit `2d7e4bd`; геометрия остаётся синтетической и NOT manufacturing-approved, это не реальная производственная ревизия.
+- [x] Добавить и подтвердить Windows E2E negative-path: при неполных Construction inputs CAD generation отказывает, оставляет placeholder assembly tree и не разрешает STEP export.
 - [x] Добавлен preliminary DXF generator из той же ReactorPhysicalGeometry revision: front elevation, plan view, side elevation, overall dimensions, SI→mm, DXF INSUNITS, source/revision provenance и PRELIMINARY / NOT VERIFIED маркировка. Step-Lap намеренно блокируется, поскольку его физическая пакетная топология ещё не поддержана.
 - [x] CAD UI получил отдельную кнопку DXF export; действие доступно только после успешной генерации актуальной 3D CAD revision и инвалидируется вместе с Construction.
-- [ ] Выполнить Windows/MSVC E2E: экспорт DXF через реальный UI action, проверить файл и три вида/размеры/provenance; пока код опубликован, но пользовательский запуск ещё не подтверждён.
+- [x] Выполнить Windows/MSVC E2E: DXF экспортирован через реальный UI action; файл проверен на три ортогональных вида, INSUNITS, общие габаритные размеры, winding envelope и source/revision provenance. Пользователь подтвердил PASS на commit `2d7e4bd`.
 - [ ] Проверить инвалидацию: геометрия → магнитные/тепловые/CAD/drawing результаты; материал → зависимые расчёты.
 - [ ] Проверить Debug и Release, сохранение/загрузку проекта, immutable snapshots.
-- [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: пользователь подтвердил commit `75816ce`, сборка target успешна, CTest 1/1 passed (16.98 s; QtTest 8 passed, 0 failed; 2D drawing check XFAIL).
+- [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: пользователь подтвердил commit `2d7e4bd`, сборка target успешна, CTest 1/1 passed (36.52 s; QtTest 9 passed, 0 failed; STEP round-trip и DXF UI export проверки PASS).
 - [ ] Запустить desktop UI тест в Windows/MSVC Release; фиксировать результаты, не объявлять PASS без фактического запуска.
 
 ## 4. Критерии приёмки
