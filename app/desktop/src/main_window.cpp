@@ -1002,6 +1002,51 @@ QWidget* MainWindow::createProjectPage()
             }
         }
 
+        for (int limb = 0; limb < 3; ++limb) {
+            const QString limbSuffix = QString::number(limb + 1);
+            const auto* count = findChild<QSpinBox*>(QStringLiteral("construction_airGapCount_") + limbSuffix);
+            double enteredGapTotalMm = 0.0;
+            int enteredGapCount = 0;
+            for (int gap = 0; gap < 3; ++gap) {
+                const QString suffix = limbSuffix + QStringLiteral("_") + QString::number(gap + 1);
+                const auto* position = findChild<QDoubleSpinBox*>(
+                    QStringLiteral("construction_airGapPosition_") + suffix);
+                const auto* length = findChild<QDoubleSpinBox*>(
+                    QStringLiteral("construction_airGapLength_") + suffix);
+                const bool hasPosition = position && position->value() > position->minimum();
+                const bool hasLength = length && length->value() > length->minimum();
+                if (hasPosition != hasLength) {
+                    QMessageBox::warning(this, tr("Incomplete air-gap definition"),
+                        tr("Limb %1 air gap %2 requires both position and length.")
+                            .arg(QChar('A' + limb)).arg(gap + 1));
+                    if (position) position->setFocus();
+                    return;
+                }
+                if (hasPosition && hasLength) {
+                    ++enteredGapCount;
+                    enteredGapTotalMm += length->value();
+                }
+            }
+            if (count && count->value() != 0 && count->value() != enteredGapCount) {
+                QMessageBox::warning(this, tr("Air-gap count mismatch"),
+                    tr("Limb %1 declares %2 air gaps but %3 complete position/length records are entered.")
+                        .arg(QChar('A' + limb)).arg(count->value()).arg(enteredGapCount));
+                count->setFocus();
+                return;
+            }
+            const auto* total = findChild<QDoubleSpinBox*>(
+                QStringLiteral("construction_totalAirGap_") + limbSuffix);
+            if (total && total->value() > total->minimum() && enteredGapCount > 0 &&
+                std::abs(total->value() - enteredGapTotalMm) > 0.001) {
+                QMessageBox::warning(this, tr("Air-gap total mismatch"),
+                    tr("Limb %1 individual gap lengths sum to %2 mm, but the declared total is %3 mm.")
+                        .arg(QChar('A' + limb)).arg(enteredGapTotalMm, 0, 'f', 3)
+                        .arg(total->value(), 0, 'f', 3));
+                total->setFocus();
+                return;
+            }
+        }
+
         QJsonObject snapshot;
         snapshot.insert(QStringLiteral("schemaVersion"), 1);
         snapshot.insert(QStringLiteral("tabId"), QStringLiteral("project"));
@@ -1904,7 +1949,7 @@ QWidget* MainWindow::createConstructionPage()
     for (int limb = 0; limb < 3; ++limb) {
         auto* count = new QSpinBox;
         count->setObjectName(QStringLiteral("construction_airGapCount_") + QString::number(limb + 1));
-        count->setRange(0, 100);
+        count->setRange(0, 3);
         count->setSpecialValueText(tr("NOT_PROVIDED"));
         coreForm->addRow(tr("Limb %1 discrete air-gap count").arg(QChar('A' + limb)), count);
         addCoreLength(QStringLiteral("construction_totalAirGap_") + QString::number(limb + 1),
@@ -2310,7 +2355,21 @@ QWidget* MainWindow::createConstructionPage()
             } else continue;
             fields.insert(key, value);
             fieldLabels.insert(key, labels.value(key, key));
-            fieldUnits.insert(key, units.value(key, QStringLiteral("NOT_APPLICABLE")));
+            QString unit = units.value(key);
+            if (unit.isEmpty()) {
+                if (key.contains(QStringLiteral("airGapCount"))) unit = QStringLiteral("count");
+                else if (key.contains(QStringLiteral("SafetyMargin"))) unit = QStringLiteral("K");
+                else if (key.contains(QStringLiteral("ThermalClass")) || key.contains(QStringLiteral("ThermalStandard")))
+                    unit = QStringLiteral("reference");
+                else if (key.contains(QStringLiteral("Overall")) || key.contains(QStringLiteral("limb")) ||
+                         key.contains(QStringLiteral("window")) || key.contains(QStringLiteral("yoke")) ||
+                         key.contains(QStringLiteral("airGap")) || key.contains(QStringLiteral("bobbin")) ||
+                         key.contains(QStringLiteral("windingRadial")) || key.contains(QStringLiteral("windingAxial")) ||
+                         key.contains(QStringLiteral("windingEnd")))
+                    unit = QStringLiteral("mm");
+                else unit = QStringLiteral("NOT_APPLICABLE");
+            }
+            fieldUnits.insert(key, unit);
         }
 
         const auto positiveIfProvided = [this](const QString& key, const QString& label) {
