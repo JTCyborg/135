@@ -148,3 +148,12 @@
 ## 5. Текущий технический вывод
 
 В репозитории уже существуют application dependency graph/execution API, domain physical geometry, OCCT three-limb core/assembly builders и Qt CAD viewport. Desktop UI пока не вызывает полный application execution pipeline и не формирует согласованный магнитный/тепловой result snapshot. При этом предварительный CAD-путь уже подключён от Construction inputs через строгий physical-geometry adapter к OCCT presentation, semantic component tree и STEP B-Rep export. Следующая работа — закрыть недостающие физические входы/модели, подключить реальное выполнение стадий расчёта и проверить весь путь сборкой и тестами.
+
+### 3D presentation — component palette and surface shading
+
+- [x] Added a presentation-only RGB palette to each flattened CAD display item.
+- [x] Assigned distinct semantic preview colors to core segments (steel blue-grey), bobbins (warm insulating beige), and winding envelopes (copper).
+- [x] Applied per-component colors in the OCCT AIS viewport and explicitly selected shaded display mode; OCCT viewer lighting provides orientation-dependent face shading.
+- [ ] Replace the temporary semantic palette with colors resolved from explicit material revision assignments on physical components. Until those assignments exist, preview colors must not be represented as verified material properties.
+- [ ] Add a controlled surface finish/material response (diffuse/specular/roughness) and verify face-by-face visual gradients under the viewport lights. Flat planar faces cannot show a spatial gradient from ordinary diffuse lighting alone; a custom shader or texture may be required for a literal gradient ramp on every face.
+- [ ] Add E2E assertions for stable component colors and a visual/manual viewport check on Windows.
