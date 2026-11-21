@@ -32,6 +32,20 @@ echo Project135 validation
 echo Log: %LOG%
 echo.
 
+rem Resolve VCPKG_ROOT before evaluating CMake presets.
+if not defined VCPKG_ROOT set "VCPKG_ROOT="
+if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
+    for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$c=@([Environment]::GetEnvironmentVariable('VCPKG_ROOT','User'),[Environment]::GetEnvironmentVariable('VCPKG_ROOT','Machine'),'C:\\vcpkg',\"$env:USERPROFILE\\vcpkg\"); $p=$c | Where-Object { $_ -and (Test-Path (Join-Path $_ 'scripts\\buildsystems\\vcpkg.cmake')) } | Select-Object -First 1; if($p){[IO.Path]::GetFullPath($p)}"`) do set "VCPKG_ROOT=%%V"
+)
+if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
+    echo ERROR: VCPKG_ROOT is not set and vcpkg.cmake was not found.
+    echo Set VCPKG_ROOT to the vcpkg installation directory and rerun.
+    echo [FATAL] vcpkg toolchain not found. VCPKG_ROOT=%VCPKG_ROOT%>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+echo VCPKG_ROOT: %VCPKG_ROOT%>>"%LOG%"
+
 where git >nul 2>&1
 if errorlevel 1 (
     echo ERROR: git was not found in PATH.
@@ -117,13 +131,13 @@ echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
 rem Configure both CMake presets before building.
 echo.
 echo [3/6] Configuring Debug and Release...
-set "RUN_CMD=cmake --preset vs2026-desktop-debug"
+set "RUN_CMD=cmake --fresh --preset vs2026-desktop-debug"
 call :RUN "Configure Debug"
 if errorlevel 1 (
     set "OVERALL=FAILED"
     goto FINALIZE
 )
-set "RUN_CMD=cmake --preset vs2026-desktop-release"
+set "RUN_CMD=cmake --fresh --preset vs2026-desktop-release"
 call :RUN "Configure Release"
 if errorlevel 1 (
     set "OVERALL=FAILED"
@@ -276,4 +290,4 @@ if !RUN_RC! EQU 0 (
     echo [FAIL] %~1 (exit !RUN_RC!)
     echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
 )
-endlocal & exit /b %RUN_RC%
+endlocal & exit /b !RUN_RC!
