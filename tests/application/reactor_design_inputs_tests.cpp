@@ -24,6 +24,7 @@ int main()
     inputs.ambientTemperatureK = 298.15;
     inputs.maximumWindingTemperatureK = 393.15;
     inputs.coreGeometryFamily = "three-limb";
+    inputs.coreLaminationConstruction = "measured packet stack";
     inputs.conductorShape = "rectangular";
     inputs.windingTechnology = "layer";
     inputs.coolingMethod = "natural-air";
@@ -31,6 +32,7 @@ int main()
     inputs.turnsPerPhase = 120;
     inputs.turnsPerLayer = 12;
     inputs.windingLayers = 10;
+    inputs.windingSections = 3;
     inputs.parallelConductors = 2;
     inputs.conductorCrossSectionM2 = 2.5e-6;
     inputs.conductorWidthM = 2.0e-3;
@@ -97,6 +99,9 @@ int main()
     inputs.bobbinInnerHeightsM = std::array<double, 3>{0.13, 0.13, 0.13};
     inputs.bobbinAxialLengthsM = std::array<double, 3>{0.18, 0.18, 0.18};
     inputs.bobbinWallThicknessesM = std::array<double, 3>{0.001, 0.001, 0.001};
+    inputs.bobbinFlangeThicknessesM = std::array<double, 3>{0.003, 0.003, 0.003};
+    inputs.bobbinFlangeOuterWidthsM = std::array<double, 3>{0.056, 0.066, 0.056};
+    inputs.bobbinFlangeOuterHeightsM = std::array<double, 3>{0.136, 0.136, 0.136};
     inputs.windingRadialBuildsM = std::array<double, 3>{0.02, 0.02, 0.02};
     inputs.windingAxialHeightsM = std::array<double, 3>{0.16, 0.16, 0.16};
     inputs.windingEndClearancesM = std::array<double, 3>{0.01, 0.01, 0.01};
@@ -123,6 +128,23 @@ int main()
     inputs = physicalAccepted;
     inputs.totalAirGapLengthPerLimbM = std::array<double, 3>{0.002, 0.0, 0.001};
     assert(requiresRecalculation(inputs, physicalAccepted));
+    inputs = physicalAccepted;
+    inputs.coreLaminationConstruction = "different packet stack";
+    assert(requiresRecalculation(inputs, physicalAccepted));
+    inputs = physicalAccepted;
+    inputs.coreJointConstructions = std::array<std::string, 8>{
+        "butt", "butt", "butt", "butt", "butt", "butt", "butt", "butt"};
+    assert(requiresRecalculation(inputs, physicalAccepted));
+    inputs = physicalAccepted;
+    inputs.windingSections = 4;
+    assert(requiresRecalculation(inputs, physicalAccepted));
+    inputs = physicalAccepted;
+    inputs.bobbinFlangeThicknessesM = std::array<double, 3>{0.004, 0.003, 0.003};
+    assert(requiresRecalculation(inputs, physicalAccepted));
+    inputs = physicalAccepted;
+    inputs.coreJointConstructions = std::array<std::string, 8>{
+        "butt", "butt", "invalid", "butt", "butt", "butt", "butt", "butt"};
+    assert(!validate(inputs));
 
     MaterialRecommendationSet recommendations;
     recommendations.sourceFilterSnapshotId = "filter-snapshot-42";
