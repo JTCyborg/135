@@ -142,6 +142,28 @@ int main()
     assert(magneticCore.value().airGaps.size() == 2);
     assert(std::abs(magneticCore.value().limbWidths[1].si() - 0.05) < 1.0e-12);
     const auto physicalAccepted = inputs;
+
+    // The physical CAD adapter must carry accepted conductor dimensions into
+    // the immutable domain geometry rather than dropping them at the boundary.
+    inputs.coolingDucts.clear();
+    inputs.bobbinMaterialId = "test-bobbin-revision";
+    inputs.conductorInsulationBuildM = 0.1e-3;
+    const auto physicalGeometry = makeReactorPhysicalGeometry(inputs, "adapter-test");
+    assert(physicalGeometry);
+    for (const auto& winding : physicalGeometry.value().windingPacks) {
+        assert(winding.turns && *winding.turns == 120);
+        assert(winding.turnsPerLayer && *winding.turnsPerLayer == 12);
+        assert(winding.parallelConductors && *winding.parallelConductors == 2);
+        assert(winding.conductorShape == "rectangular");
+        assert(winding.bareConductorWidth &&
+            std::abs(winding.bareConductorWidth->si() - 2.0e-3) < 1.0e-12);
+        assert(winding.bareConductorThickness &&
+            std::abs(winding.bareConductorThickness->si() - 1.25e-3) < 1.0e-12);
+    }
+    inputs.turnsPerPhase = 121;
+    assert(!makeReactorPhysicalGeometry(inputs, "invalid-turn-count"));
+    inputs = physicalAccepted;
+
     inputs.windowWidthsM = std::array<double, 2>{0.0, 0.10};
     assert(!validate(inputs));
     inputs = physicalAccepted;
