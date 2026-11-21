@@ -161,7 +161,7 @@ int main()
     assert(requiresRecalculation(inputs, physicalAccepted));
     inputs = physicalAccepted;
     inputs.coreJointConstructions = std::array<std::string, 8>{
-        "butt", "butt", "butt", "butt", "butt", "butt", "butt", "butt"};
+        "step-lap", "butt", "butt", "butt", "butt", "butt", "butt", "butt"};
     assert(requiresRecalculation(inputs, physicalAccepted));
     inputs = physicalAccepted;
     inputs.windingSections = 4;
