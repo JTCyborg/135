@@ -337,6 +337,10 @@ public:
 #if defined(_DEBUG) || !defined(NDEBUG)
         debugImageSaveTimer_.setSingleShot(true);
         connect(&debugImageSaveTimer_, &QTimer::timeout, this, [this] {
+            qInfo().noquote() << "[PLOT-DIAG] timer fired:"
+                << objectName() << "visible=" << isVisible()
+                << "size=" << size()
+                << "path=" << property("debugImagePath").toString();
             saveDebugImage();
         });
 #endif
@@ -404,11 +408,23 @@ private:
 
     void saveDebugImage()
     {
-        if (savingDebugImage_) return;
+        if (savingDebugImage_) {
+            qWarning().noquote() << "[PLOT-DIAG] capture skipped: recursive save" << objectName();
+            return;
+        }
         const QString path = property("debugImagePath").toString();
-        if (path.isEmpty() || width() < 120 || height() < 100) return;
+        if (path.isEmpty() || width() < 120 || height() < 100) {
+            qWarning().noquote() << "[PLOT-DIAG] capture skipped: invalid path/geometry"
+                << objectName() << "path=" << path << "size=" << size()
+                << "visible=" << isVisible();
+            return;
+        }
         const QFileInfo info(path);
-        if (!QDir().mkpath(info.absolutePath())) return;
+        if (!QDir().mkpath(info.absolutePath())) {
+            qWarning().noquote() << "[PLOT-DIAG] cannot create directory:"
+                << info.absolutePath() << "error=" << QDir().mkpath(info.absolutePath());
+            return;
+        }
         // QWidget::render() can synchronously deliver resize events. Keep the
         // capture guarded so those events cannot recursively start another capture.
         savingDebugImage_ = true;
@@ -428,8 +444,13 @@ private:
         QSaveFile output(path);
         if (!output.open(QIODevice::WriteOnly) || !image.save(&output, "PNG") ||
             !output.commit()) {
+            const QString error = output.errorString();
             output.cancelWriting();
-            qWarning("Project135: failed to save debug plot PNG: %s", qPrintable(path));
+            qWarning().noquote() << "[PLOT-DIAG] PNG write failed:"
+                << objectName() << "path=" << path << "error=" << error;
+        } else {
+            qInfo().noquote() << "[PLOT-DIAG] PNG saved:"
+                << objectName() << "path=" << path << "size=" << image.size();
         }
     }
 #endif
