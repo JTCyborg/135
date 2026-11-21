@@ -82,6 +82,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QVariant>
 #include <QUuid>
 
 #include <array>
@@ -5886,6 +5887,11 @@ void MainWindow::calculateFilter()
     const std::optional<double> saturationPeakReference =
         inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0
             ? std::optional<double>{inductorSaturationCurrent_->value()} : std::nullopt;
+    // The legacy single-path knee current is based on phase-conductor current.
+    // It is directly comparable to winding current for Wye, but not Delta.
+    const std::optional<double> magneticKneePlotReference =
+        result.value().network.connection == p135::filter::Connection::Wye
+            ? magneticKneeCurrentA : std::nullopt;
 
 
     QString calculationSummary = tr("LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available.");
@@ -6175,7 +6181,7 @@ void MainWindow::calculateFilter()
                     ? tr("Source-impedance-included diagnostic reactor branch peak current (A)")
                     : tr("Ideal-source diagnostic reactor branch peak current (A) — NOT operational stress"));
             resultsBankCurrentPlot_->setEngineeringGuides(
-                resonanceBands, saturationPeakReference, magneticKneeCurrentA);
+                resonanceBands, saturationPeakReference, magneticKneePlotReference);
         }
         if (auto* title = findChild<QLabel*>(QStringLiteral("inductorCurrentPlotTitle"))) {
             title->setText(hasSourceImpedance
@@ -6409,7 +6415,8 @@ void MainWindow::calculateFilter()
     if (resultsBankCurrentPlot_) {
         resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
             tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
-        resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
+        resultsBankCurrentPlot_->setEngineeringGuides(
+            resonanceBands, saturationPeakReference, magneticKneePlotReference);
     }
     PlotCurve liveBusImpedanceCurve{tr("Current calculation"), {}};
     if (impedanceResult) {
