@@ -621,6 +621,11 @@ void MainWindow::saveProjectSettings()
     if (const auto* w = findChild<QComboBox*>(QStringLiteral("projectIpRating"))) settings.setValue("ipRating", w->currentText());
     if (const auto* w = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"))) settings.setValue("coolingMethod", w->currentData().toString());
     if (const auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) settings.setValue("airflowM3h", w->value());
+    settings.beginGroup(QStringLiteral("filter"));
+    if (ambientTemperature_) settings.setValue(QStringLiteral("thermalAmbientC"), ambientTemperature_->value());
+    if (!settings.contains(QStringLiteral("thermalAmbientSource")))
+        settings.setValue(QStringLiteral("thermalAmbientSource"), QStringLiteral("INHERITED_FROM_PROJECT"));
+    settings.endGroup();
     settings.beginGroup(QStringLiteral("construction"));
     for (auto* widget : findChildren<QWidget*>()) {
         const QString key = widget->objectName();
@@ -678,6 +683,19 @@ void MainWindow::loadProjectSettings()
         const int i = w->findData(get("coolingMethod", QStringLiteral("AN"))); w->setCurrentIndex(i < 0 ? 0 : i);
     }
     if (auto* w = findChild<QDoubleSpinBox*>(QStringLiteral("projectAirflowM3h"))) w->setValue(get("airflowM3h", 0.0).toDouble());
+    const double projectAmbientC = get("ambientC", 40.0).toDouble();
+    settings.beginGroup(QStringLiteral("filter"));
+    const QString filterAmbientSource = settings.value(QStringLiteral("thermalAmbientSource")).toString();
+    if (ambientTemperature_) {
+        if (filterAmbientSource == QStringLiteral("MANUAL") && settings.contains(QStringLiteral("thermalAmbientC")))
+            ambientTemperature_->setValue(settings.value(QStringLiteral("thermalAmbientC")).toDouble());
+        else {
+            ambientTemperature_->setValue(projectAmbientC);
+            settings.setValue(QStringLiteral("thermalAmbientC"), projectAmbientC);
+            settings.setValue(QStringLiteral("thermalAmbientSource"), QStringLiteral("INHERITED_FROM_PROJECT"));
+        }
+    }
+    settings.endGroup();
     settings.endGroup();
     settings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/construction"));
     for (auto* widget : findChildren<QWidget*>()) {
@@ -723,7 +741,6 @@ void MainWindow::loadProjectSettings()
         flow->setEnabled(method && method->currentData().toString() == QStringLiteral("AF"));
     }
     // Inherit Project environmental inputs unless the user has overridden Construction.
-    const double projectAmbientC = get("ambientC", 40.0).toDouble();
     const QString projectCooling = get("coolingMethod", QStringLiteral("AN")).toString();
     auto* constructionAmbient = findChild<QDoubleSpinBox*>(QStringLiteral("construction_ambient"));
     auto* constructionCooling = findChild<QComboBox*>(QStringLiteral("construction_cooling"));
@@ -1132,6 +1149,15 @@ QWidget* MainWindow::createFilterPage()
     componentForm->addRow(refreshComponents);
     connect(refreshComponents, &QPushButton::clicked, this, [this] { refreshComponentSelectors(); });
     layout->addWidget(componentGroup);
+    connect(ambientTemperature_, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+        [this](double) {
+            if (loadingProjectSettings_ || projectId_.isEmpty()) return;
+            QSettings settings;
+            settings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/filter"));
+            settings.setValue(QStringLiteral("thermalAmbientSource"), QStringLiteral("MANUAL"));
+            settings.endGroup();
+            saveProjectSettings();
+        });
     refreshComponentSelectors();
 
     auto* note = new QLabel(tr(
@@ -1663,6 +1689,15 @@ QWidget* MainWindow::createFilterPage()
         inputAvailability.insert(QStringLiteral("loadCurrentHarmonicSpectrum"),
             harmonicCurrentTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
         snapshot.insert(QStringLiteral("inputAvailability"), inputAvailability);
+        QJsonObject lineage;
+        QSettings lineageSettings;
+        lineageSettings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/filter"));
+        const bool manualAmbient = lineageSettings.value(QStringLiteral("thermalAmbientSource")).toString() == QStringLiteral("MANUAL");
+        lineage.insert(QStringLiteral("thermalAmbientTemperatureSource"), manualAmbient
+            ? QStringLiteral("USER_OVERRIDE")
+            : QStringLiteral("INHERITED_FROM_PROJECT: Project.ambientC"));
+        lineageSettings.endGroup();
+        snapshot.insert(QStringLiteral("lineage"), lineage);
 
 #ifdef _DEBUG
         const QString outputDirectory = QStringLiteral("C:/Temp/trdos/135");
