@@ -286,7 +286,7 @@ Result<void> validate(const WindingPackPhysicalGeometry& g)
                 return invalid("Rectangular/foil conductor geometry requires positive explicit width and thickness.",
                     "windingPack.conductorCrossSection");
         } else {
-            return invalid("Detailed winding geometry supports round, rectangular and foil conductor cross-sections.",
+            return invalid("Conductor construction metadata supports round, rectangular and foil cross-sections.",
                 "windingPack.conductorShape");
         }
     }
