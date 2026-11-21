@@ -20,3 +20,8 @@ compile_commands.json
 *.VC.VC.opendb
 .DS_Store
 Thumbs.db
+
+# Generated engineering artifacts (recreated by the validation script)
+/CAD/
+/Drawings/
+/Debug/
