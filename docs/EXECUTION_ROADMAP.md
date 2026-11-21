@@ -158,7 +158,9 @@
 - [x] Resolve a presentation-only material finish by pinned revision/semantic role: satin electrical steel, polished copper, matte insulating former, neutral matte fallback. This is a visual classification only and does not alter engineering material data.
 - [x] Apply per-component OCCT `Graphic3d_MaterialAspect` ambient, diffuse, specular and shininess parameters in shaded mode; steel uses restrained highlights, copper stronger warm highlights, and insulation a low-gloss response.
 - [ ] Add E2E assertions for material-finish assignment and a visual/manual viewport check on Windows. Current workflow E2E confirms geometry/export but does not inspect rendered pixels or GPU material response.
-- [ ] Implement literal spatial gradient ramps on individual faces only if required after visual review; current implementation uses physically lit material shading, not a texture/shader gradient ramp.
+- [x] Add per-face tonal shading in the OCCT viewport using each B-Rep face normal and a restrained directional ramp; use AIS_ColoredShape custom face colors while retaining the component-level material finish. This is a face-level presentation gradient, not a continuous texture/shader gradient and does not modify the B-Rep or STEP geometry.
+- [ ] Add E2E assertions for face/material presentation metadata and perform a manual Windows viewport review; the current UI E2E does not inspect GPU-rendered pixels.
+- [ ] Consider continuous UV texture/shader gradients only if the manual viewport review shows a concrete need; avoid adding a shader pipeline solely for decoration.
 
 - [x] Propagated explicitly selected core, conductor and insulation material revision IDs from Construction inputs into the physical geometry model; bobbin material identifier remains attached to each bobbin.
 - [x] CAD display items now carry material-revision provenance. Known seeded revisions resolve to their corresponding steel, copper and Nomex preview palette; unrecognized or absent revisions retain the semantic fallback palette and are not guessed.
