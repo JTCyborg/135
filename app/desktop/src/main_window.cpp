@@ -253,8 +253,6 @@ protected:
             QColor(35, 145, 90), QColor(150, 85, 175)};
         int curveIndex = 0;
         int legendX = static_cast<int>(area.left()) + 8;
-        painter.save();
-        painter.setClipRect(area);
         for (const auto& curve : curves_) {
             QPainterPath path;
             bool started = false;
@@ -272,6 +270,8 @@ protected:
                 else path.lineTo(x, y);
             }
             const QColor color = colors[static_cast<std::size_t>(curveIndex) % colors.size()];
+            painter.save();
+            painter.setClipRect(area);
             painter.setPen(QPen(color, 2.0));
             painter.drawPath(path);
             if (validPointCount == 1) {
@@ -279,6 +279,7 @@ protected:
                 painter.drawEllipse(onlyPoint, 3.5, 3.5);
                 painter.setBrush(Qt::NoBrush);
             }
+            painter.restore();
             painter.drawLine(legendX, 10, legendX + 18, 10);
             painter.setPen(palette().color(QPalette::Text));
             const QString label = curve.name;
@@ -286,7 +287,6 @@ protected:
             legendX += painter.fontMetrics().horizontalAdvance(label) + 42;
             ++curveIndex;
         }
-        painter.restore();
         painter.setPen(palette().color(QPalette::Text));
         painter.drawText(QRectF(0, height() - 22, width(), 20), Qt::AlignCenter, xLabel_);
         painter.save();
