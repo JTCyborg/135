@@ -1089,68 +1089,6 @@ QWidget* MainWindow::createProjectPage()
             return;
         }
 
-        std::array<int, 8> stepLapPacketCounts{};
-        if (const auto* schedule = findChild<QPlainTextEdit*>(
-                QStringLiteral("construction_stepLapPacketSchedule"))) {
-            const auto lines = schedule->toPlainText().split('\n');
-            for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
-                const QString line = lines[lineIndex].trimmed();
-                if (line.isEmpty() || line.startsWith('#')) continue;
-                const auto columns = line.split(',');
-                if (columns.size() != 6) {
-                    QMessageBox::warning(this, tr("Invalid Step-Lap packet schedule"),
-                        tr("Line %1 must contain six comma-separated fields.").arg(lineIndex + 1));
-                    schedule->setFocus();
-                    return;
-                }
-                bool jointOk = false;
-                const int jointNumber = columns[0].trimmed().toInt(&jointOk);
-                if (!jointOk || jointNumber < 1 || jointNumber > 8) {
-                    QMessageBox::warning(this, tr("Invalid Step-Lap packet schedule"),
-                        tr("Line %1 must reference joint number 1 through 8.").arg(lineIndex + 1));
-                    schedule->setFocus();
-                    return;
-                }
-                std::array<double, 4> values{};
-                bool validValues = true;
-                for (int column = 0; column < 4; ++column) {
-                    bool ok = false;
-                    values[static_cast<std::size_t>(column)] = columns[column + 1].trimmed().toDouble(&ok);
-                    validValues = validValues && ok &&
-                        std::isfinite(values[static_cast<std::size_t>(column)]);
-                }
-                const QString direction = columns[5].trimmed().toLower();
-                if (!validValues || values[0] < 0.0 || values[1] <= 0.0 ||
-                    values[2] <= 0.0 || values[3] <= 0.0 ||
-                    (direction != QStringLiteral("limb-into-yoke") &&
-                     direction != QStringLiteral("yoke-into-limb"))) {
-                    QMessageBox::warning(this, tr("Invalid Step-Lap packet schedule"),
-                        tr("Line %1 requires non-negative offset, positive depth/overlaps and a valid direction.")
-                            .arg(lineIndex + 1));
-                    schedule->setFocus();
-                    return;
-                }
-                ++stepLapPacketCounts[static_cast<std::size_t>(jointNumber - 1)];
-            }
-        }
-        for (int joint = 0; joint < 8; ++joint) {
-            const auto* control = findChild<QComboBox*>(
-                QStringLiteral("construction_coreJoint_") + QString::number(joint + 1));
-            const QString construction = control ? control->currentData().toString() : QString{};
-            if (construction == QStringLiteral("step-lap") &&
-                stepLapPacketCounts[static_cast<std::size_t>(joint)] == 0) {
-                QMessageBox::warning(this, tr("Missing Step-Lap packet schedule"),
-                    tr("Joint %1 is Step-Lap but has no packet records.").arg(joint + 1));
-                return;
-            }
-            if (construction == QStringLiteral("butt") &&
-                stepLapPacketCounts[static_cast<std::size_t>(joint)] != 0) {
-                QMessageBox::warning(this, tr("Unexpected Step-Lap packet schedule"),
-                    tr("Joint %1 is Butt but has Step-Lap packet records.").arg(joint + 1));
-                return;
-            }
-        }
-
         const auto* ductCountControl = findChild<QSpinBox*>(QStringLiteral("construction_coolingDuctCount"));
         const int declaredDuctCount = ductCountControl ? ductCountControl->value() : 0;
         int completeDuctCount = 0;
@@ -2647,6 +2585,69 @@ QWidget* MainWindow::createConstructionPage()
             std::pair{QStringLiteral("construction_layerInsulation"), tr("Layer insulation build")},
             std::pair{QStringLiteral("construction_mainInsulation"), tr("Main insulation build")}
         }) if (!positiveIfProvided(item.first, item.second)) return;
+
+        std::array<int, 8> stepLapPacketCounts{};
+        if (const auto* schedule = findChild<QPlainTextEdit*>(
+                QStringLiteral("construction_stepLapPacketSchedule"))) {
+            const auto lines = schedule->toPlainText().split('\n');
+            for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
+                const QString line = lines[lineIndex].trimmed();
+                if (line.isEmpty() || line.startsWith('#')) continue;
+                const auto columns = line.split(',');
+                if (columns.size() != 6) {
+                    QMessageBox::warning(this, tr("Invalid Step-Lap packet schedule"),
+                        tr("Line %1 must contain six comma-separated fields.").arg(lineIndex + 1));
+                    schedule->setFocus();
+                    return;
+                }
+                bool jointOk = false;
+                const int jointNumber = columns[0].trimmed().toInt(&jointOk);
+                if (!jointOk || jointNumber < 1 || jointNumber > 8) {
+                    QMessageBox::warning(this, tr("Invalid Step-Lap packet schedule"),
+                        tr("Line %1 must reference joint number 1 through 8.").arg(lineIndex + 1));
+                    schedule->setFocus();
+                    return;
+                }
+                std::array<double, 4> values{};
+                bool validValues = true;
+                for (int column = 0; column < 4; ++column) {
+                    bool ok = false;
+                    values[static_cast<std::size_t>(column)] = columns[column + 1].trimmed().toDouble(&ok);
+                    validValues = validValues && ok &&
+                        std::isfinite(values[static_cast<std::size_t>(column)]);
+                }
+                const QString direction = columns[5].trimmed().toLower();
+                if (!validValues || values[0] < 0.0 || values[1] <= 0.0 ||
+                    values[2] <= 0.0 || values[3] <= 0.0 ||
+                    (direction != QStringLiteral("limb-into-yoke") &&
+                     direction != QStringLiteral("yoke-into-limb"))) {
+                    QMessageBox::warning(this, tr("Invalid Step-Lap packet schedule"),
+                        tr("Line %1 requires non-negative offset, positive depth/overlaps and a valid direction.")
+                            .arg(lineIndex + 1));
+                    schedule->setFocus();
+                    return;
+                }
+                ++stepLapPacketCounts[static_cast<std::size_t>(jointNumber - 1)];
+            }
+        }
+        for (int joint = 0; joint < 8; ++joint) {
+            const auto* control = findChild<QComboBox*>(
+                QStringLiteral("construction_coreJoint_") + QString::number(joint + 1));
+            const QString construction = control ? control->currentData().toString() : QString{};
+            if (construction == QStringLiteral("step-lap") &&
+                stepLapPacketCounts[static_cast<std::size_t>(joint)] == 0) {
+                QMessageBox::warning(this, tr("Missing Step-Lap packet schedule"),
+                    tr("Joint %1 is Step-Lap but has no packet records.").arg(joint + 1));
+                return;
+            }
+            if (construction == QStringLiteral("butt") &&
+                stepLapPacketCounts[static_cast<std::size_t>(joint)] != 0) {
+                QMessageBox::warning(this, tr("Unexpected Step-Lap packet schedule"),
+                    tr("Joint %1 is Butt but has Step-Lap packet records.").arg(joint + 1));
+                return;
+            }
+        }
+
 
         QJsonObject snapshot;
         snapshot.insert(QStringLiteral("schemaVersion"), 1);
