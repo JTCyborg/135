@@ -2233,9 +2233,9 @@ QWidget* MainWindow::createConstructionPage()
         addBobbinLength(QStringLiteral("construction_bobbinFlangeOuterWidth_") + suffix,
             tr("Bobbin %1 flange outer width").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_bobbinFlangeOuterHeight_") + suffix,
-        addCoreLength(QStringLiteral("construction_bobbinWindingClearance_") + suffix,
-            tr("Bobbin winding clearance"));
             tr("Bobbin %1 flange outer height").arg(phaseName));
+        addBobbinLength(QStringLiteral("construction_bobbinWindingClearance_") + suffix,
+            tr("Bobbin %1 winding clearance").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_windingRadialBuild_") + suffix,
             tr("Winding %1 radial build").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_windingAxialHeight_") + suffix,
