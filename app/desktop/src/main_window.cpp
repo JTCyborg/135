@@ -12,6 +12,8 @@
 
 #include "p135/application/reactor_design_inputs.hpp"
 #include "p135/application/reactor_design_graph.hpp"
+#include "p135/application/filter_excitation_stage_adapter.hpp"
+#include "p135/application/reactor_design_execution.hpp"
 #include "p135/application/ideal_reactor_sizing.hpp"
 #include "p135/filter/synthesis.hpp"
 #include "p135/filter/harmonics.hpp"
@@ -4445,6 +4447,68 @@ void MainWindow::calculateFilter()
         appendLog(tr("Filter synthesis failed: %1").arg(QString::fromStdString(error.message)));
         QMessageBox::warning(this, tr("Invalid filter definition"), resultsNote_->text());
         return;
+    }
+
+    // Capture synthesized electrical excitation as the first executable pipeline stage.
+    // Dependent physical stages are invalidated and remain NOT_VERIFIED until typed adapters exist.
+    const auto excitationArtifact =
+        p135::application::makeFilterExcitationStageArtifact(result.value());
+    if (!excitationArtifact) {
+        appendLog(tr("Pipeline stage filter.excitation NOT_VERIFIED: %1")
+            .arg(QString::fromStdString(excitationArtifact.error().message)));
+    } else {
+        const auto excitationPlan =
+            p135::application::planReactorRecalculation({"input.filter.excitation"});
+        if (!excitationPlan) {
+            appendLog(tr("Pipeline planning failed for filter.excitation: %1")
+                .arg(QString::fromStdString(excitationPlan.error().message)));
+        } else {
+            const auto stagePosition = std::find(
+                excitationPlan.value().orderedStages.begin(),
+                excitationPlan.value().orderedStages.end(),
+                std::string("filter.excitation"));
+            if (stagePosition == excitationPlan.value().orderedStages.end()) {
+                appendLog(tr("Pipeline plan did not contain filter.excitation; stage remains NOT_VERIFIED."));
+            } else {
+                const p135::application::ReactorRecalculationPlan supportedPlan{{
+                    "filter.excitation"
+                }};
+                const auto execution = p135::application::executeReactorDesignPlan(
+                    supportedPlan, reactorDesignExecutionState_,
+                    [&excitationArtifact](const std::string& stageId)
+                        -> p135::Result<std::string> {
+                        if (stageId != "filter.excitation")
+                            return p135::Result<std::string>::failure({
+                                p135::ErrorCode::InvalidInput,
+                                "No typed adapter is registered for this reactor design stage.", {}
+                            });
+                        return p135::Result<std::string>::success(excitationArtifact.value());
+                    });
+                if (!execution) {
+                    appendLog(tr("Pipeline execution setup failed: %1")
+                        .arg(QString::fromStdString(execution.error().message)));
+                } else if (!execution.value().committed) {
+                    appendLog(tr("Pipeline stage filter.excitation NOT_VERIFIED: %1")
+                        .arg(QString::fromStdString(execution.value().failureMessage)));
+                } else {
+                    // The graph plan is the authoritative invalidation list. Never
+                    // retain stale downstream physical artifacts after new excitation.
+                    auto& accepted = reactorDesignExecutionState_.accepted;
+                    std::size_t invalidatedStages = 0;
+                    for (const auto& stageId : excitationPlan.value().orderedStages) {
+                        if (stageId == "filter.excitation") continue;
+                        accepted.stages[stageId] = {
+                            p135::application::ReactorStageStatus::NotVerified, {}, {}
+                        };
+                        ++invalidatedStages;
+                    }
+                    accepted.verified = false;
+                    appendLog(tr("Pipeline revision %1 committed: filter.excitation VALID; %2 dependent physical stages NOT_VERIFIED.")
+                        .arg(static_cast<qulonglong>(accepted.number))
+                        .arg(static_cast<qulonglong>(invalidatedStages)));
+                }
+            }
+        }
     }
 
     // The construction page is a calculated output first. Resolve material
