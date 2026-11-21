@@ -495,3 +495,17 @@ if(MSVC)
 else()
     target_compile_options(Project135Test01FilterSizingScenario PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135FilterExcitationStageAdapterTests
+    application/filter_excitation_stage_adapter_tests.cpp
+)
+target_link_libraries(Project135FilterExcitationStageAdapterTests PRIVATE
+    Project135::Application Project135::Filter
+)
+add_test(NAME Project135FilterExcitationStageAdapterTests
+    COMMAND Project135FilterExcitationStageAdapterTests)
+if(MSVC)
+    target_compile_options(Project135FilterExcitationStageAdapterTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135FilterExcitationStageAdapterTests PRIVATE -UNDEBUG)
+endif()
