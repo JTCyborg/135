@@ -164,6 +164,15 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
             Length(*in.conductorInsulationBuildM),
             *in.windingLayers, *in.windingSections, *in.windingTechnology
         };
+        auto& winding = out.windingPacks[i];
+        if (in.turnsPerPhase) winding.turns = *in.turnsPerPhase;
+        if (in.turnsPerLayer) winding.turnsPerLayer = *in.turnsPerLayer;
+        if (in.parallelConductors) winding.parallelConductors = *in.parallelConductors;
+        if (in.conductorShape) winding.conductorShape = *in.conductorShape;
+        if (in.conductorBareDiameterM)
+            winding.bareConductorDiameter = Length(*in.conductorBareDiameterM);
+        if (in.conductorInsulatedDiameterM)
+            winding.insulatedConductorDiameter = Length(*in.conductorInsulatedDiameterM);
     }
     const auto validation = domain::validate(out);
     if (!validation) return Result<domain::ReactorPhysicalGeometry>::failure(validation.error());
