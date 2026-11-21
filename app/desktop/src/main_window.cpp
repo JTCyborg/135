@@ -1021,6 +1021,29 @@ QWidget* MainWindow::createProjectPage()
             }
         }
 
+        for (int yoke = 0; yoke < 4; ++yoke) {
+            const QString yokeLabel = yoke == 0 ? tr("Top yoke A-B") :
+                yoke == 1 ? tr("Top yoke B-C") :
+                yoke == 2 ? tr("Bottom yoke A-B") : tr("Bottom yoke B-C");
+            for (int gap = 0; gap < 3; ++gap) {
+                const QString suffix = QString::number(yoke + 1) + QStringLiteral("_") +
+                    QString::number(gap + 1);
+                auto* position = findChild<QDoubleSpinBox*>(
+                    QStringLiteral("construction_yokeAirGapPosition_") + suffix);
+                auto* length = findChild<QDoubleSpinBox*>(
+                    QStringLiteral("construction_yokeAirGapLength_") + suffix);
+                const bool hasPosition = position && position->value() > position->minimum();
+                const bool hasLength = length && length->value() > length->minimum();
+                if (hasPosition != hasLength) {
+                    QMessageBox::warning(this, tr("Incomplete yoke air-gap definition"),
+                        tr("%1 air gap %2 requires both position and length.")
+                            .arg(yokeLabel).arg(gap + 1));
+                    if (position) position->setFocus();
+                    return;
+                }
+            }
+        }
+
         for (int limb = 0; limb < 3; ++limb) {
             const QString limbSuffix = QString::number(limb + 1);
             auto* count = findChild<QSpinBox*>(QStringLiteral("construction_airGapCount_") + limbSuffix);
@@ -2036,6 +2059,20 @@ QWidget* MainWindow::createConstructionPage()
         coreForm->addRow(tr("Limb %1 discrete air-gap count").arg(QChar('A' + limb)), count);
         addCoreLength(QStringLiteral("construction_totalAirGap_") + QString::number(limb + 1),
             tr("Limb %1 total air-gap length").arg(QChar('A' + limb)));
+    }
+    const std::array<QString, 4> yokeGapLabels{
+        tr("Top yoke A-B"), tr("Top yoke B-C"),
+        tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
+    };
+    for (int yoke = 0; yoke < 4; ++yoke) {
+        for (int gap = 0; gap < 3; ++gap) {
+            const QString suffix = QString::number(yoke + 1) + QStringLiteral("_") +
+                QString::number(gap + 1);
+            addCoreLength(QStringLiteral("construction_yokeAirGapPosition_") + suffix,
+                tr("%1 air gap %2 position from left end").arg(yokeGapLabels[static_cast<std::size_t>(yoke)]).arg(gap + 1));
+            addCoreLength(QStringLiteral("construction_yokeAirGapLength_") + suffix,
+                tr("%1 air gap %2 length").arg(yokeGapLabels[static_cast<std::size_t>(yoke)]).arg(gap + 1));
+        }
     }
     const std::array<QString, 8> jointLabels{
         tr("Top A-B to limb A"), tr("Top A-B to limb B"),
@@ -4258,6 +4295,16 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
             if (position.has_value() != length.has_value()) continue;
             if (position && length)
                 inputs.airGaps.push_back({limb, *position, *length});
+        }
+    }
+    for (std::uint32_t yoke = 0; yoke < 4; ++yoke) {
+        for (std::uint32_t gap = 0; gap < 3; ++gap) {
+            const QString suffix = QString::number(yoke + 1) + QStringLiteral("_") +
+                QString::number(gap + 1);
+            const auto position = coreLength(QStringLiteral("construction_yokeAirGapPosition_") + suffix);
+            const auto length = coreLength(QStringLiteral("construction_yokeAirGapLength_") + suffix);
+            if (position && length)
+                inputs.airGaps.push_back({yoke + 3, *position, *length});
         }
     }
 
