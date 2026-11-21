@@ -1,6 +1,6 @@
 {
     "buildConfiguration": "Debug",
-    "confirmedAtUtc": "2026-11-21T08:19:13.547Z",
+    "confirmedAtUtc": "2026-11-21T16:52:49.321Z",
     "fieldLabels": {
         "projectAirflowM3h": "Forced-air volume flow",
         "projectAltitudeM": "Installation altitude",
@@ -52,7 +52,7 @@
         },
         "projectRevision": "A"
     },
-    "projectId": "5469ef97-1956-40d2-8555-a8968bfe7af7",
+    "projectId": "b3f3d910-f1a0-4fa5-9b89-88b17c5565f9",
     "schemaVersion": 1,
     "tabId": "project",
     "tabTitle": "Project",

@@ -1,0 +1,202 @@
+{
+    "buildConfiguration": "Debug",
+    "calculationStatus": "Calculation completed with NOT_VERIFIED inputs — review warnings",
+    "confirmedAtUtc": "2026-11-21T16:52:54.024Z",
+    "currentResponseStatus": "SOURCE_IMPEDANCE_INCLUDED_SINGLE_FREQUENCY_DIAGNOSTIC",
+    "inputs": {
+        "connection": "Wye (Y)",
+        "fundamentalFrequency_Hz": 50,
+        "nominalVoltage_V": 400,
+        "qualityFactor": 50,
+        "sourceInductance_mH": 1.2,
+        "sourceResistance_ohm": 0.25,
+        "targetReactivePower_kvar": 100,
+        "tuningHarmonicOrder": 5
+    },
+    "lineage": {
+        "constructionPhysicalSizingStatus": "NOT_CONNECTED_TO_SOLVER",
+        "filterBranchId": 1,
+        "filterSnapshotId": "e7e74063-b852-4ec6-b30d-1b84bd24fb8b",
+        "materialRevisions": [
+            {
+                "display": "MAT-TK-POWERCORE-M235-35A — r1",
+                "revisionId": "SEED-TK-M235-35A-R1",
+                "role": "core"
+            },
+            {
+                "display": "MAT-CU-C10100 — r1",
+                "revisionId": "SEED-CU-C10100-R1",
+                "role": "conductor"
+            },
+            {
+                "display": "MAT-DUPONT-NOMEX-410 — r1",
+                "revisionId": "SEED-DUPONT-NOMEX410-R1",
+                "role": "insulation"
+            }
+        ],
+        "physicalSizingStatus": "NOT_CALCULATED",
+        "verificationStatus": "NOT_VERIFIED"
+    },
+    "projectId": "b3f3d910-f1a0-4fa5-9b89-88b17c5565f9",
+    "results": [
+        {
+            "parameter": "Phase RMS voltage",
+            "unit": "V",
+            "value": "230.9"
+        },
+        {
+            "parameter": "Capacitance per phase",
+            "unit": "µF",
+            "value": "1910"
+        },
+        {
+            "parameter": "Inductance per phase",
+            "unit": "mH",
+            "value": "0.2122"
+        },
+        {
+            "parameter": "Series damping resistance",
+            "unit": "Ω",
+            "value": "0.006667"
+        },
+        {
+            "parameter": "Tuning harmonic order",
+            "unit": "× fundamental",
+            "value": "5"
+        },
+        {
+            "parameter": "Tuning frequency",
+            "unit": "Hz",
+            "value": "250"
+        },
+        {
+            "parameter": "Target three-phase reactive power",
+            "unit": "kvar",
+            "value": "100"
+        },
+        {
+            "parameter": "Branch quality factor",
+            "unit": "—",
+            "value": "50"
+        },
+        {
+            "parameter": "MNA filter-bank active power",
+            "unit": "W",
+            "value": "683.1"
+        },
+        {
+            "parameter": "MNA filter-bank reactive power",
+            "unit": "var",
+            "value": "-1.639e+05"
+        },
+        {
+            "parameter": "MNA matrix order",
+            "unit": "unknowns",
+            "value": "18"
+        },
+        {
+            "parameter": "MNA relative residual",
+            "unit": "—",
+            "value": "1.648e-17"
+        },
+        {
+            "parameter": "Thevenin source-limited frequency sweep",
+            "unit": "—",
+            "value": "FREQUENCY-RESPONSE DIAGNOSTIC — per-phase source R/L is included. This is not the multi-harmonic operating current and must not be used alone for Isat margins."
+        },
+        {
+            "parameter": "Frequency-sweep peak bank current (diagnostic)",
+            "unit": "A RMS",
+            "value": "1557"
+        },
+        {
+            "parameter": "Frequency at peak bank current",
+            "unit": "Hz",
+            "value": "97.45"
+        },
+        {
+            "parameter": "Frequency-sweep maximum phase current (diagnostic)",
+            "unit": "A peak",
+            "value": "1272"
+        },
+        {
+            "parameter": "Frequency at phase-current peak",
+            "unit": "Hz",
+            "value": "97.45"
+        },
+        {
+            "parameter": "Frequency sweep points",
+            "unit": "points",
+            "value": "151"
+        },
+        {
+            "parameter": "Source/filter impedance scan points",
+            "unit": "points",
+            "value": "501"
+        },
+        {
+            "parameter": "Detected parallel-resonance candidates",
+            "unit": "peaks",
+            "value": "1"
+        },
+        {
+            "parameter": "Strongest resonance candidate frequency",
+            "unit": "Hz",
+            "value": "96.13"
+        },
+        {
+            "parameter": "Strongest resonance candidate bus impedance",
+            "unit": "Ω",
+            "value": "2.203"
+        },
+        {
+            "parameter": "PCC voltage THD",
+            "unit": "%",
+            "value": "0"
+        },
+        {
+            "parameter": "Source current THD",
+            "unit": "%",
+            "value": "0"
+        },
+        {
+            "parameter": "PCC fundamental phase voltage",
+            "unit": "V RMS",
+            "value": "295.7"
+        },
+        {
+            "parameter": "Source fundamental phase current",
+            "unit": "A RMS",
+            "value": "184.8"
+        },
+        {
+            "parameter": "Branch total RMS current",
+            "unit": "A",
+            "value": "184.8"
+        },
+        {
+            "parameter": "Capacitor total RMS voltage",
+            "unit": "V",
+            "value": "308"
+        },
+        {
+            "parameter": "Reactor total RMS voltage",
+            "unit": "V",
+            "value": "12.32"
+        },
+        {
+            "parameter": "Damping resistor total RMS voltage",
+            "unit": "V",
+            "value": "1.232"
+        },
+        {
+            "parameter": "Damping resistor harmonic active loss",
+            "unit": "W",
+            "value": "227.7"
+        }
+    ],
+    "schemaVersion": 1,
+    "tabId": "calculation_design",
+    "tabTitle": "Calculation & design",
+    "warnings": "⚠ INPUT / MODEL LIMITATIONS — results are preliminary and must not be treated as verified design data.\n\nThe frequency sweep includes the entered per-phase Thevenin R/L, but is still a single-frequency diagnostic response. Do not treat its peak as multi-harmonic operating stress.\nCore geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED.\n\nLC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available. Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures. Harmonic response and component RMS stress were calculated from 0 entered non-fundamental voltage harmonics. Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated. Shaded resonance zones show the -3 dB bandwidth around local bus-impedance peaks. Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference. Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied. Calculation snapshot NOT_SAVED: Calculation JSON fields must be canonical.."
+}
