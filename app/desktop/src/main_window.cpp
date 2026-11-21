@@ -1036,6 +1036,20 @@ QWidget* MainWindow::createProjectPage()
             }
             const auto* total = findChild<QDoubleSpinBox*>(
                 QStringLiteral("construction_totalAirGap_") + limbSuffix);
+            if (count && total && count->value() > 0 && total->value() <= total->minimum()) {
+                QMessageBox::warning(this, tr("Missing total air-gap length"),
+                    tr("Limb %1 has a declared discrete air-gap count; its total length is also required.")
+                        .arg(QChar('A' + limb)));
+                total->setFocus();
+                return;
+            }
+            if (count && total && count->value() == 0 && total->value() > total->minimum()) {
+                QMessageBox::warning(this, tr("Missing air-gap count"),
+                    tr("Limb %1 has a total air-gap length but no discrete air-gap count.")
+                        .arg(QChar('A' + limb)));
+                count->setFocus();
+                return;
+            }
             if (total && total->value() > total->minimum() && enteredGapCount > 0 &&
                 std::abs(total->value() - enteredGapTotalMm) > 0.001) {
                 QMessageBox::warning(this, tr("Air-gap total mismatch"),
