@@ -76,6 +76,20 @@ private slots:
         }
     }
 
+    void everyWorkflowTabCanBeSelected()
+    {
+        auto* tabs = window_->findChild<QTabWidget*>();
+        QVERIFY(tabs);
+        QCOMPARE(tabs->count(), 7);
+
+        for (int index = 0; index < tabs->count(); ++index) {
+            tabs->setCurrentIndex(index);
+            QTRY_COMPARE(tabs->currentIndex(), index);
+            QVERIFY2(tabs->widget(index),
+                qPrintable(QStringLiteral("Workflow page %1 is missing").arg(index)));
+        }
+    }
+
     void inputControlsHaveStableIdentifiers()
     {
         auto* tabs = window_->findChild<QTabWidget*>();
