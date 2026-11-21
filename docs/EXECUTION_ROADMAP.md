@@ -53,7 +53,7 @@
 - [x] Semantic component tree строится из AssemblyPresentationNode; visibility checkboxes и transparency control управляют тем же presentation model и обновляют viewport.
 - [x] Добавлен STEP export полного assembly B-Rep; перед записью повторно проверяются semantic tree и B-Rep (это геометрическая проверка, не инженерная сертификация), ошибки Transfer/Write возвращаются как Result.
 - [x] CAD regression test проверяет создание STEP-файла, повторное чтение через STEPControl_Reader, B-Rep validity и наличие solids.
-- [ ] Выполнить CAD/desktop regression tests в Windows/MSVC CI и проверить визуальный результат в UI.
+- [ ] Выполнить CAD/desktop regression tests в Windows/MSVC CI и проверить визуальный результат в UI. (E2E подтверждает только корректный negative path при неполных Construction inputs; реальная CAD-сборка ещё не проверена в UI.)
 
 - [ ] Сопоставить каждый UI control с полем типизированной ReactorDesignInputs; убрать поля, существующие только в UI/JSON.
 - [x] UI содержит явные физические размеры стержней, глубины пакета, окон, сегментов ярма, межосевые расстояния и общие габариты.
@@ -114,7 +114,7 @@
 - [x] Добавлен Qt Test target `Project135DesktopWorkflowE2ETests` с запуском в offscreen-режиме и отдельной копией SQLite migrations.
 - [x] Добавлены проверки порядка семи вкладок, явного переключения на каждую вкладку, наличия основных workflow actions и стабильных objectName у редактируемых контролов Project / Filter definition / Construction.
 - [x] Добавлен UI-путь подтверждений Project → Filter definition → Construction и запуска расчёта с подтверждением Calculation & design.
-- [x] Добавлен явный ожидаемый пробел для 2D: тест проверяет наличие `generateCadDrawings`, но пока отмечен как expected failure, так как в приложении отсутствуют 2D drawing generator и экспорт.
+- [x] Добавлен явный ожидаемый пробел для 2D: тест проверяет наличие `generateCadDrawings`, но отмечен как expected failure (XFAIL), так как в приложении отсутствуют 2D drawing generator и экспорт. Windows/MSVC Debug подтверждён пользователем на commit `75816ce`.
 - [ ] Заполнить все поля всех вкладок детерминированным TEST-01 UI fixture; для каждого snapshot сверять полный набор control IDs и сохранённых значений.
 - [ ] Проверить численные значения TEST-01 через UI, включая C, L, R и токи, а не только факт появления строк результатов.
 - [x] Добавить в desktop E2E численные regression assertions для фазного напряжения, C, L и R TEST-01 с допусками; пользователь подтвердил успешный Windows/MSVC Debug CTest 1/1 (16.71 s).
@@ -124,7 +124,7 @@
 - [ ] После появления 2D generator убрать expected-failure и проверить содержимое/валидность 2D output artifact.
 - [ ] Проверить инвалидацию: геометрия → магнитные/тепловые/CAD/drawing результаты; материал → зависимые расчёты.
 - [ ] Проверить Debug и Release, сохранение/загрузку проекта, immutable snapshots.
-- [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: CTest 1/1 passed (13.71 s) после исправления Qt platform plugin deployment; последующий запуск с численными TEST-01 assertions подтверждён пользователем (16.71 s).
+- [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: пользователь подтвердил commit `75816ce`, сборка target успешна, CTest 1/1 passed (16.98 s; QtTest 8 passed, 0 failed; 2D drawing check XFAIL).
 - [ ] Запустить desktop UI тест в Windows/MSVC Release; фиксировать результаты, не объявлять PASS без фактического запуска.
 
 ## 4. Критерии приёмки
