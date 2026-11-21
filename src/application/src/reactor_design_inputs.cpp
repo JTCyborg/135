@@ -264,6 +264,7 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.bobbinFlangeThicknessesM != accepted.bobbinFlangeThicknessesM ||
            current.bobbinFlangeOuterWidthsM != accepted.bobbinFlangeOuterWidthsM ||
            current.bobbinFlangeOuterHeightsM != accepted.bobbinFlangeOuterHeightsM ||
+           current.bobbinWindingClearancesM != accepted.bobbinWindingClearancesM ||
            current.windingRadialBuildsM != accepted.windingRadialBuildsM ||
            current.windingAxialHeightsM != accepted.windingAxialHeightsM ||
            current.windingEndClearancesM != accepted.windingEndClearancesM ||
