@@ -53,7 +53,7 @@
 - [x] Semantic component tree строится из AssemblyPresentationNode; visibility checkboxes и transparency control управляют тем же presentation model и обновляют viewport.
 - [x] Добавлен STEP export полного assembly B-Rep; перед записью повторно проверяются semantic tree и B-Rep (это геометрическая проверка, не инженерная сертификация), ошибки Transfer/Write возвращаются как Result.
 - [x] CAD regression test проверяет создание STEP-файла, повторное чтение через STEPControl_Reader, B-Rep validity и наличие solids.
-- [ ] Выполнить CAD/desktop regression tests в Windows/MSVC CI и проверить визуальный результат в UI. (E2E подтверждает только корректный negative path при неполных Construction inputs; реальная CAD-сборка ещё не проверена в UI.)
+- [x] Пользователь подтвердил Windows/MSVC Debug E2E: синтетическая TEST-01 геометрия построена через UI; STEP export → OCCT import → B-Rep validity → 13 solids прошли. Это подтверждает геометрический regression fixture, не производственную конструкцию.
 
 - [ ] Сопоставить каждый UI control с полем типизированной ReactorDesignInputs; убрать поля, существующие только в UI/JSON.
 - [x] UI содержит явные физические размеры стержней, глубины пакета, окон, сегментов ярма, межосевые расстояния и общие габариты.
@@ -120,8 +120,9 @@
 - [x] Добавить в desktop E2E численные regression assertions для фазного напряжения, C, L и R TEST-01 с допусками; пользователь подтвердил успешный Windows/MSVC Debug CTest 1/1 (16.71 s).
 - [ ] Подготовить согласованный физический TEST-01 fixture с source/revision и точными material revision IDs; пройти через CAD UI до реальной генерации и проверки 3D B-Rep. Добавлен отдельный synthetic CAD regression fixture в `syntheticTest01ConstructionBuildsOcctAssembly`: точные seeded material revision IDs, явная геометрическая provenance, восемь Butt joints, все размеры core/bobbin/winding и проверки OCCT assembly tree. Геометрия помечена как синтетическая и NOT manufacturing-approved; Windows запуск этого нового теста ещё не подтверждён.
 - [x] Добавить E2E negative-path assertion: при неполных Construction inputs CAD generation обязана отказать, оставить placeholder assembly tree и не разрешать STEP export. Изменение опубликовано, Windows-проверка ожидается.
-- [ ] Реализовать 2D drawing generator из той же принятой физической/CAD revision (ортогональные виды, размеры, единицы, provenance) и экспорт; подключить его к CAD UI.
-- [ ] После появления 2D generator убрать expected-failure и проверить содержимое/валидность 2D output artifact.
+- [x] Добавлен preliminary DXF generator из той же ReactorPhysicalGeometry revision: front elevation, plan view, side elevation, overall dimensions, SI→mm, DXF INSUNITS, source/revision provenance и PRELIMINARY / NOT VERIFIED маркировка. Step-Lap намеренно блокируется, поскольку его физическая пакетная топология ещё не поддержана.
+- [x] CAD UI получил отдельную кнопку DXF export; действие доступно только после успешной генерации актуальной 3D CAD revision и инвалидируется вместе с Construction.
+- [ ] Выполнить Windows/MSVC E2E: экспорт DXF через реальный UI action, проверить файл и три вида/размеры/provenance; пока код опубликован, но пользовательский запуск ещё не подтверждён.
 - [ ] Проверить инвалидацию: геометрия → магнитные/тепловые/CAD/drawing результаты; материал → зависимые расчёты.
 - [ ] Проверить Debug и Release, сохранение/загрузку проекта, immutable snapshots.
 - [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: пользователь подтвердил commit `75816ce`, сборка target успешна, CTest 1/1 passed (16.98 s; QtTest 8 passed, 0 failed; 2D drawing check XFAIL).
