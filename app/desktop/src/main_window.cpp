@@ -1969,6 +1969,24 @@ QWidget* MainWindow::createConstructionPage()
         addCoreLength(QStringLiteral("construction_totalAirGap_") + QString::number(limb + 1),
             tr("Limb %1 total air-gap length").arg(QChar('A' + limb)));
     }
+    const std::array<QString, 8> jointLabels{
+        tr("Top A-B to limb A"), tr("Top A-B to limb B"),
+        tr("Top B-C to limb B"), tr("Top B-C to limb C"),
+        tr("Bottom A-B to limb A"), tr("Bottom A-B to limb B"),
+        tr("Bottom B-C to limb B"), tr("Bottom B-C to limb C")
+    };
+    for (std::size_t joint = 0; joint < jointLabels.size(); ++joint) {
+        auto* construction = new QComboBox;
+        construction->setObjectName(QStringLiteral("construction_coreJoint_") + QString::number(joint + 1));
+        construction->addItem(tr("— NOT_PROVIDED —"), QString{});
+        construction->addItem(tr("Butt joint"), QStringLiteral("butt"));
+        construction->addItem(tr("Step-Lap (packet schedule required; editor not yet available)"),
+            QStringLiteral("step-lap"));
+        coreForm->addRow(tr("Joint %1 construction").arg(jointLabels[joint]), construction);
+    }
+    auto* jointNote = new QLabel(tr("Step-Lap selection is recorded as an input but cannot yet produce CAD: explicit packet-by-packet overlap geometry is still required."));
+    jointNote->setWordWrap(true);
+    coreForm->addRow(jointNote);
     root->addWidget(coreGroup);
 
     auto* windingGroup = new QGroupBox(tr("2. Winding and conductor"));
@@ -2197,6 +2215,43 @@ QWidget* MainWindow::createConstructionPage()
     thermalForm->addRow(tr("Thermal class reference temperature"), thermalReferenceTemperature);
     thermalForm->addRow(tr("Thermal design safety margin"), thermalSafetyMargin);
     thermalForm->addRow(tr("Maximum winding temperature (design limit)"), maximumWindingTemperature);
+
+    auto* ductCount = new QSpinBox;
+    ductCount->setObjectName(QStringLiteral("construction_coolingDuctCount"));
+    ductCount->setRange(0, 3);
+    ductCount->setSpecialValueText(tr("NOT_PROVIDED"));
+    thermalForm->addRow(tr("Radial cooling duct count"), ductCount);
+    for (int duct = 0; duct < 3; ++duct) {
+        const QString suffix = QString::number(duct + 1);
+        auto* position = new QDoubleSpinBox;
+        position->setObjectName(QStringLiteral("construction_coolingDuctPosition_") + suffix);
+        position->setRange(0.0, 10000.0);
+        position->setDecimals(3);
+        position->setSuffix(tr(" mm"));
+        position->setSpecialValueText(tr("NOT_PROVIDED"));
+        thermalForm->addRow(tr("Cooling duct %1 position from winding bottom").arg(duct + 1), position);
+
+        auto* thickness = new QDoubleSpinBox;
+        thickness->setObjectName(QStringLiteral("construction_coolingDuctThickness_") + suffix);
+        thickness->setRange(0.0, 1000.0);
+        thickness->setDecimals(3);
+        thickness->setSuffix(tr(" mm"));
+        thickness->setSpecialValueText(tr("NOT_PROVIDED"));
+        thermalForm->addRow(tr("Cooling duct %1 thickness").arg(duct + 1), thickness);
+
+        auto* spacerRevision = new QLineEdit;
+        spacerRevision->setObjectName(QStringLiteral("construction_coolingDuctSpacerRevision_") + suffix);
+        spacerRevision->setPlaceholderText(tr("Exact material revision ID — NOT_PROVIDED"));
+        thermalForm->addRow(tr("Cooling duct %1 spacer revision").arg(duct + 1), spacerRevision);
+
+        auto* airflow = new QComboBox;
+        airflow->setObjectName(QStringLiteral("construction_coolingDuctAirflow_") + suffix);
+        airflow->addItem(tr("— NOT_PROVIDED —"), QString{});
+        airflow->addItem(tr("Axial"), QStringLiteral("axial"));
+        airflow->addItem(tr("Radial"), QStringLiteral("radial"));
+        airflow->addItem(tr("Transverse"), QStringLiteral("transverse"));
+        thermalForm->addRow(tr("Cooling duct %1 airflow direction").arg(duct + 1), airflow);
+    }
     root->addWidget(thermalGroup);
 
     auto* catalogStatus = new QLabel;
@@ -3733,6 +3788,19 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.coreOverallHeightM = coreLength(QStringLiteral("construction_coreOverallHeight"));
     inputs.coreOverallWidthM = coreLength(QStringLiteral("construction_coreOverallWidth"));
 
+    std::array<std::string, 8> jointConstructions{};
+    bool anyJointConstruction = false;
+    bool allJointConstructions = true;
+    for (std::size_t joint = 0; joint < jointConstructions.size(); ++joint) {
+        const auto value = comboValue(("construction_coreJoint_" + std::to_string(joint + 1)).c_str());
+        if (value) {
+            jointConstructions[joint] = *value;
+            anyJointConstruction = true;
+        } else allJointConstructions = false;
+    }
+    if (anyJointConstruction && allJointConstructions)
+        inputs.coreJointConstructions = jointConstructions;
+
     for (std::uint32_t limb = 0; limb < 3; ++limb) {
         for (std::uint32_t gap = 0; gap < 3; ++gap) {
             const QString suffix = QString::number(limb + 1) + QStringLiteral("_") + QString::number(gap + 1);
@@ -3757,6 +3825,28 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.windingRadialBuildsM = collectPhaseArray(QStringLiteral("construction_windingRadialBuild_"));
     inputs.windingAxialHeightsM = collectPhaseArray(QStringLiteral("construction_windingAxialHeight_"));
     inputs.windingEndClearancesM = collectPhaseArray(QStringLiteral("construction_windingEndClearance_"));
+
+    if (const auto* count = findChild<QSpinBox*>(QStringLiteral("construction_coolingDuctCount"));
+        count && count->value() > 0) {
+        inputs.radialCoolingDuctCount = static_cast<std::uint32_t>(count->value());
+        for (int duct = 0; duct < count->value(); ++duct) {
+            const QString suffix = QString::number(duct + 1);
+            const auto position = coreLength(QStringLiteral("construction_coolingDuctPosition_") + suffix);
+            const auto thickness = coreLength(QStringLiteral("construction_coolingDuctThickness_") + suffix);
+            const auto* materialRevision = findChild<QLineEdit*>(
+                QStringLiteral("construction_coolingDuctSpacerRevision_") + suffix);
+            const auto* airflow = findChild<QComboBox*>(
+                QStringLiteral("construction_coolingDuctAirflow_") + suffix);
+            if (position && thickness && materialRevision && airflow &&
+                !materialRevision->text().trimmed().isEmpty() && !airflow->currentData().toString().isEmpty()) {
+                inputs.coolingDucts.push_back({
+                    *position, *thickness,
+                    materialRevision->text().trimmed().toStdString(),
+                    airflow->currentData().toString().toStdString()
+                });
+            }
+        }
+    }
 
     std::array<std::uint32_t, 3> gapCounts{};
     std::array<double, 3> totalGaps{};
@@ -3840,6 +3930,11 @@ void MainWindow::markConstructionInputsChanged()
              objectName.startsWith(QStringLiteral("construction_airGapPosition_")) ||
              objectName.startsWith(QStringLiteral("construction_airGapLength_")))
         stage = QStringLiteral("input.core.physical_geometry");
+    else if (objectName.startsWith(QStringLiteral("construction_coreJoint_")))
+        stage = QStringLiteral("input.core.joints");
+    else if (objectName.startsWith(QStringLiteral("construction_coolingDuct")) ||
+             objectName == QStringLiteral("construction_coolingDuctCount"))
+        stage = QStringLiteral("input.thermal.cooling_ducts");
     else if (objectName.startsWith(QStringLiteral("construction_bobbin")) ||
              objectName.startsWith(QStringLiteral("construction_windingRadial")) ||
              objectName.startsWith(QStringLiteral("construction_windingAxial")) ||
