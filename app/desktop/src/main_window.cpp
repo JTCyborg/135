@@ -2061,7 +2061,7 @@ QWidget* MainWindow::createConstructionPage()
         }
 
         const auto positiveIfProvided = [this](const QString& key, const QString& label) {
-            const auto* value = findChild<QDoubleSpinBox*>(key);
+            auto* value = findChild<QDoubleSpinBox*>(key);
             if (!value || value->value() == value->minimum()) return true;
             if (std::isfinite(value->value()) && value->value() > 0.0) return true;
             QMessageBox::warning(this, tr("Invalid construction input"),
@@ -2103,8 +2103,15 @@ QWidget* MainWindow::createConstructionPage()
             latestFilterBranchId_ == 0 ? QJsonValue(QStringLiteral("NOT_AVAILABLE"))
                                        : QJsonValue(static_cast<qint64>(latestFilterBranchId_)));
         lineage.insert(QStringLiteral("physicalSizingStatus"), QStringLiteral("NOT_CONNECTED_TO_SOLVER"));
-        lineage.insert(QStringLiteral("projectAmbientSource"), QStringLiteral("Project.ambientC"));
-        lineage.insert(QStringLiteral("projectCoolingSource"), QStringLiteral("Project.coolingMethod"));
+        QSettings lineageSettings;
+        lineageSettings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/construction"));
+        lineage.insert(QStringLiteral("constructionAmbientSource"),
+            lineageSettings.value(QStringLiteral("construction_ambient_source")).toString() == QStringLiteral("MANUAL")
+                ? QStringLiteral("USER_OVERRIDE") : QStringLiteral("INHERITED_FROM_PROJECT: Project.ambientC"));
+        lineage.insert(QStringLiteral("constructionCoolingSource"),
+            lineageSettings.value(QStringLiteral("construction_cooling_source")).toString() == QStringLiteral("MANUAL")
+                ? QStringLiteral("USER_OVERRIDE") : QStringLiteral("INHERITED_FROM_PROJECT: Project.coolingMethod"));
+        lineageSettings.endGroup();
         const auto* insulationClass = findChild<QComboBox*>(QStringLiteral("projectInsulationClass"));
         lineage.insert(QStringLiteral("projectInsulationClass"),
             insulationClass ? insulationClass->currentText() : QStringLiteral("NOT_PROVIDED"));
