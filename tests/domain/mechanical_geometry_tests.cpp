@@ -204,6 +204,41 @@ int main()
     missingWindingBuild.windingPacks[1].radialBuild = units::Length{};
     assert(!validate(missingWindingBuild));
 
+    // Conductor-level data is optional for legacy envelope-only geometry,
+    // but once any detail is supplied the complete, internally consistent
+    // round-wire definition is required.
+    auto detailedWinding = valid;
+    for (auto& winding : detailedWinding.windingPacks) {
+        winding.turns = 20;
+        winding.turnsPerLayer = 10;
+        winding.parallelConductors = 1;
+        winding.conductorShape = "round";
+        winding.bareConductorDiameter = units::Length{0.002};
+        winding.insulatedConductorDiameter = units::Length{0.0022};
+        winding.conductorInsulationBuild = units::Length{0.0001};
+    }
+    assert(validate(detailedWinding));
+
+    auto incompleteConductorDetail = detailedWinding;
+    incompleteConductorDetail.windingPacks[0].insulatedConductorDiameter.reset();
+    assert(!validate(incompleteConductorDetail));
+
+    auto inconsistentTurnCount = detailedWinding;
+    inconsistentTurnCount.windingPacks[0].turns = 21;
+    assert(!validate(inconsistentTurnCount));
+
+    auto unsupportedConductorShape = detailedWinding;
+    unsupportedConductorShape.windingPacks[0].conductorShape = "rectangular";
+    assert(!validate(unsupportedConductorShape));
+
+    auto impossibleInsulatedDiameter = detailedWinding;
+    impossibleInsulatedDiameter.windingPacks[0].insulatedConductorDiameter = units::Length{0.0019};
+    assert(!validate(impossibleInsulatedDiameter));
+
+    auto inconsistentInsulationBuild = detailedWinding;
+    inconsistentInsulationBuild.windingPacks[0].conductorInsulationBuild = units::Length{0.0002};
+    assert(!validate(inconsistentInsulationBuild));
+
     auto bobbinTooNarrowForLimb = valid;
     bobbinTooNarrowForLimb.bobbins[0].innerWidth = units::Length{0.039};
     assert(!validate(bobbinTooNarrowForLimb));
