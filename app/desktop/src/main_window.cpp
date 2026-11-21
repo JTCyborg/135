@@ -2947,7 +2947,7 @@ QWidget* MainWindow::createResultsPage()
     resultsTable_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsTable_);
 
-    auto* currentPlotTitle = new QLabel(tr("Inductor phase peak current — frequency sweep"));
+    auto* currentPlotTitle = new QLabel(tr("Reactor branch peak current — frequency sweep"));
     currentPlotTitle->setObjectName(QStringLiteral("inductorCurrentPlotTitle"));
     currentPlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(currentPlotTitle);
@@ -3576,7 +3576,7 @@ void MainWindow::compareSelectedCalculationGraphs()
     const bool currentMetric = metricKey == QStringLiteral("reactorBranchPeakCurrent_A");
     const QString arrayKey = currentMetric ? QStringLiteral("frequencySweep")
                                             : QStringLiteral("impedanceScan");
-    const QString yLabel = currentMetric ? tr("Phase peak current (A)") : tr("Bus impedance (Ω)");
+    const QString yLabel = currentMetric ? tr("Reactor branch peak current (A)") : tr("Bus impedance (Ω)");
     std::vector<PlotCurve> curves;
     QStringList comparisonIds;
 
@@ -6174,7 +6174,8 @@ void MainWindow::calculateFilter()
                 hasSourceImpedance
                     ? tr("Source-impedance-included diagnostic reactor branch peak current (A)")
                     : tr("Ideal-source diagnostic reactor branch peak current (A) — NOT operational stress"));
-            resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
+            resultsBankCurrentPlot_->setEngineeringGuides(
+                resonanceBands, saturationPeakReference, magneticKneeCurrentA);
         }
         if (auto* title = findChild<QLabel*>(QStringLiteral("inductorCurrentPlotTitle"))) {
             title->setText(hasSourceImpedance
