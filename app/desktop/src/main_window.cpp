@@ -72,6 +72,7 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QToolBar>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QUuid>
