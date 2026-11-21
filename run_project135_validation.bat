@@ -74,8 +74,20 @@ rem Persist completed dependency binaries between runs. Do not clear this cache.
 set "VCPKG_BINARY_CACHE=%VCPKG_ROOT%\binary-cache"
 if not exist "%VCPKG_BINARY_CACHE%" mkdir "%VCPKG_BINARY_CACHE%"
 set "VCPKG_BINARY_SOURCES=clear;files,%VCPKG_BINARY_CACHE%,readwrite"
+
+rem Keep one stable manifest install tree shared by Debug and Release.
+rem This prevents each configure preset from reinstalling/rebuilding the same dependencies.
+set "VCPKG_INSTALLED_DIR=%ROOT%vcpkg_installed"
+if not exist "%VCPKG_INSTALLED_DIR%" mkdir "%VCPKG_INSTALLED_DIR%"
 echo [VCPKG] Binary cache: %VCPKG_BINARY_CACHE%>>"%LOG%"
+echo [VCPKG] Persistent installed tree: %VCPKG_INSTALLED_DIR%>>"%LOG%"
 echo [VCPKG] Cached OCCT source archive and buildtrees are left untouched.>>"%LOG%"
+git -C "%VCPKG_ROOT%" rev-parse HEAD > "BuildReports\vcpkg_revision_%STAMP%.tmp" 2>nul
+if not errorlevel 1 (
+    set /p VCPKG_REVISION=<"BuildReports\vcpkg_revision_%STAMP%.tmp"
+    del "BuildReports\vcpkg_revision_%STAMP%.tmp" 2>nul
+    echo [VCPKG] Tool checkout commit: !VCPKG_REVISION!>>"%LOG%"
+)
 
 where git >nul 2>&1
 if errorlevel 1 (
@@ -162,13 +174,15 @@ echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
 rem Configure both CMake presets before building.
 echo.
 echo [3/6] Configuring Debug and Release...
-set "RUN_CMD=cmake --fresh --preset vs2026-desktop-debug"
+rem Reuse the existing CMake cache; CMake will reconfigure only when inputs changed.
+rem Do not use --fresh here: it discards useful configure state on every validation run.
+set "RUN_CMD=cmake --preset vs2026-desktop-debug"
 call :RUN "Configure Debug"
 if errorlevel 1 (
     set "OVERALL=FAILED"
     goto FINALIZE
 )
-set "RUN_CMD=cmake --fresh --preset vs2026-desktop-release"
+set "RUN_CMD=cmake --preset vs2026-desktop-release"
 call :RUN "Configure Release"
 if errorlevel 1 (
     set "OVERALL=FAILED"
