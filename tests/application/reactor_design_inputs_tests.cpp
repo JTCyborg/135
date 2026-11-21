@@ -160,6 +160,20 @@ int main()
         "butt", "butt", "invalid", "butt", "butt", "butt", "butt", "butt"};
     assert(!validate(inputs));
 
+    inputs.coreJointConstructions = std::array<std::string, 8>{
+        "step-lap", "butt", "butt", "butt", "butt", "butt", "butt", "butt"};
+    inputs.coreJointStepLapPackets[0] = {
+        CoreJointStepLapPacketInput{0.0, 0.12, 0.01, 0.005, "limb-into-yoke"}
+    };
+    assert(validate(inputs));
+    const auto stepLapAccepted = inputs;
+    inputs.coreJointStepLapPackets[0][0].overlapIntoLimbM = 0.011;
+    assert(requiresRecalculation(inputs, stepLapAccepted));
+    inputs = stepLapAccepted;
+    inputs.coreJointStepLapPackets[0].clear();
+    assert(!validate(inputs));
+    inputs = physicalAccepted;
+
     MaterialRecommendationSet recommendations;
     recommendations.sourceFilterSnapshotId = "filter-snapshot-42";
     recommendations.filterBranchId = 1;
