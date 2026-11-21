@@ -9,6 +9,7 @@
 #include "p135/infrastructure/sqlite/sqlite_material_revision_store.hpp"
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
+#include "p135/infrastructure/sqlite/revision_bound_physical_filter_magnetic.hpp"
 
 #include "p135/application/reactor_design_inputs.hpp"
 #include "p135/application/reactor_design_graph.hpp"
@@ -5208,10 +5209,19 @@ void MainWindow::calculateFilter()
     }
 
     const bool hasLoadCurrentInjection = !harmonicRequest.loadCurrentInjections.empty();
+    const bool acceptedPhysicalMagneticCandidate =
+        acceptedConstructionInputs_.has_value() && !constructionInputsDirty_ &&
+        materialStore_ && acceptedConstructionInputs_->coreMaterial.has_value() &&
+        acceptedConstructionInputs_->stackingFactor.has_value() &&
+        acceptedConstructionInputs_->turnsPerPhase.has_value() &&
+        acceptedConstructionInputs_->dimensionalSource.has_value() &&
+        acceptedConstructionInputs_->dimensionalRevision.has_value() &&
+        acceptedConstructionInputs_->sourceFilterSnapshotId == latestFilterSnapshotId_.toStdString() &&
+        acceptedConstructionInputs_->filterBranchId == latestFilterBranchId_;
     if (!hasSourceImpedance && (suppliedHarmonics > 0 || hasLoadCurrentInjection)) {
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: enter source R and/or L from a network study.");
     } else if (hasSourceImpedance &&
-               (suppliedHarmonics > 0 || hasLoadCurrentInjection || threeLimbMagneticBase.has_value()) &&
+               (suppliedHarmonics > 0 || hasLoadCurrentInjection || threeLimbMagneticBase.has_value() || acceptedPhysicalMagneticCandidate) &&
                spectrumValid) {
         const auto harmonics = p135::filter::analyzeHarmonics(harmonicRequest);
         if (harmonics) {
@@ -5224,6 +5234,52 @@ void MainWindow::calculateFilter()
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: invalid input spectrum.");
     } else if (suppliedHarmonics == 0 && !hasLoadCurrentInjection && advancedWarning.isEmpty()) {
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
+    }
+
+    // Revision-bound magnetic analysis uses the exact accepted Construction
+    // core dimensions and exact selected material revision. It is deliberately
+    // separate from the legacy manual Ae/le diagnostic controls above.
+    if (acceptedPhysicalMagneticCandidate && harmonicResult) {
+        const auto& accepted = *acceptedConstructionInputs_;
+        const auto physicalCore = p135::application::makeThreeLimbCorePhysicalGeometry(accepted);
+        if (!physicalCore) {
+            appendLog(tr("[MAGNETIC] NOT_VERIFIED — accepted Construction core geometry: %1")
+                .arg(QString::fromStdString(physicalCore.error().message)));
+        } else {
+            p135::application::PhysicalFilterReactorMagneticRequest magneticRequest;
+            magneticRequest.physicalCore = physicalCore.value();
+            magneticRequest.stackingFactor = *accepted.stackingFactor;
+            magneticRequest.dimensionalSource = *accepted.dimensionalSource;
+            magneticRequest.dimensionalRevision = *accepted.dimensionalRevision;
+            magneticRequest.filterMagnetic.filterBranchId = accepted.filterBranchId;
+            magneticRequest.filterMagnetic.harmonicAnalysis = *harmonicResult;
+            magneticRequest.filterMagnetic.magnetic.turns = {
+                *accepted.turnsPerPhase, *accepted.turnsPerPhase, *accepted.turnsPerPhase
+            };
+            magneticRequest.filterMagnetic.relativePeakTolerance = 1.0e-3;
+            magneticRequest.filterMagnetic.maximumSamples = 576;
+            const auto magnetic = p135::infrastructure::sqlite::
+                analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
+                    *materialStore_, accepted.coreMaterial->revisionId, magneticRequest);
+            if (!magnetic) {
+                appendLog(tr("[MAGNETIC] NOT_VERIFIED — Construction revision %1; material %2: %3")
+                    .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
+                    .arg(QString::fromStdString(accepted.coreMaterial->revisionId))
+                    .arg(QString::fromStdString(magnetic.error().message)));
+            } else {
+                const auto& cycle = magnetic.value().magneticAnalysis.magneticAnalysis.magneticCycle;
+                double maximumFluxDensity = 0.0;
+                for (const auto& density : cycle.peakAbsoluteFluxDensity)
+                    maximumFluxDensity = std::max(maximumFluxDensity, density.si());
+                appendLog(tr("[MAGNETIC] PASS — Construction %1; material %2; max |B|=%3 T; samples=%4.")
+                    .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
+                    .arg(QString::fromStdString(magnetic.value().materialRevision.revisionId))
+                    .arg(maximumFluxDensity, 0, 'g', 7)
+                    .arg(static_cast<qulonglong>(cycle.samplesUsed)));
+            }
+        }
+    } else if (acceptedPhysicalMagneticCandidate) {
+        appendLog(tr("[MAGNETIC] NOT_VERIFIED — harmonic branch currents are unavailable; no magnetic result was produced."));
     }
 
     // First-pass ideal area-product bound. Inputs are explicit user criteria.
