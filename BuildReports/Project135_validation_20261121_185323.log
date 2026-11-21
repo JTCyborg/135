@@ -1,0 +1,383 @@
+================================================================ 
+Project135 validation run 
+Started: 21.11.2026 18:53:23,45 
+Project: C:\Temp\trdos\135\ 
+================================================================ 
+VCPKG_ROOT: C:\vcpkg
+From https://github.com/microsoft/vcpkg
+ * branch                  master     -> FETCH_HEAD
+HEAD is now at b94b6bdc32 [libmodplug] Update to 0.8.9.2 (#55104)
+Downloading https://github.com/microsoft/vcpkg-tool/releases/download/2026-10-29/vcpkg.exe -> C:\vcpkg\vcpkg.exe... done.
+Validating signature... done.
+
+vcpkg package management program version 2026-10-29-139f2e53438b1529e178f6295bc563f4e0de734f
+
+See LICENSE.txt for license information.
+[VCPKG] Registry checkout and executable updated.
+[VCPKG] Baseline b94b6bdc326c0faea9070b4862e0e0d4e4ac5396 verified.
+[ENVIRONMENT]
+Computer: DESKTOP-H1DJP3C
+User: JTCyb
+
+
+[RUN] CMake version
+cmake version 4.4.4
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+[PASS] CMake version
+[FAIL] CMake version (exit 0)
+
+[RUN] Git version
+git version 2.56.0.windows.4
+[PASS] Git version
+[FAIL] Git version (exit 0)
+[CLEAN] CAD, Drawings and Debug removed.
+Current branch: main
+
+[RUN] Git fetch origin
+[PASS] Git fetch origin
+[FAIL] Git fetch origin (exit 0)
+
+[RUN] Git pull --ff-only origin main
+From https://github.com/JTCyborg/135
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+[PASS] Git pull --ff-only origin main
+[FAIL] Git pull --ff-only origin main (exit 0)
+Synchronized source commit: 1ff9971ed2ab278587f600732fcfb184f6b65a13
+
+[RUN] Configure Debug
+-- Running vcpkg install
+A suitable version of cmake was not found (required v4.4.5).
+Downloading https://github.com/Kitware/CMake/releases/download/v4.4.5/cmake-4.4.5-windows-x86_64.zip -> cmake-4.4.5-windows-x86_64.zip
+Successfully downloaded cmake-4.4.5-windows-x86_64.zip
+Extracting cmake...
+A suitable version of 7zip was not found (required v26.06).
+Downloading https://github.com/ip7z/7zip/releases/download/26.06/7z2606-x64.exe -> 7z2606-x64.7z.exe
+Successfully downloaded 7z2606-x64.7z.exe
+Extracting 7zip...
+A suitable version of 7zr was not found (required v26.06).
+Downloading https://github.com/ip7z/7zip/releases/download/26.06/7zr.exe -> 4660038b-7zr.exe
+Successfully downloaded 4660038b-7zr.exe
+Detecting compiler hash for triplet x64-windows...
+A suitable version of powershell-core was not found (required v7.6.10).
+Downloading https://github.com/PowerShell/PowerShell/releases/download/v7.6.10/PowerShell-7.6.10-win-x64.zip -> PowerShell-7.6.10-win-x64.zip
+Successfully downloaded PowerShell-7.6.10-win-x64.zip
+Extracting powershell-core...
+Compiler found: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe
+The following packages will be rebuilt:
+  * brotli:x64-windows@1.2.1
+  * bzip2[core,tool]:x64-windows@1.0.8#6
+  * egl-registry:x64-windows@2026-11-06
+  * freetype[brotli,bzip2,core,png,zlib]:x64-windows@2.15.0
+  * libpng:x64-windows@1.6.59#1
+    nlohmann-json:x64-windows@3.12.0#2
+    opencascade[core,freetype]:x64-windows@8.0.1#1
+  * opengl:x64-windows@2022-12-04#3
+  * opengl-registry:x64-windows@2026-08-03
+    openssl:x64-windows@3.6.5#2
+    sqlite3[core,json1]:x64-windows@3.54.1
+  * vcpkg-cmake:x64-windows@2026-11-09
+  * vcpkg-cmake-config:x64-windows@2026-07-21
+  * vcpkg-cmake-get-vars:x64-windows@2025-05-29
+  * zlib:x64-windows@1.4
+Additional packages (*) will be modified to complete this operation.
+Restored 0 package(s) from C:\Users\JTCyb\AppData\Local\vcpkg\archives in 1.25 ms. Use --debug to see more details.
+Removing 1/30 opencascade:x64-windows
+Elapsed time to handle opencascade:x64-windows: 4.1 s
+Removing 2/30 opengl:x64-windows
+Elapsed time to handle opengl:x64-windows: 25.6 ms
+Removing 3/30 opengl-registry:x64-windows
+Elapsed time to handle opengl-registry:x64-windows: 39.7 ms
+Removing 4/30 egl-registry:x64-windows
+Elapsed time to handle egl-registry:x64-windows: 22.1 ms
+Removing 5/30 freetype:x64-windows
+Elapsed time to handle freetype:x64-windows: 80.1 ms
+Removing 6/30 brotli:x64-windows
+Elapsed time to handle brotli:x64-windows: 39.2 ms
+Removing 7/30 bzip2:x64-windows
+Elapsed time to handle bzip2:x64-windows: 35.4 ms
+Removing 8/30 libpng:x64-windows
+Elapsed time to handle libpng:x64-windows: 38.3 ms
+Removing 9/30 zlib:x64-windows
+Elapsed time to handle zlib:x64-windows: 36.2 ms
+Removing 10/30 sqlite3:x64-windows
+Elapsed time to handle sqlite3:x64-windows: 35.2 ms
+Removing 11/30 openssl:x64-windows
+Elapsed time to handle openssl:x64-windows: 124 ms
+Removing 12/30 vcpkg-cmake-get-vars:x64-windows
+Elapsed time to handle vcpkg-cmake-get-vars:x64-windows: 21.5 ms
+Removing 13/30 nlohmann-json:x64-windows
+Elapsed time to handle nlohmann-json:x64-windows: 48.6 ms
+Removing 14/30 vcpkg-cmake:x64-windows
+Elapsed time to handle vcpkg-cmake:x64-windows: 19.8 ms
+Removing 15/30 vcpkg-cmake-config:x64-windows
+Elapsed time to handle vcpkg-cmake-config:x64-windows: 18.1 ms
+Installing 16/30 vcpkg-cmake-config:x64-windows@2026-07-21...
+vcpkg-cmake-config:x64-windows@2026-07-21 package ABI: faddc6e31d81b5c8927aa139edf6d0afc6d5f9550b0ea650189fd68500f414d3
+Building vcpkg-cmake-config:x64-windows@2026-07-21...
+-- Installing: C:/vcpkg/packages/vcpkg-cmake-config_x64-windows/share/vcpkg-cmake-config/vcpkg_cmake_config_fixup.cmake
+-- Installing: C:/vcpkg/packages/vcpkg-cmake-config_x64-windows/share/vcpkg-cmake-config/vcpkg-port-config.cmake
+-- Installing: C:/vcpkg/packages/vcpkg-cmake-config_x64-windows/share/vcpkg-cmake-config/copyright
+-- Skipping post-build validation due to VCPKG_POLICY_EMPTY_PACKAGE
+Starting submission of vcpkg-cmake-config:x64-windows@2026-07-21 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-cmake-config:x64-windows: 146 ms
+Installing 17/30 vcpkg-cmake:x64-windows@2026-11-09...
+vcpkg-cmake:x64-windows@2026-11-09 package ABI: 4e1f3818ccc055f584d885fb055e8a925dea3502268cc6300cb6aa2bf70c87a4
+Building vcpkg-cmake:x64-windows@2026-11-09...
+-- Installing: C:/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg_cmake_configure.cmake
+-- Installing: C:/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg_cmake_build.cmake
+-- Installing: C:/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg_cmake_install.cmake
+-- Installing: C:/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg-port-config.cmake
+-- Installing: C:/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/copyright
+-- Performing post-build validation
+Starting submission of vcpkg-cmake:x64-windows@2026-11-09 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-cmake:x64-windows: 149 ms
+Completed submission of vcpkg-cmake-config:x64-windows@2026-07-21 to 1 binary cache(s) in 59.6 ms
+Installing 18/30 nlohmann-json:x64-windows@3.12.0#2...
+nlohmann-json:x64-windows@3.12.0#2 package ABI: 894ad7462b5113b724734a4d59660f3a335ebedbe02e01ac7fe83250aa591353
+Building nlohmann-json:x64-windows@3.12.0#2...
+Downloading https://github.com/nlohmann/json/archive/v3.12.0.tar.gz -> nlohmann-json-v3.12.0.tar.gz
+Successfully downloaded nlohmann-json-v3.12.0.tar.gz
+-- Extracting source C:/vcpkg/downloads/nlohmann-json-v3.12.0.tar.gz
+-- Applying patch fix-4736_char8_t.patch
+-- Applying patch fix-4742_std_optional.patch
+-- Using source at C:/vcpkg/buildtrees/nlohmann-json/src/v3.12.0-89fed620e6.clean
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: C:/vcpkg/packages/nlohmann-json_x64-windows/share/pkgconfig/nlohmann_json.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~3.0.7-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.6.10-4-x86_64.pkg.tar.zst
+-- Using msys root at C:/vcpkg/downloads/tools/msys2/d5586eb050429df1
+-- Fixing pkgconfig file: C:/vcpkg/packages/nlohmann-json_x64-windows/debug/share/pkgconfig/nlohmann_json.pc
+-- Installing: C:/vcpkg/packages/nlohmann-json_x64-windows/share/nlohmann-json/copyright
+-- Performing post-build validation
+Starting submission of nlohmann-json:x64-windows@3.12.0#2 to 1 binary cache(s) in the background
+Elapsed time to handle nlohmann-json:x64-windows: 7.4 s
+Completed submission of vcpkg-cmake:x64-windows@2026-11-09 to 1 binary cache(s) in 59.5 ms
+Installing 19/30 zlib:x64-windows@1.4...
+zlib:x64-windows@1.4 package ABI: 158d4fbbfe1b1884c8ad723a790f825830b0eafd475d07a853f38c2bc776f50e
+Building zlib:x64-windows@1.4...
+-- Using cached madler-zlib-v1.4.tar.gz
+-- Cleaning sources at C:/vcpkg/buildtrees/zlib/src/v1.4-d8f41485d5.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source C:/vcpkg/downloads/madler-zlib-v1.4.tar.gz
+-- Applying patch 0001-no-version-script-on-ohos.patch
+-- Using source at C:/vcpkg/buildtrees/zlib/src/v1.4-d8f41485d5.clean
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: C:/vcpkg/packages/zlib_x64-windows/lib/pkgconfig/zlib.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~3.0.7-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.6.10-4-x86_64.pkg.tar.zst
+-- Using msys root at C:/vcpkg/downloads/tools/msys2/d5586eb050429df1
+-- Fixing pkgconfig file: C:/vcpkg/packages/zlib_x64-windows/debug/lib/pkgconfig/zlib.pc
+-- Installing: C:/vcpkg/packages/zlib_x64-windows/share/zlib/vcpkg-cmake-wrapper.cmake
+-- Installing: C:/vcpkg/packages/zlib_x64-windows/share/zlib/copyright
+-- Performing post-build validation
+Starting submission of zlib:x64-windows@1.4 to 1 binary cache(s) in the background
+Elapsed time to handle zlib:x64-windows: 9.9 s
+Completed submission of nlohmann-json:x64-windows@3.12.0#2 to 1 binary cache(s) in 92.2 ms
+Installing 20/30 libpng:x64-windows@1.6.59#1...
+libpng:x64-windows@1.6.59#1 package ABI: caecfbfcbe50508fef353856d1d620a37821a520ebd4dd972c4dcaf841553c39
+Building libpng:x64-windows@1.6.59#1...
+-- Using cached pnggroup-libpng-v1.6.59.tar.gz
+-- Cleaning sources at C:/vcpkg/buildtrees/libpng/src/v1.6.59-1479063350.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source C:/vcpkg/downloads/pnggroup-libpng-v1.6.59.tar.gz
+-- Applying patch cmake.patch
+-- Applying patch genout-compiler-target.patch
+-- Using source at C:/vcpkg/buildtrees/libpng/src/v1.6.59-1479063350.clean
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Installing: C:/vcpkg/packages/libpng_x64-windows/share/png/vcpkg-cmake-wrapper.cmake
+-- Installing: C:/vcpkg/packages/libpng_x64-windows/share/libpng/libpng-config.cmake
+-- Fixing pkgconfig file: C:/vcpkg/packages/libpng_x64-windows/lib/pkgconfig/libpng16.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~3.0.7-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.6.10-4-x86_64.pkg.tar.zst
+-- Using msys root at C:/vcpkg/downloads/tools/msys2/d5586eb050429df1
+-- Fixing pkgconfig file: C:/vcpkg/packages/libpng_x64-windows/debug/lib/pkgconfig/libpng16.pc
+-- Installing: C:/vcpkg/packages/libpng_x64-windows/debug/lib/pkgconfig/libpng.pc
+-- Installing: C:/vcpkg/packages/libpng_x64-windows/lib/pkgconfig/libpng.pc
+-- Installing: C:/vcpkg/packages/libpng_x64-windows/share/libpng/usage
+-- Installing: C:/vcpkg/packages/libpng_x64-windows/share/libpng/copyright
+-- Performing post-build validation
+Starting submission of libpng:x64-windows@1.6.59#1 to 1 binary cache(s) in the background
+Elapsed time to handle libpng:x64-windows: 9.9 s
+Completed submission of zlib:x64-windows@1.4 to 1 binary cache(s) in 168 ms
+Installing 21/30 bzip2[core,tool]:x64-windows@1.0.8#6...
+bzip2[core,tool]:x64-windows@1.0.8#6 package ABI: c0aca224f8c56eff24de0190307f3497fe3ac7364f48232e7520f3078558723e
+Building bzip2[core,tool]:x64-windows@1.0.8#6...
+Downloading bzip2-1.0.8.tar.gz, trying https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+Successfully downloaded bzip2-1.0.8.tar.gz
+-- Extracting source C:/vcpkg/downloads/bzip2-1.0.8.tar.gz
+-- Applying patch fix-import-export-macros.patch
+-- Using source at C:/vcpkg/buildtrees/bzip2/src/bzip2-1-336d4794a3.clean
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: C:/vcpkg/packages/bzip2_x64-windows/lib/pkgconfig/bzip2.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~3.0.7-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.6.10-4-x86_64.pkg.tar.zst
+-- Using msys root at C:/vcpkg/downloads/tools/msys2/d5586eb050429df1
+-- Fixing pkgconfig file: C:/vcpkg/packages/bzip2_x64-windows/debug/lib/pkgconfig/bzip2.pc
+-- Installing: C:/vcpkg/packages/bzip2_x64-windows/share/bzip2/copyright
+-- Performing post-build validation
+Starting submission of bzip2[core,tool]:x64-windows@1.0.8#6 to 1 binary cache(s) in the background
+Elapsed time to handle bzip2:x64-windows: 10 s
+Completed submission of libpng:x64-windows@1.6.59#1 to 1 binary cache(s) in 226 ms
+Installing 22/30 brotli:x64-windows@1.2.1...
+brotli:x64-windows@1.2.1 package ABI: b44a1c5998f9b5dcafb23678450728858e54e53e4ce1ae28926aedea0c1f37bc
+Building brotli:x64-windows@1.2.1...
+Downloading https://github.com/google/brotli/archive/v1.2.1.tar.gz -> google-brotli-v1.2.1.tar.gz
+Successfully downloaded google-brotli-v1.2.1.tar.gz
+-- Extracting source C:/vcpkg/downloads/google-brotli-v1.2.1.tar.gz
+-- Applying patch install.patch
+-- Applying patch pkgconfig.patch
+-- Using source at C:/vcpkg/buildtrees/brotli/src/v1.2.1-cec6037376.clean
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: C:/vcpkg/packages/brotli_x64-windows/lib/pkgconfig/libbrotlicommon.pc
+-- Fixing pkgconfig file: C:/vcpkg/packages/brotli_x64-windows/lib/pkgconfig/libbrotlidec.pc
+-- Fixing pkgconfig file: C:/vcpkg/packages/brotli_x64-windows/lib/pkgconfig/libbrotlienc.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~3.0.7-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.6.10-4-x86_64.pkg.tar.zst
+-- Using msys root at C:/vcpkg/downloads/tools/msys2/d5586eb050429df1
+-- Fixing pkgconfig file: C:/vcpkg/packages/brotli_x64-windows/debug/lib/pkgconfig/libbrotlicommon.pc
+-- Fixing pkgconfig file: C:/vcpkg/packages/brotli_x64-windows/debug/lib/pkgconfig/libbrotlidec.pc
+-- Fixing pkgconfig file: C:/vcpkg/packages/brotli_x64-windows/debug/lib/pkgconfig/libbrotlienc.pc
+-- Installing: C:/vcpkg/packages/brotli_x64-windows/share/brotli/usage
+-- Installing: C:/vcpkg/packages/brotli_x64-windows/share/brotli/copyright
+-- Performing post-build validation
+Starting submission of brotli:x64-windows@1.2.1 to 1 binary cache(s) in the background
+Elapsed time to handle brotli:x64-windows: 18 s
+Completed submission of bzip2[core,tool]:x64-windows@1.0.8#6 to 1 binary cache(s) in 151 ms
+Installing 23/30 freetype[brotli,bzip2,core,png,zlib]:x64-windows@2.15.0...
+freetype[brotli,bzip2,core,png,zlib]:x64-windows@2.15.0 package ABI: 2dab89cb6fbfd035edbe31bbff031110487a64dfd84ed9d79bc014fe85505e3c
+Building freetype[brotli,bzip2,core,png,zlib]:x64-windows@2.15.0...
+Downloading https://gitlab.freedesktop.org//freetype/freetype/-/archive/VER-2-15-0/freetype-VER-2-15-0.tar.gz -> freetype-freetype-VER-2-15-0.tar.gz
+Successfully downloaded freetype-freetype-VER-2-15-0.tar.gz
+-- Extracting source C:/vcpkg/downloads/freetype-freetype-VER-2-15-0.tar.gz
+-- Applying patch 0003-Fix-UWP.patch
+-- Applying patch brotli-static.patch
+-- Applying patch bzip2.patch
+-- Applying patch fix-exports.patch
+-- Using source at C:/vcpkg/buildtrees/freetype/src/VER-2-15-0-3d629f2ee2.clean
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: C:/vcpkg/packages/freetype_x64-windows/lib/pkgconfig/freetype2.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~3.0.7-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.6.10-4-x86_64.pkg.tar.zst
+-- Using msys root at C:/vcpkg/downloads/tools/msys2/d5586eb050429df1
+-- Fixing pkgconfig file: C:/vcpkg/packages/freetype_x64-windows/debug/lib/pkgconfig/freetype2.pc
+-- Installing: C:/vcpkg/packages/freetype_x64-windows/share/freetype/usage
+-- Performing post-build validation
+Starting submission of freetype[brotli,bzip2,core,png,zlib]:x64-windows@2.15.0 to 1 binary cache(s) in the background
+Elapsed time to handle freetype:x64-windows: 20 s
+Completed submission of brotli:x64-windows@1.2.1 to 1 binary cache(s) in 288 ms
+Installing 24/30 egl-registry:x64-windows@2026-11-06...
+egl-registry:x64-windows@2026-11-06 package ABI: 90379e9847d45eb8aead0419ab5790e127bb5da954e97e194a454f15cfc2ca70
+Building egl-registry:x64-windows@2026-11-06...
+Downloading https://github.com/KhronosGroup/EGL-Registry/archive/8e56e86e65687697ef54114cdb1afabdfac756bf.tar.gz -> KhronosGroup-EGL-Registry-8e56e86e65687697ef54114cdb1afabdfac756bf.tar.gz
+Successfully downloaded KhronosGroup-EGL-Registry-8e56e86e65687697ef54114cdb1afabdfac756bf.tar.gz
+-- Extracting source C:/vcpkg/downloads/KhronosGroup-EGL-Registry-8e56e86e65687697ef54114cdb1afabdfac756bf.tar.gz
+-- Using source at C:/vcpkg/buildtrees/egl-registry/src/bdfac756bf-8effee8bd2.clean
+-- Installing: C:/vcpkg/packages/egl-registry_x64-windows/share/egl-registry/copyright
+-- Performing post-build validation
+Starting submission of egl-registry:x64-windows@2026-11-06 to 1 binary cache(s) in the background
+Elapsed time to handle egl-registry:x64-windows: 2.4 s
+Completed submission of freetype[brotli,bzip2,core,png,zlib]:x64-windows@2.15.0 to 1 binary cache(s) in 489 ms
+Installing 25/30 opengl-registry:x64-windows@2026-08-03...
+opengl-registry:x64-windows@2026-08-03 package ABI: 9ac79cf87f677efcc0b725475fccfcb66ac5d4d1d0948a6b8a26749da90f80b2
+Building opengl-registry:x64-windows@2026-08-03...
+-- Using cached KhronosGroup-OpenGL-Registry-e8f7cd0e35ac8d6f5667a021ff83d04b1fec41ef.tar.gz
+-- Cleaning sources at C:/vcpkg/buildtrees/opengl-registry/src/4b1fec41ef-a126ad0aa2.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source C:/vcpkg/downloads/KhronosGroup-OpenGL-Registry-e8f7cd0e35ac8d6f5667a021ff83d04b1fec41ef.tar.gz
+-- Using source at C:/vcpkg/buildtrees/opengl-registry/src/4b1fec41ef-a126ad0aa2.clean
+-- Installing: C:/vcpkg/packages/opengl-registry_x64-windows/share/opengl-registry/copyright
+-- Performing post-build validation
+Starting submission of opengl-registry:x64-windows@2026-08-03 to 1 binary cache(s) in the background
+Elapsed time to handle opengl-registry:x64-windows: 4.3 s
+Completed submission of egl-registry:x64-windows@2026-11-06 to 1 binary cache(s) in 77.3 ms
+Installing 26/30 opengl:x64-windows@2022-12-04#3...
+opengl:x64-windows@2022-12-04#3 package ABI: 7f56129ae4b16bcbdd40afdfdd182540c4a03bae17d3bbd1791533740a1a6b71
+Building opengl:x64-windows@2022-12-04#3...
+-- Installing: C:/vcpkg/packages/opengl_x64-windows/include/GL/gl.h
+-- Installing: C:/vcpkg/packages/opengl_x64-windows/include/GL/glu.h
+-- Installing: C:/vcpkg/packages/opengl_x64-windows/lib/OpenGL32.Lib
+-- Installing: C:/vcpkg/packages/opengl_x64-windows/lib/GlU32.Lib
+-- Installing: C:/vcpkg/packages/opengl_x64-windows/debug/lib/OpenGL32.Lib
+-- Installing: C:/vcpkg/packages/opengl_x64-windows/debug/lib/GlU32.Lib
+-- Fixing pkgconfig file: C:/vcpkg/packages/opengl_x64-windows/lib/pkgconfig/glu.pc
+-- Fixing pkgconfig file: C:/vcpkg/packages/opengl_x64-windows/lib/pkgconfig/opengl.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~3.0.7-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.6.10-4-x86_64.pkg.tar.zst
+-- Using msys root at C:/vcpkg/downloads/tools/msys2/d5586eb050429df1
+-- Fixing pkgconfig file: C:/vcpkg/packages/opengl_x64-windows/debug/lib/pkgconfig/glu.pc
+-- Fixing pkgconfig file: C:/vcpkg/packages/opengl_x64-windows/debug/lib/pkgconfig/opengl.pc
+-- Installing: C:/vcpkg/packages/opengl_x64-windows/share/opengl/usage
+-- Performing post-build validation
+Starting submission of opengl:x64-windows@2022-12-04#3 to 1 binary cache(s) in the background
+Elapsed time to handle opengl:x64-windows: 461 ms
+Completed submission of opengl-registry:x64-windows@2026-08-03 to 1 binary cache(s) in 352 ms
+Installing 27/30 opencascade[core,freetype]:x64-windows@8.0.1#1...
+opencascade[core,freetype]:x64-windows@8.0.1#1 package ABI: 947f995cb7339d31ee44fb661e7ccc87ee51fdb612e397b1209abba41f73b4fc
+Building opencascade[core,freetype]:x64-windows@8.0.1#1...
+Downloading https://github.com/Open-Cascade-SAS/OCCT/archive/V8_0_1.tar.gz -> Open-Cascade-SAS-OCCT-V8_0_1.tar.gz
+Successfully downloaded Open-Cascade-SAS-OCCT-V8_0_1.tar.gz
+-- Extracting source C:/vcpkg/downloads/Open-Cascade-SAS-OCCT-V8_0_1.tar.gz
+-- Applying patch 0001-cmake-keep-build-use-vcpkg-explicit.patch
+-- Applying patch 0002-cmake-load-exported-package-dependencies.patch
+-- Applying patch 0003-image-remove-freeimage-msvc-autolink.patch
+-- Applying patch 0004-cmake-add-additional-path-extraction-for-OpenCASCADE.patch
+-- Applying patch 0005-drop-bin-letter.patch
+-- Using source at C:/vcpkg/buildtrees/opencascade/src/V8_0_1-2f604eca2a.clean
+-- Configuring x64-windows
+CMake Error at scripts/cmake/vcpkg_execute_required_process.cmake:127 (message):
+    Command failed: "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\ninja.exe" -v
+    Working Directory: C:/vcpkg/buildtrees/opencascade/x64-windows-rel/vcpkg-parallel-configure
+    Error code: 1
+    See logs for more information:
+      C:\vcpkg\buildtrees\opencascade\config-x64-windows-dbg-CMakeConfigureLog.yaml.log
+      C:\vcpkg\buildtrees\opencascade\config-x64-windows-rel-CMakeConfigureLog.yaml.log
+      C:\vcpkg\buildtrees\opencascade\config-x64-windows-out.log
+
+Call Stack (most recent call first):
+  C:/Temp/trdos/135/out/build/vs2026-desktop-debug/vcpkg_installed/x64-windows/share/vcpkg-cmake/vcpkg_cmake_configure.cmake:284 (vcpkg_execute_required_process)
+  buildtrees/versioning_/versions/opencascade/b05bed318d28f193afd7aa3f6f1ef558ff1d7925/portfile.cmake:33 (vcpkg_cmake_configure)
+  scripts/ports.cmake:209 (include)
+
+
+error: building opencascade:x64-windows failed with: BUILD_FAILED
+See https://learn.microsoft.com/vcpkg/troubleshoot/build-failures?WT.mc_id=vcpkg_inproduct_cli for more information.
+Elapsed time to handle opencascade:x64-windows: 1.3 min
+Please ensure you're using the latest port files with `git pull` and `vcpkg update`.
+Then check for known issues at:
+  https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+opencascade
+You can submit a new issue at:
+  https://github.com/microsoft/vcpkg/issues/new?title=%5Bopencascade%5D%20build%20error%20on%20x64-windows&body=Copy%20issue%20body%20from%20C%3A%2FTemp%2Ftrdos%2F135%2Fout%2Fbuild%2Fvs2026-desktop-debug%2Fvcpkg_installed%2Fvcpkg%2Fissue_body.md
+
+Completed submission of opengl:x64-windows@2022-12-04#3 to 1 binary cache(s) in 66.7 ms
+-- Running vcpkg install - failed
+CMake Error at C:/vcpkg/scripts/buildsystems/vcpkg.cmake:1002 (message):
+  vcpkg install failed.  See logs for more information:
+  C:\Temp\trdos\135\out\build\vs2026-desktop-debug\vcpkg-manifest-install.log
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeDetermineSystem.cmake:152 (include)
+  CMakeLists.txt:3 (project)
+
+
+-- Configuring incomplete, errors occurred!
+[FAIL] Configure Debug (exit 1)
+
+===================== FINAL SUMMARY =====================
+Overall: FAILED
+Debug build: 
+Debug tests: SKIPPED
+Release build: 
+Release tests: SKIPPED
+Source commit: 1ff9971ed2ab278587f600732fcfb184f6b65a13
+Finished: 21.11.2026 18:57:19,35
+==========================================================
