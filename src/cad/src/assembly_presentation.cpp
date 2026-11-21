@@ -2,6 +2,9 @@
 
 #include <BRepCheck_Analyzer.hxx>
 #include <TopoDS_Iterator.hxx>
+#include <STEPControl_Writer.hxx>
+#include <STEPControl_StepModelType.hxx>
+#include <IFSelect_ReturnStatus.hxx>
 
 #include <array>
 #include <cmath>
@@ -222,6 +225,33 @@ collectAssemblyPresentationDisplayItems(const AssemblyPresentationNode& root)
     std::vector<AssemblyPresentationDisplayItem> items;
     collectDisplayItems(root, true, 0.0, items);
     return items;
+}
+
+Result<void> exportAssemblyStep(
+    const AssemblyPresentationNode& root, const std::string& filePath)
+{
+    const auto validation = validateAssemblyPresentation(root);
+    if (!validation) return validation;
+    if (filePath.empty()) {
+        return Result<void>::failure(presentationError(
+            ErrorCode::InvalidInput, "A non-empty STEP output path is required.", "step.filePath"));
+    }
+    if (root.shape.IsNull() || !BRepCheck_Analyzer(root.shape).IsValid()) {
+        return Result<void>::failure(presentationError(
+            ErrorCode::SolverFailure, "The complete assembly B-Rep is invalid; STEP export was blocked.", "step.assembly"));
+    }
+    STEPControl_Writer writer;
+    const auto transferStatus = writer.Transfer(root.shape, STEPControl_AsIs);
+    if (transferStatus != IFSelect_RetDone) {
+        return Result<void>::failure(presentationError(
+            ErrorCode::SolverFailure, "OCCT failed to transfer the validated assembly to STEP.", "step.transfer"));
+    }
+    const auto writeStatus = writer.Write(filePath.c_str());
+    if (writeStatus != IFSelect_RetDone) {
+        return Result<void>::failure(presentationError(
+            ErrorCode::SolverFailure, "OCCT failed to write the STEP file.", "step.write"));
+    }
+    return Result<void>::success();
 }
 
 Result<void> validateAssemblyPresentation(const AssemblyPresentationNode& root)
