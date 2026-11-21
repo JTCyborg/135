@@ -260,7 +260,10 @@ protected:
             QPointF onlyPoint;
             for (const auto& [xValue, yValue] : curve.points) {
                 if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
-                    xValue <= 0.0 || yValue < 0.0) continue;
+                    xValue <= 0.0 || yValue < 0.0) {
+                    started = false;
+                    continue;
+                }
                 const double x = area.left() +
                     (std::log10(xValue) - logMin) / (logMax - logMin) * area.width();
                 const double y = area.bottom() - (yValue / yMax) * area.height();
