@@ -722,6 +722,28 @@ void MainWindow::loadProjectSettings()
         const auto* method = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"));
         flow->setEnabled(method && method->currentData().toString() == QStringLiteral("AF"));
     }
+    // Inherit Project environmental inputs unless the user has overridden Construction.
+    const double projectAmbientC = get("ambientC", 40.0).toDouble();
+    const QString projectCooling = get("coolingMethod", QStringLiteral("AN")).toString();
+    auto* constructionAmbient = findChild<QDoubleSpinBox*>(QStringLiteral("construction_ambient"));
+    auto* constructionCooling = findChild<QComboBox*>(QStringLiteral("construction_cooling"));
+    const QString ambientSourceKey = QStringLiteral("construction/construction_ambient_source");
+    const QString coolingSourceKey = QStringLiteral("construction/construction_cooling_source");
+    if (constructionAmbient &&
+        settings.value(ambientSourceKey).toString() != QStringLiteral("MANUAL")) {
+        constructionAmbient->setValue(projectAmbientC);
+        settings.setValue(ambientSourceKey, QStringLiteral("INHERITED_FROM_PROJECT"));
+    }
+    if (constructionCooling &&
+        settings.value(coolingSourceKey).toString() != QStringLiteral("MANUAL")) {
+        QString coolingData;
+        if (projectCooling == QStringLiteral("AN")) coolingData = QStringLiteral("natural-air");
+        else if (projectCooling == QStringLiteral("AF")) coolingData = QStringLiteral("forced-air");
+        const int index = constructionCooling->findData(coolingData);
+        constructionCooling->setCurrentIndex(index >= 0 ? index : 0);
+        settings.setValue(coolingSourceKey, QStringLiteral("INHERITED_FROM_PROJECT"));
+    }
+    // Project insulation class is retained as context; it is not a winding temperature limit.
     loadingProjectSettings_ = false;
 }
 
@@ -1949,6 +1971,179 @@ QWidget* MainWindow::createConstructionPage()
     scope->setStyleSheet("color: palette(mid);");
     root->addWidget(scope);
 
+    auto* confirmationRow = new QHBoxLayout;
+    auto* confirmationStatus = new QLabel(tr("Construction has not been confirmed."));
+    confirmationStatus->setObjectName(QStringLiteral("constructionConfirmationStatus"));
+    confirmationStatus->setWordWrap(true);
+    auto* confirmConstruction = new QPushButton(tr("Confirm construction and continue"));
+    confirmConstruction->setObjectName(QStringLiteral("confirmConstructionAndContinue"));
+    confirmationRow->addWidget(confirmationStatus, 1);
+    confirmationRow->addWidget(confirmConstruction);
+    root->addLayout(confirmationRow);
+
+    connect(confirmConstruction, &QPushButton::clicked, this,
+        [this, page, confirmationStatus] {
+        QJsonObject fields;
+        QJsonObject fieldLabels;
+        QJsonObject fieldUnits;
+        const QHash<QString, QString> labels{
+            {QStringLiteral("construction_coreMaterial"), tr("Core material revision")},
+            {QStringLiteral("construction_coreGeometry"), tr("Core geometry family")},
+            {QStringLiteral("construction_stackingFactor"), tr("Core stacking factor")},
+            {QStringLiteral("construction_conductorMaterial"), tr("Conductor material revision")},
+            {QStringLiteral("construction_conductorShape"), tr("Conductor cross-section shape")},
+            {QStringLiteral("construction_windingTechnology"), tr("Winding technology")},
+            {QStringLiteral("construction_turns"), tr("Turns per phase")},
+            {QStringLiteral("construction_turnsPerLayer"), tr("Turns per layer")},
+            {QStringLiteral("construction_layers"), tr("Winding layers")},
+            {QStringLiteral("construction_parallelConductors"), tr("Parallel conductors")},
+            {QStringLiteral("construction_conductorArea"), tr("Bare conductor area")},
+            {QStringLiteral("construction_conductorWidth"), tr("Bare conductor width")},
+            {QStringLiteral("construction_conductorThickness"), tr("Bare conductor thickness")},
+            {QStringLiteral("construction_insulationMaterial"), tr("Insulation material revision")},
+            {QStringLiteral("construction_bobbinMaterial"), tr("Bobbin material")},
+            {QStringLiteral("construction_bobbinUsage"), tr("Bobbin usage")},
+            {QStringLiteral("construction_turnInsulation"), tr("Turn insulation build")},
+            {QStringLiteral("construction_layerInsulation"), tr("Layer insulation build")},
+            {QStringLiteral("construction_mainInsulation"), tr("Main insulation build")},
+            {QStringLiteral("construction_cooling"), tr("Cooling method")},
+            {QStringLiteral("construction_ambient"), tr("Ambient temperature")},
+            {QStringLiteral("construction_maximumWindingTemperature"), tr("Maximum winding temperature")}
+        };
+        const QHash<QString, QString> units{
+            {QStringLiteral("construction_coreMaterial"), QStringLiteral("material revision ID")},
+            {QStringLiteral("construction_coreGeometry"), QStringLiteral("enumerated value")},
+            {QStringLiteral("construction_stackingFactor"), QStringLiteral("dimensionless")},
+            {QStringLiteral("construction_conductorMaterial"), QStringLiteral("material revision ID")},
+            {QStringLiteral("construction_conductorShape"), QStringLiteral("enumerated value")},
+            {QStringLiteral("construction_windingTechnology"), QStringLiteral("enumerated value")},
+            {QStringLiteral("construction_turns"), QStringLiteral("turns")},
+            {QStringLiteral("construction_turnsPerLayer"), QStringLiteral("turns")},
+            {QStringLiteral("construction_layers"), QStringLiteral("layers")},
+            {QStringLiteral("construction_parallelConductors"), QStringLiteral("conductors")},
+            {QStringLiteral("construction_conductorArea"), QStringLiteral("mm²")},
+            {QStringLiteral("construction_conductorWidth"), QStringLiteral("mm")},
+            {QStringLiteral("construction_conductorThickness"), QStringLiteral("mm")},
+            {QStringLiteral("construction_insulationMaterial"), QStringLiteral("material revision ID")},
+            {QStringLiteral("construction_bobbinMaterial"), QStringLiteral("material / grade")},
+            {QStringLiteral("construction_bobbinUsage"), QStringLiteral("boolean")},
+            {QStringLiteral("construction_turnInsulation"), QStringLiteral("mm")},
+            {QStringLiteral("construction_layerInsulation"), QStringLiteral("mm")},
+            {QStringLiteral("construction_mainInsulation"), QStringLiteral("mm")},
+            {QStringLiteral("construction_cooling"), QStringLiteral("enumerated value")},
+            {QStringLiteral("construction_ambient"), QStringLiteral("°C")},
+            {QStringLiteral("construction_maximumWindingTemperature"), QStringLiteral("°C")}
+        };
+        for (auto* widget : page->findChildren<QWidget*>()) {
+            const QString key = widget->objectName();
+            if (!key.startsWith(QStringLiteral("construction_"))) continue;
+            QJsonValue value;
+            if (const auto* combo = qobject_cast<QComboBox*>(widget)) {
+                const QVariant data = combo->currentData();
+                value = data.isValid() && !data.toString().isEmpty()
+                    ? QJsonValue(data.toString()) : QJsonValue(QStringLiteral("NOT_PROVIDED"));
+            } else if (const auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
+                const double v = number->value();
+                value = (v == number->minimum() || !std::isfinite(v))
+                    ? QJsonValue(QStringLiteral("NOT_PROVIDED")) : QJsonValue(v);
+            } else if (const auto* integer = qobject_cast<QSpinBox*>(widget)) {
+                value = integer->value() == integer->minimum()
+                    ? QJsonValue(QStringLiteral("NOT_PROVIDED")) : QJsonValue(integer->value());
+            } else if (const auto* line = qobject_cast<QLineEdit*>(widget)) {
+                value = line->text().trimmed().isEmpty()
+                    ? QJsonValue(QStringLiteral("NOT_PROVIDED")) : QJsonValue(line->text().trimmed());
+            } else if (const auto* check = qobject_cast<QCheckBox*>(widget)) {
+                value = check->isChecked();
+            } else continue;
+            fields.insert(key, value);
+            fieldLabels.insert(key, labels.value(key, key));
+            fieldUnits.insert(key, units.value(key, QStringLiteral("NOT_APPLICABLE")));
+        }
+
+        const auto positiveIfProvided = [this](const QString& key, const QString& label) {
+            const auto* value = findChild<QDoubleSpinBox*>(key);
+            if (!value || value->value() == value->minimum()) return true;
+            if (std::isfinite(value->value()) && value->value() > 0.0) return true;
+            QMessageBox::warning(this, tr("Invalid construction input"),
+                tr("%1 must be greater than zero when provided.").arg(label));
+            value->setFocus();
+            return false;
+        };
+        for (const auto& item : {
+            std::pair{QStringLiteral("construction_stackingFactor"), tr("Stacking factor")},
+            std::pair{QStringLiteral("construction_conductorArea"), tr("Conductor area")},
+            std::pair{QStringLiteral("construction_conductorWidth"), tr("Conductor width")},
+            std::pair{QStringLiteral("construction_conductorThickness"), tr("Conductor thickness")},
+            std::pair{QStringLiteral("construction_turnInsulation"), tr("Turn insulation build")},
+            std::pair{QStringLiteral("construction_layerInsulation"), tr("Layer insulation build")},
+            std::pair{QStringLiteral("construction_mainInsulation"), tr("Main insulation build")}
+        }) if (!positiveIfProvided(item.first, item.second)) return;
+
+        QJsonObject snapshot;
+        snapshot.insert(QStringLiteral("schemaVersion"), 1);
+        snapshot.insert(QStringLiteral("tabId"), QStringLiteral("construction"));
+        snapshot.insert(QStringLiteral("tabTitle"), QStringLiteral("Construction"));
+        snapshot.insert(QStringLiteral("projectId"), projectId_);
+        snapshot.insert(QStringLiteral("confirmedAtUtc"),
+            QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+        snapshot.insert(QStringLiteral("buildConfiguration"),
+#ifdef _DEBUG
+            QStringLiteral("Debug")
+#else
+            QStringLiteral("Release")
+#endif
+        );
+        snapshot.insert(QStringLiteral("fields"), fields);
+        snapshot.insert(QStringLiteral("fieldLabels"), fieldLabels);
+        snapshot.insert(QStringLiteral("fieldUnits"), fieldUnits);
+        QJsonObject lineage;
+        lineage.insert(QStringLiteral("filterSnapshotId"),
+            latestFilterSnapshotId_.isEmpty() ? QStringLiteral("NOT_AVAILABLE") : latestFilterSnapshotId_);
+        lineage.insert(QStringLiteral("filterBranchId"),
+            latestFilterBranchId_ == 0 ? QJsonValue(QStringLiteral("NOT_AVAILABLE"))
+                                       : QJsonValue(static_cast<qint64>(latestFilterBranchId_)));
+        lineage.insert(QStringLiteral("physicalSizingStatus"), QStringLiteral("NOT_CONNECTED_TO_SOLVER"));
+        lineage.insert(QStringLiteral("projectAmbientSource"), QStringLiteral("Project.ambientC"));
+        lineage.insert(QStringLiteral("projectCoolingSource"), QStringLiteral("Project.coolingMethod"));
+        const auto* insulationClass = findChild<QComboBox*>(QStringLiteral("projectInsulationClass"));
+        lineage.insert(QStringLiteral("projectInsulationClass"),
+            insulationClass ? insulationClass->currentText() : QStringLiteral("NOT_PROVIDED"));
+        lineage.insert(QStringLiteral("maximumWindingTemperatureStatus"), QStringLiteral("NOT_PROVIDED"));
+        snapshot.insert(QStringLiteral("lineage"), lineage);
+        snapshot.insert(QStringLiteral("physicalSizingStatus"), QStringLiteral("NOT_CONNECTED_TO_SOLVER"));
+
+#ifdef _DEBUG
+        const QString outputDirectory = QStringLiteral("C:/Temp/trdos/135");
+        if (!QDir().mkpath(outputDirectory)) {
+            QMessageBox::critical(this, tr("Cannot save construction snapshot"),
+                tr("Cannot create the project output directory: %1").arg(outputDirectory));
+            return;
+        }
+        QSaveFile output(QDir(outputDirectory).filePath(QStringLiteral("03_construction.json")));
+        if (!output.open(QIODevice::WriteOnly)) {
+            QMessageBox::critical(this, tr("Cannot save construction snapshot"), output.errorString());
+            return;
+        }
+        const QByteArray json = QJsonDocument(snapshot).toJson(QJsonDocument::Indented);
+        if (output.write(json) != json.size() || !output.commit()) {
+            QMessageBox::critical(this, tr("Cannot save construction snapshot"),
+                tr("Writing the construction snapshot failed: %1").arg(output.errorString()));
+            return;
+        }
+        confirmationStatus->setText(tr("Confirmed. Debug snapshot saved: C:/Temp/trdos/135/03_construction.json"));
+        appendLog(tr("Construction tab confirmed; snapshot saved to C:/Temp/trdos/135/03_construction.json."));
+#else
+        confirmationStatus->setText(tr("Construction confirmed (Release build; debug snapshot is disabled)."));
+        appendLog(tr("Construction tab confirmed (Release build; debug snapshot is disabled)."));
+#endif
+        if (auto* state = findChild<QLabel*>(QStringLiteral("constructionInputState"))) {
+            state->setText(tr("CONSTRUCTION INPUTS CONFIRMED — physical sizing: NOT_CONNECTED_TO_SOLVER."));
+            state->setStyleSheet("color: palette(text); font-weight: 600;");
+        }
+        constructionInputsDirty_ = false;
+        tabs_->setCurrentIndex(3);
+    });
+
     auto* scroll = new QScrollArea;
     scroll->setObjectName(QStringLiteral("constructionScrollArea"));
     scroll->setWidgetResizable(true);
@@ -3029,6 +3224,13 @@ void MainWindow::markConstructionInputsChanged()
         state->setStyleSheet("color: #a66b00; font-weight: 600;");
     }
     const QString objectName = sender() ? sender()->objectName() : QString{};
+    if (objectName == QStringLiteral("construction_ambient") ||
+        objectName == QStringLiteral("construction_cooling")) {
+        QSettings settings;
+        settings.setValue(QStringLiteral("projects/") + projectId_ +
+            QStringLiteral("/construction/") + objectName + QStringLiteral("_source"),
+            QStringLiteral("MANUAL"));
+    }
     QString stage;
     if (objectName == QStringLiteral("construction_coreMaterial")) stage = QStringLiteral("input.core.material");
     else if (objectName == QStringLiteral("construction_coreGeometry")) stage = QStringLiteral("input.core.geometry");
