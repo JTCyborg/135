@@ -333,6 +333,12 @@ public:
         setMinimumHeight(230);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         setAutoFillBackground(true);
+#if defined(_DEBUG) || !defined(NDEBUG)
+        debugImageSaveTimer_.setSingleShot(true);
+        connect(&debugImageSaveTimer_, &QTimer::timeout, this, [this] {
+            saveDebugImage();
+        });
+#endif
     }
 
     void setDebugImagePath(QString path)
@@ -382,17 +388,17 @@ public:
 
 private:
 #if defined(_DEBUG) || !defined(NDEBUG)
-    bool debugImageSavePending_{};
+    QTimer debugImageSaveTimer_;
     bool savingDebugImage_{};
 
     void scheduleDebugImageSave()
     {
-        if (debugImageSavePending_ || savingDebugImage_) return;
-        debugImageSavePending_ = true;
-        QTimer::singleShot(0, this, [this] {
-            debugImageSavePending_ = false;
-            saveDebugImage();
-        });
+        if (savingDebugImage_) return;
+        // Debounce layout-driven resize events. A zero-delay callback can run
+        // between parent/child layout passes and capture an intermediate width.
+        // Restarting the timer guarantees the PNG is rendered after geometry
+        // has remained stable for the full interval.
+        debugImageSaveTimer_.start(100);
     }
 
     void saveDebugImage()
