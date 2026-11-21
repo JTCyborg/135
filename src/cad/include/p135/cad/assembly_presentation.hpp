@@ -61,6 +61,10 @@ struct AssemblyPresentationNode {
 [[nodiscard]] Result<void> validateAssemblyPresentation(
     const AssemblyPresentationNode& root);
 
+// Exports the complete validated assembly B-Rep, independent of current UI visibility.
+[[nodiscard]] Result<void> exportAssemblyStep(
+    const AssemblyPresentationNode& root, const std::string& filePath);
+
 // Returns false when the stable component ID is not present.
 [[nodiscard]] bool setAssemblyComponentVisibility(
     AssemblyPresentationNode& root, const std::string& componentId, bool visible);
