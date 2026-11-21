@@ -6720,6 +6720,20 @@ void MainWindow::refreshComponentSelectors()
 
 void MainWindow::updateProjectTitle()
 {
+#if defined(_DEBUG) || !defined(NDEBUG)
+    if (resultsBankCurrentPlot_)
+        resultsBankCurrentPlot_->setProperty("debugImagePath",
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_reactor_current.png")));
+    if (resultsBusImpedancePlot_)
+        resultsBusImpedancePlot_->setProperty("debugImagePath",
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_bus_impedance.png")));
+    if (resultsCoreFluxPlot_)
+        resultsCoreFluxPlot_->setProperty("debugImagePath",
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux.png")));
+    if (historyComparisonPlot_)
+        historyComparisonPlot_->setProperty("debugImagePath",
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_history_comparison.png")));
+#endif
     const QString name = projectName_ ? projectName_->text().trimmed() : QString{};
     setWindowTitle(QString("Project135 — %1").arg(name.isEmpty() ? tr("Untitled") : name));
     QSettings settings;
