@@ -399,13 +399,12 @@ private slots:
         auto* generateCad = window_->findChild<QPushButton*>(
             QStringLiteral("generatePreliminaryCad"));
         QVERIFY(generateCad);
-        QTest::mouseClick(generateCad, Qt::LeftButton);
-
         auto* cadStatus = window_->findChild<QLabel*>(
             QStringLiteral("cadGenerationStatus"));
         QVERIFY(cadStatus);
-        QTRY_VERIFY_WITH_TIMEOUT(
-            cadStatus->text().contains(QStringLiteral("Preliminary CAD generated")), 5000);
+        const QString initialCadStatus = cadStatus->text();
+        QTest::mouseClick(generateCad, Qt::LeftButton);
+        QTRY_VERIFY_WITH_TIMEOUT(cadStatus->text() != initialCadStatus, 5000);
         QVERIFY2(cadStatus->text().contains(QStringLiteral("Preliminary CAD generated")),
             qPrintable(QStringLiteral("CAD generation did not succeed. Actual status: %1")
                 .arg(cadStatus->text())));
