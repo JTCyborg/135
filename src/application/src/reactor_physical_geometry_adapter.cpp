@@ -32,10 +32,6 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
     using domain::WindingPackPhysicalGeometry;
 
     if (productId.empty()) return geometryFailure("A project/product ID is required.", "productId");
-    const auto required = [](const auto& value, const char* field) -> bool { return value.has_value(); };
-    const auto requireArray = [&](const auto& value, const char* field) -> bool {
-        return required(value, field);
-    };
     if (!in.dimensionalSource || !in.dimensionalRevision ||
         in.dimensionalSource->empty() || in.dimensionalRevision->empty())
         return geometryFailure("Physical dimensions require an explicit source and revision.", "dimensionalProvenance");
@@ -49,11 +45,13 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
         return geometryFailure("All explicit core physical dimensions are required before CAD generation.", "core.dimensions");
     if (!in.bobbinInnerWidthsM || !in.bobbinInnerHeightsM || !in.bobbinAxialLengthsM ||
         !in.bobbinWallThicknessesM || !in.bobbinFlangeThicknessesM ||
-        !in.bobbinFlangeOuterWidthsM || !in.bobbinFlangeOuterHeightsM ||
+        !in.bobbinFlangeOuterWidthsM || !in.bobbinFlangeOuterHeightsM || !in.bobbinWindingClearancesM ||
         !in.windingRadialBuildsM || !in.windingAxialHeightsM || !in.windingEndClearancesM)
         return geometryFailure("All three bobbin and winding-pack dimension sets are required.", "windings.dimensions");
     if (!in.bobbinMaterialId || in.bobbinMaterialId->empty())
         return geometryFailure("An explicit bobbin material identifier is required.", "bobbins.material");
+    if (!in.conductorInsulationBuildM || !in.layerInsulationBuildM || !in.mainInsulationBuildM)
+        return geometryFailure("Conductor, layer and main insulation builds must be explicitly supplied (zero is allowed only when explicitly entered).", "windings.insulationBuilds");
     if (!in.windingTechnology || in.windingTechnology->empty() ||
         !in.windingLayers || !in.windingSections)
         return geometryFailure("Winding technology, layer count and section count are required.", "windings.construction");
@@ -112,14 +110,14 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
             Length((*in.bobbinInnerWidthsM)[i]), Length((*in.bobbinInnerHeightsM)[i]),
             Length((*in.bobbinAxialLengthsM)[i]), Length((*in.bobbinWallThicknessesM)[i]),
             Length((*in.bobbinFlangeThicknessesM)[i]), Length((*in.bobbinFlangeOuterWidthsM)[i]),
-            Length((*in.bobbinFlangeOuterHeightsM)[i]), Length(0.0), *in.bobbinMaterialId
+            Length((*in.bobbinFlangeOuterHeightsM)[i]), Length((*in.bobbinWindingClearancesM)[i]), *in.bobbinMaterialId
         };
         out.windingPacks[i] = WindingPackPhysicalGeometry{
             Length((*in.windingRadialBuildsM)[i]), Length((*in.windingAxialHeightsM)[i]),
             Length((*in.windingEndClearancesM)[i]),
-            Length(in.layerInsulationBuildM.value_or(0.0)),
-            Length(in.mainInsulationBuildM.value_or(0.0)),
-            Length(in.conductorInsulationBuildM.value_or(0.0)),
+            Length(*in.layerInsulationBuildM),
+            Length(*in.mainInsulationBuildM),
+            Length(*in.conductorInsulationBuildM),
             *in.windingLayers, *in.windingSections, *in.windingTechnology
         };
     }
