@@ -71,6 +71,12 @@
 - [ ] Проверить наследование Project → Filter definition → Construction и snapshot lineage.
 
 ### C. Реальный execution pipeline
+
+Промежуточная реализация:
+- Добавлен typed adapter `makeMagneticOperatingPointStageArtifact()` поверх существующего `analyzePhysicalFilterReactorMagneticCycle()`: он принимает фактический результат нелинейного трёхстержневого магнитного решателя, требует совпадающий filter branch, явные source/revision физических размеров и ревизию B-H данных, а также отклоняет неконвергентный или вышедший за измеренную B-H кривую operating point.
+- Добавлены regression tests для успешной сериализации, отсутствующей ревизии геометрии, несовпадающего branch, отсутствия сходимости и B-H extrapolation.
+- Это пока adapter, а не подключённая desktop pipeline stage: `magnetic.operating_point` не должна считаться VALID до интеграции с реальным desktop calculation result и проверки upstream revision lineage.
+
 - [ ] Построить input fingerprint и dependency plan из изменённых входов.
 - [ ] Подключить реальные stage adapters к существующим магнитным, winding, loss и thermal use cases.
 - [ ] Не отмечать stage Valid, если он вернул placeholder или отсутствуют обязательные источники.
