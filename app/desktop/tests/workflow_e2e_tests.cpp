@@ -511,6 +511,10 @@ private slots:
         QVERIFY(dxfContent.find("A - FRONT ELEVATION") != std::string::npos);
         QVERIFY(dxfContent.find("B - PLAN VIEW") != std::string::npos);
         QVERIFY(dxfContent.find("C - SIDE ELEVATION") != std::string::npos);
+        QVERIFY(dxfContent.find("$INSUNITS") != std::string::npos);
+        QVERIFY(dxfContent.find("OVERALL WIDTH") != std::string::npos);
+        QVERIFY(dxfContent.find("OVERALL HEIGHT") != std::string::npos);
+        QVERIFY(dxfContent.find("WINDING_ENVELOPE") != std::string::npos);
         QVERIFY(dxfContent.find("PRELIMINARY / NOT VERIFIED") != std::string::npos);
         QVERIFY(dxfContent.find("TEST-01-SYNTHETIC-GEOMETRY-R1") != std::string::npos);
         QVERIFY(cadStatus->text().contains(QStringLiteral("DXF")));
