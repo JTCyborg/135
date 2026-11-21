@@ -187,3 +187,15 @@
 - [x] User confirmed Windows/MSVC Debug build and `Project135DesktopWorkflowE2ETests`: CTest 1/1 PASS (38.68 s); this validates the plotted current/impedance series and independent numerical assertions, not GPU-rendered pixel appearance.
 - [ ] Add a separate segment-based visualization for the Construction-revision-bound magnetic operating point (three limbs and four yoke segments); it must not reuse the frequency axis.
 - [ ] Add direct rendering tests for all-zero and single-point plots, plus a visual/manual Windows check of legend, axis ticks and reference-guide readability.
+
+
+### Automatic engineering artifact persistence (2026-11-21)
+
+- [x] Establish the fixed Windows output root `C:/Temp/trdos/135` (equivalent to `C:\\Temp\\trdos\\135`).
+- [x] Automatically export the accepted OCCT assembly to `CAD/<projectId>_assembly.step` after successful CAD generation; retain manual STEP export as an additional action.
+- [x] Add an automatically generated preliminary A3 landscape PDF drawing under `Drawings/<projectId>_assembly.pdf`, with front, plan and side views, dimensional summary, source/revision provenance and explicit NOT VERIFIED disclaimer. This first PDF issue is an outline drawing; full detail sheets, complete dimension chains, gap cut-face projection and BOM remain future work.
+- [x] In Debug builds, save current, bus-impedance, core-flux and history-comparison plot widgets as PNG files under `Debug/Plots`; images are refreshed when curve data or engineering guides change.
+- [x] Log automatic artifact save success/failure and expose STEP/PDF save status in the CAD workspace.
+- [x] Extend desktop workflow E2E to assert automatic STEP/PDF creation, PDF signature, and Debug current/impedance PNG creation/signature under the requested root.
+- [ ] User Windows/MSVC Debug build and E2E execution pending. Do not claim file generation is verified until the user confirms the test result.
+- [ ] Add PDF page rendering inspection and compare its three projections against the physical OCCT B-Rep; the current PDF is preliminary and not a manufacturing drawing.
