@@ -9,6 +9,7 @@
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
 #include "p135/application/reactor_design_inputs.hpp"
+#include "p135/application/reactor_design_inputs.hpp"
 #include "p135/application/reactor_design_graph.hpp"
 #include "p135/application/ideal_reactor_sizing.hpp"
 #include "p135/filter/synthesis.hpp"
@@ -20,6 +21,7 @@
 #include "p135/domain/magnetic_circuit.hpp"
 #include "p135/domain/three_limb_magnetic.hpp"
 #include "p135/cad/three_limb_core.hpp"
+#include "p135/cad/assembly_presentation.hpp"
 
 #include <TopoDS_Iterator.hxx>
 #include "p135/thermal/filter_bridge.hpp"
@@ -3673,13 +3675,16 @@ QWidget* MainWindow::createCadPage()
     layout->addWidget(heading);
 
     auto* status = new QLabel(tr(
-        "The CAD workspace is a read-only presentation of the current accepted project geometry. "
-        "Physical dimensions are defined and corrected on the Calculation & design tab. "
-        "No geometry is generated until a verified physical-geometry result is supplied by the design solver."));
+        "CAD preview is built only from explicit Construction dimensions with source/revision traceability. "
+        "The preview is preliminary geometry, not magnetic, thermal, dielectric or manufacturing approval."));
+    status->setObjectName(QStringLiteral("cadGenerationStatus"));
     status->setWordWrap(true);
     status->setTextInteractionFlags(Qt::TextSelectableByMouse);
     status->setStyleSheet("color: palette(mid);");
     layout->addWidget(status);
+    auto* generateCad = new QPushButton(tr("Generate preliminary 3D model from Construction"));
+    generateCad->setObjectName(QStringLiteral("generatePreliminaryCad"));
+    layout->addWidget(generateCad);
 
     auto* workspace = new QSplitter(Qt::Horizontal, page);
     workspace->setChildrenCollapsible(false);
@@ -3730,6 +3735,54 @@ QWidget* MainWindow::createCadPage()
     viewportLayout->setContentsMargins(0, 0, 0, 0);
     auto* viewport = new CadViewportWidget(viewportPanel);
     viewportLayout->addWidget(viewport, 1);
+
+    connect(generateCad, &QPushButton::clicked, this,
+        [this, status, tree, root, properties, viewport, generateCad] {
+        if (constructionInputsDirty_) {
+            status->setText(tr("CAD is blocked: confirm Construction again after the latest input change."));
+            return;
+        }
+        if (latestFilterSnapshotId_.isEmpty() || latestFilterBranchId_ == 0) {
+            status->setText(tr("CAD is blocked: no accepted filter calculation snapshot is available."));
+            return;
+        }
+        const auto inputs = collectReactorDesignInputs();
+        const auto physical = p135::application::makeReactorPhysicalGeometry(
+            inputs, projectId_.toStdString());
+        if (!physical) {
+            const auto& error = physical.error();
+            status->setText(tr("CAD is waiting for explicit physical inputs: %1").arg(
+                QString::fromStdString(error.message)));
+            appendLog(tr("[CAD] PRELIMINARY MODEL NOT BUILT: %1").arg(
+                QString::fromStdString(error.message)));
+            return;
+        }
+        const auto presentation = p135::cad::buildThreeLimbReactorPresentation(physical.value());
+        if (!presentation) {
+            status->setText(tr("CAD generation failed: %1").arg(
+                QString::fromStdString(presentation.error().message)));
+            appendLog(tr("[CAD] BUILD FAILED: %1").arg(
+                QString::fromStdString(presentation.error().message)));
+            return;
+        }
+        const auto items = p135::cad::collectAssemblyPresentationDisplayItems(presentation.value());
+        if (items.empty()) {
+            status->setText(tr("CAD generation returned no displayable solids."));
+            return;
+        }
+        viewport->setDisplayItems(items);
+        root->setText(1, QStringLiteral("PRELIMINARY"));
+        for (int i = 0; i < root->childCount(); ++i)
+            root->child(i)->setText(1, QStringLiteral("BUILT"));
+        properties->setText(tr(
+            "PRELIMINARY / NOT_VERIFIED. Source: %1; revision: %2. Core segments are simplified solids; "
+            "windings are envelopes, not detailed conductor geometry.")
+            .arg(QString::fromStdString(physical.value().dimensionalSource),
+                 QString::fromStdString(physical.value().dimensionalRevision)));
+        status->setText(tr("Preliminary CAD generated from the current Construction revision. Physical and manufacturing validation remain separate."));
+        generateCad->setEnabled(false);
+        appendLog(tr("[CAD] PRELIMINARY ASSEMBLY BUILT: %1 display solids").arg(items.size()));
+    });
 
     workspace->addWidget(structurePanel);
     workspace->addWidget(viewportPanel);
