@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace p135::cad {
 namespace {
@@ -115,6 +116,68 @@ Error drawingError(ErrorCode code, std::string message, std::string field)
 
 double mm(double metres) { return metres * 1000.0; }
 
+using GapIntervals = std::vector<std::pair<double, double>>;
+
+GapIntervals gapIntervalsFor(
+    const domain::ThreeLimbCorePhysicalGeometry& core,
+    domain::CoreSegment segment)
+{
+    GapIntervals intervals;
+    for (const auto& gap : core.airGaps) {
+        if (gap.segment == segment) {
+            intervals.emplace_back(
+                mm(gap.positionFromSegmentStart.si()),
+                mm(gap.positionFromSegmentStart.si() + gap.length.si()));
+        }
+    }
+    std::sort(intervals.begin(), intervals.end());
+    return intervals;
+}
+
+// A limb is split along its Y axis. In front elevation (X-Y), each air gap
+// interrupts both side edges and is bounded by the two physical cut faces.
+void verticalCoreMember(
+    DxfWriter& dxf, double x, double y, double width, double height,
+    const GapIntervals& gaps)
+{
+    double cursor = 0.0;
+    for (const auto& gap : gaps) {
+        const double start = std::clamp(gap.first, cursor, height);
+        const double end = std::clamp(gap.second, start, height);
+        dxf.line(x, y + cursor, x, y + start, "OUTLINE");
+        dxf.line(x + width, y + cursor, x + width, y + start, "OUTLINE");
+        dxf.line(x, y + start, x + width, y + start, "OUTLINE");
+        dxf.line(x, y + end, x + width, y + end, "OUTLINE");
+        cursor = end;
+    }
+    dxf.line(x, y + cursor, x, y + height, "OUTLINE");
+    dxf.line(x + width, y + cursor, x + width, y + height, "OUTLINE");
+    dxf.line(x, y, x + width, y, "OUTLINE");
+    dxf.line(x, y + height, x + width, y + height, "OUTLINE");
+}
+
+// A yoke is split along its X axis. This helper is used in both front and
+// plan projections so a physical yoke air gap is not drawn as solid material.
+void horizontalCoreMember(
+    DxfWriter& dxf, double x, double y, double width, double height,
+    const GapIntervals& gaps)
+{
+    double cursor = 0.0;
+    for (const auto& gap : gaps) {
+        const double start = std::clamp(gap.first, cursor, width);
+        const double end = std::clamp(gap.second, start, width);
+        dxf.line(x + cursor, y, x + start, y, "OUTLINE");
+        dxf.line(x + cursor, y + height, x + start, y + height, "OUTLINE");
+        dxf.line(x + start, y, x + start, y + height, "OUTLINE");
+        dxf.line(x + end, y, x + end, y + height, "OUTLINE");
+        cursor = end;
+    }
+    dxf.line(x + cursor, y, x + width, y, "OUTLINE");
+    dxf.line(x + cursor, y + height, x + width, y + height, "OUTLINE");
+    dxf.line(x, y, x, y + height, "OUTLINE");
+    dxf.line(x + width, y, x + width, y + height, "OUTLINE");
+}
+
 } // namespace
 
 Result<void> exportReactorAssemblyDxf(
@@ -167,17 +230,30 @@ Result<void> exportReactorAssemblyDxf(
     // rectangular physical envelopes; bobbins/winding are labelled envelopes.
     const double frontX = 25.0, frontY = 285.0;
     dxf.text(frontX, frontY + totalHeight + 12.0, 3.5, "A - FRONT ELEVATION", "ANNOTATION");
-    dxf.rectangle(frontX + xA, frontY + yokeBottom, wA, limbHeight, "OUTLINE");
-    dxf.rectangle(frontX + xB, frontY + yokeBottom, wB, limbHeight, "OUTLINE");
-    dxf.rectangle(frontX + xC, frontY + yokeBottom, wC, limbHeight, "OUTLINE");
-    dxf.rectangle(frontX + xA, frontY + totalHeight - mm(core.yokeThicknesses[0].si()), wA + gapAB + 0.5 * wB,
-        mm(core.yokeThicknesses[0].si()), "OUTLINE");
-    dxf.rectangle(frontX + xB + 0.5 * wB, frontY + totalHeight - mm(core.yokeThicknesses[1].si()),
-        0.5 * wB + gapBC + wC, mm(core.yokeThicknesses[1].si()), "OUTLINE");
-    dxf.rectangle(frontX + xA, frontY, wA + gapAB + 0.5 * wB,
-        mm(core.yokeThicknesses[2].si()), "OUTLINE");
-    dxf.rectangle(frontX + xB + 0.5 * wB, frontY, 0.5 * wB + gapBC + wC,
-        mm(core.yokeThicknesses[3].si()), "OUTLINE");
+    const std::array<domain::CoreSegment, 3> limbSegments{
+        domain::CoreSegment::LimbA, domain::CoreSegment::LimbB, domain::CoreSegment::LimbC};
+    for (std::size_t i = 0; i < limbSegments.size(); ++i) {
+        verticalCoreMember(dxf, frontX + std::array<double, 3>{xA, xB, xC}[i],
+            frontY + yokeBottom, mm(core.limbWidths[i].si()), limbHeight,
+            gapIntervalsFor(core, limbSegments[i]));
+    }
+
+    const double xMid = xB + 0.5 * wB;
+    const std::array<double, 4> yokeX{frontX + xA, frontX + xMid,
+                                      frontX + xA, frontX + xMid};
+    const std::array<double, 4> yokeWidths{xMid - xA, xC + wC - xMid,
+                                           xMid - xA, xC + wC - xMid};
+    const std::array<double, 4> yokeY{
+        frontY + totalHeight - mm(core.yokeThicknesses[0].si()),
+        frontY + totalHeight - mm(core.yokeThicknesses[1].si()),
+        frontY, frontY};
+    const std::array<domain::CoreSegment, 4> yokeSegments{
+        domain::CoreSegment::YokeTopAB, domain::CoreSegment::YokeTopBC,
+        domain::CoreSegment::YokeBottomAB, domain::CoreSegment::YokeBottomBC};
+    for (std::size_t i = 0; i < yokeSegments.size(); ++i) {
+        horizontalCoreMember(dxf, yokeX[i], yokeY[i], yokeWidths[i],
+            mm(core.yokeThicknesses[i].si()), gapIntervalsFor(core, yokeSegments[i]));
+    }
 
     const std::array<double, 3> limbX{xA, xB, xC};
     for (std::size_t phase = 0; phase < 3; ++phase) {
@@ -239,6 +315,27 @@ Result<void> exportReactorAssemblyDxf(
                                       mm(core.limbDepths[2].si()), mm(core.yokeDepths[0].si()),
                                       mm(core.yokeDepths[1].si()), mm(core.yokeDepths[2].si()),
                                       mm(core.yokeDepths[3].si())});
+    // The four yoke footprints are separate physical members and each has
+    // its own stack depth. Their X extents match the OCCT core builder datum.
+    const std::array<double, 4> planYokeX{planX + xA, planX + xMid,
+                                          planX + xA, planX + xMid};
+    const std::array<double, 4> planYokeWidths{xMid - xA, xC + wC - xMid,
+                                               xMid - xA, xC + wC - xMid};
+    const std::array<const char*, 4> planYokeLabels{
+        "YOKE TOP AB PLAN", "YOKE TOP BC PLAN",
+        "YOKE BOTTOM AB PLAN", "YOKE BOTTOM BC PLAN"};
+    const std::array<domain::CoreSegment, 4> planYokeSegments{
+        domain::CoreSegment::YokeTopAB, domain::CoreSegment::YokeTopBC,
+        domain::CoreSegment::YokeBottomAB, domain::CoreSegment::YokeBottomBC};
+    for (std::size_t i = 0; i < planYokeSegments.size(); ++i) {
+        const double depth = mm(core.yokeDepths[i].si());
+        horizontalCoreMember(dxf, planYokeX[i], planY, planYokeWidths[i],
+            depth, gapIntervalsFor(core, planYokeSegments[i]));
+        dxf.text(planYokeX[i], planY + depth + 2.0, 1.8,
+            std::string(planYokeLabels[i]) + " - " + std::to_string(depth) + " mm",
+            "ANNOTATION");
+    }
+
     for (std::size_t phase = 0; phase < 3; ++phase) {
         const double x = limbX[phase];
         const double width = mm(core.limbWidths[phase].si());
@@ -305,11 +402,34 @@ Result<void> exportReactorAssemblyDxf(
         " x " + std::to_string(mm(bobbinB.innerHeight.si())) +
         " mm; wall " + std::to_string(mm(bobbinB.wallThickness.si())) + " mm", "DIMENSIONS");
 
-    // Explicit gap callouts are annotation-only; their exact cut positions are
-    // retained in the source geometry and not inferred from this simplified view.
-    dxf.text(470.0, 80.0, 2.5,
-        "Air-gap records: " + std::to_string(core.airGaps.size()) +
-        " | Joint interfaces: " + std::to_string(core.joints.size()), "ANNOTATION");
+    // List the exact air-gap source records as a traceable schedule. The
+    // front/plan outlines above also show the gaps in the projections where
+    // their cut direction is visible.
+    const auto segmentName = [](domain::CoreSegment segment) -> const char* {
+        switch (segment) {
+        case domain::CoreSegment::LimbA: return "LIMB A";
+        case domain::CoreSegment::LimbB: return "LIMB B";
+        case domain::CoreSegment::LimbC: return "LIMB C";
+        case domain::CoreSegment::YokeTopAB: return "YOKE TOP AB";
+        case domain::CoreSegment::YokeTopBC: return "YOKE TOP BC";
+        case domain::CoreSegment::YokeBottomAB: return "YOKE BOTTOM AB";
+        case domain::CoreSegment::YokeBottomBC: return "YOKE BOTTOM BC";
+        }
+        return "UNKNOWN";
+    };
+    double gapScheduleY = 112.0;
+    dxf.text(470.0, gapScheduleY, 2.5,
+        "AIR GAP SCHEDULE (" + std::to_string(core.airGaps.size()) + ")", "ANNOTATION");
+    gapScheduleY -= 6.0;
+    for (const auto& gap : core.airGaps) {
+        dxf.text(470.0, gapScheduleY, 1.8,
+            std::string(segmentName(gap.segment)) + " - position " +
+            std::to_string(mm(gap.positionFromSegmentStart.si())) + " mm; length " +
+            std::to_string(mm(gap.length.si())) + " mm", "ANNOTATION");
+        gapScheduleY -= 4.5;
+    }
+    dxf.text(470.0, gapScheduleY - 2.0, 2.0,
+        "Joint interfaces: " + std::to_string(core.joints.size()), "ANNOTATION");
     dxf.text(470.0, 72.0, 2.0,
         "Core and winding outlines are physical envelopes; no conductor detail, tolerances or BOM are implied.", "ANNOTATION");
 
