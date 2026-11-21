@@ -16,6 +16,8 @@
 #include <QStringList>
 #include <QWidget>
 
+#include <optional>
+
 class DesktopWorkflowE2ETests final : public QObject
 {
     Q_OBJECT
@@ -149,6 +151,34 @@ private slots:
         auto* results = window_->findChild<QTableWidget*>(QStringLiteral("calculationResultsTable"));
         QVERIFY2(results, "Calculation results table was not created");
         QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
+
+        // TEST-01 numeric regression: 400 V L-L, 50 Hz, 100 kvar, Wye,
+        // 5th-harmonic tuning and Qf=50. These values are calculated from
+        // the independent series-RLC sizing equations, not copied from UI text.
+        const auto resultValue = [results](const QString& label) -> std::optional<double> {
+            for (int row = 0; row < results->rowCount(); ++row) {
+                const auto* name = results->item(row, 0);
+                const auto* value = results->item(row, 1);
+                if (!name || !value || name->text() != label) continue;
+                bool parsed = false;
+                const double number = value->text().toDouble(&parsed);
+                if (parsed) return number;
+                return std::nullopt;
+            }
+            return std::nullopt;
+        };
+        const auto phaseVoltage = resultValue(QStringLiteral("Phase RMS voltage"));
+        const auto capacitance = resultValue(QStringLiteral("Capacitance per phase"));
+        const auto inductance = resultValue(QStringLiteral("Inductance per phase"));
+        const auto resistance = resultValue(QStringLiteral("Series damping resistance"));
+        QVERIFY2(phaseVoltage.has_value(), "TEST-01 phase voltage result is missing or non-numeric");
+        QVERIFY2(capacitance.has_value(), "TEST-01 capacitance result is missing or non-numeric");
+        QVERIFY2(inductance.has_value(), "TEST-01 inductance result is missing or non-numeric");
+        QVERIFY2(resistance.has_value(), "TEST-01 damping resistance result is missing or non-numeric");
+        QVERIFY(qAbs(*phaseVoltage - 230.9401077) <= 0.01);
+        QVERIFY(qAbs(*capacitance - 1909.892474) <= 0.1);
+        QVERIFY(qAbs(*inductance - 0.212202907) <= 0.00001);
+        QVERIFY(qAbs(*resistance - 0.006666551) <= 0.000001);
 
         auto* confirmCalculation = window_->findChild<QPushButton*>(
             QStringLiteral("confirmCalculationDesign"));
