@@ -4248,6 +4248,8 @@ QWidget* MainWindow::createCadPage()
         // beside the project workspace. Manual export actions remain available.
         const QString cadDirectory = QDir(projectOutputRoot()).filePath(QStringLiteral("CAD"));
         const QString drawingDirectory = QDir(projectOutputRoot()).filePath(QStringLiteral("Drawings"));
+        bool automaticStepSaved = false;
+        bool automaticPdfSaved = false;
         const bool cadDirectoryReady = QDir().mkpath(cadDirectory);
         const bool drawingDirectoryReady = QDir().mkpath(drawingDirectory);
         if (!cadDirectoryReady || !drawingDirectoryReady) {
@@ -4258,6 +4260,7 @@ QWidget* MainWindow::createCadPage()
             const QString stepPath = QDir(cadDirectory).filePath(projectId_ + QStringLiteral("_assembly.step"));
             const auto stepResult = p135::cad::exportAssemblyStep(*assemblyModel, stepPath.toStdString());
             if (stepResult) {
+                automaticStepSaved = true;
                 appendLog(tr("[ARTIFACT] STEP AUTO-SAVED: %1").arg(stepPath));
             } else {
                 appendLog(tr("[ARTIFACT] STEP AUTO-SAVE FAILED: %1").arg(
@@ -4266,6 +4269,7 @@ QWidget* MainWindow::createCadPage()
             const QString pdfPath = QDir(drawingDirectory).filePath(projectId_ + QStringLiteral("_assembly.pdf"));
             QString pdfError;
             if (exportReactorAssemblyPdf(physical.value(), pdfPath, &pdfError)) {
+                automaticPdfSaved = true;
                 appendLog(tr("[ARTIFACT] PDF AUTO-SAVED: %1").arg(pdfPath));
             } else {
                 appendLog(tr("[ARTIFACT] PDF AUTO-SAVE FAILED: %1").arg(pdfError));
@@ -4279,7 +4283,9 @@ QWidget* MainWindow::createCadPage()
             "windings are envelopes, not detailed conductor geometry.")
             .arg(QString::fromStdString(physical.value().dimensionalSource),
                  QString::fromStdString(physical.value().dimensionalRevision)));
-        status->setText(tr("Preliminary CAD generated. Automatic STEP/PDF outputs are written under C:/Temp/trdos/135. Physical and manufacturing validation remain separate."));
+        status->setText(tr("Preliminary CAD generated. Automatic STEP: %1; PDF: %2. Output root: C:/Temp/trdos/135. Physical and manufacturing validation remain separate.")
+            .arg(automaticStepSaved ? tr("saved") : tr("FAILED — see log"),
+                 automaticPdfSaved ? tr("saved") : tr("FAILED — see log")));
         generateCad->setEnabled(false);
         exportStep->setEnabled(true);
         exportDrawing->setEnabled(true);
