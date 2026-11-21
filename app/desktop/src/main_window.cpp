@@ -2233,6 +2233,8 @@ QWidget* MainWindow::createConstructionPage()
         addBobbinLength(QStringLiteral("construction_bobbinFlangeOuterWidth_") + suffix,
             tr("Bobbin %1 flange outer width").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_bobbinFlangeOuterHeight_") + suffix,
+        addCoreLength(QStringLiteral("construction_bobbinWindingClearance_") + suffix,
+            tr("Bobbin winding clearance"));
             tr("Bobbin %1 flange outer height").arg(phaseName));
         addBobbinLength(QStringLiteral("construction_windingRadialBuild_") + suffix,
             tr("Winding %1 radial build").arg(phaseName));
@@ -3925,6 +3927,7 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.bobbinFlangeThicknessesM = collectPhaseArray(QStringLiteral("construction_bobbinFlangeThickness_"));
     inputs.bobbinFlangeOuterWidthsM = collectPhaseArray(QStringLiteral("construction_bobbinFlangeOuterWidth_"));
     inputs.bobbinFlangeOuterHeightsM = collectPhaseArray(QStringLiteral("construction_bobbinFlangeOuterHeight_"));
+    inputs.bobbinWindingClearancesM = collectPhaseArray(QStringLiteral("construction_bobbinWindingClearance_"));
     inputs.windingRadialBuildsM = collectPhaseArray(QStringLiteral("construction_windingRadialBuild_"));
     inputs.windingAxialHeightsM = collectPhaseArray(QStringLiteral("construction_windingAxialHeight_"));
     inputs.windingEndClearancesM = collectPhaseArray(QStringLiteral("construction_windingEndClearance_"));
