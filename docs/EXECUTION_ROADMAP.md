@@ -84,7 +84,8 @@
 - [x] Desktop сохраняет типизированный `ReactorDesignInputs` как принятую Construction-ревизию после подтверждения; CAD использует именно этот захваченный набор. Любое изменение Construction или загрузка другого проекта сбрасывает принятую ревизию.
 - [x] Добавлен core-only adapter: магнитная модель получает `ThreeLimbCorePhysicalGeometry` из принятых Construction размеров, joint/Step-Lap и air-gap записей без зависимости от CAD-only bobbin/winding envelope.
 - [x] Desktop вызывает revision-bound magnetic-cycle bridge для принятой ревизии и точного `coreMaterial.revisionId`, используя harmonic currents выбранной filter branch и `turnsPerPhase`. Отсутствующая/неподтверждённая B-H кривая и выход за её диапазон явно дают `NOT_VERIFIED`; ручные legacy Ae/le поля не используются в этом новом пути.
-- [ ] Windows build/E2E и сценарий UI с выбранным материалом/Construction ещё должны быть подтверждены пользователем.
+- [x] Пользователь подтвердил Windows/MSVC Debug build и пять целевых тестов: ReactorDesignInputs, PhysicalFilterReactorMagnetic, RevisionBoundPhysicalFilterMagnetic, MagneticOperatingPointStageAdapter и DesktopWorkflowE2E (5/5 PASS, 40.70 s). Desktop E2E закрепляет точные material revision IDs и Construction fixture для CAD, но ещё не запускает revision-bound magnetic UI path с подтверждёнными source impedance и harmonic branch currents.
+- [ ] Добавить отдельный Windows UI E2E сценарий, который запускает revision-bound magnetic path с явным source impedance и harmonic currents; проверить ожидаемый NOT_VERIFIED для M235-35A без табулированной B-H кривой и отсутствие ложного Bmax.
 - [ ] Построить input fingerprint и dependency plan из изменённых входов.
 - [ ] Подключить реальные stage adapters к существующим магнитным, winding, loss и thermal use cases.
 - [ ] Не отмечать stage Valid, если он вернул placeholder или отсутствуют обязательные источники.
