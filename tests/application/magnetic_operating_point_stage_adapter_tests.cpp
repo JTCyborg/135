@@ -1,6 +1,8 @@
 #include "p135/application/magnetic_operating_point_stage_adapter.hpp"
 
+#include <array>
 #include <cassert>
+#include <complex>
 #include <string>
 
 using namespace p135;
