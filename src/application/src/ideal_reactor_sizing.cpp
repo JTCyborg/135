@@ -31,7 +31,9 @@ Result<IdealReactorSizingResult> calculateIdealReactorAreaProduct(
     if (request.stackingFactor > 1.0)
         return invalid("Stacking factor must be in the interval (0, 1].");
 
-    const double effectiveAreaProduct = request.inductanceH * request.peakCurrentA *
+    // Three-limb, three-phase reactor: each of the two core windows carries
+    // two winding packs. The window copper constraint therefore contributes 2*N*Irms.
+    const double effectiveAreaProduct = 2.0 * request.inductanceH * request.peakCurrentA *
         request.rmsCurrentA / (request.allowablePeakFluxDensityT *
         request.allowableCurrentDensityApm2 * request.windowUtilization);
     const double grossAreaProduct = effectiveAreaProduct / request.stackingFactor;
