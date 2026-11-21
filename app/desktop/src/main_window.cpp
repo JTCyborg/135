@@ -5271,11 +5271,15 @@ void MainWindow::calculateFilter()
                 double maximumFluxDensity = 0.0;
                 for (const auto& density : cycle.peakAbsoluteFluxDensity)
                     maximumFluxDensity = std::max(maximumFluxDensity, density.si());
-                appendLog(tr("[MAGNETIC] PASS — Construction %1; material %2; max |B|=%3 T; samples=%4.")
+                const QString magneticState = cycle.converged
+                    ? tr("PASS") : tr("NOT_VERIFIED — peak flux density did not converge to the requested tolerance");
+                appendLog(tr("[MAGNETIC] %1 — Construction %2; material %3; max |B|=%4 T; samples=%5; relative peak change=%6.")
+                    .arg(magneticState)
                     .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
                     .arg(QString::fromStdString(magnetic.value().materialRevision.revisionId))
                     .arg(maximumFluxDensity, 0, 'g', 7)
-                    .arg(static_cast<qulonglong>(cycle.samplesUsed)));
+                    .arg(static_cast<qulonglong>(cycle.samplesUsed))
+                    .arg(cycle.relativePeakChange, 0, 'g', 6));
             }
         }
     } else if (acceptedPhysicalMagneticCandidate) {
