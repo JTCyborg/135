@@ -80,6 +80,10 @@ int main()
     extrapolated.magneticAnalysis.magneticCycle.withinBhCurveRange = false;
     assert(!makeMagneticOperatingPointStageArtifact(request, extrapolated));
 
+    auto injectedProvenance = request;
+    injectedProvenance.dimensionalSource = "drawing\\nforged_key=value";
+    assert(!makeMagneticOperatingPointStageArtifact(injectedProvenance, result));
+
     auto missingProvenance = request;
     missingProvenance.dimensionalRevision.clear();
     assert(!makeMagneticOperatingPointStageArtifact(missingProvenance, result));
