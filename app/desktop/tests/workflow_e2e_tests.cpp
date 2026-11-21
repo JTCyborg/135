@@ -527,13 +527,13 @@ private slots:
             coreFluxPlot, historyPlot
         };
         for (std::size_t i = 0; i < plotFiles.size(); ++i) {
-            QVERIFY2(plotFiles[i].exists() && plotFiles[i].size() > 100,
-                "A Debug plot PNG was not automatically saved.");
             QVERIFY(plotWidgets[i]);
-            // The plot capture is intentionally deferred out of resizeEvent().
-            // Wait until the last layout-driven resize has produced its PNG;
-            // otherwise this check can observe a valid but stale earlier size.
+            // Capture is debounced out of resizeEvent(). Wait for the PNG to
+            // exist and match the final widget geometry before asserting it;
+            // checking exists() first races the deferred save.
             QTRY_VERIFY_WITH_TIMEOUT(([&] {
+                if (!plotFiles[i].exists() || plotFiles[i].size() <= 100)
+                    return false;
                 const QImage latestImage(plotFiles[i].absoluteFilePath());
                 return !latestImage.isNull() &&
                     latestImage.size() == plotWidgets[i]->size();
