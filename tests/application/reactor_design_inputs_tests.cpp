@@ -43,6 +43,8 @@ int main()
     inputs.layerInsulationBuildM = 0.2e-3;
     inputs.mainInsulationBuildM = 1.0e-3;
     assert(validate(inputs));
+    // CAD conversion must fail closed until all explicit geometry is supplied.
+    assert(!makeReactorPhysicalGeometry(inputs, "test-reactor"));
 
     const auto accepted = inputs;
     assert(!requiresRecalculation(inputs, accepted));
@@ -110,6 +112,7 @@ int main()
     inputs.bobbinFlangeThicknessesM = std::array<double, 3>{0.003, 0.003, 0.003};
     inputs.bobbinFlangeOuterWidthsM = std::array<double, 3>{0.056, 0.066, 0.056};
     inputs.bobbinFlangeOuterHeightsM = std::array<double, 3>{0.136, 0.136, 0.136};
+    inputs.bobbinWindingClearancesM = std::array<double, 3>{0.001, 0.001, 0.001};
     inputs.windingRadialBuildsM = std::array<double, 3>{0.02, 0.02, 0.02};
     inputs.windingAxialHeightsM = std::array<double, 3>{0.16, 0.16, 0.16};
     inputs.windingEndClearancesM = std::array<double, 3>{0.01, 0.01, 0.01};
@@ -148,6 +151,9 @@ int main()
     assert(requiresRecalculation(inputs, physicalAccepted));
     inputs = physicalAccepted;
     inputs.bobbinFlangeThicknessesM = std::array<double, 3>{0.004, 0.003, 0.003};
+    assert(requiresRecalculation(inputs, physicalAccepted));
+    inputs = physicalAccepted;
+    inputs.bobbinWindingClearancesM = std::array<double, 3>{0.002, 0.001, 0.001};
     assert(requiresRecalculation(inputs, physicalAccepted));
     inputs = physicalAccepted;
     inputs.coreJointConstructions = std::array<std::string, 8>{
