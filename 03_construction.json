@@ -1,6 +1,6 @@
 {
     "buildConfiguration": "Debug",
-    "confirmedAtUtc": "2026-11-21T08:08:21.208Z",
+    "confirmedAtUtc": "2026-11-21T08:45:31.103Z",
     "fieldLabels": {
         "construction_ambient": "Ambient temperature",
         "construction_bobbinMaterial": "Bobbin material",
@@ -58,7 +58,7 @@
         "construction_conductorShape": "NOT_PROVIDED",
         "construction_conductorThickness": "NOT_PROVIDED",
         "construction_conductorWidth": "NOT_PROVIDED",
-        "construction_cooling": "natural-air",
+        "construction_cooling": "NOT_PROVIDED",
         "construction_coreGeometry": "NOT_PROVIDED",
         "construction_coreMaterial": "SEED-TK-M235-35A-R1",
         "construction_insulationMaterial": "SEED-MAT-DUPONT-NOMEX-410-50UM-R1",
@@ -74,16 +74,16 @@
         "construction_windingTechnology": "NOT_PROVIDED"
     },
     "lineage": {
-        "constructionAmbientSource": "INHERITED_FROM_PROJECT: Project.ambientC",
-        "constructionCoolingSource": "INHERITED_FROM_PROJECT: Project.coolingMethod",
+        "constructionAmbientSource": "USER_OVERRIDE",
+        "constructionCoolingSource": "USER_OVERRIDE",
         "filterBranchId": 1,
-        "filterSnapshotId": "8f73a8df-6e1b-4e28-8cc4-98a50bf01a09",
+        "filterSnapshotId": "8e7bb408-f666-4f85-b4ee-7c65e1a44633",
         "maximumWindingTemperatureStatus": "NOT_PROVIDED",
         "physicalSizingStatus": "NOT_CONNECTED_TO_SOLVER",
         "projectInsulationClass": "F (155 °C)"
     },
     "physicalSizingStatus": "NOT_CONNECTED_TO_SOLVER",
-    "projectId": "8eaf90c7-5e4a-4d22-b8d7-202611201120",
+    "projectId": "5469ef97-1956-40d2-8555-a8968bfe7af7",
     "schemaVersion": 1,
     "tabId": "construction",
     "tabTitle": "Construction"
