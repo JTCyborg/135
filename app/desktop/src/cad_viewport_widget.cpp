@@ -20,6 +20,7 @@
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
+#include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
 #include <AIS_SelectionScheme.hxx>
 #include <Aspect_DisplayConnection.hxx>
