@@ -99,6 +99,11 @@ struct WindingPackPhysicalGeometry {
 
 struct ReactorPhysicalGeometry {
     std::string productId;
+    // Pinned catalog revisions are presentation provenance as well as design inputs.
+    // Empty means no explicit revision was selected; consumers must not infer one.
+    std::string coreMaterialRevisionId;
+    std::string conductorMaterialRevisionId;
+    std::string insulationMaterialRevisionId;
     ThreeLimbCorePhysicalGeometry core;
     std::array<BobbinPhysicalGeometry, 3> bobbins{};
     std::array<WindingPackPhysicalGeometry, 3> windingPacks{};
