@@ -55,14 +55,74 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
     if (!positiveFinite(request.stackingFactor) || request.stackingFactor > 1.0 ||
         request.filterMagnetic.filterBranchId == 0 || !validTurns || !validBhCurve ||
         !singleLine(request.dimensionalSource) || !singleLine(request.dimensionalRevision) ||
-        !singleLine(material.id) || !singleLine(material.manufacturer) ||
-        !singleLine(material.grade) || !singleLine(material.sourceReference) ||
+        !singleLine(material.id) || !singleLineOrEmpty(material.manufacturer) ||
+        !singleLineOrEmpty(material.grade) || !singleLine(material.sourceReference) ||
         !singleLine(material.datasetRevision) || !singleLineOrEmpty(material.lossDataReference) ||
         !singleLine(request.physicalCore.laminationConstruction) ||
         result.magneticAnalysis.filterBranchId != request.filterMagnetic.filterBranchId ||
         material.id.empty() || material.sourceReference.empty() || material.datasetRevision.empty())
         return Result<std::string>::failure(invalidArtifact(
             "Magnetic operating point requires a valid stacking factor, matching filter branch and revision-bound B-H material."));
+
+    const auto expectedGeometry = domain::buildThreeLimbMagneticGeometry(
+        request.physicalCore, request.stackingFactor);
+    if (!expectedGeometry)
+        return Result<std::string>::failure(expectedGeometry.error());
+    const auto sameValue = [](double lhs, double rhs) {
+        return std::abs(lhs - rhs) <= 1.0e-12 * std::max({1.0, std::abs(lhs), std::abs(rhs)});
+    };
+    const auto& expected = expectedGeometry.value();
+    const auto& actual = result.effectiveMagneticGeometry;
+    if (!sameValue(expected.limbEffectiveArea.si(), actual.limbEffectiveArea.si()) ||
+        !sameValue(expected.limbMeanPath.si(), actual.limbMeanPath.si()) ||
+        !sameValue(expected.limbAirGap.si(), actual.limbAirGap.si()) ||
+        !sameValue(expected.yokeEffectiveArea.si(), actual.yokeEffectiveArea.si()) ||
+        !sameValue(expected.yokeSegmentPath.si(), actual.yokeSegmentPath.si()))
+        return Result<std::string>::failure(invalidArtifact(
+            "Magnetic operating point geometry does not match the supplied physical core revision."));
+    for (std::size_t i = 0; i < expected.limbEffectiveAreas.size(); ++i) {
+        const auto equalOptional = [&sameValue](const auto& lhs, const auto& rhs) {
+            return lhs.has_value() == rhs.has_value() &&
+                   (!lhs || sameValue(lhs->si(), rhs->si()));
+        };
+        if (!equalOptional(expected.limbEffectiveAreas[i], actual.limbEffectiveAreas[i]) ||
+            !equalOptional(expected.limbMeanPaths[i], actual.limbMeanPaths[i]) ||
+            !equalOptional(expected.limbAirGaps[i], actual.limbAirGaps[i]) ||
+            !equalOptional(expected.limbGapEffectiveAreas[i], actual.limbGapEffectiveAreas[i]))
+            return Result<std::string>::failure(invalidArtifact(
+                "Magnetic operating point limb geometry does not match the supplied physical core revision."));
+    }
+    for (std::size_t i = 0; i < expected.yokeEffectiveAreas.size(); ++i) {
+        if (expected.yokeEffectiveAreas[i].has_value() != actual.yokeEffectiveAreas[i].has_value() ||
+            (expected.yokeEffectiveAreas[i] &&
+             !sameValue(expected.yokeEffectiveAreas[i]->si(), actual.yokeEffectiveAreas[i]->si())) ||
+            expected.yokeSegmentPaths[i].has_value() != actual.yokeSegmentPaths[i].has_value() ||
+            (expected.yokeSegmentPaths[i] &&
+             !sameValue(expected.yokeSegmentPaths[i]->si(), actual.yokeSegmentPaths[i]->si())))
+            return Result<std::string>::failure(invalidArtifact(
+                "Magnetic operating point yoke geometry does not match the supplied physical core revision."));
+    }
+
+    std::vector<const filter::BranchHarmonicPoint*> selectedPoints;
+    for (const auto& point : request.filterMagnetic.harmonicAnalysis.branchPoints) {
+        if (point.branchId == request.filterMagnetic.filterBranchId)
+            selectedPoints.push_back(&point);
+    }
+    if (selectedPoints.size() != result.magneticAnalysis.excitations.size())
+        return Result<std::string>::failure(invalidArtifact(
+            "Magnetic operating point excitation count does not match the selected filter branch."));
+    for (const auto& excitation : result.magneticAnalysis.excitations) {
+        const auto point = std::find_if(selectedPoints.begin(), selectedPoints.end(),
+            [&excitation](const auto* candidate) { return candidate->order == excitation.order; });
+        if (point == selectedPoints.end())
+            return Result<std::string>::failure(invalidArtifact(
+                "Magnetic operating point harmonic orders do not match the selected filter branch."));
+        for (std::size_t phase = 0; phase < 3; ++phase) {
+            if ((*point)->phaseCurrentRms[phase] != excitation.phaseRmsPhasors[phase])
+                return Result<std::string>::failure(invalidArtifact(
+                    "Magnetic operating point phase-current phasors do not match the selected filter branch revision."));
+        }
+    }
 
     const auto& cycle = result.magneticAnalysis.magneticCycle;
     if (!cycle.converged || !cycle.withinBhCurveRange || cycle.samplesUsed < 72 ||
