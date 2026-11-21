@@ -180,6 +180,18 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
             return Result<std::string>::failure(invalidArtifact(
                 "Magnetic operating point contains a zero-order AC excitation."));
         output << "excitation." << i << ".order=" << excitation.order << '\n';
+        const auto sourcePoint = std::find_if(
+            request.filterMagnetic.harmonicAnalysis.branchPoints.begin(),
+            request.filterMagnetic.harmonicAnalysis.branchPoints.end(),
+            [&request, &excitation](const auto& point) {
+                return point.branchId == request.filterMagnetic.filterBranchId &&
+                       point.order == excitation.order;
+            });
+        if (sourcePoint == request.filterMagnetic.harmonicAnalysis.branchPoints.end() ||
+            !std::isfinite(sourcePoint->frequency.si()) || sourcePoint->frequency.si() <= 0.0)
+            return Result<std::string>::failure(invalidArtifact(
+                "Magnetic operating point is missing the source frequency for a harmonic excitation."));
+        output << "excitation." << i << ".frequency_Hz=" << sourcePoint->frequency.si() << '\n';
         for (std::size_t phase = 0; phase < 3; ++phase) {
             const auto value = excitation.phaseRmsPhasors[phase];
             if (!std::isfinite(value.real()) || !std::isfinite(value.imag()))
