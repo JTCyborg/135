@@ -86,6 +86,7 @@
 #include <QTableWidgetItem>
 #include <QToolBar>
 #include <QToolButton>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QFileInfo>
@@ -338,7 +339,7 @@ public:
     {
 #if defined(_DEBUG) || !defined(NDEBUG)
         setProperty("debugImagePath", std::move(path));
-        saveDebugImage();
+        scheduleDebugImageSave();
 #else
         Q_UNUSED(path);
 #endif
@@ -362,7 +363,7 @@ public:
         setProperty("plotCurves", serializedCurves);
         update();
 #if defined(_DEBUG) || !defined(NDEBUG)
-        saveDebugImage();
+        scheduleDebugImageSave();
 #endif
     }
 
@@ -381,12 +382,34 @@ public:
 
 private:
 #if defined(_DEBUG) || !defined(NDEBUG)
+    bool debugImageSavePending_{};
+    bool savingDebugImage_{};
+
+    void scheduleDebugImageSave()
+    {
+        if (debugImageSavePending_ || savingDebugImage_) return;
+        debugImageSavePending_ = true;
+        QTimer::singleShot(0, this, [this] {
+            debugImageSavePending_ = false;
+            saveDebugImage();
+        });
+    }
+
     void saveDebugImage()
     {
+        if (savingDebugImage_) return;
         const QString path = property("debugImagePath").toString();
         if (path.isEmpty() || width() < 120 || height() < 100) return;
         const QFileInfo info(path);
         if (!QDir().mkpath(info.absolutePath())) return;
+        // QWidget::render() can synchronously deliver resize events. Keep the
+        // capture guarded so those events cannot recursively start another capture.
+        savingDebugImage_ = true;
+        struct SaveGuard {
+            bool& active;
+            ~SaveGuard() { active = false; }
+        } saveGuard{savingDebugImage_};
+
         QImage image(size(), QImage::Format_ARGB32_Premultiplied);
         image.fill(palette().color(QPalette::Base));
         QPainter imagePainter(&image);
@@ -412,7 +435,7 @@ protected:
         // Plot widgets are laid out after their initial data is assigned.
         // Save again at the final on-screen size so the artifact is not a
         // stale first-layout placeholder.
-        saveDebugImage();
+        scheduleDebugImageSave();
 #endif
     }
 
