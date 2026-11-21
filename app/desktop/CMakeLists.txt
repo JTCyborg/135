@@ -119,6 +119,45 @@ if(P135_BUILD_TESTS)
         "${CMAKE_BINARY_DIR}/bin/tests/migrations/002_calculation_snapshots.sql"
         COPYONLY
     )
+    # Deploy the same runtime dependencies for the E2E executable as for the
+    # desktop application. CTest launches the test from its own output directory,
+    # so deploying only Project135 leaves Qt/OCCT/vcpkg DLLs unavailable and
+    # causes Windows loader error 0xc0000135 before QtTest can start.
+    if(WIN32)
+        add_custom_command(TARGET Project135DesktopWorkflowE2ETests POST_BUILD
+            COMMAND "${P135_WINDEPLOYQT_EXECUTABLE}"
+                --no-translations
+                $<$<CONFIG:Debug>:--debug>
+                "$<TARGET_FILE:Project135DesktopWorkflowE2ETests>"
+            COMMENT "Deploying Qt runtime for desktop workflow E2E tests"
+            VERBATIM
+        )
+
+        # The test uses the offscreen platform plugin rather than qwindows.
+        set(P135_QT_PLATFORMS_DIR "${Qt6_DIR}/../../../plugins/platforms")
+        add_custom_command(TARGET Project135DesktopWorkflowE2ETests POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E make_directory
+                "$<TARGET_FILE_DIR:Project135DesktopWorkflowE2ETests>/platforms"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${P135_QT_PLATFORMS_DIR}/qoffscreen.dll"
+                "$<TARGET_FILE_DIR:Project135DesktopWorkflowE2ETests>/platforms/qoffscreen.dll"
+            COMMENT "Deploying Qt offscreen platform plugin for desktop workflow E2E tests"
+            VERBATIM
+        )
+
+        # Include vcpkg runtime DLLs (SQLite, OpenSSL and OCCT TK* DLLs).
+        if(VCPKG_INSTALLED_DIR AND VCPKG_TARGET_TRIPLET)
+            set(P135_VCPKG_TRIPLET_ROOT "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+            add_custom_command(TARGET Project135DesktopWorkflowE2ETests POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_directory
+                    "$<IF:$<CONFIG:Debug>,${P135_VCPKG_TRIPLET_ROOT}/debug/bin,${P135_VCPKG_TRIPLET_ROOT}/bin>"
+                    "$<TARGET_FILE_DIR:Project135DesktopWorkflowE2ETests>"
+                COMMENT "Deploying vcpkg runtime for desktop workflow E2E tests"
+                VERBATIM
+            )
+        endif()
+    endif()
+
     add_test(NAME Project135DesktopWorkflowE2ETests
         COMMAND Project135DesktopWorkflowE2ETests)
     set_tests_properties(Project135DesktopWorkflowE2ETests PROPERTIES
