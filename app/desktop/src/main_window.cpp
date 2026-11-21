@@ -1031,7 +1031,24 @@ QWidget* MainWindow::createProjectPage()
     connect(engineer, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
     connect(projectDate, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
     connect(revision, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
-    connect(ambient, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
+    connect(ambient, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
+        if (loadingProjectSettings_) return;
+        saveProjectSettings();
+        QSettings settings;
+        settings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/filter"));
+        const bool manuallyOverridden =
+            settings.value(QStringLiteral("thermalAmbientSource")).toString() == QStringLiteral("MANUAL");
+        if (!manuallyOverridden && ambientTemperature_) {
+            {
+                const QSignalBlocker blocker(ambientTemperature_);
+                ambientTemperature_->setValue(value);
+            }
+            settings.setValue(QStringLiteral("thermalAmbientC"), value);
+            settings.setValue(QStringLiteral("thermalAmbientSource"), QStringLiteral("INHERITED_FROM_PROJECT"));
+        }
+        settings.endGroup();
+        if (!manuallyOverridden) saveProjectSettings();
+    });
     connect(altitude, qOverload<int>(&QSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
     connect(insulationClass, &QComboBox::currentIndexChanged, this, [this] { saveProjectSettings(); });
     connect(ipRating, &QComboBox::currentIndexChanged, this, [this] { saveProjectSettings(); });
