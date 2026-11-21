@@ -4447,7 +4447,9 @@ void MainWindow::markConstructionInputsChanged()
              objectName.startsWith(QStringLiteral("construction_airGapCount_")) ||
              objectName.startsWith(QStringLiteral("construction_totalAirGap_")) ||
              objectName.startsWith(QStringLiteral("construction_airGapPosition_")) ||
-             objectName.startsWith(QStringLiteral("construction_airGapLength_")))
+             objectName.startsWith(QStringLiteral("construction_airGapLength_")) ||
+             objectName.startsWith(QStringLiteral("construction_yokeAirGapPosition_")) ||
+             objectName.startsWith(QStringLiteral("construction_yokeAirGapLength_")))
         stage = QStringLiteral("input.core.physical_geometry");
     else if (objectName.startsWith(QStringLiteral("construction_coreJoint_")))
         stage = QStringLiteral("input.core.joints");
