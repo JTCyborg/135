@@ -509,3 +509,17 @@ if(MSVC)
 else()
     target_compile_options(Project135FilterExcitationStageAdapterTests PRIVATE -UNDEBUG)
 endif()
+
+add_executable(Project135MagneticOperatingPointStageAdapterTests
+    application/magnetic_operating_point_stage_adapter_tests.cpp
+)
+target_link_libraries(Project135MagneticOperatingPointStageAdapterTests PRIVATE
+    Project135::Application Project135::Domain
+)
+add_test(NAME Project135MagneticOperatingPointStageAdapterTests
+    COMMAND Project135MagneticOperatingPointStageAdapterTests)
+if(MSVC)
+    target_compile_options(Project135MagneticOperatingPointStageAdapterTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135MagneticOperatingPointStageAdapterTests PRIVATE -UNDEBUG)
+endif()
