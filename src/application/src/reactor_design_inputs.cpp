@@ -115,10 +115,28 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         (!std::isfinite(*inputs.coreOverallWidthM) || *inputs.coreOverallWidthM <= 0.0))
         return invalid("Core overall width must be finite and greater than zero.");
     if (inputs.coreJointConstructions) {
-        for (const auto& construction : *inputs.coreJointConstructions) {
+        for (std::size_t joint = 0; joint < inputs.coreJointConstructions->size(); ++joint) {
+            const auto& construction = (*inputs.coreJointConstructions)[joint];
             if (construction != "butt" && construction != "step-lap")
                 return invalid("Each core joint must explicitly select a supported construction type.");
+            const auto& packets = inputs.coreJointStepLapPackets[joint];
+            if (construction == "butt" && !packets.empty())
+                return invalid("Butt joints cannot contain Step-Lap packet records.");
+            if (construction == "step-lap" && packets.empty())
+                return invalid("Every Step-Lap joint requires an explicit packet schedule.");
+            for (const auto& packet : packets) {
+                if (!std::isfinite(packet.stackDepthOffsetM) || packet.stackDepthOffsetM < 0.0 ||
+                    !std::isfinite(packet.stackDepthM) || packet.stackDepthM <= 0.0 ||
+                    !std::isfinite(packet.overlapIntoLimbM) || packet.overlapIntoLimbM <= 0.0 ||
+                    !std::isfinite(packet.overlapIntoYokeM) || packet.overlapIntoYokeM <= 0.0 ||
+                    (packet.direction != "limb-into-yoke" && packet.direction != "yoke-into-limb"))
+                    return invalid("Each Step-Lap packet requires finite positive geometry and an explicit alternating direction.");
+            }
         }
+    } else {
+        for (const auto& packets : inputs.coreJointStepLapPackets)
+            if (!packets.empty())
+                return invalid("Step-Lap packet schedules require all eight joint construction selectors.");
     }
     if (inputs.airGapCountPerLimb && inputs.totalAirGapLengthPerLimbM) {
         for (std::size_t i = 0; i < 3; ++i) {
@@ -233,6 +251,7 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.coreOverallHeightM != accepted.coreOverallHeightM ||
            current.coreOverallWidthM != accepted.coreOverallWidthM ||
            current.coreJointConstructions != accepted.coreJointConstructions ||
+           current.coreJointStepLapPackets != accepted.coreJointStepLapPackets ||
            current.airGapCountPerLimb != accepted.airGapCountPerLimb ||
            current.totalAirGapLengthPerLimbM != accepted.totalAirGapLengthPerLimbM ||
            current.airGaps != accepted.airGaps ||
