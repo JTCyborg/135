@@ -158,6 +158,10 @@ struct MaterialRecommendationSet {
 };
 
 [[nodiscard]] Result<void> validate(const ReactorDesignInputs& inputs);
+/// Extracts only the explicitly specified laminated core geometry for magnetic analysis.
+/// Unlike the CAD adapter, this does not require bobbin/winding envelope inputs.
+[[nodiscard]] Result<domain::ThreeLimbCorePhysicalGeometry>
+makeThreeLimbCorePhysicalGeometry(const ReactorDesignInputs& inputs);
 // Converts only explicit, complete physical dimensions. Missing inputs are errors;
 // electrical effective Ae/Aw/le values are never used as CAD dimensions.
 [[nodiscard]] Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
