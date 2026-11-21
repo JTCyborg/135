@@ -130,6 +130,7 @@ if(P135_BUILD_TESTS)
                 $<$<CONFIG:Debug>:--debug>
                 "$<TARGET_FILE:Project135DesktopWorkflowE2ETests>"
             COMMENT "Deploying Qt runtime for desktop workflow E2E tests"
+            COMMAND_EXPAND_LISTS
             VERBATIM
         )
 
