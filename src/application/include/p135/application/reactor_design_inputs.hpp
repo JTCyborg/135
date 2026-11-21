@@ -105,6 +105,9 @@ struct ReactorDesignInputs {
     std::optional<std::array<double, 3>> bobbinInnerHeightsM;
     std::optional<std::array<double, 3>> bobbinAxialLengthsM;
     std::optional<std::array<double, 3>> bobbinWallThicknessesM;
+    std::optional<std::array<double, 3>> bobbinFlangeThicknessesM;
+    std::optional<std::array<double, 3>> bobbinFlangeOuterWidthsM;
+    std::optional<std::array<double, 3>> bobbinFlangeOuterHeightsM;
     std::optional<std::array<double, 3>> windingRadialBuildsM;
     std::optional<std::array<double, 3>> windingAxialHeightsM;
     std::optional<std::array<double, 3>> windingEndClearancesM;
