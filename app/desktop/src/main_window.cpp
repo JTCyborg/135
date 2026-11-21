@@ -1986,7 +1986,7 @@ QWidget* MainWindow::createConstructionPage()
         conductorWidth->setVisible(!round);
         conductorThickness->setVisible(!round);
     };
-    connect(conductorShape, &QComboBox::currentIndexChanged, page,
+    connect(conductorShape, qOverload<int>(&QComboBox::currentIndexChanged), page,
         [updateConductorApplicability](int) { updateConductorApplicability(); });
     updateConductorApplicability();
     auto* layerNote = new QLabel(tr(
@@ -3518,8 +3518,14 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.parallelConductors = positiveCount("construction_parallelConductors");
     if (const auto value = positiveDouble("construction_conductorArea"))
         inputs.conductorCrossSectionM2 = *value * 1.0e-6;
-    inputs.conductorWidthM = lengthMetres("construction_conductorWidth");
-    inputs.conductorThicknessM = lengthMetres("construction_conductorThickness");
+    if (inputs.conductorShape && *inputs.conductorShape == "round") {
+        inputs.conductorBareDiameterM = lengthMetres("construction_conductorBareDiameter");
+        inputs.conductorInsulatedDiameterM = lengthMetres("construction_conductorInsulatedDiameter");
+    } else {
+        inputs.conductorWidthM = lengthMetres("construction_conductorWidth");
+        inputs.conductorThicknessM = lengthMetres("construction_conductorThickness");
+    }
+    inputs.conductorInsulationBuildM = lengthMetres("construction_conductorInsulationBuild");
     inputs.turnInsulationBuildM = lengthMetres("construction_turnInsulation");
     inputs.layerInsulationBuildM = lengthMetres("construction_layerInsulation");
     inputs.mainInsulationBuildM = lengthMetres("construction_mainInsulation");
