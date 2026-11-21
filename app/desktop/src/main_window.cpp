@@ -1118,6 +1118,23 @@ QWidget* MainWindow::createFilterPage()
     form->addRow(tr("Branch connection"), filterConnection_);
     form->addRow(tr("Target reactive power"), targetReactivePower_);
     form->addRow(tr("Tuning harmonic order"), tuningHarmonicOrder_);
+    auto* tuningPreview = new QLabel;
+    tuningPreview->setObjectName(QStringLiteral("filterTuningPreview"));
+    tuningPreview->setStyleSheet(QStringLiteral("color: #26734d; font-weight: 600;"));
+    const auto updateTuningPreview = [this, tuningPreview] {
+        const double order = tuningHarmonicOrder_->value();
+        const double frequency = order * fundamentalFrequency_->value();
+        const double detuningPercent = 100.0 / (order * order);
+        tuningPreview->setText(tr("f_res = %1 Hz  (p = %2%)")
+            .arg(frequency, 0, 'f', 2)
+            .arg(detuningPercent, 0, 'f', 2));
+    };
+    connect(tuningHarmonicOrder_, qOverload<double>(&QDoubleSpinBox::valueChanged),
+        this, [updateTuningPreview](double) { updateTuningPreview(); });
+    connect(fundamentalFrequency_, qOverload<double>(&QDoubleSpinBox::valueChanged),
+        this, [updateTuningPreview](double) { updateTuningPreview(); });
+    updateTuningPreview();
+    form->addRow(tr("Calculated tuning frequency / detuning"), tuningPreview);
     form->addRow(tr("Series-branch quality factor Qf"), qualityFactor_);
     layout->addWidget(group);
 
@@ -1268,7 +1285,17 @@ QWidget* MainWindow::createFilterPage()
     sourceForm->addRow(tr("B-H curve source"), coreBhSource_);
     advancedLayout->addLayout(sourceForm);
 
+    auto* branchGeometryToggle = new QToolButton;
+    branchGeometryToggle->setObjectName(QStringLiteral("toggleAsymmetricGeometryOverrides"));
+    branchGeometryToggle->setText(tr("Advanced: Asymmetric limb & yoke overrides"));
+    branchGeometryToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    branchGeometryToggle->setArrowType(Qt::RightArrow);
+    branchGeometryToggle->setCheckable(true);
+    branchGeometryToggle->setChecked(false);
+    advancedLayout->addWidget(branchGeometryToggle);
     auto* branchGeometryGroup = new QGroupBox(tr("Independent three-limb geometry overrides"));
+    branchGeometryGroup->setObjectName(QStringLiteral("asymmetricGeometryOverridesPanel"));
+    branchGeometryGroup->setVisible(false);
     auto* branchGeometryForm = new QFormLayout(branchGeometryGroup);
     const auto addGeometryOverride = [branchGeometryForm](
         const QString& label, const QString& key, QCheckBox*& enabled, QDoubleSpinBox*& value,
@@ -1318,6 +1345,11 @@ QWidget* MainWindow::createFilterPage()
         "Unchecked fields inherit the corresponding legacy symmetric geometry. "
         "Checked fields override one branch; an explicitly entered zero air gap is valid."));
     advancedLayout->addWidget(branchGeometryGroup);
+    connect(branchGeometryToggle, &QToolButton::toggled, this,
+        [branchGeometryToggle, branchGeometryGroup](bool expanded) {
+            branchGeometryToggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+            branchGeometryGroup->setVisible(expanded);
+        });
 
     auto* dcBiasGroup = new QGroupBox(tr("Per-phase DC current bias"));
     auto* dcBiasForm = new QFormLayout(dcBiasGroup);
