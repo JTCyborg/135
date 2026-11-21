@@ -66,9 +66,12 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         return !value || !value->empty();
     };
     if (!validText(inputs.coreGeometryFamily) || !validText(inputs.coreLaminationConstruction) ||
+        !validText(inputs.dimensionalSource) || !validText(inputs.dimensionalRevision) ||
         !validText(inputs.conductorShape) || !validText(inputs.windingTechnology) ||
         !validText(inputs.coolingMethod) || !validText(inputs.bobbinMaterialId))
         return invalid("Specified construction identifiers must not be empty.");
+    if (inputs.dimensionalSource.has_value() != inputs.dimensionalRevision.has_value())
+        return invalid("Dimensional source and revision must be supplied together.");
 
     const auto validCount = [](const auto& value) { return !value || *value > 0; };
     if (!validCount(inputs.turnsPerPhase) || !validCount(inputs.turnsPerLayer) ||
