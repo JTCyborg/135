@@ -106,6 +106,8 @@ int main()
     inputs.limbCenterSpacingsM = std::array<double, 3>{0.15, 0.15, 0.30};
     inputs.coreOverallHeightM = 0.28;
     inputs.coreOverallWidthM = 0.40;
+    inputs.coreJointConstructions = std::array<std::string, 8>{
+        "butt", "butt", "butt", "butt", "butt", "butt", "butt", "butt"};
     inputs.airGapCountPerLimb = std::array<std::uint32_t, 3>{1, 0, 1};
     inputs.totalAirGapLengthPerLimbM = std::array<double, 3>{0.001, 0.0, 0.001};
     inputs.airGaps = {{0, 0.08, 0.001}, {2, 0.08, 0.001}};
@@ -132,6 +134,12 @@ int main()
         std::cerr << "Physical construction validation failed: "
                   << physicalValidation.error().message << '\\n';
     assert(physicalValidation);
+    // Magnetic core extraction requires only core construction data; it must
+    // not depend on CAD-only bobbin/winding envelope completeness.
+    const auto magneticCore = makeThreeLimbCorePhysicalGeometry(inputs);
+    assert(magneticCore);
+    assert(magneticCore.value().airGaps.size() == 2);
+    assert(std::abs(magneticCore.value().limbWidths[1].si() - 0.05) < 1.0e-12);
     const auto physicalAccepted = inputs;
     inputs.windowWidthsM = std::array<double, 2>{0.0, 0.10};
     assert(!validate(inputs));
