@@ -73,6 +73,7 @@ struct ReactorDesignInputs {
     std::optional<std::uint32_t> turnsPerPhase;
     std::optional<std::uint32_t> turnsPerLayer;
     std::optional<std::uint32_t> windingLayers;
+    std::optional<std::uint32_t> windingSections;
     std::optional<std::uint32_t> parallelConductors;
     std::optional<double> conductorCrossSectionM2;
     std::optional<double> conductorWidthM;
@@ -92,6 +93,7 @@ struct ReactorDesignInputs {
     std::optional<double> coreOverallWidthM;
     // Explicit construction for the eight limb-to-yoke interfaces in domain enum order.
     std::optional<std::array<std::string, 8>> coreJointConstructions;
+    std::optional<std::string> coreLaminationConstruction;
 
     // Gap count and total gap length are distinct from individual gap positions.
     std::optional<std::array<std::uint32_t, 3>> airGapCountPerLimb;
