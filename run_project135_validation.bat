@@ -305,17 +305,17 @@ pause
 exit /b 1
 
 :RUN
-setlocal EnableDelayedExpansion
+setlocal DisableDelayedExpansion
 echo [RUN] %~1
 echo.>>"%LOG%"
 echo [RUN] %~1>>"%LOG%"
 call %RUN_CMD% >>"%LOG%" 2>&1
-set "RUN_RC=!ERRORLEVEL!"
-if !RUN_RC! EQU 0 (
+set "RUN_RC=%ERRORLEVEL%"
+if "%RUN_RC%"=="0" (
     echo [PASS] %~1
     echo [PASS] %~1>>"%LOG%"
 ) else (
-    echo [FAIL] %~1 (exit !RUN_RC!)
-    echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
+    echo [FAIL] %~1 (exit %RUN_RC%)
+    echo [FAIL] %~1 (exit %RUN_RC%)>>"%LOG%"
 )
 endlocal & exit /b %RUN_RC%
