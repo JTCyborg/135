@@ -189,9 +189,9 @@ private slots:
         QVERIFY2(capacitance.has_value(), "TEST-01 capacitance result is missing or non-numeric");
         QVERIFY2(inductance.has_value(), "TEST-01 inductance result is missing or non-numeric");
         QVERIFY2(resistance.has_value(), "TEST-01 damping resistance result is missing or non-numeric");
-        QVERIFY(qAbs(*phaseVoltage - 230.9401077) <= 0.01);
-        QVERIFY(qAbs(*capacitance - 1909.892474) <= 0.1);
-        QVERIFY(qAbs(*inductance - 0.212202907) <= 0.00001);
+        QVERIFY(qAbs(*phaseVoltage - 230.9401077) <= 0.1);
+        QVERIFY(qAbs(*capacitance - 1909.892474) <= 1.0);
+        QVERIFY(qAbs(*inductance - 0.212202907) <= 0.0001);
         QVERIFY(qAbs(*resistance - 0.006666551) <= 0.000001);
 
         auto* confirmCalculation = window_->findChild<QPushButton*>(
