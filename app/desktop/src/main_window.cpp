@@ -213,10 +213,37 @@ bool exportReactorAssemblyPdf(
     const double py = plan.center().y() - depth * planScale * 0.5;
     const std::array<double,3> widths{wa,wb,wc};
     const std::array<double,3> centers{0.0,xB,xC};
-    for (std::size_t i=0;i<3;++i)
+    const double yokeMidX = xB + 0.5 * wb;
+    const std::array<double,4> yokeX{0.0,yokeMidX,0.0,yokeMidX};
+    const std::array<double,4> yokeWidths{yokeMidX,totalW-yokeMidX,
+                                          yokeMidX,totalW-yokeMidX};
+    for (std::size_t i=0;i<4;++i) {
+        const double yokeDepth = mm(core.yokeDepths[i].si());
+        painter.setPen(QPen(QColor(105, 75, 35), 1.4));
+        painter.drawRect(QRectF(px+yokeX[i]*planScale,
+            py+(depth-yokeDepth)*0.5*planScale,
+            yokeWidths[i]*planScale,yokeDepth*planScale));
+    }
+    for (std::size_t i=0;i<3;++i) {
+        const double limbDepth = mm(core.limbDepths[i].si());
+        painter.setPen(QPen(QColor(35, 70, 105), 1.8));
         painter.drawRect(QRectF(px+centers[i]*planScale,
-            py+(depth-mm(core.limbDepths[i].si()))*0.5*planScale,
-            widths[i]*planScale,mm(core.limbDepths[i].si())*planScale));
+            py+(depth-limbDepth)*0.5*planScale,
+            widths[i]*planScale,limbDepth*planScale));
+        const auto& bobbin = geometry.bobbins[i];
+        const auto& winding = geometry.windingPacks[i];
+        const double bodyW = mm(bobbin.innerWidth.si() + 2.0*bobbin.wallThickness.si());
+        const double bodyD = mm(bobbin.innerHeight.si() + 2.0*bobbin.wallThickness.si());
+        const double windingW = bodyW + 2.0*mm(bobbin.windingClearance.si()+winding.radialBuild.si());
+        const double windingD = bodyD + 2.0*mm(bobbin.windingClearance.si()+winding.radialBuild.si());
+        const double centerX = centers[i] + 0.5*widths[i];
+        painter.setPen(QPen(QColor(150, 105, 45), 1.2, Qt::DashLine));
+        painter.drawRect(QRectF(px+(centerX-0.5*bodyW)*planScale,
+            py+(depth-bodyD)*0.5*planScale,bodyW*planScale,bodyD*planScale));
+        painter.setPen(QPen(QColor(175, 75, 30), 1.2, Qt::DashDotLine));
+        painter.drawRect(QRectF(px+(centerX-0.5*windingW)*planScale,
+            py+(depth-windingD)*0.5*planScale,windingW*planScale,windingD*planScale));
+    }
     painter.setPen(QPen(QColor(105, 75, 35), 1.4, Qt::DashLine));
     painter.drawRect(QRectF(px,py,totalW*planScale,depth*planScale));
 
