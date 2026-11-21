@@ -1020,12 +1020,12 @@ QWidget* MainWindow::createProjectPage()
 
         for (int limb = 0; limb < 3; ++limb) {
             const QString limbSuffix = QString::number(limb + 1);
-            const auto* count = findChild<QSpinBox*>(QStringLiteral("construction_airGapCount_") + limbSuffix);
+            auto* count = findChild<QSpinBox*>(QStringLiteral("construction_airGapCount_") + limbSuffix);
             double enteredGapTotalMm = 0.0;
             int enteredGapCount = 0;
             for (int gap = 0; gap < 3; ++gap) {
                 const QString suffix = limbSuffix + QStringLiteral("_") + QString::number(gap + 1);
-                const auto* position = findChild<QDoubleSpinBox*>(
+                auto* position = findChild<QDoubleSpinBox*>(
                     QStringLiteral("construction_airGapPosition_") + suffix);
                 const auto* length = findChild<QDoubleSpinBox*>(
                     QStringLiteral("construction_airGapLength_") + suffix);
@@ -1050,7 +1050,7 @@ QWidget* MainWindow::createProjectPage()
                 count->setFocus();
                 return;
             }
-            const auto* total = findChild<QDoubleSpinBox*>(
+            auto* total = findChild<QDoubleSpinBox*>(
                 QStringLiteral("construction_totalAirGap_") + limbSuffix);
             if (count && total && count->value() > 0 && total->value() <= total->minimum()) {
                 QMessageBox::warning(this, tr("Missing total air-gap length"),
@@ -1100,12 +1100,12 @@ QWidget* MainWindow::createProjectPage()
                 QStringLiteral("construction_coolingDuctThickness_") + suffix);
             const auto* material = findChild<QLineEdit*>(
                 QStringLiteral("construction_coolingDuctSpacerRevision_") + suffix);
-            const auto* airflow = findChild<QComboBox*>(
+            const auto* airflowControl = findChild<QComboBox*>(
                 QStringLiteral("construction_coolingDuctAirflow_") + suffix);
             const bool any = (position && position->value() > position->minimum()) ||
                 (thickness && thickness->value() > thickness->minimum()) ||
                 (material && !material->text().trimmed().isEmpty()) ||
-                (airflow && !airflow->currentData().toString().isEmpty());
+                (airflowControl && !airflowControl->currentData().toString().isEmpty());
             const bool complete = position && position->value() > position->minimum() &&
                 thickness && thickness->value() > thickness->minimum() &&
                 material && !material->text().trimmed().isEmpty() &&
@@ -2169,7 +2169,8 @@ QWidget* MainWindow::createConstructionPage()
     windingForm->addRow(insulatedDiameterLabel, insulatedDiameter);
     windingForm->addRow(conductorInsulationLabel, conductorInsulationBuild);
     const auto updateConductorApplicability = [conductorShape, bareDiameter, insulatedDiameter,
-        conductorInsulationBuild, bareDiameterLabel, insulatedDiameterLabel, conductorInsulationLabel] {
+        conductorInsulationBuild, conductorWidth, conductorThickness,
+        bareDiameterLabel, insulatedDiameterLabel, conductorInsulationLabel] {
         const bool round = conductorShape->currentData().toString() == QStringLiteral("round");
         bareDiameter->setVisible(round);
         insulatedDiameter->setVisible(round);
@@ -2599,7 +2600,7 @@ QWidget* MainWindow::createConstructionPage()
         }
 
         std::array<int, 8> stepLapPacketCounts{};
-        if (const auto* schedule = findChild<QPlainTextEdit*>(
+        if (auto* schedule = findChild<QPlainTextEdit*>(
                 QStringLiteral("construction_stepLapPacketSchedule"))) {
             const auto lines = schedule->toPlainText().split('\n');
             for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
