@@ -62,7 +62,8 @@
 - [x] Добавлены размеры фланцев каркасов по каждой фазе: толщина и внешние ширина/высота; параметры включены в validate/requiresRecalculation и application regression tests.
 - [x] Добавлены явные описание конструкции пакета магнитопровода и число секций обмотки.
 - [x] Добавлены отдельные поля источника и ревизии физических размеров; они передаются в типизированную модель, проверяются как согласованная пара, входят в invalidation и regression tests. JSON Debug snapshot собирает оба поля автоматически.
-- [x] Добавлены восемь независимых селекторов Butt/Step-Lap для соединений стержней с ярмами; частичное заполнение не принимается. Step-Lap остаётся заблокированным для CAD до реализации packet schedule editor.
+- [x] Добавлены восемь независимых селекторов Butt/Step-Lap и редактор packet schedule: joint, stack-depth offset/depth, overlaps into limb/yoke, alternating direction; расписание сохраняется в Debug snapshot и project settings, проверяется и участвует в dependency invalidation.
+- [ ] Реализовать физически корректную interleaved Step-Lap B-Rep топологию. Domain packet validation и application adapter готовы, но OCCT builder намеренно блокирует Step-Lap, пока не определена и не реализована безпересекающаяся геометрия пакетов.
 - [x] Добавлены Construction controls для числа и трёх охлаждающих каналов; все четыре параметра каждой записи передаются в ReactorDesignInputs и включены в snapshot/invalidation.
 - [ ] Для круглого/прямоугольного/фольгового проводника включать только применимые размеры; неприменимые поля — NOT_APPLICABLE, не ноль.
 - [x] Добавлен явный bobbin winding clearance per phase, включён в snapshot, validation и dependency invalidation.
