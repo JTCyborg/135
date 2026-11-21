@@ -78,8 +78,8 @@ struct DxfWriter {
     {
         pair(0, "SECTION"); pair(2, "HEADER");
         pair(9, "$ACADVER"); pair(1, "AC1009");
-        pair(9, "$INSUNITS"); pair(70, "4");
-        pair(9, "$MEASUREMENT"); pair(70, "1");
+        pair(9, "$INSUNITS"); pair(70, 4.0);
+        pair(9, "$MEASUREMENT"); pair(70, 1.0);
         pair(0, "ENDSEC");
         pair(0, "SECTION"); pair(2, "TABLES");
         pair(0, "TABLE"); pair(2, "LAYER"); pair(70, "5");
@@ -184,7 +184,9 @@ Result<void> exportReactorAssemblyDxf(
         const auto& bobbin = geometry.bobbins[phase];
         const auto& winding = geometry.windingPacks[phase];
         const double bobbinLength = mm(bobbin.axialLength.si());
-        const double windowHeight = mm(core.windowHeights[phase == 0 ? 0 : 1].si());
+        const double windowHeight = mm(phase == 0 ? core.windowHeights[0].si()
+            : phase == 1 ? std::min(core.windowHeights[0].si(), core.windowHeights[1].si())
+                         : core.windowHeights[1].si());
         const double bobbinY = yokeBottom + 0.5 * (windowHeight - bobbinLength);
         const double flangeW = mm(bobbin.flangeOuterWidth.si());
         const double flangeH = mm(bobbin.flangeOuterHeight.si());
@@ -245,7 +247,7 @@ Result<void> exportReactorAssemblyDxf(
     const auto& bobbinB = geometry.bobbins[1];
     const auto& windingB = geometry.windingPacks[1];
     const double bobbinYB = yokeBottom + 0.5 *
-        (mm(core.windowHeights[0].si()) - mm(bobbinB.axialLength.si()));
+        (mm(std::min(core.windowHeights[0].si(), core.windowHeights[1].si())) - mm(bobbinB.axialLength.si()));
     const double bobbinDepthB = mm(bobbinB.innerHeight.si() + 2.0 * bobbinB.wallThickness.si());
     const double windingDepthB = bobbinDepthB +
         2.0 * mm(bobbinB.windingClearance.si() + windingB.radialBuild.si());
