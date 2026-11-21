@@ -90,6 +90,8 @@ struct ReactorDesignInputs {
     std::optional<std::array<double, 3>> limbCenterSpacingsM; // AB, BC, AC
     std::optional<double> coreOverallHeightM;
     std::optional<double> coreOverallWidthM;
+    // Explicit construction for the eight limb-to-yoke interfaces in domain enum order.
+    std::optional<std::array<std::string, 8>> coreJointConstructions;
 
     // Gap count and total gap length are distinct from individual gap positions.
     std::optional<std::array<std::uint32_t, 3>> airGapCountPerLimb;
