@@ -63,6 +63,9 @@ int main()
     };
 
     PhysicalFilterReactorMagneticResult result;
+    const auto effectiveGeometry = domain::buildThreeLimbMagneticGeometry(request.physicalCore, request.stackingFactor);
+    assert(effectiveGeometry);
+    result.effectiveMagneticGeometry = effectiveGeometry.value();
     result.magneticAnalysis.filterBranchId = 7;
     result.magneticAnalysis.excitations.push_back({
         1, {{{1.0, 0.0}, {-0.5, -0.8660254037844386}, {-0.5, 0.8660254037844386}}}
@@ -100,6 +103,14 @@ int main()
     auto missingBhCurve = request;
     missingBhCurve.filterMagnetic.magnetic.material.bhCurve.clear();
     assert(!makeMagneticOperatingPointStageArtifact(missingBhCurve, result));
+
+    auto mismatchedGeometry = result;
+    mismatchedGeometry.effectiveMagneticGeometry.limbEffectiveArea = units::Area{0.123};
+    assert(!makeMagneticOperatingPointStageArtifact(request, mismatchedGeometry));
+
+    auto mismatchedExcitation = result;
+    mismatchedExcitation.magneticAnalysis.excitations.front().phaseRmsPhasors[0] = {9.0, 0.0};
+    assert(!makeMagneticOperatingPointStageArtifact(request, mismatchedExcitation));
 
     auto unconverged = result;
     unconverged.magneticAnalysis.magneticCycle.converged = false;
