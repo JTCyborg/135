@@ -51,7 +51,7 @@
 - [x] CAD вкладка подключена к adapter, buildThreeLimbReactorPresentation() и collectAssemblyPresentationDisplayItems(); кнопка строит PRELIMINARY / NOT_VERIFIED preview после подтверждения Construction.
 - [x] Любое изменение Construction инвалидирует CAD preview: viewport очищается, дерево получает STALE, генерация снова разрешается только после повторного подтверждения.
 - [x] Semantic component tree строится из AssemblyPresentationNode; visibility checkboxes и transparency control управляют тем же presentation model и обновляют viewport.
-- [x] Добавлен STEP export полного assembly B-Rep; перед записью повторно проверяются semantic tree и B-Rep, ошибки Transfer/Write возвращаются как Result.
+- [x] Добавлен STEP export полного assembly B-Rep; перед записью повторно проверяются semantic tree и B-Rep (это геометрическая проверка, не инженерная сертификация), ошибки Transfer/Write возвращаются как Result.
 - [x] CAD regression test проверяет создание STEP-файла и его ненулевой размер; runtime/compile execution ещё требуется.
 - [ ] Проверить STEP round-trip/import в OCCT и CAD UI на Windows/MSVC.
 
@@ -114,4 +114,4 @@
 
 ## 5. Текущий технический вывод
 
-В репозитории уже существуют application dependency graph/execution API, domain physical geometry, OCCT three-limb core/assembly builders и Qt CAD viewport. Однако desktop UI не вызывает application execution pipeline и не связывает принятый результат с CAD presentation. Ближайшая работа — закрыть интеграционные разрывы, затем добавить недостающие физические входы и тесты.
+В репозитории уже существуют application dependency graph/execution API, domain physical geometry, OCCT three-limb core/assembly builders и Qt CAD viewport. Desktop UI пока не вызывает полный application execution pipeline и не формирует согласованный магнитный/тепловой result snapshot. При этом предварительный CAD-путь уже подключён от Construction inputs через строгий physical-geometry adapter к OCCT presentation, semantic component tree и STEP B-Rep export. Следующая работа — закрыть недостающие физические входы/модели, подключить реальное выполнение стадий расчёта и проверить весь путь сборкой и тестами.
