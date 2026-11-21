@@ -25,3 +25,5 @@ Thumbs.db
 /CAD/
 /Drawings/
 /Debug/
+# Temporary output from the Windows validation script
+/BuildReports/*.tmp
