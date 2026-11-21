@@ -13,7 +13,14 @@
 #include <QVBoxLayout>
 
 #include <AIS_InteractiveContext.hxx>
+#include <AIS_ColoredShape.hxx>
 #include <AIS_Shape.hxx>
+#include <BRepAdaptor_Surface.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopAbs_ShapeEnum.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Face.hxx>
+#include <gp_Vec.hxx>
 #include <AIS_SelectionScheme.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_Handle.hxx>
@@ -33,6 +40,49 @@
 #include <utility>
 #include <cmath>
 #include <unordered_map>
+
+namespace {
+
+Quantity_Color faceGradientColor(
+    const std::array<double, 3>& baseColor,
+    const TopoDS_Face& face)
+{
+    // A restrained face-level tonal ramp makes edges and cut faces readable
+    // without pretending that the simplified B-Rep contains real laminations.
+    double directional = 0.5;
+    try
+    {
+        BRepAdaptor_Surface surface(face, Standard_True);
+        const double u = (surface.FirstUParameter() + surface.LastUParameter()) * 0.5;
+        const double v = (surface.FirstVParameter() + surface.LastVParameter()) * 0.5;
+        gp_Pnt point;
+        gp_Vec du;
+        gp_Vec dv;
+        surface.D1(u, v, point, du, dv);
+        gp_Vec normal = du.Crossed(dv);
+        if (normal.SquareMagnitude() > 1.0e-18)
+        {
+            normal.Normalize();
+            if (face.Orientation() == TopAbs_REVERSED)
+                normal.Reverse();
+            const gp_Vec light(0.35, -0.45, 0.82);
+            directional = std::clamp(0.5 + 0.5 * normal.Dot(light.Normalized()), 0.0, 1.0);
+        }
+    }
+    catch (const Standard_Failure&)
+    {
+        // Degenerate parameter bounds retain a neutral mid-tone.
+    }
+
+    const double factor = 0.78 + 0.28 * directional;
+    const auto channel = [factor](double value) {
+        return std::clamp(value * factor, 0.0, 1.0);
+    };
+    return Quantity_Color(channel(baseColor[0]), channel(baseColor[1]),
+                          channel(baseColor[2]), Quantity_TOC_RGB);
+}
+
+} // namespace
 
 class CadViewportWidget::NativeView final : public QWidget
 {
@@ -295,7 +345,7 @@ private:
         for (const auto& item : items_)
         {
             if (item.shape.IsNull()) continue;
-            Handle(AIS_Shape) presentation = new AIS_Shape(item.shape);
+            Handle(AIS_ColoredShape) presentation = new AIS_ColoredShape(item.shape);
             const Quantity_Color baseColor(
                 item.baseColor[0], item.baseColor[1], item.baseColor[2], Quantity_TOC_RGB);
             Graphic3d_MaterialAspect surfaceMaterial;
@@ -324,6 +374,11 @@ private:
                 break;
             }
             presentation->SetMaterial(surfaceMaterial);
+            for (TopExp_Explorer faceIt(item.shape, TopAbs_FACE); faceIt.More(); faceIt.Next())
+            {
+                const TopoDS_Face face = TopoDS::Face(faceIt.Current());
+                presentation->SetCustomColor(face, faceGradientColor(item.baseColor, face));
+            }
             presentation->SetDisplayMode(AIS_Shaded);
             if (item.transparency > 0.0)
                 presentation->SetTransparency(item.transparency);
@@ -335,7 +390,7 @@ private:
     }
 
     std::vector<p135::cad::AssemblyPresentationDisplayItem> items_;
-    std::unordered_map<std::string, Handle(AIS_Shape)> presentations_;
+    std::unordered_map<std::string, Handle(AIS_ColoredShape)> presentations_;
     QPoint lastMousePosition_;
     QPoint panStartPosition_;
     bool rotating_{false};
