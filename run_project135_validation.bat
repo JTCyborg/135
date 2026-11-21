@@ -46,6 +46,34 @@ if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
 )
 echo VCPKG_ROOT: %VCPKG_ROOT%>>"%LOG%"
 
+rem Ensure the vcpkg baseline commit and its tree are present locally.
+echo.
+echo [VCPKG] Fetching complete vcpkg Git history required by manifest baseline...
+git -C "%VCPKG_ROOT%" rev-parse --is-shallow-repository > "BuildReports\vcpkg_shallow_%STAMP%.tmp" 2>&1
+set "VCPKG_SHALLOW="
+set /p VCPKG_SHALLOW=<"BuildReports\vcpkg_shallow_%STAMP%.tmp"
+del "BuildReports\vcpkg_shallow_%STAMP%.tmp" 2>nul
+if /i "%VCPKG_SHALLOW%"=="true" (
+    git -C "%VCPKG_ROOT%" fetch --unshallow origin >>"%LOG%" 2>&1
+) else (
+    git -C "%VCPKG_ROOT%" fetch origin >>"%LOG%" 2>&1
+)
+if errorlevel 1 (
+    echo ERROR: Could not fetch vcpkg repository history. See log.
+    echo [FATAL] vcpkg Git history fetch failed.>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+for /f %%H in ('powershell -NoProfile -Command "(Get-Content -Raw 'vcpkg.json' | ConvertFrom-Json).'builtin-baseline'"') do set "VCPKG_BASELINE=%%H"
+git -C "%VCPKG_ROOT%" cat-file -e "%VCPKG_BASELINE%:versions/baseline.json" 2>nul
+if errorlevel 1 (
+    echo ERROR: vcpkg baseline %VCPKG_BASELINE% is not available locally.
+    echo [FATAL] vcpkg baseline tree is missing: %VCPKG_BASELINE%>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+echo [VCPKG] Baseline %VCPKG_BASELINE% verified.>>"%LOG%"
+
 where git >nul 2>&1
 if errorlevel 1 (
     echo ERROR: git was not found in PATH.
@@ -290,4 +318,4 @@ if !RUN_RC! EQU 0 (
     echo [FAIL] %~1 (exit !RUN_RC!)
     echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
 )
-endlocal & exit /b !RUN_RC!
+endlocal & exit /b %RUN_RC%
