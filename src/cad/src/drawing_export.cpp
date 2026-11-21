@@ -331,8 +331,8 @@ Result<void> exportReactorAssemblyDxf(
         const double depth = mm(core.yokeDepths[i].si());
         horizontalCoreMember(dxf, planYokeX[i], planY, planYokeWidths[i],
             depth, gapIntervalsFor(core, planYokeSegments[i]));
-        dxf.text(planYokeX[i], planY + depth + 2.0, 1.8,
-            std::string(planYokeLabels[i]) + " - " + std::to_string(depth) + " mm",
+        dxf.text(planX, planY - 34.0 - 5.0 * static_cast<double>(i), 1.8,
+            std::string(planYokeLabels[i]) + " DEPTH: " + std::to_string(depth) + " mm",
             "ANNOTATION");
     }
 
