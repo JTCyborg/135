@@ -11,6 +11,9 @@ namespace p135::application {
 struct PhysicalFilterReactorMagneticRequest {
     domain::ThreeLimbCorePhysicalGeometry physicalCore;
     double stackingFactor{};
+    // Provenance for the physical dimensions used by this magnetic revision.
+    std::string dimensionalSource;
+    std::string dimensionalRevision;
     FilterReactorMagneticRequest filterMagnetic;
 };
 
