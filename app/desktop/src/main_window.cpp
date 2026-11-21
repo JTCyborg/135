@@ -665,6 +665,8 @@ void MainWindow::saveProjectSettings()
             settings.setValue(key, integer->value());
         else if (const auto* line = qobject_cast<QLineEdit*>(widget))
             settings.setValue(key, line->text());
+        else if (const auto* textEdit = qobject_cast<QPlainTextEdit*>(widget))
+            settings.setValue(key, textEdit->toPlainText());
         else if (const auto* check = qobject_cast<QCheckBox*>(widget))
             settings.setValue(key, check->isChecked());
     }
@@ -757,6 +759,8 @@ void MainWindow::loadProjectSettings()
             integer->setValue(settings.contains(key) ? settings.value(key).toInt() : integer->minimum());
         } else if (auto* line = qobject_cast<QLineEdit*>(widget)) {
             line->setText(settings.value(key).toString());
+        } else if (auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) {
+            textEdit->setPlainText(settings.value(key).toString());
         } else if (auto* check = qobject_cast<QCheckBox*>(widget)) {
             check->setChecked(settings.contains(key) ? settings.value(key).toBool()
                 : false);
@@ -2057,9 +2061,22 @@ QWidget* MainWindow::createConstructionPage()
     dimensionalRevision->setObjectName(QStringLiteral("construction_dimensionalRevision"));
     dimensionalRevision->setPlaceholderText(tr("Document revision / measurement issue — NOT_PROVIDED"));
     coreForm->addRow(tr("Physical dimensions revision"), dimensionalRevision);
-    auto* jointNote = new QLabel(tr("Step-Lap selection is recorded as an input but cannot yet produce CAD: explicit packet-by-packet overlap geometry is still required."));
+    auto* jointNote = new QLabel(tr(
+        "For each Step-Lap interface, enter one packet per line using: "
+        "joint number (1–8), stack offset, packet depth, overlap into limb, "
+        "overlap into yoke, direction. Lengths are in mm; direction is "
+        "limb-into-yoke or yoke-into-limb. Packets must cover the complete stack depth "
+        "contiguously and alternate direction."));
     jointNote->setWordWrap(true);
     coreForm->addRow(jointNote);
+    auto* stepLapSchedule = new QPlainTextEdit;
+    stepLapSchedule->setObjectName(QStringLiteral("construction_stepLapPacketSchedule"));
+    stepLapSchedule->setPlaceholderText(tr(
+        "joint,offset_mm,depth_mm,overlap_limb_mm,overlap_yoke_mm,direction\n"
+        "1,...,...,...,...,limb-into-yoke\n"
+        "1,...,...,...,...,yoke-into-limb"));
+    stepLapSchedule->setMaximumHeight(110);
+    coreForm->addRow(tr("Step-Lap packet schedule"), stepLapSchedule);
     root->addWidget(coreGroup);
 
     auto* windingGroup = new QGroupBox(tr("2. Winding and conductor"));
@@ -2513,6 +2530,9 @@ QWidget* MainWindow::createConstructionPage()
             } else if (const auto* line = qobject_cast<QLineEdit*>(widget)) {
                 value = line->text().trimmed().isEmpty()
                     ? QJsonValue(QStringLiteral("NOT_PROVIDED")) : QJsonValue(line->text().trimmed());
+            } else if (const auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) {
+                value = textEdit->toPlainText().trimmed().isEmpty()
+                    ? QJsonValue(QStringLiteral("NOT_PROVIDED")) : QJsonValue(textEdit->toPlainText());
             } else if (const auto* check = qobject_cast<QCheckBox*>(widget)) {
                 value = check->isChecked();
             } else continue;
@@ -5552,6 +5572,8 @@ void MainWindow::calculateFilter()
                 constructionSnapshot.insert(field, integer->value());
             } else if (const auto* line = qobject_cast<QLineEdit*>(widget)) {
                 constructionSnapshot.insert(field, line->text());
+            } else if (const auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) {
+                constructionSnapshot.insert(field, textEdit->toPlainText());
             } else if (const auto* check = qobject_cast<QCheckBox*>(widget)) {
                 constructionSnapshot.insert(field, check->isChecked());
             }
