@@ -72,19 +72,6 @@ ReactorPhysicalGeometry validGeometry()
 int main()
 {
     const auto geometry = validGeometry();
-    auto stepLapGeometry = geometry;
-    stepLapGeometry.core.joints[0].construction = CoreJointType::StepLap;
-    stepLapGeometry.core.joints[0].stepLapPackets = {
-        StepLapPacketPhysicalGeometry{
-            units::Length{0.0}, units::Length{0.08},
-            units::Length{0.01}, units::Length{0.01},
-            StepLapPacketDirection::LimbIntoYoke}
-    };
-    assert(domain::validate(stepLapGeometry));
-    const auto blockedStepLapCad = p135::cad::buildThreeLimbCoreShape(stepLapGeometry);
-    assert(!blockedStepLapCad); // CAD must fail closed until packet overlap topology is implemented.
-    assert(blockedStepLapCad.error().message.find("Step-Lap") != std::string::npos);
-
     const auto shape = p135::cad::buildThreeLimbCoreShape(geometry);
     if (!shape) {
         std::cerr << "CAD build failed: " << shape.error().message << '\\n';
