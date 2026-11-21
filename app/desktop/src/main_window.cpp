@@ -25,6 +25,7 @@
 #include "p135/domain/three_limb_magnetic.hpp"
 #include "p135/cad/three_limb_core.hpp"
 #include "p135/cad/assembly_presentation.hpp"
+#include "p135/cad/drawing_export.hpp"
 
 #include <TopoDS_Iterator.hxx>
 #include "p135/thermal/filter_bridge.hpp"
@@ -3800,6 +3801,10 @@ QWidget* MainWindow::createCadPage()
     exportStep->setObjectName(QStringLiteral("exportCadStep"));
     exportStep->setEnabled(false);
     layout->addWidget(exportStep);
+    auto* exportDrawing = new QPushButton(tr("Generate and export preliminary 2D drawing (DXF)"));
+    exportDrawing->setObjectName(QStringLiteral("generateCadDrawings"));
+    exportDrawing->setEnabled(false);
+    layout->addWidget(exportDrawing);
 
     auto* workspace = new QSplitter(Qt::Horizontal, page);
     workspace->setChildrenCollapsible(false);
@@ -3856,6 +3861,7 @@ QWidget* MainWindow::createCadPage()
     viewportLayout->addWidget(viewport, 1);
 
     auto assemblyModel = std::make_shared<p135::cad::AssemblyPresentationNode>();
+    auto physicalGeometry = std::make_shared<std::optional<p135::domain::ReactorPhysicalGeometry>>();
     const auto rebuildCadDisplay = [assemblyModel, viewport] {
         viewport->setDisplayItems(p135::cad::collectAssemblyPresentationDisplayItems(*assemblyModel));
     };
@@ -3942,6 +3948,7 @@ QWidget* MainWindow::createCadPage()
             return;
         }
         *assemblyModel = presentation.value();
+        *physicalGeometry = physical.value();
         {
             const QSignalBlocker blocker(tree);
             tree->clear();
@@ -3981,6 +3988,7 @@ QWidget* MainWindow::createCadPage()
         status->setText(tr("Preliminary CAD generated from the current Construction revision. Physical and manufacturing validation remain separate."));
         generateCad->setEnabled(false);
         exportStep->setEnabled(true);
+        exportDrawing->setEnabled(true);
         appendLog(tr("[CAD] PRELIMINARY ASSEMBLY BUILT: %1 display solids").arg(items.size()));
     });
 
@@ -4006,6 +4014,36 @@ QWidget* MainWindow::createCadPage()
         }
         status->setText(tr("B-Rep checked assembly exported to %1").arg(path));
         appendLog(tr("[CAD] STEP EXPORT OK: %1").arg(path));
+    });
+
+    connect(exportDrawing, &QPushButton::clicked, this,
+        [this, status, physicalGeometry] {
+        if (!physicalGeometry->has_value()) {
+            status->setText(tr("2D drawing export is blocked: no current physical CAD revision is available."));
+            return;
+        }
+        QFileDialog dialog(this, tr("Export preliminary 2D drawing"),
+            projectId_ + QStringLiteral(".dxf"));
+        dialog.setAcceptMode(QFileDialog::AcceptSave);
+        dialog.setNameFilter(tr("DXF drawings (*.dxf)"));
+        dialog.setDefaultSuffix(QStringLiteral("dxf"));
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        if (dialog.exec() != QDialog::Accepted) return;
+        const QString path = dialog.selectedFiles().value(0);
+        if (path.isEmpty()) return;
+        const auto result = p135::cad::exportReactorAssemblyDxf(
+            **physicalGeometry, path.toStdString());
+        if (!result) {
+            status->setText(tr("2D drawing export failed: %1").arg(
+                QString::fromStdString(result.error().message)));
+            appendLog(tr("[CAD] DXF EXPORT FAILED: %1").arg(
+                QString::fromStdString(result.error().message)));
+            QMessageBox::warning(this, tr("DXF export failed"),
+                QString::fromStdString(result.error().message));
+            return;
+        }
+        status->setText(tr("Preliminary three-view DXF drawing exported to %1").arg(path));
+        appendLog(tr("[CAD] PRELIMINARY DXF EXPORT OK: %1").arg(path));
     });
 
     workspace->addWidget(structurePanel);
