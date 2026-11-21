@@ -23,8 +23,8 @@ struct MaterialRevisionSelection {
 // Physical construction inputs are optional until supplied by a drawing,
 // datasheet or measurement. All lengths are SI metres; no defaults are inferred.
 struct CoreAirGapInput {
-    std::uint32_t limbIndex{}; // A=0, B=1, C=2
-    double positionFromLimbStartM{};
+    std::uint32_t limbIndex{}; // CoreSegment ordinal: limbs 0..2, yokes 3..6
+    double positionFromLimbStartM{}; // From lower limb end or left yoke end
     double lengthM{};
     bool operator==(const CoreAirGapInput&) const = default;
 };
