@@ -89,7 +89,8 @@ if not "%CURRENT_BRANCH%"=="main" (
     goto STOP_WITH_LOCAL_LOG
 )
 set "DIRTY="
-for /f "delims=" %%S in ('git status --porcelain --untracked-files^=all') do set "DIRTY=1"
+rem BuildReports is created by this script before the check; exclude only that generated directory.
+for /f "delims=" %%S in ('git status --porcelain --untracked-files^=all -- . ":(exclude)BuildReports/**"') do set "DIRTY=1"
 if defined DIRTY (
     echo ERROR: Git working tree is not clean. Commit or stash source changes, then rerun.
     echo [FATAL] Working tree is not clean after generated-folder cleanup. Pull was not run.>>"%LOG%"
@@ -262,16 +263,17 @@ pause
 exit /b 1
 
 :RUN
+setlocal EnableDelayedExpansion
 echo [RUN] %~1
 echo.>>"%LOG%"
 echo [RUN] %~1>>"%LOG%"
 call %RUN_CMD% >>"%LOG%" 2>&1
-set "RUN_RC=%ERRORLEVEL%"
-if "%RUN_RC%"=="0" (
+set "RUN_RC=!ERRORLEVEL!"
+if !RUN_RC! EQU 0 (
     echo [PASS] %~1
     echo [PASS] %~1>>"%LOG%"
 ) else (
-    echo [FAIL] %~1 (exit %RUN_RC%)
-    echo [FAIL] %~1 (exit %RUN_RC%)>>"%LOG%"
+    echo [FAIL] %~1 (exit !RUN_RC!)
+    echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
 )
-exit /b %RUN_RC%
+endlocal & exit /b %ERRORLEVEL%
