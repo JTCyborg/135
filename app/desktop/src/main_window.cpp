@@ -191,7 +191,7 @@ protected:
         const double yMax = std::max({maxY * 1.08,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
             magneticKneeCurrentA_.value_or(0.0) * 1.08,
-            1.0e-12});
+            1.0});
         const auto xPixel = [&area, logMin, logMax](double frequency) {
             return area.left() + (std::log10(frequency) - logMin) /
                 (logMax - logMin) * area.width();
@@ -6414,7 +6414,7 @@ void MainWindow::calculateFilter()
     }
     if (resultsBankCurrentPlot_) {
         resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
-            tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
+            tr("Frequency (Hz, logarithmic)"), tr("Reactor branch peak current (A)"));
         resultsBankCurrentPlot_->setEngineeringGuides(
             resonanceBands, saturationPeakReference, magneticKneePlotReference);
     }
