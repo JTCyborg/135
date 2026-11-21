@@ -3718,6 +3718,18 @@ QWidget* MainWindow::createCadPage()
     }
     structureLayout->addWidget(tree, 1);
 
+    auto* transparencyLabel = new QLabel(tr("Selected component transparency"), structurePanel);
+    structureLayout->addWidget(transparencyLabel);
+    auto* transparency = new QDoubleSpinBox(structurePanel);
+    transparency->setObjectName(QStringLiteral("cadComponentTransparency"));
+    transparency->setRange(0.0, 1.0);
+    transparency->setSingleStep(0.05);
+    transparency->setDecimals(2);
+    transparency->setValue(0.0);
+    transparency->setSuffix(tr(" opacity loss"));
+    transparency->setEnabled(false);
+    structureLayout->addWidget(transparency);
+
     auto* propertiesTitle = new QLabel(tr("Component properties"), structurePanel);
     propertiesTitle->setStyleSheet("font-weight: 600;");
     structureLayout->addWidget(propertiesTitle);
@@ -3736,8 +3748,50 @@ QWidget* MainWindow::createCadPage()
     viewport->setObjectName(QStringLiteral("cadViewportWidget"));
     viewportLayout->addWidget(viewport, 1);
 
+    auto assemblyModel = std::make_shared<p135::cad::AssemblyPresentationNode>();
+    const auto rebuildCadDisplay = [assemblyModel, viewport] {
+        viewport->setDisplayItems(p135::cad::collectAssemblyPresentationDisplayItems(*assemblyModel));
+    };
+    connect(tree, &QTreeWidget::itemChanged, this,
+        [assemblyModel, rebuildCadDisplay](QTreeWidgetItem* item, int column) {
+        if (column != 0) return;
+        const auto id = item->data(0, Qt::UserRole).toString();
+        if (id.isEmpty()) return;
+        if (p135::cad::setAssemblyComponentVisibility(
+                *assemblyModel, id.toStdString(), item->checkState(0) == Qt::Checked))
+            rebuildCadDisplay();
+    });
+    connect(tree, &QTreeWidget::currentItemChanged, this,
+        [assemblyModel, transparency](QTreeWidgetItem* current, QTreeWidgetItem*) {
+        const auto id = current ? current->data(0, Qt::UserRole).toString() : QString{};
+        if (id.isEmpty()) { transparency->setEnabled(false); return; }
+        std::function<const p135::cad::AssemblyPresentationNode*(const p135::cad::AssemblyPresentationNode&)> findNode;
+        findNode = [&findNode, &id](const p135::cad::AssemblyPresentationNode& node)
+            -> const p135::cad::AssemblyPresentationNode* {
+            if (node.id == id.toStdString()) return &node;
+            for (const auto& child : node.children)
+                if (const auto* found = findNode(child)) return found;
+            return nullptr;
+        };
+        if (const auto* node = findNode(*assemblyModel)) {
+            transparency->blockSignals(true);
+            transparency->setValue(node->transparency);
+            transparency->blockSignals(false);
+            transparency->setEnabled(true);
+        } else transparency->setEnabled(false);
+    });
+    connect(transparency, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+        [assemblyModel, rebuildCadDisplay, tree](double value) {
+        auto* item = tree->currentItem();
+        if (!item) return;
+        const auto id = item->data(0, Qt::UserRole).toString();
+        if (id.isEmpty()) return;
+        if (p135::cad::setAssemblyComponentTransparency(*assemblyModel, id.toStdString(), value))
+            rebuildCadDisplay();
+    });
+
     connect(generateCad, &QPushButton::clicked, this,
-        [this, status, root, properties, viewport, generateCad] {
+        [this, status, root, properties, viewport, generateCad, tree, transparency, assemblyModel] {
         if (constructionInputsDirty_) {
             status->setText(tr("CAD is blocked: confirm Construction again after the latest input change."));
             return;
@@ -3765,7 +3819,30 @@ QWidget* MainWindow::createCadPage()
                 QString::fromStdString(presentation.error().message)));
             return;
         }
-        const auto items = p135::cad::collectAssemblyPresentationDisplayItems(presentation.value());
+        *assemblyModel = presentation.value();
+        {
+            const QSignalBlocker blocker(tree);
+            tree->clear();
+            std::function<void(const p135::cad::AssemblyPresentationNode&, QTreeWidgetItem*)> appendNode;
+            appendNode = [&appendNode, tree](const p135::cad::AssemblyPresentationNode& node, QTreeWidgetItem* parent) {
+                auto* item = parent ? new QTreeWidgetItem(parent) : new QTreeWidgetItem(tree);
+                item->setText(0, QString::fromStdString(node.displayName));
+                item->setText(1, QStringLiteral("BUILT"));
+                item->setData(0, Qt::UserRole, QString::fromStdString(node.id));
+                item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+                item->setCheckState(0, node.visible ? Qt::Checked : Qt::Unchecked);
+                const QString detail = node.representation == p135::cad::AssemblyGeometryRepresentation::SimplifiedCoreSegment
+                    ? QObject::tr("Simplified core segment")
+                    : node.representation == p135::cad::AssemblyGeometryRepresentation::WindingPackEnvelope
+                        ? QObject::tr("Winding envelope — not detailed conductor geometry")
+                        : QObject::tr("Physical solid");
+                item->setToolTip(0, detail);
+                for (const auto& child : node.children) appendNode(child, item);
+                item->setExpanded(true);
+            };
+            appendNode(*assemblyModel, nullptr);
+        }
+        const auto items = p135::cad::collectAssemblyPresentationDisplayItems(*assemblyModel);
         if (items.empty()) {
             status->setText(tr("CAD generation returned no displayable solids."));
             return;
