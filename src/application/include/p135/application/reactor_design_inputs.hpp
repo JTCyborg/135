@@ -29,6 +29,15 @@ struct CoreAirGapInput {
     bool operator==(const CoreAirGapInput&) const = default;
 };
 
+struct CoreJointStepLapPacketInput {
+    double stackDepthOffsetM{};
+    double stackDepthM{};
+    double overlapIntoLimbM{};
+    double overlapIntoYokeM{};
+    std::string direction; // "limb-into-yoke" or "yoke-into-limb"
+    bool operator==(const CoreJointStepLapPacketInput&) const = default;
+};
+
 struct CoolingDuctInput {
     double positionFromWindingBottomM{};
     double thicknessM{};
@@ -94,6 +103,7 @@ struct ReactorDesignInputs {
     std::optional<double> coreOverallWidthM;
     // Explicit construction for the eight limb-to-yoke interfaces in domain enum order.
     std::optional<std::array<std::string, 8>> coreJointConstructions;
+    std::array<std::vector<CoreJointStepLapPacketInput>, 8> coreJointStepLapPackets;
     std::optional<std::string> coreLaminationConstruction;
     // Provenance for the physical dimensions used to construct CAD; both are required together.
     std::optional<std::string> dimensionalSource;
