@@ -1089,7 +1089,7 @@ QWidget* MainWindow::createProjectPage()
             return;
         }
 
-        const auto* ductCountControl = findChild<QSpinBox*>(QStringLiteral("construction_coolingDuctCount"));
+        auto* ductCountControl = findChild<QSpinBox*>(QStringLiteral("construction_coolingDuctCount"));
         const int declaredDuctCount = ductCountControl ? ductCountControl->value() : 0;
         int completeDuctCount = 0;
         for (int duct = 0; duct < 3; ++duct) {
@@ -1109,7 +1109,7 @@ QWidget* MainWindow::createProjectPage()
             const bool complete = position && position->value() > position->minimum() &&
                 thickness && thickness->value() > thickness->minimum() &&
                 material && !material->text().trimmed().isEmpty() &&
-                airflow && !airflow->currentData().toString().isEmpty();
+                airflowControl && !airflowControl->currentData().toString().isEmpty();
             if (any && !complete) {
                 QMessageBox::warning(this, tr("Incomplete cooling duct"),
                     tr("Cooling duct %1 requires position, thickness, spacer material revision and airflow direction.")
