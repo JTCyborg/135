@@ -100,6 +100,7 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         !validArray(inputs.bobbinInnerHeightsM) || !validArray(inputs.bobbinAxialLengthsM) ||
         !validArray(inputs.bobbinWallThicknessesM) || !validArray(inputs.bobbinFlangeThicknessesM) ||
         !validArray(inputs.bobbinFlangeOuterWidthsM) || !validArray(inputs.bobbinFlangeOuterHeightsM) ||
+        !validArray(inputs.bobbinWindingClearancesM) ||
         !validArray(inputs.windingRadialBuildsM) ||
         !validArray(inputs.windingAxialHeightsM) || !validArray(inputs.windingEndClearancesM))
         return invalid("Specified physical core, bobbin and winding dimensions must be finite and greater than zero.");
