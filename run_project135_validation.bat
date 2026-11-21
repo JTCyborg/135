@@ -46,6 +46,17 @@ if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
 )
 echo VCPKG_ROOT: %VCPKG_ROOT%>>"%LOG%"
 
+rem Keep the expensive OCCT source archive in the vcpkg download cache.
+rem This runner must never clean or delete "%VCPKG_ROOT%\downloads".
+set "OCCT_ARCHIVE=%VCPKG_ROOT%\downloads\Open-Cascade-SAS-OCCT-V8_0_1.tar.gz"
+if exist "%OCCT_ARCHIVE%" (
+    echo [VCPKG] Preserving cached OCCT archive: %OCCT_ARCHIVE%
+    echo [VCPKG] OCCT archive found and will be preserved: %OCCT_ARCHIVE%>>"%LOG%"
+) else (
+    echo [VCPKG] OCCT archive is not in the cache; vcpkg may need to download it.
+    echo [VCPKG] OCCT archive not found in cache: %OCCT_ARCHIVE%>>"%LOG%"
+)
+
 rem Refresh the vcpkg checkout itself: the version database files must match
 rem the current registry, not merely have the baseline commit object available.
 echo.
