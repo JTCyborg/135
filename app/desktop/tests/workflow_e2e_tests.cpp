@@ -463,8 +463,28 @@ private slots:
         QVERIFY(impedancePlot);
         const auto impedanceCurves = impedancePlot->property("plotCurves").toList();
         QCOMPARE(impedanceCurves.size(), 1);
-        QCOMPARE(impedanceCurves.front().toMap()
-            .value(QStringLiteral("points")).toList().size(), 501);
+        const auto impedancePoints = impedanceCurves.front().toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(impedancePoints.size(), 501);
+        for (const auto& pointValue : impedancePoints) {
+            const auto point = pointValue.toList();
+            QCOMPARE(point.size(), 2);
+            const double frequencyHz = point[0].toDouble();
+            const double plottedOhm = point[1].toDouble();
+            const double omega = 2.0 * std::acos(-1.0) * frequencyHz;
+            const std::complex<double> sourceZ{sourceR, omega * sourceL};
+            const std::complex<double> filterZ{
+                branchR, omega * branchL - 1.0 / (omega * branchC)
+            };
+            const double expectedBusOhm = std::abs(sourceZ * filterZ / (sourceZ + filterZ));
+            QVERIFY(std::isfinite(plottedOhm) && plottedOhm >= 0.0);
+            QVERIFY(qAbs(plottedOhm - expectedBusOhm) < 1.0e-9);
+        }
+
+        auto* currentTitle = window_->findChild<QLabel*>(
+            QStringLiteral("inductorCurrentPlotTitle"));
+        QVERIFY(currentTitle);
+        QVERIFY(currentTitle->text().contains(QStringLiteral("Reactor branch peak current")));
 
         auto* coreFluxPlot = window_->findChild<QWidget*>(
             QStringLiteral("resultsCoreFluxPlot"));
