@@ -505,16 +505,32 @@ private slots:
             artifactProjectId + QStringLiteral("_bus_impedance.png")));
         const QFileInfo coreFluxPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_core_flux.png")));
-        QVERIFY2(currentPng.exists() && currentPng.size() > 100,
-            "Debug reactor-current graph PNG was not automatically saved.");
-        QVERIFY2(impedancePng.exists() && impedancePng.size() > 100,
-            "Debug bus-impedance graph PNG was not automatically saved.");
-        QVERIFY2(coreFluxPng.exists() && coreFluxPng.size() > 100,
-            "Debug core-flux graph PNG was not automatically saved.");
-        QFile currentImage(currentPng.absoluteFilePath());
-        QVERIFY(currentImage.open(QIODevice::ReadOnly));
-        QCOMPARE(currentImage.read(8).toHex(),
-            QByteArray("89504e470d0a1a0a"));
+        auto* historyPlot = window_->findChild<QWidget*>(
+            QStringLiteral("historyComparisonPlot"));
+        QVERIFY(historyPlot);
+        const QFileInfo historyPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_history_comparison.png")));
+        const std::array<QFileInfo, 4> plotFiles{
+            currentPng, impedancePng, coreFluxPng, historyPng
+        };
+        const std::array<QWidget*, 4> plotWidgets{
+            window_->findChild<QWidget*>(QStringLiteral("resultsBankCurrentPlot")),
+            window_->findChild<QWidget*>(QStringLiteral("resultsBusImpedancePlot")),
+            coreFluxPlot, historyPlot
+        };
+        for (std::size_t i = 0; i < plotFiles.size(); ++i) {
+            QVERIFY2(plotFiles[i].exists() && plotFiles[i].size() > 100,
+                "A Debug plot PNG was not automatically saved.");
+            QVERIFY(plotWidgets[i]);
+            QImage image(plotFiles[i].absoluteFilePath());
+            QVERIFY2(!image.isNull(), "Saved Debug plot is not a decodable PNG.");
+            QVERIFY(image.width() >= 120);
+            QVERIFY(image.height() >= 100);
+            QCOMPARE(image.size(), plotWidgets[i]->size());
+            // An empty-data plot must still be a rendered diagnostic image,
+            // not a fully transparent placeholder.
+            QVERIFY(image.pixelColor(image.width() / 2, image.height() / 2).alpha() > 0);
+        }
 #endif
         for (const auto& curve : fluxCurves)
             QVERIFY(curve.toMap().value(QStringLiteral("points")).toList().isEmpty());
