@@ -50,7 +50,10 @@
 - [x] Добавлен строгий application adapter ReactorDesignInputs → ReactorPhysicalGeometry: только явные размеры, источник и ревизия; domain validation выполняется до CAD. Неизвестные размеры не подставляются.
 - [x] CAD вкладка подключена к adapter, buildThreeLimbReactorPresentation() и collectAssemblyPresentationDisplayItems(); кнопка строит PRELIMINARY / NOT_VERIFIED preview после подтверждения Construction.
 - [x] Любое изменение Construction инвалидирует CAD preview: viewport очищается, дерево получает STALE, генерация снова разрешается только после повторного подтверждения.
-- [ ] STEP export, component-level visibility/transparency tree controls и CAD regression tests ещё не подключены.
+- [x] Semantic component tree строится из AssemblyPresentationNode; visibility checkboxes и transparency control управляют тем же presentation model и обновляют viewport.
+- [x] Добавлен STEP export полного assembly B-Rep; перед записью повторно проверяются semantic tree и B-Rep, ошибки Transfer/Write возвращаются как Result.
+- [x] CAD regression test проверяет создание STEP-файла и его ненулевой размер; runtime/compile execution ещё требуется.
+- [ ] Проверить STEP round-trip/import в OCCT и CAD UI на Windows/MSVC.
 
 - [ ] Сопоставить каждый UI control с полем типизированной ReactorDesignInputs; убрать поля, существующие только в UI/JSON.
 - [x] UI содержит явные физические размеры стержней, глубины пакета, окон, сегментов ярма, межосевые расстояния и общие габариты.
@@ -89,8 +92,8 @@
 - [x] Валидировать окна, зазоры, стыки, габариты каркасов и winding envelopes до OCCT через domain validation.
 - [x] Подключить buildThreeLimbReactorPresentation() и collectAssemblyPresentationDisplayItems() к CAD вкладке.
 - [x] Отображать семь сегментов сердечника, три каркаса и три winding-pack envelopes; статус PRELIMINARY / NOT_VERIFIED и ограничения детализации показаны в UI.
-- [ ] Показать свойства, статусы, visibility/transparency по компонентам.
-- [ ] Добавить экспорт STEP после валидации B-Rep.
+- [x] Показать semantic component tree, свойства и статусы; visibility/transparency управляются по стабильным component IDs.
+- [x] Добавить экспорт STEP после валидации B-Rep.
 - [ ] Не называть упрощённые оболочки производственной геометрией.
 
 ### F. Сквозная проверка и выпуск
