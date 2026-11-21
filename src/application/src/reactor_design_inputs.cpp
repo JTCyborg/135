@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <array>
+#include <algorithm>
 #include <unordered_set>
 
 namespace p135::application {
