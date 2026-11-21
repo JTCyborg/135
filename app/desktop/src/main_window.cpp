@@ -3721,8 +3721,7 @@ QWidget* MainWindow::createCadPage()
     propertiesTitle->setStyleSheet("font-weight: 600;");
     structureLayout->addWidget(propertiesTitle);
     auto* properties = new QLabel(tr(
-        "No accepted physical geometry is available yet. Run the project design calculation "
-        "from the Calculation & design tab after supplying the required engineering data."));
+        "No preliminary CAD has been generated for the current Construction revision."));
     properties->setWordWrap(true);
     properties->setMinimumHeight(72);
     properties->setFrameShape(QFrame::StyledPanel);
@@ -3736,7 +3735,7 @@ QWidget* MainWindow::createCadPage()
     viewportLayout->addWidget(viewport, 1);
 
     connect(generateCad, &QPushButton::clicked, this,
-        [this, status, tree, root, properties, viewport, generateCad] {
+        [this, status, root, properties, viewport, generateCad] {
         if (constructionInputsDirty_) {
             status->setText(tr("CAD is blocked: confirm Construction again after the latest input change."));
             return;
