@@ -1,6 +1,7 @@
 #include "main_window.hpp"
 
 #include <functional>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include "material_database_widget.hpp"
 #include "cad_viewport_widget.hpp"
@@ -3685,6 +3686,10 @@ QWidget* MainWindow::createCadPage()
     auto* generateCad = new QPushButton(tr("Generate preliminary 3D model from Construction"));
     generateCad->setObjectName(QStringLiteral("generatePreliminaryCad"));
     layout->addWidget(generateCad);
+    auto* exportStep = new QPushButton(tr("Export validated assembly to STEP"));
+    exportStep->setObjectName(QStringLiteral("exportCadStep"));
+    exportStep->setEnabled(false);
+    layout->addWidget(exportStep);
 
     auto* workspace = new QSplitter(Qt::Horizontal, page);
     workspace->setChildrenCollapsible(false);
@@ -3858,7 +3863,25 @@ QWidget* MainWindow::createCadPage()
                  QString::fromStdString(physical.value().dimensionalRevision)));
         status->setText(tr("Preliminary CAD generated from the current Construction revision. Physical and manufacturing validation remain separate."));
         generateCad->setEnabled(false);
+        exportStep->setEnabled(true);
         appendLog(tr("[CAD] PRELIMINARY ASSEMBLY BUILT: %1 display solids").arg(items.size()));
+    });
+
+    connect(exportStep, &QPushButton::clicked, this,
+        [this, status, assemblyModel] {
+        const QString path = QFileDialog::getSaveFileName(
+            this, tr("Export STEP assembly"), projectId_ + QStringLiteral(".step"),
+            tr("STEP files (*.step *.stp)"));
+        if (path.isEmpty()) return;
+        const auto result = p135::cad::exportAssemblyStep(*assemblyModel, path.toStdString());
+        if (!result) {
+            status->setText(tr("STEP export failed: %1").arg(QString::fromStdString(result.error().message)));
+            appendLog(tr("[CAD] STEP EXPORT FAILED: %1").arg(QString::fromStdString(result.error().message)));
+            QMessageBox::warning(this, tr("STEP export failed"), QString::fromStdString(result.error().message));
+            return;
+        }
+        status->setText(tr("Validated assembly exported to %1").arg(path));
+        appendLog(tr("[CAD] STEP EXPORT OK: %1").arg(path));
     });
 
     workspace->addWidget(structurePanel);
@@ -4114,17 +4137,20 @@ void MainWindow::markConstructionInputsChanged()
     constructionInputsDirty_ = true;
     if (auto* generate = findChild<QPushButton*>(QStringLiteral("generatePreliminaryCad")))
         generate->setEnabled(true);
+    if (auto* exportStep = findChild<QPushButton*>(QStringLiteral("exportCadStep")))
+        exportStep->setEnabled(false);
     if (auto* viewport = findChild<CadViewportWidget*>(QStringLiteral("cadViewportWidget")))
         viewport->setDisplayItems({});
     if (auto* cadStatus = findChild<QLabel*>(QStringLiteral("cadGenerationStatus")))
         cadStatus->setText(tr("CAD preview invalidated: Construction inputs changed. Confirm the new revision and regenerate."));
     if (auto* tree = findChild<QTreeWidget*>(QStringLiteral("cadAssemblyTree"))) {
-        if (tree->topLevelItemCount() > 0) {
-            auto* root = tree->topLevelItem(0);
-            root->setText(1, QStringLiteral("STALE"));
-            for (int i = 0; i < root->childCount(); ++i)
-                root->child(i)->setText(1, QStringLiteral("STALE"));
-        }
+        std::function<void(QTreeWidgetItem*)> markStale;
+        markStale = [&markStale](QTreeWidgetItem* item) {
+            item->setText(1, QStringLiteral("STALE"));
+            for (int i = 0; i < item->childCount(); ++i) markStale(item->child(i));
+        };
+        for (int i = 0; i < tree->topLevelItemCount(); ++i)
+            markStale(tree->topLevelItem(i));
     }
     if (auto* state = findChild<QLabel*>(QStringLiteral("constructionInputState"))) {
         state->setText(tr("CONSTRUCTION INPUTS CHANGED — previous design-input capture is stale. Run the project calculation to create a new linked snapshot."));
