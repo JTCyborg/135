@@ -2867,6 +2867,7 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(designGroup);
 
     resultsTable_ = new QTableWidget(0, 3);
+    resultsTable_->setObjectName(QStringLiteral("calculationResultsTable"));
     resultsTable_->setHorizontalHeaderLabels({tr("Parameter"), tr("Value"), tr("Unit")});
     resultsTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     resultsTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
