@@ -1956,6 +1956,39 @@ QWidget* MainWindow::createConstructionPage()
     windingForm->addRow(tr("Bare conductor area"), conductorArea);
     windingForm->addRow(tr("Bare width (rectangular / foil)"), conductorWidth);
     windingForm->addRow(tr("Bare thickness (rectangular / foil)"), conductorThickness);
+    const auto makeConductorDimension = [](const QString& name) {
+        auto* field = new QDoubleSpinBox;
+        field->setObjectName(name);
+        field->setRange(0.0, 100000.0);
+        field->setDecimals(4);
+        field->setSuffix(QObject::tr(" mm"));
+        field->setSpecialValueText(QObject::tr("NOT_APPLICABLE"));
+        return field;
+    };
+    auto* bareDiameter = makeConductorDimension(QStringLiteral("construction_conductorBareDiameter"));
+    auto* insulatedDiameter = makeConductorDimension(QStringLiteral("construction_conductorInsulatedDiameter"));
+    auto* conductorInsulationBuild = makeConductorDimension(QStringLiteral("construction_conductorInsulationBuild"));
+    auto* bareDiameterLabel = new QLabel(tr("Bare diameter (round)"));
+    auto* insulatedDiameterLabel = new QLabel(tr("Insulated diameter (round)"));
+    auto* conductorInsulationLabel = new QLabel(tr("Conductor insulation build"));
+    windingForm->addRow(bareDiameterLabel, bareDiameter);
+    windingForm->addRow(insulatedDiameterLabel, insulatedDiameter);
+    windingForm->addRow(conductorInsulationLabel, conductorInsulationBuild);
+    const auto updateConductorApplicability = [conductorShape, bareDiameter, insulatedDiameter,
+        conductorInsulationBuild, bareDiameterLabel, insulatedDiameterLabel, conductorInsulationLabel] {
+        const bool round = conductorShape->currentData().toString() == QStringLiteral("round");
+        bareDiameter->setVisible(round);
+        insulatedDiameter->setVisible(round);
+        bareDiameterLabel->setVisible(round);
+        insulatedDiameterLabel->setVisible(round);
+        conductorInsulationBuild->setVisible(!round);
+        conductorInsulationLabel->setVisible(!round);
+        conductorWidth->setVisible(!round);
+        conductorThickness->setVisible(!round);
+    };
+    connect(conductorShape, &QComboBox::currentIndexChanged, page,
+        [updateConductorApplicability](int) { updateConductorApplicability(); });
+    updateConductorApplicability();
     auto* layerNote = new QLabel(tr(
         "Turns = turns per layer × layers is applicable only to layer-based winding constructions. "
         "For sectional, disc and foil windings, layer count and turn distribution require their own construction rules."));
