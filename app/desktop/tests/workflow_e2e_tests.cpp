@@ -514,6 +514,15 @@ private slots:
         QVERIFY(dxfContent.find("$INSUNITS") != std::string::npos);
         QVERIFY(dxfContent.find("OVERALL WIDTH") != std::string::npos);
         QVERIFY(dxfContent.find("OVERALL HEIGHT") != std::string::npos);
+        QVERIFY(dxfContent.find("LIMB A WIDTH") != std::string::npos);
+        QVERIFY(dxfContent.find("LIMB B WIDTH") != std::string::npos);
+        QVERIFY(dxfContent.find("LIMB C WIDTH") != std::string::npos);
+        QVERIFY(dxfContent.find("WINDOW AB") != std::string::npos);
+        QVERIFY(dxfContent.find("WINDOW BC") != std::string::npos);
+        QVERIFY(dxfContent.find("Yoke thickness T1/T2/B1/B2") != std::string::npos);
+        QVERIFY(dxfContent.find("Limb stack depths A/B/C") != std::string::npos);
+        QVERIFY(dxfContent.find("BOBBIN B AXIAL LENGTH") != std::string::npos);
+        QVERIFY(dxfContent.find("BOBBIN B DEPTH") != std::string::npos);
         QVERIFY(dxfContent.find("WINDING_ENVELOPE") != std::string::npos);
         QVERIFY(dxfContent.find("PRELIMINARY / NOT VERIFIED") != std::string::npos);
         QVERIFY(dxfContent.find("TEST-01-SYNTHETIC-GEOMETRY-R1") != std::string::npos);
