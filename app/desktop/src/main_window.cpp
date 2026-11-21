@@ -1061,6 +1061,55 @@ QWidget* MainWindow::createProjectPage()
             }
         }
 
+        int selectedJointCount = 0;
+        for (int joint = 0; joint < 8; ++joint) {
+            const auto* control = findChild<QComboBox*>(
+                QStringLiteral("construction_coreJoint_") + QString::number(joint + 1));
+            if (control && !control->currentData().toString().isEmpty()) ++selectedJointCount;
+        }
+        if (selectedJointCount != 0 && selectedJointCount != 8) {
+            QMessageBox::warning(this, tr("Incomplete core joint construction"),
+                tr("Specify the construction type for all eight limb-to-yoke interfaces, or leave all eight unspecified."));
+            return;
+        }
+
+        const auto* ductCountControl = findChild<QSpinBox*>(QStringLiteral("construction_coolingDuctCount"));
+        const int declaredDuctCount = ductCountControl ? ductCountControl->value() : 0;
+        int completeDuctCount = 0;
+        for (int duct = 0; duct < 3; ++duct) {
+            const QString suffix = QString::number(duct + 1);
+            const auto* position = findChild<QDoubleSpinBox*>(
+                QStringLiteral("construction_coolingDuctPosition_") + suffix);
+            const auto* thickness = findChild<QDoubleSpinBox*>(
+                QStringLiteral("construction_coolingDuctThickness_") + suffix);
+            const auto* material = findChild<QLineEdit*>(
+                QStringLiteral("construction_coolingDuctSpacerRevision_") + suffix);
+            const auto* airflow = findChild<QComboBox*>(
+                QStringLiteral("construction_coolingDuctAirflow_") + suffix);
+            const bool any = (position && position->value() > position->minimum()) ||
+                (thickness && thickness->value() > thickness->minimum()) ||
+                (material && !material->text().trimmed().isEmpty()) ||
+                (airflow && !airflow->currentData().toString().isEmpty());
+            const bool complete = position && position->value() > position->minimum() &&
+                thickness && thickness->value() > thickness->minimum() &&
+                material && !material->text().trimmed().isEmpty() &&
+                airflow && !airflow->currentData().toString().isEmpty();
+            if (any && !complete) {
+                QMessageBox::warning(this, tr("Incomplete cooling duct"),
+                    tr("Cooling duct %1 requires position, thickness, spacer material revision and airflow direction.")
+                        .arg(duct + 1));
+                return;
+            }
+            if (complete) ++completeDuctCount;
+        }
+        if (declaredDuctCount != completeDuctCount) {
+            QMessageBox::warning(this, tr("Cooling duct count mismatch"),
+                tr("Declared cooling duct count is %1, but %2 complete duct records are entered.")
+                    .arg(declaredDuctCount).arg(completeDuctCount));
+            if (ductCountControl) ductCountControl->setFocus();
+            return;
+        }
+
         QJsonObject snapshot;
         snapshot.insert(QStringLiteral("schemaVersion"), 1);
         snapshot.insert(QStringLiteral("tabId"), QStringLiteral("project"));
