@@ -63,6 +63,8 @@
 #include <QImage>
 #include <QPdfWriter>
 #include <QPageSize>
+#include <QPageLayout>
+#include <QDebug>
 #include <QColor>
 #include <QSizePolicy>
 #include <QPainterPath>
