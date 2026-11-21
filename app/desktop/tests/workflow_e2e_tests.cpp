@@ -557,14 +557,14 @@ private slots:
         QVERIFY(exportStep);
         QVERIFY(exportStep->isEnabled());
 
-        QSettings artifactSettings;
-        const QString artifactProjectId =
-            artifactSettings.value(QStringLiteral("project/currentId")).toString();
-        QVERIFY(!artifactProjectId.isEmpty());
+        QSettings cadArtifactSettings;
+        const QString cadArtifactProjectId =
+            cadArtifactSettings.value(QStringLiteral("project/currentId")).toString();
+        QVERIFY(!cadArtifactProjectId.isEmpty());
         const QString automaticStepPath = QDir(QStringLiteral("C:/Temp/trdos/135/CAD"))
-            .filePath(artifactProjectId + QStringLiteral("_assembly.step"));
+            .filePath(cadArtifactProjectId + QStringLiteral("_assembly.step"));
         const QString automaticPdfPath = QDir(QStringLiteral("C:/Temp/trdos/135/Drawings"))
-            .filePath(artifactProjectId + QStringLiteral("_assembly.pdf"));
+            .filePath(cadArtifactProjectId + QStringLiteral("_assembly.pdf"));
         QVERIFY2(QFileInfo::exists(automaticStepPath),
             "CAD generation did not automatically save the STEP assembly.");
         QVERIFY2(QFileInfo(automaticStepPath).size() > 0,
