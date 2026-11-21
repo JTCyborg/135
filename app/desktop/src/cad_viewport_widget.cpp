@@ -24,6 +24,7 @@
 #include <V3d_TypeOfOrientation.hxx>
 #include <V3d_Viewer.hxx>
 #include <Quantity_Color.hxx>
+#include <Graphic3d_MaterialAspect.hxx>
 
 #ifdef _WIN32
 #include <WNT_Window.hxx>
@@ -295,8 +296,34 @@ private:
         {
             if (item.shape.IsNull()) continue;
             Handle(AIS_Shape) presentation = new AIS_Shape(item.shape);
-            presentation->SetColor(Quantity_Color(
-                item.baseColor[0], item.baseColor[1], item.baseColor[2], Quantity_TOC_RGB));
+            const Quantity_Color baseColor(
+                item.baseColor[0], item.baseColor[1], item.baseColor[2], Quantity_TOC_RGB);
+            Graphic3d_MaterialAspect surfaceMaterial;
+            surfaceMaterial.SetAmbientColor(Quantity_Color(
+                item.baseColor[0] * 0.28, item.baseColor[1] * 0.28,
+                item.baseColor[2] * 0.28, Quantity_TOC_RGB));
+            surfaceMaterial.SetDiffuseColor(baseColor);
+            switch (item.surfaceFinish)
+            {
+            case p135::cad::AssemblySurfaceFinish::ElectricalSteelSatin:
+                surfaceMaterial.SetSpecularColor(Quantity_Color(0.42, 0.45, 0.49, Quantity_TOC_RGB));
+                surfaceMaterial.SetShininess(0.22f);
+                break;
+            case p135::cad::AssemblySurfaceFinish::CopperPolished:
+                surfaceMaterial.SetSpecularColor(Quantity_Color(0.95, 0.72, 0.52, Quantity_TOC_RGB));
+                surfaceMaterial.SetShininess(0.68f);
+                break;
+            case p135::cad::AssemblySurfaceFinish::InsulatorMatte:
+                surfaceMaterial.SetSpecularColor(Quantity_Color(0.22, 0.21, 0.18, Quantity_TOC_RGB));
+                surfaceMaterial.SetShininess(0.08f);
+                break;
+            case p135::cad::AssemblySurfaceFinish::NeutralMatte:
+            default:
+                surfaceMaterial.SetSpecularColor(Quantity_Color(0.30, 0.31, 0.33, Quantity_TOC_RGB));
+                surfaceMaterial.SetShininess(0.12f);
+                break;
+            }
+            presentation->SetMaterial(surfaceMaterial);
             presentation->SetDisplayMode(AIS_Shaded);
             if (item.transparency > 0.0)
                 presentation->SetTransparency(item.transparency);
