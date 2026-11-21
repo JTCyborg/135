@@ -101,3 +101,9 @@ The application now contains `makeFilterExcitationStageArtifact(const filter::Fi
 A focused application test covers a TEST-01 synthesis result and invalid/missing input cases.
 
 **Integration status:** this adapter is an application-layer building block. It is not yet called from `MainWindow::calculateFilter()`, and no desktop UI status is yet driven by the dependency execution state. The next increment must wire this adapter to the successful synthesis result and then expose the accepted electrical-stage revision in Calculation & design. No magnetic/winding/thermal stages should be marked valid by that change.
+
+## 8. Desktop integration: filter excitation
+
+`MainWindow::calculateFilter()` now adapts the successful typed `filter::synthesize()` result with `makeFilterExcitationStageArtifact()` and executes only the `filter.excitation` stage through `executeReactorDesignPlan()`. The window owns the execution state across calculation runs. The graph plan generated from `input.filter.excitation` is used as the invalidation list: every dependent magnetic, winding-loss, core-loss, thermal, assembly and verification stage is reset to `NOT_VERIFIED` and its previous payload is cleared. These stages are not marked valid by electrical synthesis. The committed revision remains unverified.
+
+This is deliberately narrow integration. AC network solving, frequency sweep, magnetic analysis and thermal assessments remain their existing calculation paths and are not yet registered as typed pipeline stages. If excitation artifact validation or pipeline execution fails, the failure is logged and no successful pipeline commit is claimed.
