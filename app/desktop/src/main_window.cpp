@@ -9,7 +9,6 @@
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 
 #include "p135/application/reactor_design_inputs.hpp"
-#include "p135/application/reactor_design_inputs.hpp"
 #include "p135/application/reactor_design_graph.hpp"
 #include "p135/application/ideal_reactor_sizing.hpp"
 #include "p135/filter/synthesis.hpp"
