@@ -1,6 +1,6 @@
 {
     "buildConfiguration": "Debug",
-    "confirmedAtUtc": "2026-11-21T08:07:43.024Z",
+    "confirmedAtUtc": "2026-11-21T08:19:13.547Z",
     "fieldLabels": {
         "projectAirflowM3h": "Forced-air volume flow",
         "projectAltitudeM": "Installation altitude",
@@ -31,7 +31,7 @@
             "text": "AN — natural air cooling"
         },
         "projectCustomer": "",
-        "projectDate": "2026-11-20",
+        "projectDate": "2026-11-21",
         "projectEngineer": "",
         "projectInsulationClass": {
             "data": null,
@@ -43,7 +43,7 @@
             "index": 0,
             "text": "IP00"
         },
-        "projectName": "TEST-01 — Industrial detuned LC filter 5th harmonic, 100 kVAr / 400 V",
+        "projectName": "New engineering project",
         "projectNumber": "",
         "projectProductFamily": {
             "data": null,
@@ -52,7 +52,7 @@
         },
         "projectRevision": "A"
     },
-    "projectId": "8eaf90c7-5e4a-4d22-b8d7-202611201120",
+    "projectId": "5469ef97-1956-40d2-8555-a8968bfe7af7",
     "schemaVersion": 1,
     "tabId": "project",
     "tabTitle": "Project",
