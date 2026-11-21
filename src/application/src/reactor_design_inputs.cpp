@@ -95,7 +95,9 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         !validArray(inputs.yokeThicknessesM) || !validArray(inputs.yokeDepthsM) ||
         !validArray(inputs.limbCenterSpacingsM) || !validArray(inputs.bobbinInnerWidthsM) ||
         !validArray(inputs.bobbinInnerHeightsM) || !validArray(inputs.bobbinAxialLengthsM) ||
-        !validArray(inputs.bobbinWallThicknessesM) || !validArray(inputs.windingRadialBuildsM) ||
+        !validArray(inputs.bobbinWallThicknessesM) || !validArray(inputs.bobbinFlangeThicknessesM) ||
+        !validArray(inputs.bobbinFlangeOuterWidthsM) || !validArray(inputs.bobbinFlangeOuterHeightsM) ||
+        !validArray(inputs.windingRadialBuildsM) ||
         !validArray(inputs.windingAxialHeightsM) || !validArray(inputs.windingEndClearancesM))
         return invalid("Specified physical core, bobbin and winding dimensions must be finite and greater than zero.");
     if (inputs.coreOverallHeightM &&
@@ -230,6 +232,9 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.bobbinInnerHeightsM != accepted.bobbinInnerHeightsM ||
            current.bobbinAxialLengthsM != accepted.bobbinAxialLengthsM ||
            current.bobbinWallThicknessesM != accepted.bobbinWallThicknessesM ||
+           current.bobbinFlangeThicknessesM != accepted.bobbinFlangeThicknessesM ||
+           current.bobbinFlangeOuterWidthsM != accepted.bobbinFlangeOuterWidthsM ||
+           current.bobbinFlangeOuterHeightsM != accepted.bobbinFlangeOuterHeightsM ||
            current.windingRadialBuildsM != accepted.windingRadialBuildsM ||
            current.windingAxialHeightsM != accepted.windingAxialHeightsM ||
            current.windingEndClearancesM != accepted.windingEndClearancesM ||
