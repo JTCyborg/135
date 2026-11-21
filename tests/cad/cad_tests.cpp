@@ -14,6 +14,7 @@
 #include <TopoDS_Face.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Iterator.hxx>
+#include <STEPControl_Reader.hxx>
 
 #include <algorithm>
 #include <array>
@@ -670,6 +671,16 @@ int main()
     assert(stepExport);
     assert(std::filesystem::exists(stepTestPath));
     assert(std::filesystem::file_size(stepTestPath) > 0);
+    STEPControl_Reader stepReader;
+    assert(stepReader.ReadFile(stepTestPath.string().c_str()) == IFSelect_RetDone);
+    assert(stepReader.TransferRoots() > 0);
+    const auto importedStepShape = stepReader.OneShape();
+    assert(!importedStepShape.IsNull());
+    assert(BRepCheck_Analyzer(importedStepShape).IsValid());
+    std::size_t importedStepSolids = 0;
+    for (TopExp_Explorer it(importedStepShape, TopAbs_SOLID); it.More(); it.Next())
+        ++importedStepSolids;
+    assert(importedStepSolids >= 13);
     std::filesystem::remove(stepTestPath, stepFileError);
 
     auto presentation = presentationResult.value();
