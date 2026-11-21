@@ -25,6 +25,8 @@ int main()
     inputs.maximumWindingTemperatureK = 393.15;
     inputs.coreGeometryFamily = "three-limb";
     inputs.coreLaminationConstruction = "measured packet stack";
+    inputs.dimensionalSource = "Core drawing DR-125";
+    inputs.dimensionalRevision = "Rev C";
     inputs.conductorShape = "rectangular";
     inputs.windingTechnology = "layer";
     inputs.coolingMethod = "natural-air";
@@ -45,9 +47,15 @@ int main()
     const auto accepted = inputs;
     assert(!requiresRecalculation(inputs, accepted));
 
+    inputs.dimensionalRevision = "Rev D";
+    assert(requiresRecalculation(inputs, accepted));
+    inputs.dimensionalRevision = "Rev C";
     inputs.coreStackDepthM = 0.125;
     assert(requiresRecalculation(inputs, accepted));
     inputs.coreStackDepthM = 0.12;
+    inputs.dimensionalRevision.reset();
+    assert(!validate(inputs));
+    inputs.dimensionalRevision = "Rev C";
     inputs.coreYokeThicknessM = 0.031;
     assert(requiresRecalculation(inputs, accepted));
     inputs.coreYokeThicknessM = 0.03;
