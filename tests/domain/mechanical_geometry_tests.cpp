@@ -209,6 +209,7 @@ int main()
     // round-wire definition is required.
     auto detailedWinding = valid;
     for (auto& winding : detailedWinding.windingPacks) {
+        winding.layerCount = 2;
         winding.turns = 20;
         winding.turnsPerLayer = 10;
         winding.parallelConductors = 1;
