@@ -14,6 +14,7 @@
 #include <QTabWidget>
 #include <QTest>
 #include <QTableWidget>
+#include <QTreeWidget>
 #include <QStringList>
 #include <QWidget>
 
