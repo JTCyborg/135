@@ -224,6 +224,213 @@ private slots:
         QVERIFY(!exportStep->isEnabled());
     }
 
+    void syntheticTest01ConstructionBuildsOcctAssembly()
+    {
+        auto* tabs = window_->findChild<QTabWidget*>();
+        QVERIFY(tabs);
+
+        // Enter the normal workflow through the UI. The geometry below is a
+        // deterministic synthetic CAD regression fixture, NOT a manufacturing
+        // drawing or an engineering-approved reactor design.
+        auto* projectConfirm = window_->findChild<QPushButton*>(
+            QStringLiteral("confirmProjectAndContinue"));
+        QVERIFY(projectConfirm);
+        QTest::mouseClick(projectConfirm, Qt::LeftButton);
+        QTRY_COMPARE(tabs->currentIndex(), 1);
+
+        auto* synthesize = window_->findChild<QPushButton*>(
+            QStringLiteral("synthesizeLcBranch"));
+        QVERIFY(synthesize);
+        QTest::mouseClick(synthesize, Qt::LeftButton);
+
+        auto* filterConfirm = window_->findChild<QPushButton*>(
+            QStringLiteral("confirmFilterDefinitionAndContinue"));
+        QVERIFY(filterConfirm);
+        QTest::mouseClick(filterConfirm, Qt::LeftButton);
+        QTRY_COMPARE(tabs->currentIndex(), 2);
+
+        const auto selectCombo = [this](const QString& name, const QVariant& data) {
+            auto* combo = window_->findChild<QComboBox*>(name);
+            if (!combo) return false;
+            const int index = combo->findData(data);
+            if (index < 0) return false;
+            combo->setCurrentIndex(index);
+            return combo->currentData() == data;
+        };
+        const auto setDouble = [this](const QString& name, double value) {
+            auto* field = window_->findChild<QDoubleSpinBox*>(name);
+            if (!field) return false;
+            field->setValue(value);
+            return qAbs(field->value() - value) < 1.0e-9;
+        };
+        const auto setInteger = [this](const QString& name, int value) {
+            auto* field = window_->findChild<QSpinBox*>(name);
+            if (!field) return false;
+            field->setValue(value);
+            return field->value() == value;
+        };
+        const auto setText = [this](const QString& name, const QString& value) {
+            auto* field = window_->findChild<QLineEdit*>(name);
+            if (!field) return false;
+            field->setText(value);
+            return field->text() == value;
+        };
+
+        // Pin exact, seeded material revisions. No "latest" or free-text
+        // material aliases are accepted by this fixture.
+        QVERIFY(selectCombo(QStringLiteral("construction_coreMaterial"),
+            QStringLiteral("SEED-TK-M235-35A-R1")));
+        QVERIFY(selectCombo(QStringLiteral("construction_conductorMaterial"),
+            QStringLiteral("SEED-CU-C10100-R1")));
+        QVERIFY(selectCombo(QStringLiteral("construction_insulationMaterial"),
+            QStringLiteral("SEED-DUPONT-NOMEX410-R1")));
+        QVERIFY(selectCombo(QStringLiteral("construction_coreGeometry"),
+            QStringLiteral("three-limb")));
+        QVERIFY(selectCombo(QStringLiteral("construction_conductorShape"),
+            QStringLiteral("round")));
+        QVERIFY(selectCombo(QStringLiteral("construction_windingTechnology"),
+            QStringLiteral("layer")));
+        QVERIFY(selectCombo(QStringLiteral("construction_bobbinUsage"), true));
+        QVERIFY(selectCombo(QStringLiteral("construction_cooling"),
+            QStringLiteral("natural-air")));
+        QVERIFY(selectCombo(QStringLiteral("construction_insulationThermalClass"),
+            QStringLiteral("B")));
+
+        QVERIFY(setDouble(QStringLiteral("construction_stackingFactor"), 0.95));
+        QVERIFY(setText(QStringLiteral("construction_laminationConstruction"),
+            QStringLiteral("Uniform 40 mm stack; eight butt interfaces; synthetic E2E fixture only")));
+        QVERIFY(setText(QStringLiteral("construction_dimensionalSource"),
+            QStringLiteral("TEST-01 synthetic CAD regression fixture; not a source engineering drawing")));
+        QVERIFY(setText(QStringLiteral("construction_dimensionalRevision"),
+            QStringLiteral("TEST-01-SYNTHETIC-GEOMETRY-R1")));
+        QVERIFY(setText(QStringLiteral("construction_bobbinMaterial"),
+            QStringLiteral("TEST-01 synthetic insulating bobbin material; properties NOT_VERIFIED")));
+
+        // Three-limb core: all values are explicit millimetres. The dimensions
+        // satisfy the domain stack-up equations and equal-depth Butt interfaces.
+        for (int i = 1; i <= 3; ++i) {
+            QVERIFY(setDouble(QStringLiteral("construction_limbWidth_%1").arg(i), 60.0));
+            QVERIFY(setDouble(QStringLiteral("construction_limbDepth_%1").arg(i), 40.0));
+        }
+        for (int i = 1; i <= 2; ++i) {
+            QVERIFY(setDouble(QStringLiteral("construction_windowWidth_%1").arg(i), 80.0));
+            QVERIFY(setDouble(QStringLiteral("construction_windowHeight_%1").arg(i), 190.0));
+        }
+        for (int i = 1; i <= 4; ++i) {
+            QVERIFY(setDouble(QStringLiteral("construction_yokeThickness_%1").arg(i), 30.0));
+            QVERIFY(setDouble(QStringLiteral("construction_yokeDepth_%1").arg(i), 40.0));
+        }
+        QVERIFY(setDouble(QStringLiteral("construction_limbCenterSpacing_1"), 140.0));
+        QVERIFY(setDouble(QStringLiteral("construction_limbCenterSpacing_2"), 140.0));
+        QVERIFY(setDouble(QStringLiteral("construction_limbCenterSpacing_3"), 280.0));
+        QVERIFY(setDouble(QStringLiteral("construction_coreOverallHeight"), 250.0));
+        QVERIFY(setDouble(QStringLiteral("construction_coreOverallWidth"), 340.0));
+        for (int i = 1; i <= 8; ++i) {
+            QVERIFY(selectCombo(QStringLiteral("construction_coreJoint_%1").arg(i),
+                QStringLiteral("butt")));
+        }
+
+        // Explicit winding/conductor inputs. These values make the UI fixture
+        // deterministic; they are not used to claim a verified electrical or
+        // thermal design.
+        QVERIFY(setInteger(QStringLiteral("construction_turns"), 20));
+        QVERIFY(setInteger(QStringLiteral("construction_turnsPerLayer"), 10));
+        QVERIFY(setInteger(QStringLiteral("construction_layers"), 2));
+        QVERIFY(setInteger(QStringLiteral("construction_sections"), 1));
+        QVERIFY(setInteger(QStringLiteral("construction_parallelConductors"), 1));
+        QVERIFY(setDouble(QStringLiteral("construction_conductorArea"), 3.1416));
+        QVERIFY(setDouble(QStringLiteral("construction_conductorBareDiameter"), 2.0));
+        QVERIFY(setDouble(QStringLiteral("construction_conductorInsulatedDiameter"), 2.2));
+        QVERIFY(setDouble(QStringLiteral("construction_conductorInsulationBuild"), 0.1));
+        QVERIFY(setDouble(QStringLiteral("construction_turnInsulation"), 0.05));
+        QVERIFY(setDouble(QStringLiteral("construction_layerInsulation"), 0.2));
+        QVERIFY(setDouble(QStringLiteral("construction_mainInsulation"), 1.0));
+
+        // Bobbin and winding envelopes: all three phases use the same declared
+        // test dimensions. Axial and radial clearances satisfy the OCCT adapter.
+        for (int i = 1; i <= 3; ++i) {
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinInnerWidth_%1").arg(i), 64.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinInnerHeight_%1").arg(i), 46.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinAxialLength_%1").arg(i), 160.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinWallThickness_%1").arg(i), 3.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinFlangeThickness_%1").arg(i), 4.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinFlangeOuterWidth_%1").arg(i), 72.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinFlangeOuterHeight_%1").arg(i), 54.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinWindingClearance_%1").arg(i), 2.0));
+            QVERIFY(setDouble(QStringLiteral("construction_windingRadialBuild_%1").arg(i), 5.0));
+            QVERIFY(setDouble(QStringLiteral("construction_windingAxialHeight_%1").arg(i), 140.0));
+            QVERIFY(setDouble(QStringLiteral("construction_windingEndClearance_%1").arg(i), 10.0));
+        }
+
+        // Explicit thermal metadata; no cooling ducts or discrete air gaps are
+        // invented. Those features remain absent from this test geometry.
+        QVERIFY(setDouble(QStringLiteral("construction_ambient"), 40.0));
+        QVERIFY(setText(QStringLiteral("construction_insulationThermalStandard"),
+            QStringLiteral("IEC 60085 (test metadata)")));
+        QVERIFY(setDouble(QStringLiteral("construction_insulationClassReferenceTemperature"), 130.0));
+        QVERIFY(setDouble(QStringLiteral("construction_insulationSafetyMargin"), 10.0));
+        QVERIFY(setDouble(QStringLiteral("construction_maximumWindingTemperature"), 100.0));
+
+        auto* confirmConstruction = window_->findChild<QPushButton*>(
+            QStringLiteral("confirmConstructionAndContinue"));
+        QVERIFY(confirmConstruction);
+        QTest::mouseClick(confirmConstruction, Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), 3, 5000);
+        auto* confirmationStatus = window_->findChild<QLabel*>(
+            QStringLiteral("constructionConfirmationStatus"));
+        QVERIFY(confirmationStatus);
+        QVERIFY(confirmationStatus->text().contains(QStringLiteral("Confirmed")));
+
+        auto* recalculate = window_->findChild<QPushButton*>(
+            QStringLiteral("recalculateProjectButton"));
+        QVERIFY(recalculate);
+        QTest::mouseClick(recalculate, Qt::LeftButton);
+        auto* results = window_->findChild<QTableWidget*>(
+            QStringLiteral("calculationResultsTable"));
+        QVERIFY(results);
+        QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
+
+        auto* confirmCalculation = window_->findChild<QPushButton*>(
+            QStringLiteral("confirmCalculationDesign"));
+        QVERIFY(confirmCalculation);
+        QTest::mouseClick(confirmCalculation, Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), 4, 5000);
+
+        auto* generateCad = window_->findChild<QPushButton*>(
+            QStringLiteral("generatePreliminaryCad"));
+        QVERIFY(generateCad);
+        QTest::mouseClick(generateCad, Qt::LeftButton);
+
+        auto* cadStatus = window_->findChild<QLabel*>(
+            QStringLiteral("cadGenerationStatus"));
+        QVERIFY(cadStatus);
+        QTRY_VERIFY_WITH_TIMEOUT(
+            cadStatus->text().contains(QStringLiteral("Preliminary CAD generated")), 5000);
+
+        auto* assemblyTree = window_->findChild<QTreeWidget*>(
+            QStringLiteral("cadAssemblyTree"));
+        QVERIFY(assemblyTree);
+        QCOMPARE(assemblyTree->topLevelItemCount(), 1);
+        auto* root = assemblyTree->topLevelItem(0);
+        QVERIFY(root);
+        QCOMPARE(root->childCount(), 2);
+        auto* core = root->child(0);
+        auto* windingGroup = root->child(1);
+        QVERIFY(core);
+        QVERIFY(windingGroup);
+        QCOMPARE(core->childCount(), 7); // Three limbs and four yoke segments.
+        QCOMPARE(windingGroup->childCount(), 3);
+        for (int phase = 0; phase < 3; ++phase) {
+            auto* phaseNode = windingGroup->child(phase);
+            QVERIFY(phaseNode);
+            QCOMPARE(phaseNode->childCount(), 2); // Bobbin + winding envelope.
+        }
+        auto* exportStep = window_->findChild<QPushButton*>(
+            QStringLiteral("exportCadStep"));
+        QVERIFY(exportStep);
+        QVERIFY(exportStep->isEnabled());
+    }
+
     void twoDimensionalDrawingStageIsPresent()
     {
         const auto* drawingAction = window_->findChild<QPushButton*>(
