@@ -86,8 +86,12 @@ bool setTransparency(
     return false;
 }
 
-std::array<double, 3> presentationColor(const std::string& id)
+std::array<double, 3> presentationColor(
+    const std::string& id, const std::string& materialRevisionId)
 {
+    if (materialRevisionId == "SEED-TK-M235-35A-R1") return {0.48, 0.55, 0.63};
+    if (materialRevisionId == "SEED-CU-C10100-R1") return {0.78, 0.39, 0.16};
+    if (materialRevisionId == "SEED-DUPONT-NOMEX410-R1") return {0.88, 0.78, 0.56};
     // Temporary visual palette keyed by semantic component role. These colors
     // are deliberately not inferred as verified material assignments.
     if (id.rfind("core.", 0) == 0) return {0.48, 0.55, 0.63}; // laminated steel
@@ -110,7 +114,8 @@ void collectDisplayItems(
 
     if (node.children.empty() && !node.shape.IsNull()) {
         items.push_back(AssemblyPresentationDisplayItem{
-            node.id, node.shape, effectiveTransparency, presentationColor(node.id)
+            node.id, node.shape, effectiveTransparency,
+            presentationColor(node.id, node.materialRevisionId), node.materialRevisionId
         });
         return;
     }
@@ -152,6 +157,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
     core.kind = AssemblyComponentKind::CoreGroup;
     core.representation = AssemblyGeometryRepresentation::SimplifiedCoreSegment;
     core.shape = topLevel[0];
+    core.materialRevisionId = geometry.coreMaterialRevisionId;
 
     constexpr std::array<const char*, 7> coreIds{
         "core.limb.A", "core.limb.B", "core.limb.C",
@@ -177,6 +183,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         component.kind = AssemblyComponentKind::CoreSegment;
         component.representation = AssemblyGeometryRepresentation::SimplifiedCoreSegment;
         component.shape = it.Value();
+        component.materialRevisionId = geometry.coreMaterialRevisionId;
         core.children.push_back(std::move(component));
         ++coreComponentCount;
     }
@@ -210,6 +217,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         bobbin.kind = AssemblyComponentKind::Bobbin;
         bobbin.representation = AssemblyGeometryRepresentation::PhysicalSolid;
         bobbin.shape = topLevel[bobbinIndex];
+        bobbin.materialRevisionId = geometry.bobbins[phase].material;
 
         AssemblyPresentationNode winding;
         winding.id = "winding." + phaseId + ".envelope";
@@ -217,6 +225,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         winding.kind = AssemblyComponentKind::WindingEnvelope;
         winding.representation = AssemblyGeometryRepresentation::WindingPackEnvelope;
         winding.shape = topLevel[windingIndex];
+        winding.materialRevisionId = geometry.conductorMaterialRevisionId;
 
         phaseNode.children.push_back(std::move(bobbin));
         phaseNode.children.push_back(std::move(winding));
