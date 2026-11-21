@@ -3698,6 +3698,7 @@ QWidget* MainWindow::createCadPage()
     structureLayout->addWidget(structureTitle);
 
     auto* tree = new QTreeWidget(structurePanel);
+    tree->setObjectName(QStringLiteral("cadAssemblyTree"));
     tree->setColumnCount(2);
     tree->setHeaderLabels({tr("Component"), tr("State")});
     tree->setRootIsDecorated(true);
@@ -3732,6 +3733,7 @@ QWidget* MainWindow::createCadPage()
     auto* viewportLayout = new QVBoxLayout(viewportPanel);
     viewportLayout->setContentsMargins(0, 0, 0, 0);
     auto* viewport = new CadViewportWidget(viewportPanel);
+    viewport->setObjectName(QStringLiteral("cadViewportWidget"));
     viewportLayout->addWidget(viewport, 1);
 
     connect(generateCad, &QPushButton::clicked, this,
@@ -4033,6 +4035,20 @@ void MainWindow::markConstructionInputsChanged()
 {
     if (loadingProjectSettings_) return;
     constructionInputsDirty_ = true;
+    if (auto* generate = findChild<QPushButton*>(QStringLiteral("generatePreliminaryCad")))
+        generate->setEnabled(true);
+    if (auto* viewport = findChild<CadViewportWidget*>(QStringLiteral("cadViewportWidget")))
+        viewport->setDisplayItems({});
+    if (auto* cadStatus = findChild<QLabel*>(QStringLiteral("cadGenerationStatus")))
+        cadStatus->setText(tr("CAD preview invalidated: Construction inputs changed. Confirm the new revision and regenerate."));
+    if (auto* tree = findChild<QTreeWidget*>(QStringLiteral("cadAssemblyTree"))) {
+        if (tree->topLevelItemCount() > 0) {
+            auto* root = tree->topLevelItem(0);
+            root->setText(1, QStringLiteral("STALE"));
+            for (int i = 0; i < root->childCount(); ++i)
+                root->child(i)->setText(1, QStringLiteral("STALE"));
+        }
+    }
     if (auto* state = findChild<QLabel*>(QStringLiteral("constructionInputState"))) {
         state->setText(tr("CONSTRUCTION INPUTS CHANGED — previous design-input capture is stale. Run the project calculation to create a new linked snapshot."));
         state->setStyleSheet("color: #a66b00; font-weight: 600;");
