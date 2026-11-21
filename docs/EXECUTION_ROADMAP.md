@@ -117,13 +117,14 @@
 - [x] Добавлен явный ожидаемый пробел для 2D: тест проверяет наличие `generateCadDrawings`, но пока отмечен как expected failure, так как в приложении отсутствуют 2D drawing generator и экспорт.
 - [ ] Заполнить все поля всех вкладок детерминированным TEST-01 UI fixture; для каждого snapshot сверять полный набор control IDs и сохранённых значений.
 - [ ] Проверить численные значения TEST-01 через UI, включая C, L, R и токи, а не только факт появления строк результатов.
-- [x] Добавить в desktop E2E численные regression assertions для фазного напряжения, C, L и R TEST-01 с допусками; выполнение нового теста на Windows ещё ожидает подтверждения.
+- [x] Добавить в desktop E2E численные regression assertions для фазного напряжения, C, L и R TEST-01 с допусками; пользователь подтвердил успешный Windows/MSVC Debug CTest 1/1 (16.71 s).
 - [ ] Подготовить согласованный физический TEST-01 fixture с source/revision и точными material revision IDs; пройти через CAD UI до реальной генерации и проверки 3D B-Rep.
+- [x] Добавить E2E negative-path assertion: при неполных Construction inputs CAD generation обязана отказать, оставить placeholder assembly tree и не разрешать STEP export. Изменение опубликовано, Windows-проверка ожидается.
 - [ ] Реализовать 2D drawing generator из той же принятой физической/CAD revision (ортогональные виды, размеры, единицы, provenance) и экспорт; подключить его к CAD UI.
 - [ ] После появления 2D generator убрать expected-failure и проверить содержимое/валидность 2D output artifact.
 - [ ] Проверить инвалидацию: геометрия → магнитные/тепловые/CAD/drawing результаты; материал → зависимые расчёты.
 - [ ] Проверить Debug и Release, сохранение/загрузку проекта, immutable snapshots.
-- [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: CTest 1/1 passed (13.71 s), после исправления Qt platform plugin deployment; результат подтверждён пользователем.
+- [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: CTest 1/1 passed (13.71 s) после исправления Qt platform plugin deployment; последующий запуск с численными TEST-01 assertions подтверждён пользователем (16.71 s).
 - [ ] Запустить desktop UI тест в Windows/MSVC Release; фиксировать результаты, не объявлять PASS без фактического запуска.
 
 ## 4. Критерии приёмки
