@@ -147,9 +147,9 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         }
     }
     for (const auto& gap : inputs.airGaps) {
-        if (gap.limbIndex >= 3 || !std::isfinite(gap.positionFromLimbStartM) ||
+        if (gap.limbIndex >= 7 || !std::isfinite(gap.positionFromLimbStartM) ||
             !std::isfinite(gap.lengthM) || gap.positionFromLimbStartM < 0.0 || gap.lengthM <= 0.0)
-            return invalid("Each discrete air gap requires a valid limb, non-negative position and positive length.");
+            return invalid("Each discrete air gap requires a valid core segment, non-negative position and positive length.");
     }
     if (inputs.airGapCountPerLimb) {
         std::array<std::uint32_t, 3> actual{};
