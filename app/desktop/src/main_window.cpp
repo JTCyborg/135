@@ -2952,6 +2952,7 @@ QWidget* MainWindow::createResultsPage()
     currentPlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
+    resultsBankCurrentPlot_->setObjectName(QStringLiteral("resultsBankCurrentPlot"));
     resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Reactor branch peak current (A)"));
     resultsBankCurrentPlot_->setMinimumHeight(250);
     resultsBankCurrentPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -2961,6 +2962,7 @@ QWidget* MainWindow::createResultsPage()
     coreFluxPlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(coreFluxPlotTitle);
     resultsCoreFluxPlot_ = new PlotWidget;
+    resultsCoreFluxPlot_->setObjectName(QStringLiteral("resultsCoreFluxPlot"));
     resultsCoreFluxPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
     resultsCoreFluxPlot_->setMinimumHeight(250);
     resultsCoreFluxPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -2970,6 +2972,7 @@ QWidget* MainWindow::createResultsPage()
     impedancePlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(impedancePlotTitle);
     resultsBusImpedancePlot_ = new PlotWidget;
+    resultsBusImpedancePlot_->setObjectName(QStringLiteral("resultsBusImpedancePlot"));
     resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
     resultsBusImpedancePlot_->setMinimumHeight(250);
     resultsBusImpedancePlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -3177,6 +3180,7 @@ QWidget* MainWindow::createHistoryPage()
     compareRow->addWidget(compareGraphs);
     layout->addLayout(compareRow);
     historyComparisonPlot_ = new PlotWidget;
+    historyComparisonPlot_->setObjectName(QStringLiteral("historyComparisonPlot"));
     historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Selected metric"));
     layout->addWidget(historyComparisonPlot_);
 
