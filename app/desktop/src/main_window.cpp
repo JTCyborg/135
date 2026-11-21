@@ -125,6 +125,17 @@ public:
         curves_ = std::move(curves);
         xLabel_ = std::move(xLabel);
         yLabel_ = std::move(yLabel);
+        QVariantList serializedCurves;
+        for (const auto& curve : curves_) {
+            QVariantMap serializedCurve;
+            serializedCurve.insert(QStringLiteral("name"), curve.name);
+            QVariantList serializedPoints;
+            for (const auto& [x, y] : curve.points)
+                serializedPoints.push_back(QVariantList{x, y});
+            serializedCurve.insert(QStringLiteral("points"), serializedPoints);
+            serializedCurves.push_back(serializedCurve);
+        }
+        setProperty("plotCurves", serializedCurves);
         update();
     }
 
@@ -156,25 +167,30 @@ protected:
         bool hasPoints = false;
         for (const auto& curve : curves_) {
             for (const auto& [x, y] : curve.points) {
-                if (!std::isfinite(x) || !std::isfinite(y) || x <= 0.0) continue;
+                if (!std::isfinite(x) || !std::isfinite(y) || x <= 0.0 || y < 0.0) continue;
                 minX = std::min(minX, x);
                 maxX = std::max(maxX, x);
                 maxY = std::max(maxY, y);
                 hasPoints = true;
             }
         }
-        if (!hasPoints || !(maxX > minX) || !(maxY > minY)) {
+        if (!hasPoints) {
             painter.setPen(palette().color(QPalette::Text));
-            painter.drawText(area, Qt::AlignCenter, tr("No frequency-response data available"));
+            painter.drawText(area, Qt::AlignCenter, tr("No valid frequency-response data available"));
             painter.drawText(QRectF(0, height() - 30, width(), 22), Qt::AlignCenter, xLabel_);
             return;
         }
 
-        const double logMin = std::log10(minX);
-        const double logMax = std::log10(maxX);
+        double logMin = std::log10(minX);
+        double logMax = std::log10(maxX);
+        if (!(logMax > logMin)) {
+            logMin -= 0.5;
+            logMax += 0.5;
+        }
         const double yMax = std::max({maxY * 1.08,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
-            magneticKneeCurrentA_.value_or(0.0) * 1.08});
+            magneticKneeCurrentA_.value_or(0.0) * 1.08,
+            1.0e-12});
         const auto xPixel = [&area, logMin, logMax](double frequency) {
             return area.left() + (std::log10(frequency) - logMin) /
                 (logMax - logMin) * area.width();
@@ -236,21 +252,32 @@ protected:
             QColor(35, 145, 90), QColor(150, 85, 175)};
         int curveIndex = 0;
         int legendX = static_cast<int>(area.left()) + 8;
+        painter.save();
+        painter.setClipRect(area);
         for (const auto& curve : curves_) {
             QPainterPath path;
             bool started = false;
+            std::size_t validPointCount = 0;
+            QPointF onlyPoint;
             for (const auto& [xValue, yValue] : curve.points) {
                 if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
                     xValue <= 0.0 || yValue < 0.0) continue;
                 const double x = area.left() +
                     (std::log10(xValue) - logMin) / (logMax - logMin) * area.width();
                 const double y = area.bottom() - (yValue / yMax) * area.height();
+                onlyPoint = QPointF(x, y);
+                ++validPointCount;
                 if (!started) { path.moveTo(x, y); started = true; }
                 else path.lineTo(x, y);
             }
             const QColor color = colors[static_cast<std::size_t>(curveIndex) % colors.size()];
             painter.setPen(QPen(color, 2.0));
             painter.drawPath(path);
+            if (validPointCount == 1) {
+                painter.setBrush(color);
+                painter.drawEllipse(onlyPoint, 3.5, 3.5);
+                painter.setBrush(Qt::NoBrush);
+            }
             painter.drawLine(legendX, 10, legendX + 18, 10);
             painter.setPen(palette().color(QPalette::Text));
             const QString label = curve.name;
@@ -258,6 +285,7 @@ protected:
             legendX += painter.fontMetrics().horizontalAdvance(label) + 42;
             ++curveIndex;
         }
+        painter.restore();
         painter.setPen(palette().color(QPalette::Text));
         painter.drawText(QRectF(0, height() - 22, width(), 20), Qt::AlignCenter, xLabel_);
         painter.save();
@@ -2924,7 +2952,7 @@ QWidget* MainWindow::createResultsPage()
     currentPlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
-    resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Phase peak current (A)"));
+    resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Reactor branch peak current (A)"));
     resultsBankCurrentPlot_->setMinimumHeight(250);
     resultsBankCurrentPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBankCurrentPlot_);
@@ -3142,7 +3170,7 @@ QWidget* MainWindow::createHistoryPage()
 
     auto* compareRow = new QHBoxLayout;
     historyPlotMetric_ = new QComboBox;
-    historyPlotMetric_->addItem(tr("Phase peak current (A)"), QStringLiteral("phasePeakCurrent_A"));
+    historyPlotMetric_->addItem(tr("Reactor branch peak current (A)"), QStringLiteral("reactorBranchPeakCurrent_A"));
     historyPlotMetric_->addItem(tr("Bus impedance (Ω)"), QStringLiteral("busImpedance_Ohm"));
     auto* compareGraphs = new QPushButton(tr("Compare graphs of selected calculations"));
     compareRow->addWidget(historyPlotMetric_);
@@ -3541,7 +3569,7 @@ void MainWindow::compareSelectedCalculationGraphs()
     }
 
     const QString metricKey = historyPlotMetric_->currentData().toString();
-    const bool currentMetric = metricKey == QStringLiteral("phasePeakCurrent_A");
+    const bool currentMetric = metricKey == QStringLiteral("reactorBranchPeakCurrent_A");
     const QString arrayKey = currentMetric ? QStringLiteral("frequencySweep")
                                             : QStringLiteral("impedanceScan");
     const QString yLabel = currentMetric ? tr("Phase peak current (A)") : tr("Bus impedance (Ω)");
@@ -3579,7 +3607,7 @@ void MainWindow::compareSelectedCalculationGraphs()
 
     if (curves.size() != 2) {
         historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), yLabel);
-        historyDetails_->appendPlainText(tr("\nGraph comparison unavailable: one or both selected snapshots do not contain this frequency series. Older snapshots created before D43 have no stored plot points."));
+        historyDetails_->appendPlainText(tr("\nGraph comparison unavailable: one or both selected snapshots do not contain this frequency series. Older snapshots do not contain the corrected reactor-branch current series."));
         return;
     }
     historyComparisonPlot_->setCurves(std::move(curves),
@@ -4700,6 +4728,46 @@ void MainWindow::calculateFilter()
         QMessageBox::warning(this, tr("Circuit generation failed"), message);
         return;
     }
+
+    // Resolve winding-current component IDs by element name. Branch-result vector
+    // offsets are not stable when Thevenin source elements are inserted.
+    std::array<p135::circuit::ComponentId, 3> filterCurrentComponents{};
+    const std::array<std::string, 3> windingSuffixes =
+        specification.network.connection == p135::filter::Connection::Wye
+            ? std::array<std::string, 3>{"L1", "L2", "L3"}
+            : std::array<std::string, 3>{"L1-L2", "L2-L3", "L3-L1"};
+    for (std::size_t phase = 0; phase < windingSuffixes.size(); ++phase) {
+        const std::string expectedName =
+            result.value().branches.front().name + " " + windingSuffixes[phase] + " R";
+        const auto element = std::find_if(circuitResult.value().elements.begin(),
+            circuitResult.value().elements.end(), [&expectedName](const auto& candidate) {
+                return candidate.kind == p135::circuit::ElementKind::Resistor &&
+                    candidate.name == expectedName;
+            });
+        if (element == circuitResult.value().elements.end()) {
+            const QString message = tr("Cannot resolve filter winding-current component: %1")
+                .arg(QString::fromStdString(expectedName));
+            appendLog(message);
+            resultsNote_->setText(message);
+            status_->setText(tr("Plot data mapping failed"));
+            return;
+        }
+        filterCurrentComponents[phase] = element->id;
+    }
+    const auto maximumFilterBranchRmsCurrent =
+        [&filterCurrentComponents](const p135::circuit::ElectricalResult& electrical)
+            -> std::optional<double> {
+        double maximum = 0.0;
+        for (const auto componentId : filterCurrentComponents) {
+            const auto branch = std::find_if(electrical.branches.begin(),
+                electrical.branches.end(), [componentId](const auto& candidate) {
+                    return candidate.component == componentId;
+                });
+            if (branch == electrical.branches.end()) return std::nullopt;
+            maximum = std::max(maximum, std::abs(branch->rmsCurrent));
+        }
+        return maximum;
+    };
 
     const auto electricalResult = p135::circuit::solve(p135::circuit::Study{
         circuitResult.value(),
@@ -6065,19 +6133,20 @@ void MainWindow::calculateFilter()
         QJsonArray frequencySweepSnapshot;
         PlotCurve bankCurrentCurve{tr("Current calculation"), {}};
         for (const auto& point : sweepResult.value().points) {
-            double maximumPhaseRmsCurrent = 0.0;
-            for (const std::size_t index : {3U, 6U, 9U}) {
-                if (index < point.result.branches.size())
-                    maximumPhaseRmsCurrent = std::max(maximumPhaseRmsCurrent,
-                        std::abs(point.result.branches[index].rmsCurrent));
+            const auto maximumBranchRms = maximumFilterBranchRmsCurrent(point.result);
+            if (!maximumBranchRms) {
+                appendLog(tr("Frequency-sweep point is missing a filter winding-current result; plot data rejected."));
+                resultsNote_->setText(tr("Frequency-sweep current mapping failed; no current curve was generated."));
+                status_->setText(tr("Plot data mapping failed"));
+                return;
             }
-            const double phasePeakCurrent = std::sqrt(2.0) * maximumPhaseRmsCurrent;
+            const double branchPeakCurrent = std::sqrt(2.0) * *maximumBranchRms;
             const double frequencyHz = point.frequency.si();
             QJsonObject sample;
             sample.insert(QStringLiteral("frequency_Hz"), frequencyHz);
-            sample.insert(QStringLiteral("phasePeakCurrent_A"), phasePeakCurrent);
+            sample.insert(QStringLiteral("reactorBranchPeakCurrent_A"), branchPeakCurrent);
             frequencySweepSnapshot.append(sample);
-            bankCurrentCurve.points.emplace_back(frequencyHz, phasePeakCurrent);
+            bankCurrentCurve.points.emplace_back(frequencyHz, branchPeakCurrent);
         }
 
         QJsonArray impedanceScanSnapshot;
@@ -6099,14 +6168,14 @@ void MainWindow::calculateFilter()
             resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
                 tr("Frequency (Hz, logarithmic)"),
                 hasSourceImpedance
-                    ? tr("Source-impedance-included diagnostic phase peak current (A)")
-                    : tr("Ideal-source diagnostic phase peak current (A) — NOT operational stress"));
+                    ? tr("Source-impedance-included diagnostic reactor branch peak current (A)")
+                    : tr("Ideal-source diagnostic reactor branch peak current (A) — NOT operational stress"));
             resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
         }
         if (auto* title = findChild<QLabel*>(QStringLiteral("inductorCurrentPlotTitle"))) {
             title->setText(hasSourceImpedance
-                ? tr("Inductor phase peak current — source-impedance-included diagnostic sweep")
-                : tr("Inductor phase peak current — ideal-source diagnostic only (NOT operational stress)"));
+                ? tr("Reactor branch peak current — source-impedance-included diagnostic sweep")
+                : tr("Reactor branch peak current — ideal-source diagnostic only (NOT operational stress)"));
             title->setToolTip(hasSourceImpedance
                 ? tr("The entered Thevenin R/L is included. This remains a single-frequency diagnostic, not a multi-harmonic operating waveform.")
                 : tr("Thevenin source R/L is zero or unset. The curve is an ideal-voltage-source response and must not be interpreted as a network-limited or operating current."));
@@ -6139,7 +6208,8 @@ void MainWindow::calculateFilter()
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
-        resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
+        resultSnapshot.insert(QStringLiteral("plotDataVersion"), 2);
+    resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
         resultSnapshot.insert(QStringLiteral("impedanceScan"), impedanceScanSnapshot);
         QJsonArray magneticSweepSnapshot;
         if (magneticCircuitBase && magneticSweepValid) {
@@ -6321,14 +6391,15 @@ void MainWindow::calculateFilter()
     // when the material database is unavailable and its snapshot cannot be saved.
     PlotCurve liveCurrentCurve{tr("Current calculation"), {}};
     for (const auto& point : sweepResult.value().points) {
-        double maximumPhaseRmsCurrent = 0.0;
-        for (const std::size_t index : {3U, 6U, 9U}) {
-            if (index < point.result.branches.size())
-                maximumPhaseRmsCurrent = std::max(maximumPhaseRmsCurrent,
-                    std::abs(point.result.branches[index].rmsCurrent));
+        const auto maximumBranchRms = maximumFilterBranchRmsCurrent(point.result);
+        if (!maximumBranchRms) {
+            appendLog(tr("Live frequency-sweep point is missing a filter winding-current result; plot data rejected."));
+            resultsNote_->setText(tr("Frequency-sweep current mapping failed; no current curve was generated."));
+            status_->setText(tr("Plot data mapping failed"));
+            return;
         }
         liveCurrentCurve.points.emplace_back(point.frequency.si(),
-            std::sqrt(2.0) * maximumPhaseRmsCurrent);
+            std::sqrt(2.0) * *maximumBranchRms);
     }
     if (resultsBankCurrentPlot_) {
         resultsBankCurrentPlot_->setCurves({liveCurrentCurve},
