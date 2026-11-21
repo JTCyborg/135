@@ -36,6 +36,7 @@ struct AssemblyPresentationDisplayItem {
     double transparency{0.0};
     // Presentation palette only; RGB values are not engineering material data.
     std::array<double, 3> baseColor{0.72, 0.75, 0.79};
+    std::string materialRevisionId; // Empty when the design has no pinned revision.
 };
 
 // Flatten the semantic tree into renderable leaf solids. Parent visibility
@@ -52,6 +53,7 @@ struct AssemblyPresentationNode {
     TopoDS_Shape shape;             // Null for logical grouping nodes.
     bool visible{true};
     double transparency{0.0};      // 0 = opaque, 1 = fully transparent.
+    std::string materialRevisionId; // Catalog revision used by this component, if selected.
     std::vector<AssemblyPresentationNode> children;
 };
 
