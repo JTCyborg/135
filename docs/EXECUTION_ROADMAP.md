@@ -47,7 +47,9 @@
 - [x] Thermal class reference включает явно вводимые стандарт, опорную температуру и safety margin; нормативная температура автоматически не подставляется.
 - [x] Исправлены value equality для новых записей и добавлен явный include для std::array; проверена актуальная версия заголовка через GitHub.
 - [x] Добавлены thermal class, стандарт, safety margin и отдельный maximum design winding temperature; thermal class остаётся справочной категорией.
-- [ ] Реальная физическая геометрия пока не строится из этих полей; UI → domain CAD adapter и STEP export ещё не подключены. CAD должен требовать dimensionalSource + dimensionalRevision.
+- [x] Добавлен строгий application adapter ReactorDesignInputs → ReactorPhysicalGeometry: только явные размеры, источник и ревизия; domain validation выполняется до CAD. Неизвестные размеры не подставляются.
+- [x] CAD вкладка подключена к adapter, buildThreeLimbReactorPresentation() и collectAssemblyPresentationDisplayItems(); кнопка строит PRELIMINARY / NOT_VERIFIED preview после подтверждения Construction.
+- [ ] STEP export, component-level visibility/transparency tree controls и CAD regression tests ещё не подключены.
 
 - [ ] Сопоставить каждый UI control с полем типизированной ReactorDesignInputs; убрать поля, существующие только в UI/JSON.
 - [x] UI содержит явные физические размеры стержней, глубины пакета, окон, сегментов ярма, межосевые расстояния и общие габариты.
@@ -59,6 +61,7 @@
 - [x] Добавлены восемь независимых селекторов Butt/Step-Lap для соединений стержней с ярмами; частичное заполнение не принимается. Step-Lap остаётся заблокированным для CAD до реализации packet schedule editor.
 - [x] Добавлены Construction controls для числа и трёх охлаждающих каналов; все четыре параметра каждой записи передаются в ReactorDesignInputs и включены в snapshot/invalidation.
 - [ ] Для круглого/прямоугольного/фольгового проводника включать только применимые размеры; неприменимые поля — NOT_APPLICABLE, не ноль.
+- [x] Добавлен явный bobbin winding clearance per phase, включён в snapshot, validation и dependency invalidation.
 - [x] Thermal class reference отделён от maximum design winding temperature; класс, стандарт и safety margin сохраняются отдельно.
 - [ ] Проверить наследование Project → Filter definition → Construction и snapshot lineage.
 
@@ -81,10 +84,10 @@
 - [ ] Сохранить диагностический график идеального источника, не выдавая его за эксплуатационный стресс.
 
 ### E. Параметрическая 3D CAD
-- [ ] Сформировать ReactorPhysicalGeometry из согласованных физических размеров.
-- [ ] Валидировать окна, зазоры, пересечения, габариты катушек и clearance до OCCT.
-- [ ] Подключить buildThreeLimbReactorPresentation() и collectAssemblyPresentationDisplayItems() к CAD вкладке.
-- [ ] Отображать семь сегментов сердечника, три каркаса и три winding-pack envelopes с маркировкой уровня детализации.
+- [x] Сформировать ReactorPhysicalGeometry из согласованных физических размеров через строгий adapter; отсутствующие данные блокируют генерацию.
+- [x] Валидировать окна, зазоры, стыки, габариты каркасов и winding envelopes до OCCT через domain validation.
+- [x] Подключить buildThreeLimbReactorPresentation() и collectAssemblyPresentationDisplayItems() к CAD вкладке.
+- [x] Отображать семь сегментов сердечника, три каркаса и три winding-pack envelopes; статус PRELIMINARY / NOT_VERIFIED и ограничения детализации показаны в UI.
 - [ ] Показать свойства, статусы, visibility/transparency по компонентам.
 - [ ] Добавить экспорт STEP после валидации B-Rep.
 - [ ] Не называть упрощённые оболочки производственной геометрией.
