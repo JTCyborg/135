@@ -91,6 +91,9 @@ int main()
     inputs.turnsPerLayer = 12;
     inputs.conductorWidthM = std::numeric_limits<double>::quiet_NaN();
     assert(!validate(inputs));
+    // Restore the valid rectangular-conductor dimension before the later
+    // physical-construction validation scenario.
+    inputs.conductorWidthM = 2.0e-3;
 
     // Explicit physical construction dimensions participate in validation
     // and invalidate any previously accepted revision.
