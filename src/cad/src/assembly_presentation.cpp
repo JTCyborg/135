@@ -86,6 +86,16 @@ bool setTransparency(
     return false;
 }
 
+std::array<double, 3> presentationColor(const std::string& id)
+{
+    // Temporary visual palette keyed by semantic component role. These colors
+    // are deliberately not inferred as verified material assignments.
+    if (id.rfind("core.", 0) == 0) return {0.48, 0.55, 0.63}; // laminated steel
+    if (id.rfind("bobbin.", 0) == 0) return {0.88, 0.78, 0.56}; // insulating former
+    if (id.rfind("winding.", 0) == 0) return {0.78, 0.39, 0.16}; // copper envelope
+    return {0.72, 0.75, 0.79};
+}
+
 void collectDisplayItems(
     const AssemblyPresentationNode& node,
     bool ancestorsVisible,
@@ -100,7 +110,7 @@ void collectDisplayItems(
 
     if (node.children.empty() && !node.shape.IsNull()) {
         items.push_back(AssemblyPresentationDisplayItem{
-            node.id, node.shape, effectiveTransparency
+            node.id, node.shape, effectiveTransparency, presentationColor(node.id)
         });
         return;
     }
