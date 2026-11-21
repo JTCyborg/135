@@ -18,6 +18,13 @@ enum class AssemblyGeometryRepresentation {
     WindingPackEnvelope
 };
 
+enum class AssemblySurfaceFinish {
+    NeutralMatte,
+    ElectricalSteelSatin,
+    CopperPolished,
+    InsulatorMatte
+};
+
 enum class AssemblyComponentKind {
     Assembly,
     CoreGroup,
@@ -36,6 +43,7 @@ struct AssemblyPresentationDisplayItem {
     double transparency{0.0};
     // Presentation palette only; RGB values are not engineering material data.
     std::array<double, 3> baseColor{0.72, 0.75, 0.79};
+    AssemblySurfaceFinish surfaceFinish{AssemblySurfaceFinish::NeutralMatte};
     std::string materialRevisionId; // Empty when the design has no pinned revision.
 };
 
@@ -54,6 +62,7 @@ struct AssemblyPresentationNode {
     bool visible{true};
     double transparency{0.0};      // 0 = opaque, 1 = fully transparent.
     std::string materialRevisionId; // Catalog revision used by this component, if selected.
+    AssemblySurfaceFinish surfaceFinish{AssemblySurfaceFinish::NeutralMatte};
     std::vector<AssemblyPresentationNode> children;
 };
 
