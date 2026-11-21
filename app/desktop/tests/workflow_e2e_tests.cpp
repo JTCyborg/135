@@ -406,6 +406,9 @@ private slots:
         QVERIFY(cadStatus);
         QTRY_VERIFY_WITH_TIMEOUT(
             cadStatus->text().contains(QStringLiteral("Preliminary CAD generated")), 5000);
+        QVERIFY2(cadStatus->text().contains(QStringLiteral("Preliminary CAD generated")),
+            qPrintable(QStringLiteral("CAD generation did not succeed. Actual status: %1")
+                .arg(cadStatus->text())));
 
         auto* assemblyTree = window_->findChild<QTreeWidget*>(
             QStringLiteral("cadAssemblyTree"));
