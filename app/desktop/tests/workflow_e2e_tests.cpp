@@ -3,6 +3,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -58,9 +59,14 @@ private slots:
 
     void init()
     {
+        qInfo().noquote() << "[E2E-DIAG] init: before MainWindow construction";
         window_ = std::make_unique<MainWindow>();
+        qInfo().noquote() << "[E2E-DIAG] init: MainWindow constructed";
+        qInfo().noquote() << "[E2E-DIAG] init: before show()";
         window_->show();
+        qInfo().noquote() << "[E2E-DIAG] init: show() returned";
         QTest::qWait(50);
+        qInfo().noquote() << "[E2E-DIAG] init: event wait completed";
     }
 
     void cleanup()
