@@ -87,3 +87,17 @@ The next code increment should establish a typed desktop-to-application stage bo
 - Run Debug and Release builds/tests on Windows/MSVC.
 - Verify the UI with TEST-01 and with deliberately incomplete Construction data.
 - Do not report desktop build, UI, or STEP export success unless actually run in the Windows/MSVC environment.
+
+## 7. First typed stage adapter added
+
+The application now contains `makeFilterExcitationStageArtifact(const filter::FilterDesign&)` in `filter_excitation_stage_adapter`.
+
+- It consumes the actual typed output of `filter::synthesize()`.
+- It rejects missing branches, invalid network voltage/frequency, and non-finite or non-positive branch electrical values.
+- It serializes the network and branch electrical quantities in SI units with locale-independent, round-trip-safe floating-point formatting.
+- Its artifact schema is explicitly versioned as `project135.filter-excitation.v1`.
+- The adapter documentation explicitly limits this artifact to electrical filter excitation; it does not imply magnetic, winding, thermal or mechanical verification.
+
+A focused application test covers a TEST-01 synthesis result and invalid/missing input cases.
+
+**Integration status:** this adapter is an application-layer building block. It is not yet called from `MainWindow::calculateFilter()`, and no desktop UI status is yet driven by the dependency execution state. The next increment must wire this adapter to the successful synthesis result and then expose the accepted electrical-stage revision in Calculation & design. No magnetic/winding/thermal stages should be marked valid by that change.
