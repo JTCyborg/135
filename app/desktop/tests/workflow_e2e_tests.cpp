@@ -200,8 +200,26 @@ private slots:
         QTest::mouseClick(confirmCalculation, Qt::LeftButton);
         QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), 4, 5000);
 
-        QVERIFY(window_->findChild<QPushButton*>(
-            QStringLiteral("generatePreliminaryCad")));
+        auto* generateCad = window_->findChild<QPushButton*>(
+            QStringLiteral("generatePreliminaryCad"));
+        QVERIFY(generateCad);
+        QTest::mouseClick(generateCad, Qt::LeftButton);
+
+        // This workflow intentionally has no fabricated physical dimensions.
+        // The CAD adapter must reject the incomplete Construction revision and
+        // leave the placeholder tree/STEP export untouched rather than showing
+        // a successful but invented assembly.
+        auto* cadStatus = window_->findChild<QLabel*>(QStringLiteral("cadGenerationStatus"));
+        QVERIFY(cadStatus);
+        QTRY_VERIFY_WITH_TIMEOUT(
+            cadStatus->text().contains(QStringLiteral("explicit physical inputs")), 3000);
+        auto* assemblyTree = window_->findChild<QTreeWidget*>(QStringLiteral("cadAssemblyTree"));
+        QVERIFY(assemblyTree);
+        QCOMPARE(assemblyTree->topLevelItemCount(), 1);
+        QCOMPARE(assemblyTree->topLevelItem(0)->text(0), QStringLiteral("No generated assembly"));
+        auto* exportStep = window_->findChild<QPushButton*>(QStringLiteral("exportCadStep"));
+        QVERIFY(exportStep);
+        QVERIFY(!exportStep->isEnabled());
     }
 
     void twoDimensionalDrawingStageIsPresent()
