@@ -159,7 +159,7 @@
 - [x] Apply per-component OCCT `Graphic3d_MaterialAspect` ambient, diffuse, specular and shininess parameters in shaded mode; steel uses restrained highlights, copper stronger warm highlights, and insulation a low-gloss response.
 - [ ] Add E2E assertions for material-finish assignment and a visual/manual viewport check on Windows. Current workflow E2E confirms geometry/export but does not inspect rendered pixels or GPU material response.
 - [x] Add per-face tonal shading in the OCCT viewport using each B-Rep face normal and a restrained directional ramp; use AIS_ColoredShape custom face colors while retaining the component-level material finish. This is a face-level presentation gradient, not a continuous texture/shader gradient and does not modify the B-Rep or STEP geometry.
-- [ ] Add E2E assertions for face/material presentation metadata and perform a manual Windows viewport review; the current UI E2E does not inspect GPU-rendered pixels.
+- [ ] Add E2E assertions for face/material presentation metadata and perform a manual Windows viewport review; the current UI E2E does not inspect GPU-rendered pixels. The user confirmed Windows/MSVC Debug E2E after per-face shading: CTest 1/1 PASS (37.51 s); this validates build/workflow regression only, not visual appearance.
 - [ ] Consider continuous UV texture/shader gradients only if the manual viewport review shows a concrete need; avoid adding a shader pipeline solely for decoration.
 
 - [x] Propagated explicitly selected core, conductor and insulation material revision IDs from Construction inputs into the physical geometry model; bobbin material identifier remains attached to each bobbin.
