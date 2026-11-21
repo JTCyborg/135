@@ -22,7 +22,7 @@ Result<domain::ReactorPhysicalGeometry> geometryFailure(std::string message, std
 Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
     const ReactorDesignInputs& in, const std::string& productId)
 {
-    using domain::units::Length;
+    using p135::units::Length;
     using domain::CoreSegment;
     using domain::CoreJointInterface;
     using domain::CoreJointType;
