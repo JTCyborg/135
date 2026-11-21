@@ -36,7 +36,12 @@
 - [x] Добавлены отдельные поля bare/insulated diameter и conductor insulation build для круглого проводника.
 - [x] Добавлена отдельная insulation thermal-class reference с источником, стандартом, температурой класса, safety margin и maximum design winding temperature.
 - [x] Все новые физические поля включены в validate() и requiresRecalculation(); добавлены regression assertions в application input tests.
-- [ ] UI Construction ещё не связан с новыми полями; эти поля пока не считаются заполненными и не попадают в UI snapshots.
+- [x] Construction UI и collectReactorDesignInputs() связаны с явными ширинами/глубинами трёх стержней, размерами двух окон, толщинами/глубинами четырёх сегментов ярма.
+- [x] Construction UI сохраняет количество дискретных зазоров и суммарную длину зазоров отдельно для каждого стержня.
+- [ ] Позиции и длины отдельных зазоров ещё не имеют редактора; без них точная CAD-нарезка зазоров не разрешается.
+- [ ] Межосевые расстояния и общие габариты пока не введены в UI.
+- [ ] Каркас, winding-pack, conductor applicability и cooling duct поля пока не введены в UI.
+- [ ] Thermal class reference пока не введён отдельным UI-полем.
 - [ ] Реальная физическая геометрия пока не строится из этих полей.
 
 - [ ] Сопоставить каждый UI control с полем типизированной ReactorDesignInputs; убрать поля, существующие только в UI/JSON.
