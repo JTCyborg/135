@@ -103,6 +103,12 @@ Result<void> validate(const ReactorDesignInputs& inputs)
     if (inputs.coreOverallWidthM &&
         (!std::isfinite(*inputs.coreOverallWidthM) || *inputs.coreOverallWidthM <= 0.0))
         return invalid("Core overall width must be finite and greater than zero.");
+    if (inputs.coreJointConstructions) {
+        for (const auto& construction : *inputs.coreJointConstructions) {
+            if (construction != "butt" && construction != "step-lap")
+                return invalid("Each core joint must explicitly select a supported construction type.");
+        }
+    }
     if (inputs.airGapCountPerLimb && inputs.totalAirGapLengthPerLimbM) {
         for (std::size_t i = 0; i < 3; ++i) {
             const auto count = (*inputs.airGapCountPerLimb)[i];
@@ -213,6 +219,7 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.limbCenterSpacingsM != accepted.limbCenterSpacingsM ||
            current.coreOverallHeightM != accepted.coreOverallHeightM ||
            current.coreOverallWidthM != accepted.coreOverallWidthM ||
+           current.coreJointConstructions != accepted.coreJointConstructions ||
            current.airGapCountPerLimb != accepted.airGapCountPerLimb ||
            current.totalAirGapLengthPerLimbM != accepted.totalAirGapLengthPerLimbM ||
            current.airGaps != accepted.airGaps ||
