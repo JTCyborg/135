@@ -3710,18 +3710,9 @@ QWidget* MainWindow::createCadPage()
     tree->setRootIsDecorated(true);
     tree->setAlternatingRowColors(true);
     tree->setMinimumHeight(240);
-    auto* root = new QTreeWidgetItem(tree, {tr("Three-limb magnetic core"), QStringLiteral("NOT_CALCULATED")});
-    root->setExpanded(true);
-    const QStringList names{
-        tr("Limb A"), tr("Limb B"), tr("Limb C"),
-        tr("Top yoke A-B"), tr("Top yoke B-C"),
-        tr("Bottom yoke A-B"), tr("Bottom yoke B-C"),
-        tr("Bobbin and winding packs"), tr("Insulation and terminals")
-    };
-    for (const auto& name : names) {
-        auto* item = new QTreeWidgetItem(root, {name, QStringLiteral("NOT_CALCULATED")});
-        item->setToolTip(1, tr("Awaiting a consistent physical-design result."));
-    }
+    auto* placeholder = new QTreeWidgetItem(tree,
+        {tr("No generated assembly"), QStringLiteral("NOT_CALCULATED")});
+    placeholder->setToolTip(1, tr("Generate a preliminary assembly from confirmed Construction inputs."));
     structureLayout->addWidget(tree, 1);
 
     auto* transparencyLabel = new QLabel(tr("Selected component transparency"), structurePanel);
