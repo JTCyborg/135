@@ -2156,6 +2156,13 @@ QWidget* MainWindow::createConstructionPage()
     auto* thermalStandard = new QLineEdit;
     thermalStandard->setObjectName(QStringLiteral("construction_insulationThermalStandard"));
     thermalStandard->setPlaceholderText(tr("Standard reference — NOT_PROVIDED"));
+    auto* thermalReferenceTemperature = new QDoubleSpinBox;
+    thermalReferenceTemperature->setObjectName(QStringLiteral("construction_insulationClassReferenceTemperature"));
+    thermalReferenceTemperature->setRange(-50.0, 300.0);
+    thermalReferenceTemperature->setDecimals(2);
+    thermalReferenceTemperature->setSuffix(tr(" °C"));
+    thermalReferenceTemperature->setSpecialValueText(tr("NOT_PROVIDED"));
+    thermalReferenceTemperature->setValue(-50.0);
     auto* thermalSafetyMargin = new QDoubleSpinBox;
     thermalSafetyMargin->setObjectName(QStringLiteral("construction_insulationSafetyMargin"));
     thermalSafetyMargin->setRange(0.0, 200.0);
@@ -2173,6 +2180,7 @@ QWidget* MainWindow::createConstructionPage()
     thermalForm->addRow(tr("Ambient temperature"), ambient);
     thermalForm->addRow(tr("Insulation thermal class reference"), thermalClass);
     thermalForm->addRow(tr("Thermal class standard"), thermalStandard);
+    thermalForm->addRow(tr("Thermal class reference temperature"), thermalReferenceTemperature);
     thermalForm->addRow(tr("Thermal design safety margin"), thermalSafetyMargin);
     thermalForm->addRow(tr("Maximum winding temperature (design limit)"), maximumWindingTemperature);
     root->addWidget(thermalGroup);
@@ -3664,6 +3672,10 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
         reference.thermalClass = classControl->currentData().toString().toStdString();
         if (const auto* standard = findChild<QLineEdit*>(QStringLiteral("construction_insulationThermalStandard")))
             reference.standardReference = standard->text().trimmed().toStdString();
+        if (const auto* referenceTemperature = findChild<QDoubleSpinBox*>(
+                QStringLiteral("construction_insulationClassReferenceTemperature"));
+            referenceTemperature && referenceTemperature->value() > -50.0)
+            reference.referenceTemperatureK = referenceTemperature->value() + 273.15;
         if (const auto* margin = findChild<QDoubleSpinBox*>(QStringLiteral("construction_insulationSafetyMargin")))
             reference.safetyMarginK = margin->value();
         if (const auto* maxTemp = findChild<QDoubleSpinBox*>(QStringLiteral("construction_maximumWindingTemperature"));
