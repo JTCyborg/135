@@ -157,3 +157,7 @@
 - [ ] Replace the temporary semantic palette with colors resolved from explicit material revision assignments on physical components. Until those assignments exist, preview colors must not be represented as verified material properties.
 - [ ] Add a controlled surface finish/material response (diffuse/specular/roughness) and verify face-by-face visual gradients under the viewport lights. Flat planar faces cannot show a spatial gradient from ordinary diffuse lighting alone; a custom shader or texture may be required for a literal gradient ramp on every face.
 - [ ] Add E2E assertions for stable component colors and a visual/manual viewport check on Windows.
+
+- [x] Propagated explicitly selected core, conductor and insulation material revision IDs from Construction inputs into the physical geometry model; bobbin material identifier remains attached to each bobbin.
+- [x] CAD display items now carry material-revision provenance. Known seeded revisions resolve to their corresponding steel, copper and Nomex preview palette; unrecognized or absent revisions retain the semantic fallback palette and are not guessed.
+- [ ] Insulation currently has no independent physical solid in the simplified winding-envelope CAD builder, so its revision is preserved as provenance but cannot yet be rendered as a separate visible material layer.
