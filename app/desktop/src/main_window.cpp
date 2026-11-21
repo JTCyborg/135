@@ -60,6 +60,9 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPainter>
+#include <QImage>
+#include <QPdfWriter>
+#include <QPageSize>
 #include <QColor>
 #include <QSizePolicy>
 #include <QPainterPath>
@@ -82,6 +85,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QFileInfo>
 #include <QVariant>
 #include <QUuid>
 
@@ -99,6 +103,152 @@
 #include <algorithm>
 #include <array>
 
+
+namespace {
+
+QString projectOutputRoot()
+{
+    return QStringLiteral("C:/Temp/trdos/135");
+}
+
+QString projectArtifactPath(const QString& folder, const QString& projectId,
+                            const QString& suffix)
+{
+    return QDir(projectOutputRoot()).filePath(
+        folder + QLatin1Char('/') + projectId + suffix);
+}
+
+bool exportReactorAssemblyPdf(
+    const p135::domain::ReactorPhysicalGeometry& geometry,
+    const QString& filePath,
+    QString* error)
+{
+    QPdfWriter pdf(filePath);
+    pdf.setPageSize(QPageSize(QPageSize::A3));
+    pdf.setPageOrientation(QPageLayout::Landscape);
+    pdf.setResolution(144);
+    QPainter painter(&pdf);
+    if (!painter.isActive()) {
+        if (error) *error = QObject::tr("Could not initialize PDF painter.");
+        return false;
+    }
+    const QRect page = pdf.pageLayout().paintRectPixels(pdf.resolution());
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(Qt::black, 1.2));
+    painter.drawRect(page.adjusted(24, 24, -24, -24));
+    painter.setFont(QFont(QStringLiteral("Arial"), 18, QFont::Bold));
+    painter.drawText(QRect(50, 42, page.width() - 100, 34),
+        Qt::AlignLeft | Qt::AlignVCenter, QObject::tr("PROJECT135 — THREE-PHASE REACTOR"));
+    painter.setFont(QFont(QStringLiteral("Arial"), 10, QFont::Bold));
+    painter.setPen(QColor(170, 35, 25));
+    painter.drawText(QRect(50, 80, page.width() - 100, 24),
+        Qt::AlignLeft | Qt::AlignVCenter,
+        QObject::tr("PRELIMINARY / NOT VERIFIED — NOT FOR MANUFACTURE"));
+    painter.setPen(Qt::black);
+
+    const auto& core = geometry.core;
+    const auto mm = [](double metres) { return metres * 1000.0; };
+    const double wa = mm(core.limbWidths[0].si());
+    const double wb = mm(core.limbWidths[1].si());
+    const double wc = mm(core.limbWidths[2].si());
+    const double ab = mm(core.windowWidths[0].si());
+    const double bc = mm(core.windowWidths[1].si());
+    const double totalW = mm(core.coreOverallWidth.si());
+    const double totalH = mm(core.coreOverallHeight.si());
+    const double top = 0.5 * (mm(core.yokeThicknesses[0].si()) +
+                              mm(core.yokeThicknesses[1].si()));
+    const double bottom = 0.5 * (mm(core.yokeThicknesses[2].si()) +
+                                 mm(core.yokeThicknesses[3].si()));
+    const double windowH = std::max(1.0, totalH - top - bottom);
+    const double xB = wa + ab;
+    const double xC = xB + wb + bc;
+
+    const QRectF front(70.0, 170.0, 620.0, 330.0);
+    const QRectF plan(770.0, 170.0, 360.0, 330.0);
+    const QRectF side(1190.0, 170.0, 250.0, 330.0);
+    const auto drawCoreFront = [&](const QRectF& area) {
+        const double scale = std::min(area.width() / std::max(1.0, totalW),
+                                      area.height() / std::max(1.0, totalH));
+        const double ox = area.center().x() - totalW * scale * 0.5;
+        const double oy = area.center().y() + totalH * scale * 0.5;
+        const auto rect = [&](double x, double y, double w, double h) {
+            painter.drawRect(QRectF(ox + x * scale, oy - (y + h) * scale,
+                                    w * scale, h * scale));
+        };
+        rect(0, 0, totalW, bottom);
+        rect(0, totalH - top, totalW, top);
+        rect(0, bottom, wa, windowH);
+        rect(xB, bottom, wb, windowH);
+        rect(xC, bottom, wc, windowH);
+    };
+    painter.setFont(QFont(QStringLiteral("Arial"), 11, QFont::Bold));
+    painter.drawText(QRectF(front.left(), front.top() - 28, front.width(), 22),
+                     Qt::AlignLeft, QObject::tr("A — FRONT ELEVATION"));
+    painter.drawText(QRectF(plan.left(), plan.top() - 28, plan.width(), 22),
+                     Qt::AlignLeft, QObject::tr("B — PLAN VIEW"));
+    painter.drawText(QRectF(side.left(), side.top() - 28, side.width(), 22),
+                     Qt::AlignLeft, QObject::tr("C — SIDE ELEVATION"));
+    painter.setPen(QPen(QColor(35, 70, 105), 1.8));
+    drawCoreFront(front);
+
+    // Plan projection: three limb footprints and four individual yoke footprints.
+    const double depth = std::max({mm(core.limbDepths[0].si()),
+        mm(core.limbDepths[1].si()), mm(core.limbDepths[2].si()), 1.0});
+    const double planScale = std::min(plan.width() / std::max(1.0, totalW),
+                                      plan.height() / depth);
+    const double px = plan.center().x() - totalW * planScale * 0.5;
+    const double py = plan.center().y() - depth * planScale * 0.5;
+    const std::array<double,3> widths{wa,wb,wc};
+    const std::array<double,3> centers{0.0,xB,xC};
+    for (std::size_t i=0;i<3;++i)
+        painter.drawRect(QRectF(px+centers[i]*planScale,
+            py+(depth-mm(core.limbDepths[i].si()))*0.5*planScale,
+            widths[i]*planScale,mm(core.limbDepths[i].si())*planScale));
+    painter.setPen(QPen(QColor(105, 75, 35), 1.4, Qt::DashLine));
+    painter.drawRect(QRectF(px,py,totalW*planScale,depth*planScale));
+
+    const double sideDepth = mm(core.limbDepths[1].si());
+    const double sideScale = std::min(side.width()/std::max(1.0,sideDepth),
+                                      side.height()/std::max(1.0,totalH));
+    const QRectF sideCore(side.center().x()-sideDepth*sideScale*0.5,
+        side.center().y()-totalH*sideScale*0.5,
+        sideDepth*sideScale,totalH*sideScale);
+    painter.setPen(QPen(QColor(35,70,105),1.8));
+    painter.drawRect(sideCore);
+    painter.drawLine(sideCore.left(),sideCore.top()+top*sideScale,
+                     sideCore.right(),sideCore.top()+top*sideScale);
+    painter.drawLine(sideCore.left(),sideCore.bottom()-bottom*sideScale,
+                     sideCore.right(),sideCore.bottom()-bottom*sideScale);
+
+    painter.setPen(Qt::black);
+    painter.setFont(QFont(QStringLiteral("Arial"), 9));
+    const int infoY = 545;
+    painter.drawText(60, infoY, QObject::tr("Overall: %1 × %2 mm")
+        .arg(totalW,0,'f',2).arg(totalH,0,'f',2));
+    painter.drawText(60, infoY+22, QObject::tr("Limb widths A/B/C: %1 / %2 / %3 mm")
+        .arg(wa,0,'f',2).arg(wb,0,'f',2).arg(wc,0,'f',2));
+    painter.drawText(60, infoY+44, QObject::tr("Windows AB/BC: %1 / %2 mm")
+        .arg(ab,0,'f',2).arg(bc,0,'f',2));
+    painter.drawText(60, infoY+66, QObject::tr("Air gaps: %1; joint interfaces: %2")
+        .arg(static_cast<int>(core.airGaps.size()))
+        .arg(static_cast<int>(core.joints.size())));
+    painter.drawText(60, infoY+88, QObject::tr("Source: %1 | Revision: %2")
+        .arg(QString::fromStdString(geometry.dimensionalSource),
+             QString::fromStdString(geometry.dimensionalRevision)));
+    painter.drawText(60, infoY+110, QObject::tr("Product: %1")
+        .arg(QString::fromStdString(geometry.productId)));
+    painter.setPen(QPen(Qt::black, 1.0));
+    painter.drawRect(QRectF(45, page.height()-100, page.width()-90, 55));
+    painter.setFont(QFont(QStringLiteral("Arial"), 8));
+    painter.drawText(QRectF(55,page.height()-92,page.width()-110,40),
+        Qt::AlignLeft|Qt::AlignVCenter,
+        QObject::tr("PRELIMINARY GEOMETRIC DRAWING. Winding envelopes are not conductor details. "
+                    "No tolerances, manufacturing instructions, thermal or magnetic approval are implied."));
+    painter.end();
+    return true;
+}
+
+} // namespace
 
 struct PlotCurve {
     QString name;
@@ -138,6 +288,9 @@ public:
         }
         setProperty("plotCurves", serializedCurves);
         update();
+#if defined(_DEBUG) || !defined(NDEBUG)
+        saveDebugImage();
+#endif
     }
 
     void setEngineeringGuides(std::vector<PlotBand> resonanceBands,
@@ -148,7 +301,28 @@ public:
         saturationPeakCurrentA_ = saturationPeakCurrentA;
         magneticKneeCurrentA_ = magneticKneeCurrentA;
         update();
+#if defined(_DEBUG) || !defined(NDEBUG)
+        saveDebugImage();
+#endif
     }
+
+private:
+#if defined(_DEBUG) || !defined(NDEBUG)
+    void saveDebugImage()
+    {
+        const QString path = property("debugImagePath").toString();
+        if (path.isEmpty() || width() < 120 || height() < 100) return;
+        const QFileInfo info(path);
+        if (!QDir().mkpath(info.absolutePath())) return;
+        QImage image(size(), QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        QPainter imagePainter(&image);
+        render(&imagePainter);
+        imagePainter.end();
+        if (!image.save(path, "PNG"))
+            qWarning("Project135: failed to save debug plot PNG: %s", qPrintable(path));
+    }
+#endif
 
 protected:
     void paintEvent(QPaintEvent*) override
