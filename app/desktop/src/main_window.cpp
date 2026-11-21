@@ -3744,7 +3744,7 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
         }
     }
 
-    const auto collectPhaseArray = [&coreLength](const QString& prefix)
+    const auto collectPhaseArray = [&collectLengthArray](const QString& prefix)
         -> std::optional<std::array<double, 3>> {
         const auto values = collectLengthArray(prefix, 3);
         if (!values) return std::nullopt;
