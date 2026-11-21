@@ -422,7 +422,7 @@ private:
         const QFileInfo info(path);
         if (!QDir().mkpath(info.absolutePath())) {
             qWarning().noquote() << "[PLOT-DIAG] cannot create directory:"
-                << info.absolutePath() << "error=" << QDir().mkpath(info.absolutePath());
+                << info.absolutePath();
             return;
         }
         // QWidget::render() can synchronously deliver resize events. Keep the
