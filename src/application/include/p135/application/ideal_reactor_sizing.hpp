@@ -35,8 +35,10 @@ struct IdealReactorSizingResult {
     double idealTotalAirGapM{};
 };
 
-/// Computes an ideal area-product bound, splits Ae/Aw using the explicit Aw/Ae
-/// ratio, then estimates N >= L*Ipk/(Bmax*Aecore) and g = mu0*N^2*Aecore/L.
+/// Computes an ideal area-product bound for a three-limb, three-phase reactor.
+/// Each of the two core windows is assumed to carry two winding packs, hence
+/// the factor 2 in Ae*Aw. Splits Ae/Aw using the explicit Aw/Ae ratio, then
+/// estimates N >= L*Ipk/(Bmax*Aecore) and g = mu0*N^2*Aecore/L.
 /// The gap estimate assumes all reluctance is in one ideal gap; it excludes
 /// core reluctance, fringing, leakage, winding build, losses and standards checks.
 [[nodiscard]] Result<IdealReactorSizingResult> calculateIdealReactorAreaProduct(
