@@ -3,6 +3,7 @@ add_library(Project135Application
     src/physical_filter_reactor_magnetic.cpp
     src/reactor_design_graph.cpp
     src/reactor_design_execution.cpp
+    src/filter_excitation_stage_adapter.cpp
     src/material_revision_use_cases.cpp
     src/reactor_design_inputs.cpp
     src/reactor_physical_geometry_adapter.cpp
