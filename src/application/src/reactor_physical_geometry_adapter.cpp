@@ -157,4 +157,90 @@ Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
     return Result<domain::ReactorPhysicalGeometry>::success(std::move(out));
 }
 
+
+Result<domain::ThreeLimbCorePhysicalGeometry>
+makeThreeLimbCorePhysicalGeometry(const ReactorDesignInputs& in)
+{
+    using domain::CoreJointInterface;
+    using domain::CoreJointType;
+    using p135::units::Length;
+
+    if (!in.coreLaminationConstruction || in.coreLaminationConstruction->empty())
+        return geometryFailure("Core lamination/packet construction description is required.", "core.laminationConstruction");
+    if (!in.coreJointConstructions || in.coreJointConstructions->size() != 8)
+        return geometryFailure("All eight core joint interfaces must be explicitly specified.", "core.joints");
+    if (!in.limbWidthsM || !in.limbStackDepthsM || !in.windowWidthsM || !in.windowHeightsM ||
+        !in.yokeThicknessesM || !in.yokeDepthsM || !in.limbCenterSpacingsM ||
+        !in.coreOverallHeightM || !in.coreOverallWidthM)
+        return geometryFailure("All explicit core physical dimensions are required for magnetic analysis.", "core.dimensions");
+
+    domain::ThreeLimbCorePhysicalGeometry core;
+    for (std::size_t i = 0; i < 3; ++i) {
+        core.limbWidths[i] = Length((*in.limbWidthsM)[i]);
+        core.limbDepths[i] = Length((*in.limbStackDepthsM)[i]);
+        core.limbCenterSpacings[i] = Length((*in.limbCenterSpacingsM)[i]);
+    }
+    for (std::size_t i = 0; i < 2; ++i) {
+        core.windowWidths[i] = Length((*in.windowWidthsM)[i]);
+        core.windowHeights[i] = Length((*in.windowHeightsM)[i]);
+    }
+    for (std::size_t i = 0; i < 4; ++i) {
+        core.yokeThicknesses[i] = Length((*in.yokeThicknessesM)[i]);
+        core.yokeDepths[i] = Length((*in.yokeDepthsM)[i]);
+    }
+    core.coreOverallHeight = Length(*in.coreOverallHeightM);
+    core.coreOverallWidth = Length(*in.coreOverallWidthM);
+    core.laminationConstruction = *in.coreLaminationConstruction;
+
+    constexpr std::array<CoreJointInterface, 8> interfaces{
+        CoreJointInterface::TopYokeABToLimbA, CoreJointInterface::TopYokeABToLimbB,
+        CoreJointInterface::TopYokeBCToLimbB, CoreJointInterface::TopYokeBCToLimbC,
+        CoreJointInterface::BottomYokeABToLimbA, CoreJointInterface::BottomYokeABToLimbB,
+        CoreJointInterface::BottomYokeBCToLimbB, CoreJointInterface::BottomYokeBCToLimbC
+    };
+    for (std::size_t i = 0; i < interfaces.size(); ++i) {
+        const auto& type = (*in.coreJointConstructions)[i];
+        if (type == "butt") {
+            if (!in.coreJointStepLapPackets[i].empty())
+                return geometryFailure("Butt joints cannot contain Step-Lap packet records.",
+                    "core.joints[" + std::to_string(i) + "].stepLapPackets");
+            core.joints.push_back({interfaces[i], CoreJointType::Butt, {}});
+            continue;
+        }
+        if (type != "step-lap")
+            return geometryFailure("Unsupported or missing core joint construction.",
+                "core.joints[" + std::to_string(i) + "]");
+        std::vector<domain::StepLapPacketPhysicalGeometry> packets;
+        for (std::size_t p = 0; p < in.coreJointStepLapPackets[i].size(); ++p) {
+            const auto& packet = in.coreJointStepLapPackets[i][p];
+            domain::StepLapPacketDirection direction;
+            if (packet.direction == "limb-into-yoke")
+                direction = domain::StepLapPacketDirection::LimbIntoYoke;
+            else if (packet.direction == "yoke-into-limb")
+                direction = domain::StepLapPacketDirection::YokeIntoLimb;
+            else
+                return geometryFailure("Step-Lap packet direction must be explicitly selected.",
+                    "core.joints[" + std::to_string(i) + "].stepLapPackets[" + std::to_string(p) + "].direction");
+            packets.push_back({Length(packet.stackDepthOffsetM), Length(packet.stackDepthM),
+                Length(packet.overlapIntoLimbM), Length(packet.overlapIntoYokeM), direction});
+        }
+        if (packets.empty())
+            return geometryFailure("Step-Lap joint requires an explicit packet schedule.",
+                "core.joints[" + std::to_string(i) + "].stepLapPackets");
+        core.joints.push_back({interfaces[i], CoreJointType::StepLap, std::move(packets)});
+    }
+
+    for (const auto& gap : in.airGaps) {
+        if (gap.limbIndex >= 7)
+            return geometryFailure("Air-gap segment index must identify one of the three limbs or four yoke segments.", "core.airGaps");
+        core.airGaps.push_back({
+            static_cast<domain::CoreSegment>(static_cast<std::size_t>(domain::CoreSegment::LimbA) + gap.limbIndex),
+            Length(gap.positionFromLimbStartM), Length(gap.lengthM)});
+    }
+    const auto validation = domain::validate(core);
+    if (!validation)
+        return Result<domain::ThreeLimbCorePhysicalGeometry>::failure(validation.error());
+    return Result<domain::ThreeLimbCorePhysicalGeometry>::success(std::move(core));
+}
+
 } // namespace p135::application
