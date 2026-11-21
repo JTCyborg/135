@@ -18,6 +18,7 @@ target_link_libraries(Project135DesktopUi
         Project135::InfrastructureSqlite
 )
 target_compile_features(Project135DesktopUi PUBLIC cxx_std_20)
+target_include_directories(Project135DesktopUi PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set_target_properties(Project135DesktopUi PROPERTIES AUTOMOC ON)
 
 qt_add_executable(Project135 WIN32 src/main.cpp)
