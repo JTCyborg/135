@@ -15,6 +15,7 @@ enum class RecommendationStatus { Preliminary, Verified, NotVerified };
 struct MaterialRevisionSelection {
     std::string revisionId;
     DesignInputOrigin origin{DesignInputOrigin::Recommended};
+    bool operator==(const InsulationTemperatureReference&) const = default;
 };
 
 // Physical construction inputs are optional until supplied by a drawing,
@@ -23,6 +24,7 @@ struct CoreAirGapInput {
     std::uint32_t limbIndex{}; // A=0, B=1, C=2
     double positionFromLimbStartM{};
     double lengthM{};
+    bool operator==(const CoreAirGapInput&) const = default;
 };
 
 struct CoolingDuctInput {
@@ -30,6 +32,7 @@ struct CoolingDuctInput {
     double thicknessM{};
     std::string spacerMaterialRevisionId;
     std::string airflowDirection; // e.g. axial, radial, transverse; explicit source required
+    bool operator==(const CoolingDuctInput&) const = default;
 };
 
 struct InsulationTemperatureReference {
