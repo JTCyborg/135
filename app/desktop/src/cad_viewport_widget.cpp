@@ -23,6 +23,7 @@
 #include <V3d_View.hxx>
 #include <V3d_TypeOfOrientation.hxx>
 #include <V3d_Viewer.hxx>
+#include <Quantity_Color.hxx>
 
 #ifdef _WIN32
 #include <WNT_Window.hxx>
@@ -294,6 +295,9 @@ private:
         {
             if (item.shape.IsNull()) continue;
             Handle(AIS_Shape) presentation = new AIS_Shape(item.shape);
+            presentation->SetColor(Quantity_Color(
+                item.baseColor[0], item.baseColor[1], item.baseColor[2], Quantity_TOC_RGB));
+            presentation->SetDisplayMode(AIS_Shaded);
             if (item.transparency > 0.0)
                 presentation->SetTransparency(item.transparency);
             context_->Display(presentation, false);
