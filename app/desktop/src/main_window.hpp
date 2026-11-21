@@ -8,6 +8,7 @@
 
 #include "p135/infrastructure/sqlite/sqlite_database.hpp"
 #include "p135/application/reactor_design_inputs.hpp"
+#include "p135/application/reactor_design_execution.hpp"
 
 #include <memory>
 
@@ -119,4 +120,5 @@ private:
     QString latestFilterSnapshotId_;
     std::uint32_t latestFilterBranchId_{};
     bool constructionInputsDirty_{true};
+    p135::application::ReactorDesignExecutionState reactorDesignExecutionState_;
 };
