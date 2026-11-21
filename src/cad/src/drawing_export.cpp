@@ -212,6 +212,26 @@ Result<void> exportReactorAssemblyDxf(
     dxf.text(frontX, frontY - 30.0, 2.5,
         "Core overall: " + std::to_string(totalWidth) + " x " + std::to_string(totalHeight) + " mm", "DIMENSIONS");
 
+    // Front-view dimension chains use only the explicit Construction values.
+    // They intentionally describe the nominal envelopes, not toleranced parts.
+    const double widthChainY = frontY - 48.0;
+    dxf.horizontalDimension(frontX + xA, frontX + xA + wA, frontY,
+        widthChainY, "LIMB A WIDTH " + std::to_string(wA) + " mm");
+    dxf.horizontalDimension(frontX + xB, frontX + xB + wB, frontY,
+        widthChainY - 15.0, "LIMB B WIDTH " + std::to_string(wB) + " mm");
+    dxf.horizontalDimension(frontX + xC, frontX + xC + wC, frontY,
+        widthChainY - 30.0, "LIMB C WIDTH " + std::to_string(wC) + " mm");
+    dxf.horizontalDimension(frontX + xA + wA, frontX + xB, frontY,
+        widthChainY - 45.0, "WINDOW AB " + std::to_string(gapAB) + " mm");
+    dxf.horizontalDimension(frontX + xB + wB, frontX + xC, frontY,
+        widthChainY - 60.0, "WINDOW BC " + std::to_string(gapBC) + " mm");
+    dxf.text(frontX, frontY - 125.0, 2.2,
+        "Yoke thickness T1/T2/B1/B2: " +
+        std::to_string(mm(core.yokeThicknesses[0].si())) + " / " +
+        std::to_string(mm(core.yokeThicknesses[1].si())) + " / " +
+        std::to_string(mm(core.yokeThicknesses[2].si())) + " / " +
+        std::to_string(mm(core.yokeThicknesses[3].si())) + " mm", "DIMENSIONS");
+
     // Plan view: core stack depths and the explicit bobbin/winding cross-sections.
     const double planX = 25.0, planY = 80.0;
     dxf.text(planX, planY + 115.0, 3.5, "B - PLAN VIEW (X-Z)", "ANNOTATION");
@@ -237,6 +257,17 @@ Result<void> exportReactorAssemblyDxf(
     }
     dxf.text(planX, planY - 10.0, 2.5,
         "Maximum specified core stack depth: " + std::to_string(maxDepth) + " mm", "DIMENSIONS");
+    dxf.text(planX, planY - 18.0, 2.2,
+        "Limb stack depths A/B/C: " +
+        std::to_string(mm(core.limbDepths[0].si())) + " / " +
+        std::to_string(mm(core.limbDepths[1].si())) + " / " +
+        std::to_string(mm(core.limbDepths[2].si())) + " mm", "DIMENSIONS");
+    dxf.text(planX, planY - 26.0, 2.2,
+        "Yoke stack depths T1/T2/B1/B2: " +
+        std::to_string(mm(core.yokeDepths[0].si())) + " / " +
+        std::to_string(mm(core.yokeDepths[1].si())) + " / " +
+        std::to_string(mm(core.yokeDepths[2].si())) + " / " +
+        std::to_string(mm(core.yokeDepths[3].si())) + " mm", "DIMENSIONS");
 
     // Side elevation: phase B is the central reference stack; all supplied
     // depth dimensions remain visible in the plan view above.
@@ -257,6 +288,22 @@ Result<void> exportReactorAssemblyDxf(
         bobbinDepthB, mm(bobbinB.axialLength.si()), "OUTLINE");
     dxf.rectangle(sideX + 0.5 * (depthB - windingDepthB), sideY + windingYB,
         windingDepthB, mm(windingB.axialHeight.si()), "WINDING_ENVELOPE");
+    dxf.verticalDimension(sideX + depthB, sideY + bobbinYB,
+        sideY + bobbinYB + mm(bobbinB.axialLength.si()), sideX + depthB + 18.0,
+        "BOBBIN B AXIAL LENGTH " + std::to_string(mm(bobbinB.axialLength.si())) + " mm");
+    dxf.horizontalDimension(sideX + 0.5 * (depthB - bobbinDepthB),
+        sideX + 0.5 * (depthB + bobbinDepthB), sideY + bobbinYB,
+        sideY + bobbinYB - 15.0,
+        "BOBBIN B DEPTH " + std::to_string(bobbinDepthB) + " mm");
+    dxf.text(sideX, 165.0, 2.2,
+        "Phase B winding envelope: axial " +
+        std::to_string(mm(windingB.axialHeight.si())) + " mm; radial build " +
+        std::to_string(mm(windingB.radialBuild.si())) + " mm; clearance " +
+        std::to_string(mm(bobbinB.windingClearance.si())) + " mm", "DIMENSIONS");
+    dxf.text(sideX, 157.0, 2.2,
+        "Bobbin B opening: " + std::to_string(mm(bobbinB.innerWidth.si())) +
+        " x " + std::to_string(mm(bobbinB.innerHeight.si())) +
+        " mm; wall " + std::to_string(mm(bobbinB.wallThickness.si())) + " mm", "DIMENSIONS");
 
     // Explicit gap callouts are annotation-only; their exact cut positions are
     // retained in the source geometry and not inferred from this simplified view.
