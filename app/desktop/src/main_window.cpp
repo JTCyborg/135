@@ -3986,9 +3986,16 @@ QWidget* MainWindow::createCadPage()
 
     connect(exportStep, &QPushButton::clicked, this,
         [this, status, assemblyModel] {
-        const QString path = QFileDialog::getSaveFileName(
-            this, tr("Export STEP assembly"), projectId_ + QStringLiteral(".step"),
-            tr("STEP files (*.step *.stp)"));
+        QFileDialog dialog(this, tr("Export STEP assembly"),
+            projectId_ + QStringLiteral(".step"));
+        dialog.setAcceptMode(QFileDialog::AcceptSave);
+        dialog.setNameFilter(tr("STEP files (*.step *.stp)"));
+        dialog.setDefaultSuffix(QStringLiteral("step"));
+        // A widget-backed dialog keeps the workflow accessible to UI automation
+        // and behaves consistently across platforms.
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        if (dialog.exec() != QDialog::Accepted) return;
+        const QString path = dialog.selectedFiles().value(0);
         if (path.isEmpty()) return;
         const auto result = p135::cad::exportAssemblyStep(*assemblyModel, path.toStdString());
         if (!result) {
