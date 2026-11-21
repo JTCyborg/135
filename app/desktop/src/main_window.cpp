@@ -2586,6 +2586,18 @@ QWidget* MainWindow::createConstructionPage()
             std::pair{QStringLiteral("construction_mainInsulation"), tr("Main insulation build")}
         }) if (!positiveIfProvided(item.first, item.second)) return;
 
+        int selectedJointCount = 0;
+        for (int joint = 0; joint < 8; ++joint) {
+            const auto* control = findChild<QComboBox*>(
+                QStringLiteral("construction_coreJoint_") + QString::number(joint + 1));
+            if (control && !control->currentData().toString().isEmpty()) ++selectedJointCount;
+        }
+        if (selectedJointCount != 0 && selectedJointCount != 8) {
+            QMessageBox::warning(this, tr("Incomplete core joint construction"),
+                tr("Specify the construction type for all eight limb-to-yoke interfaces, or leave all eight unspecified."));
+            return;
+        }
+
         std::array<int, 8> stepLapPacketCounts{};
         if (const auto* schedule = findChild<QPlainTextEdit*>(
                 QStringLiteral("construction_stepLapPacketSchedule"))) {
