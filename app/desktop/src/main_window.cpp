@@ -2066,7 +2066,7 @@ QWidget* MainWindow::createConstructionPage()
         "joint number (1–8), stack offset, packet depth, overlap into limb, "
         "overlap into yoke, direction. Lengths are in mm; direction is "
         "limb-into-yoke or yoke-into-limb. Packets must cover the complete stack depth "
-        "contiguously and alternate direction."));
+        "contiguously and alternate direction. The current OCCT core builder still rejects Step-Lap: packet data is captured and validated, but interleaved solid generation is not yet implemented."));
     jointNote->setWordWrap(true);
     coreForm->addRow(jointNote);
     auto* stepLapSchedule = new QPlainTextEdit;
