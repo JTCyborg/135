@@ -3,6 +3,7 @@
 #include <cassert>
 #include <array>
 #include <limits>
+#include <iostream>
 
 using namespace p135::application;
 
@@ -123,7 +124,11 @@ int main()
     inputs.conductorInsulationBuildM.reset();
     inputs.insulationTemperatureReference = InsulationTemperatureReference{
         "F", "IEC 60085", 428.15, 10.0, 418.15, DesignInputOrigin::UserSelected};
-    assert(validate(inputs));
+    const auto physicalValidation = validate(inputs);
+    if (!physicalValidation)
+        std::cerr << "Physical construction validation failed: "
+                  << physicalValidation.error().message << '\\n';
+    assert(physicalValidation);
     const auto physicalAccepted = inputs;
     inputs.windowWidthsM = std::array<double, 2>{0.0, 0.10};
     assert(!validate(inputs));
