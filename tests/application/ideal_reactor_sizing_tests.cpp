@@ -13,7 +13,8 @@ int main()
     };
     const auto result = calculateIdealReactorAreaProduct(request);
     assert(result);
-    const double expected = 0.01 * 100.0 * 70.0 / (1.2 * 3.0e6 * 0.35);
+    // Two winding packs occupy each window in the three-limb three-phase topology.
+    const double expected = 2.0 * 0.01 * 100.0 * 70.0 / (1.2 * 3.0e6 * 0.35);
     assert(std::abs(result.value().minimumEffectiveAreaProductM4 - expected) < expected * 1.0e-12);
     assert(std::abs(result.value().minimumGrossAreaProductM4 - expected / 0.95) < expected * 1.0e-12);
     assert(std::abs(result.value().storedPeakEnergyJ - 50.0) < 1.0e-12);
