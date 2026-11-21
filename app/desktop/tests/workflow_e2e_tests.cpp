@@ -6,6 +6,7 @@
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QImage>
 #include <QDir>
 #include <QApplication>
 #include <QTemporaryDir>
@@ -24,6 +25,7 @@
 #include <QStringList>
 #include <QWidget>
 
+#include <array>
 #include <optional>
 #include <complex>
 #include <cmath>
