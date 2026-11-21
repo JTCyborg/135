@@ -104,9 +104,9 @@ int main()
     inputs.windowHeightsM = std::array<double, 2>{0.20, 0.20};
     inputs.yokeThicknessesM = std::array<double, 4>{0.04, 0.04, 0.04, 0.04};
     inputs.yokeDepthsM = std::array<double, 4>{0.12, 0.12, 0.12, 0.12};
-    inputs.limbCenterSpacingsM = std::array<double, 3>{0.15, 0.15, 0.30};
+    inputs.limbCenterSpacingsM = std::array<double, 3>{0.17, 0.145, 0.315};
     inputs.coreOverallHeightM = 0.28;
-    inputs.coreOverallWidthM = 0.40;
+    inputs.coreOverallWidthM = 0.33;
     inputs.coreJointConstructions = std::array<std::string, 8>{
         "butt", "butt", "butt", "butt", "butt", "butt", "butt", "butt"};
     inputs.airGapCountPerLimb = std::array<std::uint32_t, 3>{1, 0, 1};
