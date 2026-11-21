@@ -107,3 +107,20 @@ A focused application test covers a TEST-01 synthesis result and invalid/missing
 `MainWindow::calculateFilter()` now adapts the successful typed `filter::synthesize()` result with `makeFilterExcitationStageArtifact()` and executes only the `filter.excitation` stage through `executeReactorDesignPlan()`. The window owns the execution state across calculation runs. The graph plan generated from `input.filter.excitation` is used as the invalidation list: every dependent magnetic, winding-loss, core-loss, thermal, assembly and verification stage is reset to `NOT_VERIFIED` and its previous payload is cleared. These stages are not marked valid by electrical synthesis. The committed revision remains unverified.
 
 This is deliberately narrow integration. AC network solving, frequency sweep, magnetic analysis and thermal assessments remain their existing calculation paths and are not yet registered as typed pipeline stages. If excitation artifact validation or pipeline execution fails, the failure is logged and no successful pipeline commit is claimed.
+
+## 9. Magnetic operating-point adapter boundary and desktop gap
+
+A typed adapter, `makeMagneticOperatingPointStageArtifact()`, now serializes the output of the existing physical three-limb magnetic bridge. It requires:
+- a valid explicit `ThreeLimbCorePhysicalGeometry` and stacking factor;
+- matching non-zero filter branch identity;
+- explicit dimensional source/revision;
+- core material ID, B-H source reference and dataset revision;
+- a converged cycle whose solved branches remain within the measured B-H range.
+
+It records the selected branch harmonic phasors, sampling convergence metadata and peak absolute flux density for all seven limb/yoke branches. Zero flux in an individual branch is allowed; negative/non-finite peak magnitudes are rejected. The artifact is not a core-loss result and does not establish thermal or design verification.
+
+The adapter is covered by `Project135MagneticOperatingPointStageAdapterTests`, including incomplete provenance, wrong branch, unconverged cycle, B-H extrapolation and zero-flux branch cases. This test has been registered in CMake; it has not yet been run against the latest commit in this audit.
+
+**Desktop integration is intentionally pending.** The current `MainWindow::calculateFilter()` legacy magnetic setup constructs `ThreeLimbMagneticRequest` from independently entered effective Ae/le/air-gap/yoke values and a manually entered B-H table. It does not currently build the new physical request from the confirmed `ReactorDesignInputs` / `ReactorPhysicalGeometry` path. The three-limb frequency sweep is a source-limited single-frequency diagnostic and must not be mislabeled as the multi-harmonic operating point. Directly wrapping that legacy sweep would create false physical lineage.
+
+Next integration must bind the confirmed Construction snapshot, exact core-material revision, explicit winding turns and the actual harmonic branch result into one immutable context. The physical bridge must execute once; its exact result is then passed to the adapter and pipeline stage. Missing inputs must remain NOT_VERIFIED with a reason. No duplicate solver path or guessed geometry/material data is acceptable.
