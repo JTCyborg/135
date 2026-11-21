@@ -11,6 +11,8 @@
 #include <QStandardPaths>
 #include <QTabWidget>
 #include <QTest>
+#include <QTableWidget>
+#include <QStringList>
 #include <QWidget>
 
 class DesktopWorkflowE2ETests final : public QObject
@@ -135,7 +137,7 @@ private slots:
         QVERIFY(recalculate);
         QTest::mouseClick(recalculate, Qt::LeftButton);
 
-        auto* results = window_->findChild<QTableWidget*>();
+        auto* results = window_->findChild<QTableWidget*>(QStringLiteral("calculationResultsTable"));
         QVERIFY2(results, "Calculation results table was not created");
         QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
     }
