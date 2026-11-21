@@ -113,6 +113,9 @@ private slots:
         };
 
         clickAndWait("confirmProjectAndContinue", 1);
+        auto* synthesize = window_->findChild<QPushButton*>(QStringLiteral("synthesizeLcBranch"));
+        QVERIFY(synthesize);
+        QTest::mouseClick(synthesize, Qt::LeftButton);
         clickAndWait("confirmFilterDefinitionAndContinue", 2);
         clickAndWait("confirmConstructionAndContinue", 3);
     }
@@ -125,6 +128,9 @@ private slots:
         QTest::mouseClick(window_->findChild<QPushButton*>(
             QStringLiteral("confirmProjectAndContinue")), Qt::LeftButton);
         QTRY_COMPARE(tabs->currentIndex(), 1);
+        auto* synthesize = window_->findChild<QPushButton*>(QStringLiteral("synthesizeLcBranch"));
+        QVERIFY(synthesize);
+        QTest::mouseClick(synthesize, Qt::LeftButton);
         QTest::mouseClick(window_->findChild<QPushButton*>(
             QStringLiteral("confirmFilterDefinitionAndContinue")), Qt::LeftButton);
         QTRY_COMPARE(tabs->currentIndex(), 2);
