@@ -684,6 +684,7 @@ void MainWindow::loadProjectSettings()
     latestFilterSnapshotId_.clear();
     latestFilterBranchId_ = 0;
     constructionInputsDirty_ = true;
+    acceptedConstructionInputs_.reset();
     loadingProjectSettings_ = true;
     QSettings settings;
     settings.beginGroup(QStringLiteral("projects/") + projectId_);
@@ -2778,7 +2779,10 @@ QWidget* MainWindow::createConstructionPage()
             state->setText(tr("CONSTRUCTION INPUTS CONFIRMED — physical sizing: NOT_CONNECTED_TO_SOLVER."));
             state->setStyleSheet("color: palette(text); font-weight: 600;");
         }
+        acceptedConstructionInputs_ = constructionInputs;
         constructionInputsDirty_ = false;
+        appendLog(tr("[CONSTRUCTION] Accepted immutable input capture linked to filter snapshot %1 / branch %2.")
+            .arg(latestFilterSnapshotId_).arg(latestFilterBranchId_));
         tabs_->setCurrentIndex(3);
     });
 
@@ -3965,9 +3969,12 @@ QWidget* MainWindow::createCadPage()
             status->setText(tr("CAD is blocked: no accepted filter calculation snapshot is available."));
             return;
         }
-        const auto inputs = collectReactorDesignInputs();
+        if (!acceptedConstructionInputs_) {
+            status->setText(tr("CAD is blocked: no accepted Construction input revision is available. Confirm Construction first."));
+            return;
+        }
         const auto physical = p135::application::makeReactorPhysicalGeometry(
-            inputs, projectId_.toStdString());
+            *acceptedConstructionInputs_, projectId_.toStdString());
         if (!physical) {
             const auto& error = physical.error();
             status->setText(tr("CAD is waiting for explicit physical inputs: %1").arg(
@@ -4376,6 +4383,7 @@ void MainWindow::markConstructionInputsChanged()
 {
     if (loadingProjectSettings_) return;
     constructionInputsDirty_ = true;
+    acceptedConstructionInputs_.reset();
     if (auto* generate = findChild<QPushButton*>(QStringLiteral("generatePreliminaryCad")))
         generate->setEnabled(true);
     if (auto* exportStep = findChild<QPushButton*>(QStringLiteral("exportCadStep")))
