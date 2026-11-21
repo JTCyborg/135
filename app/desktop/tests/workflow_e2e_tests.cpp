@@ -6,6 +6,7 @@
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QDir>
 #include <QApplication>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -491,6 +492,26 @@ private slots:
         QVERIFY(coreFluxPlot);
         const auto fluxCurves = coreFluxPlot->property("plotCurves").toList();
         QCOMPARE(fluxCurves.size(), 4);
+
+#if defined(_DEBUG) || !defined(NDEBUG)
+        QSettings artifactSettings;
+        const QString artifactProjectId =
+            artifactSettings.value(QStringLiteral("project/currentId")).toString();
+        QVERIFY(!artifactProjectId.isEmpty());
+        const QDir artifactRoot(QStringLiteral("C:/Temp/trdos/135/Debug/Plots"));
+        const QFileInfo currentPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_reactor_current.png")));
+        const QFileInfo impedancePng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_bus_impedance.png")));
+        QVERIFY2(currentPng.exists() && currentPng.size() > 100,
+            "Debug reactor-current graph PNG was not automatically saved.");
+        QVERIFY2(impedancePng.exists() && impedancePng.size() > 100,
+            "Debug bus-impedance graph PNG was not automatically saved.");
+        QFile currentImage(currentPng.absoluteFilePath());
+        QVERIFY(currentImage.open(QIODevice::ReadOnly));
+        QCOMPARE(currentImage.read(8).toHex(),
+            QByteArray("89504e470d0a1a0a"));
+#endif
         for (const auto& curve : fluxCurves)
             QVERIFY(curve.toMap().value(QStringLiteral("points")).toList().isEmpty());
 
@@ -535,6 +556,26 @@ private slots:
             QStringLiteral("exportCadStep"));
         QVERIFY(exportStep);
         QVERIFY(exportStep->isEnabled());
+
+        QSettings artifactSettings;
+        const QString artifactProjectId =
+            artifactSettings.value(QStringLiteral("project/currentId")).toString();
+        QVERIFY(!artifactProjectId.isEmpty());
+        const QString automaticStepPath = QDir(QStringLiteral("C:/Temp/trdos/135/CAD"))
+            .filePath(artifactProjectId + QStringLiteral("_assembly.step"));
+        const QString automaticPdfPath = QDir(QStringLiteral("C:/Temp/trdos/135/Drawings"))
+            .filePath(artifactProjectId + QStringLiteral("_assembly.pdf"));
+        QVERIFY2(QFileInfo::exists(automaticStepPath),
+            "CAD generation did not automatically save the STEP assembly.");
+        QVERIFY2(QFileInfo(automaticStepPath).size() > 0,
+            "Automatically saved STEP assembly is empty.");
+        QVERIFY2(QFileInfo::exists(automaticPdfPath),
+            "CAD generation did not automatically save the PDF drawing.");
+        QVERIFY2(QFileInfo(automaticPdfPath).size() > 100,
+            "Automatically saved PDF drawing is empty.");
+        QFile pdfFile(automaticPdfPath);
+        QVERIFY(pdfFile.open(QIODevice::ReadOnly));
+        QVERIFY(pdfFile.read(5).startsWith("%PDF-"));
 
         // Exercise the real UI export action. The timer accepts the widget-backed
         // save dialog with a deterministic temporary path; the export itself
