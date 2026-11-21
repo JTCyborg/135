@@ -3686,7 +3686,7 @@ QWidget* MainWindow::createCadPage()
     auto* generateCad = new QPushButton(tr("Generate preliminary 3D model from Construction"));
     generateCad->setObjectName(QStringLiteral("generatePreliminaryCad"));
     layout->addWidget(generateCad);
-    auto* exportStep = new QPushButton(tr("Export validated assembly to STEP"));
+    auto* exportStep = new QPushButton(tr("Export B-Rep checked assembly to STEP"));
     exportStep->setObjectName(QStringLiteral("exportCadStep"));
     exportStep->setEnabled(false);
     layout->addWidget(exportStep);
@@ -3768,7 +3768,7 @@ QWidget* MainWindow::createCadPage()
             rebuildCadDisplay();
     });
     connect(tree, &QTreeWidget::currentItemChanged, this,
-        [assemblyModel, transparency](QTreeWidgetItem* current, QTreeWidgetItem*) {
+        [assemblyModel, transparency, properties](QTreeWidgetItem* current, QTreeWidgetItem*) {
         const auto id = current ? current->data(0, Qt::UserRole).toString() : QString{};
         if (id.isEmpty()) { transparency->setEnabled(false); return; }
         std::function<const p135::cad::AssemblyPresentationNode*(const p135::cad::AssemblyPresentationNode&)> findNode;
@@ -3784,7 +3784,22 @@ QWidget* MainWindow::createCadPage()
             transparency->setValue(node->transparency);
             transparency->blockSignals(false);
             transparency->setEnabled(true);
-        } else transparency->setEnabled(false);
+            const QString representation =
+                node->representation == p135::cad::AssemblyGeometryRepresentation::SimplifiedCoreSegment
+                    ? QObject::tr("Simplified core segment")
+                    : node->representation == p135::cad::AssemblyGeometryRepresentation::WindingPackEnvelope
+                        ? QObject::tr("Winding envelope (not detailed conductor geometry)")
+                        : QObject::tr("Physical solid");
+            properties->setText(QObject::tr(
+                "%1\nID: %2\nRepresentation: %3\nVisibility: %4\nTransparency: %5")
+                .arg(QString::fromStdString(node->displayName),
+                     QString::fromStdString(node->id), representation,
+                     node->visible ? QObject::tr("Visible") : QObject::tr("Hidden"),
+                     QString::number(node->transparency, 'f', 2)));
+        } else {
+            transparency->setEnabled(false);
+            properties->setText(QObject::tr("No component selected."));
+        }
     });
     connect(transparency, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
         [assemblyModel, rebuildCadDisplay, tree](double value) {
@@ -3847,6 +3862,7 @@ QWidget* MainWindow::createCadPage()
                 item->setExpanded(true);
             };
             appendNode(*assemblyModel, nullptr);
+            tree->setCurrentItem(tree->topLevelItem(0));
         }
         const auto items = p135::cad::collectAssemblyPresentationDisplayItems(*assemblyModel);
         if (items.empty()) {
@@ -3880,7 +3896,7 @@ QWidget* MainWindow::createCadPage()
             QMessageBox::warning(this, tr("STEP export failed"), QString::fromStdString(result.error().message));
             return;
         }
-        status->setText(tr("Validated assembly exported to %1").arg(path));
+        status->setText(tr("B-Rep checked assembly exported to %1").arg(path));
         appendLog(tr("[CAD] STEP EXPORT OK: %1").arg(path));
     });
 
