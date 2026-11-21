@@ -112,7 +112,7 @@
 Текущая реализация автоматизации:
 - [x] Выделена библиотека `Project135DesktopUi`, чтобы тестировать тот же `MainWindow`, который используется desktop-приложением.
 - [x] Добавлен Qt Test target `Project135DesktopWorkflowE2ETests` с запуском в offscreen-режиме и отдельной копией SQLite migrations.
-- [x] Добавлены проверки порядка семи вкладок, наличия основных workflow actions и стабильных objectName у редактируемых контролов Project / Filter definition / Construction.
+- [x] Добавлены проверки порядка семи вкладок, явного переключения на каждую вкладку, наличия основных workflow actions и стабильных objectName у редактируемых контролов Project / Filter definition / Construction.
 - [x] Добавлен UI-путь подтверждений Project → Filter definition → Construction и запуска расчёта с подтверждением Calculation & design.
 - [x] Добавлен явный ожидаемый пробел для 2D: тест проверяет наличие `generateCadDrawings`, но пока отмечен как expected failure, так как в приложении отсутствуют 2D drawing generator и экспорт.
 - [ ] Заполнить все поля всех вкладок детерминированным TEST-01 UI fixture; для каждого snapshot сверять полный набор control IDs и сохранённых значений.
