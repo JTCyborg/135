@@ -17,6 +17,30 @@ struct MaterialRevisionSelection {
     DesignInputOrigin origin{DesignInputOrigin::Recommended};
 };
 
+// Physical construction inputs are optional until supplied by a drawing,
+// datasheet or measurement. All lengths are SI metres; no defaults are inferred.
+struct CoreAirGapInput {
+    std::uint32_t limbIndex{}; // A=0, B=1, C=2
+    double positionFromLimbStartM{};
+    double lengthM{};
+};
+
+struct CoolingDuctInput {
+    double positionFromWindingBottomM{};
+    double thicknessM{};
+    std::string spacerMaterialRevisionId;
+    std::string airflowDirection; // e.g. axial, radial, transverse; explicit source required
+};
+
+struct InsulationTemperatureReference {
+    std::string thermalClass; // e.g. F, H; reference only, not a design hotspot limit
+    std::string standardReference;
+    double referenceTemperatureK{};
+    double safetyMarginK{};
+    double maximumDesignWindingTemperatureK{};
+    DesignInputOrigin origin{DesignInputOrigin::Recommended};
+};
+
 /// Explicit inputs for the physical reactor-design stage.
 /// The filter snapshot is the immutable electrical-analysis source; material
 /// revisions are pinned, never silently replaced by newer catalog revisions.
@@ -51,6 +75,42 @@ struct ReactorDesignInputs {
     std::optional<double> turnInsulationBuildM;
     std::optional<double> layerInsulationBuildM;
     std::optional<double> mainInsulationBuildM;
+    // Explicit three-limb physical core dimensions (A/B/C, left/right windows).
+    std::optional<std::array<double, 3>> limbWidthsM;
+    std::optional<std::array<double, 3>> limbStackDepthsM;
+    std::optional<std::array<double, 2>> windowWidthsM;
+    std::optional<std::array<double, 2>> windowHeightsM;
+    std::optional<std::array<double, 4>> yokeThicknessesM;
+    std::optional<std::array<double, 4>> yokeDepthsM;
+    std::optional<std::array<double, 3>> limbCenterSpacingsM; // AB, BC, AC
+    std::optional<double> coreOverallHeightM;
+    std::optional<double> coreOverallWidthM;
+
+    // Gap count and total gap length are distinct from individual gap positions.
+    std::optional<std::array<std::uint32_t, 3>> airGapCountPerLimb;
+    std::optional<std::array<double, 3>> totalAirGapLengthPerLimbM;
+    std::vector<CoreAirGapInput> airGaps;
+
+    // Bobbin and winding-pack dimensions, one entry per phase/limb.
+    std::optional<std::array<double, 3>> bobbinInnerWidthsM;
+    std::optional<std::array<double, 3>> bobbinInnerHeightsM;
+    std::optional<std::array<double, 3>> bobbinAxialLengthsM;
+    std::optional<std::array<double, 3>> bobbinWallThicknessesM;
+    std::optional<std::array<double, 3>> windingRadialBuildsM;
+    std::optional<std::array<double, 3>> windingAxialHeightsM;
+    std::optional<std::array<double, 3>> windingEndClearancesM;
+
+    // Cooling ducts are explicit geometric features, not an area correction.
+    std::optional<std::uint32_t> radialCoolingDuctCount;
+    std::vector<CoolingDuctInput> coolingDucts;
+
+    // Cross-section applicability: round uses bare/insulated diameter;
+    // rectangular/foil use bare width/thickness and insulation build.
+    std::optional<double> conductorBareDiameterM;
+    std::optional<double> conductorInsulatedDiameterM;
+    std::optional<double> conductorInsulationBuildM;
+
+    std::optional<InsulationTemperatureReference> insulationTemperatureReference;
 };
 
 /// A candidate is evidence, not a promise that a physical design has passed.
