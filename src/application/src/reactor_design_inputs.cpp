@@ -93,6 +93,10 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         return !values || std::all_of(values->begin(), values->end(),
             [](double value) { return std::isfinite(value) && value > 0.0; });
     };
+    const auto validNonNegativeArray = [](const auto& values) {
+        return !values || std::all_of(values->begin(), values->end(),
+            [](double value) { return std::isfinite(value) && value >= 0.0; });
+    };
     if (!validArray(inputs.limbWidthsM) || !validArray(inputs.limbStackDepthsM) ||
         !validArray(inputs.windowWidthsM) || !validArray(inputs.windowHeightsM) ||
         !validArray(inputs.yokeThicknessesM) || !validArray(inputs.yokeDepthsM) ||
@@ -100,7 +104,7 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         !validArray(inputs.bobbinInnerHeightsM) || !validArray(inputs.bobbinAxialLengthsM) ||
         !validArray(inputs.bobbinWallThicknessesM) || !validArray(inputs.bobbinFlangeThicknessesM) ||
         !validArray(inputs.bobbinFlangeOuterWidthsM) || !validArray(inputs.bobbinFlangeOuterHeightsM) ||
-        !validArray(inputs.bobbinWindingClearancesM) ||
+        !validNonNegativeArray(inputs.bobbinWindingClearancesM) ||
         !validArray(inputs.windingRadialBuildsM) ||
         !validArray(inputs.windingAxialHeightsM) || !validArray(inputs.windingEndClearancesM))
         return invalid("Specified physical core, bobbin and winding dimensions must be finite and greater than zero.");
