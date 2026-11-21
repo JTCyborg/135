@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 
 #include "p135/infrastructure/sqlite/sqlite_database.hpp"
 #include "p135/application/reactor_design_inputs.hpp"
@@ -120,5 +121,6 @@ private:
     QString latestFilterSnapshotId_;
     std::uint32_t latestFilterBranchId_{};
     bool constructionInputsDirty_{true};
+    std::optional<p135::application::ReactorDesignInputs> acceptedConstructionInputs_;
     p135::application::ReactorDesignExecutionState reactorDesignExecutionState_;
 };
