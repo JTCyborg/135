@@ -3131,6 +3131,7 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
     resultsBankCurrentPlot_->setObjectName(QStringLiteral("resultsBankCurrentPlot"));
+    resultsBankCurrentPlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_reactor_current.png")));
     resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Reactor branch peak current (A)"));
     resultsBankCurrentPlot_->setMinimumHeight(250);
     resultsBankCurrentPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -3145,6 +3146,7 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(coreFluxPlotTitle);
     resultsCoreFluxPlot_ = new PlotWidget;
     resultsCoreFluxPlot_->setObjectName(QStringLiteral("resultsCoreFluxPlot"));
+    resultsCoreFluxPlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux.png")));
     resultsCoreFluxPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
     resultsCoreFluxPlot_->setMinimumHeight(250);
     resultsCoreFluxPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -3155,6 +3157,7 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(impedancePlotTitle);
     resultsBusImpedancePlot_ = new PlotWidget;
     resultsBusImpedancePlot_->setObjectName(QStringLiteral("resultsBusImpedancePlot"));
+    resultsBusImpedancePlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_bus_impedance.png")));
     resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
     resultsBusImpedancePlot_->setMinimumHeight(250);
     resultsBusImpedancePlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -3363,6 +3366,7 @@ QWidget* MainWindow::createHistoryPage()
     layout->addLayout(compareRow);
     historyComparisonPlot_ = new PlotWidget;
     historyComparisonPlot_->setObjectName(QStringLiteral("historyComparisonPlot"));
+    historyComparisonPlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_history_comparison.png")));
     historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Selected metric"));
     layout->addWidget(historyComparisonPlot_);
 
@@ -4237,6 +4241,35 @@ QWidget* MainWindow::createCadPage()
             return;
         }
         viewport->setDisplayItems(items);
+
+        // Automatically persist the accepted physical assembly and its drawing
+        // beside the project workspace. Manual export actions remain available.
+        const QString cadDirectory = QDir(projectOutputRoot()).filePath(QStringLiteral("CAD"));
+        const QString drawingDirectory = QDir(projectOutputRoot()).filePath(QStringLiteral("Drawings"));
+        const bool cadDirectoryReady = QDir().mkpath(cadDirectory);
+        const bool drawingDirectoryReady = QDir().mkpath(drawingDirectory);
+        if (!cadDirectoryReady || !drawingDirectoryReady) {
+            const QString message = tr("Automatic CAD output directories could not be created under C:/Temp/trdos/135.");
+            status->setText(message);
+            appendLog(QStringLiteral("[ARTIFACT] ERROR: ") + message);
+        } else {
+            const QString stepPath = QDir(cadDirectory).filePath(projectId_ + QStringLiteral("_assembly.step"));
+            const auto stepResult = p135::cad::exportAssemblyStep(*assemblyModel, stepPath.toStdString());
+            if (stepResult) {
+                appendLog(tr("[ARTIFACT] STEP AUTO-SAVED: %1").arg(stepPath));
+            } else {
+                appendLog(tr("[ARTIFACT] STEP AUTO-SAVE FAILED: %1").arg(
+                    QString::fromStdString(stepResult.error().message)));
+            }
+            const QString pdfPath = QDir(drawingDirectory).filePath(projectId_ + QStringLiteral("_assembly.pdf"));
+            QString pdfError;
+            if (exportReactorAssemblyPdf(physical.value(), pdfPath, &pdfError)) {
+                appendLog(tr("[ARTIFACT] PDF AUTO-SAVED: %1").arg(pdfPath));
+            } else {
+                appendLog(tr("[ARTIFACT] PDF AUTO-SAVE FAILED: %1").arg(pdfError));
+            }
+        }
+
         if (auto* generatedRoot = tree->topLevelItem(0))
             generatedRoot->setText(1, QStringLiteral("PRELIMINARY"));
         properties->setText(tr(
@@ -4244,7 +4277,7 @@ QWidget* MainWindow::createCadPage()
             "windings are envelopes, not detailed conductor geometry.")
             .arg(QString::fromStdString(physical.value().dimensionalSource),
                  QString::fromStdString(physical.value().dimensionalRevision)));
-        status->setText(tr("Preliminary CAD generated from the current Construction revision. Physical and manufacturing validation remain separate."));
+        status->setText(tr("Preliminary CAD generated. Automatic STEP/PDF outputs are written under C:/Temp/trdos/135. Physical and manufacturing validation remain separate."));
         generateCad->setEnabled(false);
         exportStep->setEnabled(true);
         exportDrawing->setEnabled(true);
