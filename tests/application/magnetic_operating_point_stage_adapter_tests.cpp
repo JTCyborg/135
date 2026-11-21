@@ -9,6 +9,21 @@ using namespace p135;
 using namespace p135::application;
 
 namespace {
+bool hasNumericValue(const std::string& artifact, const std::string& key, double expected)
+{
+    const auto position = artifact.find(key + "=");
+    if (position == std::string::npos)
+        return false;
+    const auto valueStart = position + key.size() + 1;
+    const auto valueEnd = artifact.find('\\n', valueStart);
+    try {
+        const double actual = std::stod(artifact.substr(valueStart, valueEnd - valueStart));
+        return std::abs(actual - expected) <= 1.0e-12 * std::max({1.0, std::abs(actual), std::abs(expected)});
+    } catch (...) {
+        return false;
+    }
+}
+
 domain::ThreeLimbCorePhysicalGeometry validCore()
 {
     domain::ThreeLimbCorePhysicalGeometry g;
@@ -85,7 +100,7 @@ int main()
     assert(artifact.value().find("bh_dataset_revision=BH-REV-3") != std::string::npos);
     assert(artifact.value().find("peak_absolute_flux_density_6_T=") != std::string::npos);
     assert(artifact.value().find("physical_limb_width_0_m=0.04") != std::string::npos);
-    assert(artifact.value().find("physical_core_overall_width_m=0.24") != std::string::npos);
+    assert(hasNumericValue(artifact.value(), "physical_core_overall_width_m", 0.24));
     assert(artifact.value().find("turns_phase_0=120") != std::string::npos);
     assert(artifact.value().find("bh_curve.2.B_T=1") != std::string::npos);
     assert(artifact.value().find("excitation.0.frequency_Hz=50") != std::string::npos);
