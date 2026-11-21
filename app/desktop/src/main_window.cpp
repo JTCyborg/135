@@ -1846,6 +1846,47 @@ QWidget* MainWindow::createConstructionPage()
     coreForm->addRow(tr("Core material revision"), coreMaterial);
     coreForm->addRow(tr("Core geometry family"), coreGeometry);
     coreForm->addRow(tr("Stacking factor"), stackingFactor);
+
+    const auto addCoreLength = [coreForm](const QString& objectName, const QString& label) {
+        auto* field = new QDoubleSpinBox;
+        field->setObjectName(objectName);
+        field->setRange(0.0, 10000.0);
+        field->setDecimals(3);
+        field->setSuffix(QObject::tr(" mm"));
+        field->setSpecialValueText(QObject::tr("NOT_PROVIDED"));
+        coreForm->addRow(label, field);
+        return field;
+    };
+    for (int limb = 0; limb < 3; ++limb) {
+        const QString suffix = QString::number(limb + 1);
+        addCoreLength(QStringLiteral("construction_limbWidth_") + suffix,
+            tr("Limb %1 width").arg(QChar('A' + limb)));
+        addCoreLength(QStringLiteral("construction_limbDepth_") + suffix,
+            tr("Limb %1 stack depth").arg(QChar('A' + limb)));
+    }
+    for (int window = 0; window < 2; ++window) {
+        const QString suffix = QString::number(window + 1);
+        addCoreLength(QStringLiteral("construction_windowWidth_") + suffix,
+            tr("Window %1 clear width").arg(window + 1));
+        addCoreLength(QStringLiteral("construction_windowHeight_") + suffix,
+            tr("Window %1 clear height").arg(window + 1));
+    }
+    for (int yoke = 0; yoke < 4; ++yoke) {
+        const QString suffix = QString::number(yoke + 1);
+        addCoreLength(QStringLiteral("construction_yokeThickness_") + suffix,
+            tr("Yoke segment %1 thickness").arg(yoke + 1));
+        addCoreLength(QStringLiteral("construction_yokeDepth_") + suffix,
+            tr("Yoke segment %1 stack depth").arg(yoke + 1));
+    }
+    for (int limb = 0; limb < 3; ++limb) {
+        auto* count = new QSpinBox;
+        count->setObjectName(QStringLiteral("construction_airGapCount_") + QString::number(limb + 1));
+        count->setRange(0, 100);
+        count->setSpecialValueText(tr("NOT_PROVIDED"));
+        coreForm->addRow(tr("Limb %1 discrete air-gap count").arg(QChar('A' + limb)), count);
+        addCoreLength(QStringLiteral("construction_totalAirGap_") + QString::number(limb + 1),
+            tr("Limb %1 total air-gap length").arg(QChar('A' + limb)));
+    }
     root->addWidget(coreGroup);
 
     auto* windingGroup = new QGroupBox(tr("2. Winding and conductor"));
