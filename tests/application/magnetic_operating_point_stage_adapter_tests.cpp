@@ -17,7 +17,7 @@ bool hasNumericValue(const std::string& artifact, const std::string& key, double
     if (position == std::string::npos)
         return false;
     const auto valueStart = position + key.size() + 1;
-    const auto valueEnd = artifact.find('\\n', valueStart);
+    const auto valueEnd = artifact.find('\n', valueStart);
     try {
         const double actual = std::stod(artifact.substr(valueStart, valueEnd - valueStart));
         return std::abs(actual - expected) <= 1.0e-12 * std::max({1.0, std::abs(actual), std::abs(expected)});
