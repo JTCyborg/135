@@ -1,5 +1,6 @@
 #include "main_window.hpp"
 
+#include <functional>
 #include <nlohmann/json.hpp>
 #include "material_database_widget.hpp"
 #include "cad_viewport_widget.hpp"
@@ -3848,9 +3849,8 @@ QWidget* MainWindow::createCadPage()
             return;
         }
         viewport->setDisplayItems(items);
-        root->setText(1, QStringLiteral("PRELIMINARY"));
-        for (int i = 0; i < root->childCount(); ++i)
-            root->child(i)->setText(1, QStringLiteral("BUILT"));
+        if (auto* generatedRoot = tree->topLevelItem(0))
+            generatedRoot->setText(1, QStringLiteral("PRELIMINARY"));
         properties->setText(tr(
             "PRELIMINARY / NOT_VERIFIED. Source: %1; revision: %2. Core segments are simplified solids; "
             "windings are envelopes, not detailed conductor geometry.")
