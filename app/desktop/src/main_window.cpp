@@ -1143,7 +1143,9 @@ QWidget* MainWindow::createFilterPage()
     auto* componentGroup = new QGroupBox(tr("Selected components and installation thermal data"));
     auto* componentForm = new QFormLayout(componentGroup);
     capacitorComponent_ = new QComboBox;
+    capacitorComponent_->setObjectName(QStringLiteral("capacitorComponent"));
     resistorComponent_ = new QComboBox;
+    resistorComponent_->setObjectName(QStringLiteral("resistorComponent"));
     ambientTemperature_ = new QDoubleSpinBox;
     ambientTemperature_->setRange(-50.0, 150.0);
     ambientTemperature_->setDecimals(2);
