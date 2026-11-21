@@ -133,18 +133,6 @@ if(P135_BUILD_TESTS)
             VERBATIM
         )
 
-        # The test uses the offscreen platform plugin rather than qwindows.
-        set(P135_QT_PLATFORMS_DIR "${Qt6_DIR}/../../../plugins/platforms")
-        add_custom_command(TARGET Project135DesktopWorkflowE2ETests POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E make_directory
-                "$<TARGET_FILE_DIR:Project135DesktopWorkflowE2ETests>/platforms"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                "${P135_QT_PLATFORMS_DIR}/qoffscreen.dll"
-                "$<TARGET_FILE_DIR:Project135DesktopWorkflowE2ETests>/platforms/qoffscreen.dll"
-            COMMENT "Deploying Qt offscreen platform plugin for desktop workflow E2E tests"
-            VERBATIM
-        )
-
         # Include vcpkg runtime DLLs (SQLite, OpenSSL and OCCT TK* DLLs).
         if(VCPKG_INSTALLED_DIR AND VCPKG_TARGET_TRIPLET)
             set(P135_VCPKG_TRIPLET_ROOT "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
@@ -160,7 +148,10 @@ if(P135_BUILD_TESTS)
 
     add_test(NAME Project135DesktopWorkflowE2ETests
         COMMAND Project135DesktopWorkflowE2ETests)
+    # Run the desktop UI test with Qt's native Windows platform plugin.
+    # The offscreen plugin is not part of every Qt deployment and was not
+    # reliably discoverable by CTest on Windows.
     set_tests_properties(Project135DesktopWorkflowE2ETests PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        ENVIRONMENT "QT_QPA_PLATFORM=windows"
     )
 endif()
