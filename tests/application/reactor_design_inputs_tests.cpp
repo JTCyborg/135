@@ -1,6 +1,7 @@
 #include "p135/application/reactor_design_inputs.hpp"
 
 #include <cassert>
+#include <cmath>
 #include <array>
 #include <limits>
 #include <iostream>
