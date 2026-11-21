@@ -3813,6 +3813,29 @@ void MainWindow::markConstructionInputsChanged()
     else if (objectName == QStringLiteral("construction_bobbinMaterial") ||
              objectName == QStringLiteral("construction_bobbinUsage"))
         stage = QStringLiteral("input.winding.bobbin");
+    else if (objectName.startsWith(QStringLiteral("construction_limbWidth_")) ||
+             objectName.startsWith(QStringLiteral("construction_limbDepth_")) ||
+             objectName.startsWith(QStringLiteral("construction_windowWidth_")) ||
+             objectName.startsWith(QStringLiteral("construction_windowHeight_")) ||
+             objectName.startsWith(QStringLiteral("construction_yokeThickness_")) ||
+             objectName.startsWith(QStringLiteral("construction_yokeDepth_")) ||
+             objectName.startsWith(QStringLiteral("construction_limbCenterSpacing_")) ||
+             objectName.startsWith(QStringLiteral("construction_coreOverall")) ||
+             objectName.startsWith(QStringLiteral("construction_airGapCount_")) ||
+             objectName.startsWith(QStringLiteral("construction_totalAirGap_")) ||
+             objectName.startsWith(QStringLiteral("construction_airGapPosition_")) ||
+             objectName.startsWith(QStringLiteral("construction_airGapLength_")))
+        stage = QStringLiteral("input.core.physical_geometry");
+    else if (objectName.startsWith(QStringLiteral("construction_bobbin")) ||
+             objectName.startsWith(QStringLiteral("construction_windingRadial")) ||
+             objectName.startsWith(QStringLiteral("construction_windingAxial")) ||
+             objectName.startsWith(QStringLiteral("construction_windingEnd")))
+        stage = QStringLiteral("input.winding.physical_geometry");
+    else if (objectName == QStringLiteral("construction_insulationThermalClass") ||
+             objectName == QStringLiteral("construction_insulationThermalStandard") ||
+             objectName == QStringLiteral("construction_insulationClassReferenceTemperature") ||
+             objectName == QStringLiteral("construction_insulationSafetyMargin"))
+        stage = QStringLiteral("input.thermal.insulation_reference");
     if (!stage.isEmpty()) {
         const auto plan = p135::application::planReactorRecalculation({stage.toStdString()});
         if (plan) {
