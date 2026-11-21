@@ -520,6 +520,11 @@ private slots:
         QVERIFY(dxfContent.find("WINDOW AB") != std::string::npos);
         QVERIFY(dxfContent.find("WINDOW BC") != std::string::npos);
         QVERIFY(dxfContent.find("Yoke thickness T1/T2/B1/B2") != std::string::npos);
+        QVERIFY(dxfContent.find("YOKE TOP AB PLAN") != std::string::npos);
+        QVERIFY(dxfContent.find("YOKE TOP BC PLAN") != std::string::npos);
+        QVERIFY(dxfContent.find("YOKE BOTTOM AB PLAN") != std::string::npos);
+        QVERIFY(dxfContent.find("YOKE BOTTOM BC PLAN") != std::string::npos);
+        QVERIFY(dxfContent.find("AIR GAP SCHEDULE (0)") != std::string::npos);
         QVERIFY(dxfContent.find("Limb stack depths A/B/C") != std::string::npos);
         QVERIFY(dxfContent.find("BOBBIN B AXIAL LENGTH") != std::string::npos);
         QVERIFY(dxfContent.find("BOBBIN B DEPTH") != std::string::npos);
