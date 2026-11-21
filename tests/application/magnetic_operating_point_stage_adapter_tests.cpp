@@ -43,6 +43,11 @@ int main()
     request.dimensionalSource = "TEST-01 verified drawing";
     request.dimensionalRevision = "REV-A";
     request.filterMagnetic.filterBranchId = 7;
+    request.filterMagnetic.harmonicAnalysis.branchPoints.push_back(filter::BranchHarmonicPoint{
+        7, 1, units::Frequency{50.0}, 1.0,
+        std::array<std::complex<double>, 3>{{{1.0, 0.0}, {-0.5, -0.8660254037844386},
+                                             {-0.5, 0.8660254037844386}}}
+    });
     request.filterMagnetic.magnetic.material.id = "core-revision-7";
     request.filterMagnetic.magnetic.material.manufacturer = "Test Manufacturer";
     request.filterMagnetic.magnetic.material.grade = "Test Electrical Steel";
@@ -78,6 +83,7 @@ int main()
     assert(artifact.value().find("physical_core_overall_width_m=0.24") != std::string::npos);
     assert(artifact.value().find("turns_phase_0=120") != std::string::npos);
     assert(artifact.value().find("bh_curve.2.B_T=1") != std::string::npos);
+    assert(artifact.value().find("excitation.0.frequency_Hz=50") != std::string::npos);
     assert(artifact.value().find("magnetic_geometry.limb_area_m2=") != std::string::npos);
 
     auto zeroFluxBranch = result;
