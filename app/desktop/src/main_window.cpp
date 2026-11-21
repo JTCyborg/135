@@ -2498,13 +2498,22 @@ QWidget* MainWindow::createConstructionPage()
             fieldLabels.insert(key, labels.value(key, key));
             QString unit = units.value(key);
             if (unit.isEmpty()) {
-                if (key.contains(QStringLiteral("airGapCount"))) unit = QStringLiteral("count");
+                if (key.contains(QStringLiteral("airGapCount")) ||
+                    key.contains(QStringLiteral("coolingDuctCount")) ||
+                    key.contains(QStringLiteral("construction_sections")))
+                    unit = QStringLiteral("count");
+                else if (key.contains(QStringLiteral("coreJoint_")) ||
+                         key.contains(QStringLiteral("laminationConstruction")) ||
+                         key.contains(QStringLiteral("SpacerRevision")) ||
+                         key.contains(QStringLiteral("Airflow_")))
+                    unit = QStringLiteral("reference");
                 else if (key.contains(QStringLiteral("SafetyMargin"))) unit = QStringLiteral("K");
                 else if (key.contains(QStringLiteral("ThermalClass")) || key.contains(QStringLiteral("ThermalStandard")))
                     unit = QStringLiteral("reference");
                 else if (key.contains(QStringLiteral("Overall")) || key.contains(QStringLiteral("limb")) ||
                          key.contains(QStringLiteral("window")) || key.contains(QStringLiteral("yoke")) ||
-                         key.contains(QStringLiteral("airGap")) || key.contains(QStringLiteral("bobbin")) ||
+                         key.contains(QStringLiteral("airGap")) || key.contains(QStringLiteral("coolingDuct")) ||
+                         key.contains(QStringLiteral("bobbin")) ||
                          key.contains(QStringLiteral("windingRadial")) || key.contains(QStringLiteral("windingAxial")) ||
                          key.contains(QStringLiteral("windingEnd")))
                     unit = QStringLiteral("mm");
