@@ -1,6 +1,7 @@
 #include "p135/application/reactor_design_inputs.hpp"
 
 #include <cassert>
+#include <array>
 #include <limits>
 
 using namespace p135::application;
@@ -77,6 +78,51 @@ int main()
     inputs.turnsPerLayer = 12;
     inputs.conductorWidthM = std::numeric_limits<double>::quiet_NaN();
     assert(!validate(inputs));
+
+    // Explicit physical construction dimensions participate in validation
+    // and invalidate any previously accepted revision.
+    inputs.limbWidthsM = std::array<double, 3>{0.04, 0.05, 0.04};
+    inputs.limbStackDepthsM = std::array<double, 3>{0.12, 0.12, 0.12};
+    inputs.windowWidthsM = std::array<double, 2>{0.10, 0.10};
+    inputs.windowHeightsM = std::array<double, 2>{0.20, 0.20};
+    inputs.yokeThicknessesM = std::array<double, 4>{0.04, 0.04, 0.04, 0.04};
+    inputs.yokeDepthsM = std::array<double, 4>{0.12, 0.12, 0.12, 0.12};
+    inputs.limbCenterSpacingsM = std::array<double, 3>{0.15, 0.15, 0.30};
+    inputs.coreOverallHeightM = 0.28;
+    inputs.coreOverallWidthM = 0.40;
+    inputs.airGapCountPerLimb = std::array<std::uint32_t, 3>{1, 0, 1};
+    inputs.totalAirGapLengthPerLimbM = std::array<double, 3>{0.001, 0.0, 0.001};
+    inputs.airGaps = {{0, 0.08, 0.001}, {2, 0.08, 0.001}};
+    inputs.bobbinInnerWidthsM = std::array<double, 3>{0.05, 0.06, 0.05};
+    inputs.bobbinInnerHeightsM = std::array<double, 3>{0.13, 0.13, 0.13};
+    inputs.bobbinAxialLengthsM = std::array<double, 3>{0.18, 0.18, 0.18};
+    inputs.bobbinWallThicknessesM = std::array<double, 3>{0.001, 0.001, 0.001};
+    inputs.windingRadialBuildsM = std::array<double, 3>{0.02, 0.02, 0.02};
+    inputs.windingAxialHeightsM = std::array<double, 3>{0.16, 0.16, 0.16};
+    inputs.windingEndClearancesM = std::array<double, 3>{0.01, 0.01, 0.01};
+    inputs.radialCoolingDuctCount = 1;
+    inputs.coolingDucts = {{0.08, 0.002, "spacer-rev-1", "radial"}};
+    inputs.conductorBareDiameterM.reset();
+    inputs.conductorInsulatedDiameterM.reset();
+    inputs.conductorInsulationBuildM.reset();
+    inputs.insulationTemperatureReference = InsulationTemperatureReference{
+        "F", "IEC 60085", 428.15, 10.0, 418.15, DesignInputOrigin::UserSelected};
+    assert(validate(inputs));
+    const auto physicalAccepted = inputs;
+    inputs.windowWidthsM = std::array<double, 2>{0.0, 0.10};
+    assert(!validate(inputs));
+    inputs = physicalAccepted;
+    inputs.airGaps.pop_back();
+    assert(!validate(inputs));
+    inputs = physicalAccepted;
+    inputs.coolingDucts[0].thicknessM = 0.0;
+    assert(!validate(inputs));
+    inputs = physicalAccepted;
+    inputs.insulationTemperatureReference->maximumDesignWindingTemperatureK = 430.0;
+    assert(!validate(inputs));
+    inputs = physicalAccepted;
+    inputs.totalAirGapLengthPerLimbM = std::array<double, 3>{0.002, 0.0, 0.001};
+    assert(requiresRecalculation(inputs, physicalAccepted));
 
     MaterialRecommendationSet recommendations;
     recommendations.sourceFilterSnapshotId = "filter-snapshot-42";
