@@ -184,6 +184,6 @@
 - [x] Plot rendering accepts all-zero series and a single valid frequency point, draws a marker for a single point, breaks line segments across invalid samples, and clips data curves without clipping the legend.
 - [x] The core-flux frequency graph is explicitly identified as the legacy manual Ae/le/B-H diagnostic sweep. Construction-revision-bound harmonic operating-point B values are not misrepresented as frequency-sweep samples.
 - [x] Desktop E2E now inspects the exact current/impedance series and independently checks each plotted sample against the Wye series-RLC + Thevenin equations; it also asserts that no core-flux series is fabricated when the selected steel revision has no verified B-H curve.
-- [ ] User Windows/MSVC Debug build and DesktopWorkflowE2E confirmation pending.
+- [x] User confirmed Windows/MSVC Debug build and `Project135DesktopWorkflowE2ETests`: CTest 1/1 PASS (38.68 s); this validates the plotted current/impedance series and independent numerical assertions, not GPU-rendered pixel appearance.
 - [ ] Add a separate segment-based visualization for the Construction-revision-bound magnetic operating point (three limbs and four yoke segments); it must not reuse the frequency axis.
 - [ ] Add direct rendering tests for all-zero and single-point plots, plus a visual/manual Windows check of legend, axis ticks and reference-guide readability.
