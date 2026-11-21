@@ -2435,6 +2435,9 @@ QWidget* MainWindow::createConstructionPage()
         } else if (auto* line = qobject_cast<QLineEdit*>(widget)) {
             connect(line, &QLineEdit::textChanged, this,
                     [this](const QString&) { saveProjectSettings(); markConstructionInputsChanged(); });
+        } else if (auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) {
+            connect(textEdit, &QPlainTextEdit::textChanged, this,
+                    [this] { saveProjectSettings(); markConstructionInputsChanged(); });
         } else if (auto* check = qobject_cast<QCheckBox*>(widget)) {
             connect(check, &QCheckBox::toggled, this,
                     [this](bool) { saveProjectSettings(); markConstructionInputsChanged(); });
@@ -4082,6 +4085,38 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     }
     if (anyJointConstruction && allJointConstructions)
         inputs.coreJointConstructions = jointConstructions;
+
+    std::array<std::vector<p135::application::CoreJointStepLapPacketInput>, 8> stepLapPackets;
+    if (const auto* schedule = findChild<QPlainTextEdit*>(
+            QStringLiteral("construction_stepLapPacketSchedule"))) {
+        const auto lines = schedule->toPlainText().split('\n');
+        for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
+            const QString line = lines[lineIndex].trimmed();
+            if (line.isEmpty() || line.startsWith('#')) continue;
+            const auto columns = line.split(',');
+            if (columns.size() != 6) continue; // Confirmation validation reports malformed rows.
+            bool jointOk = false;
+            const int jointNumber = columns[0].trimmed().toInt(&jointOk);
+            if (!jointOk || jointNumber < 1 || jointNumber > 8) continue;
+            std::array<double, 4> values{};
+            bool validRow = true;
+            for (int column = 0; column < 4; ++column) {
+                bool ok = false;
+                values[static_cast<std::size_t>(column)] = columns[column + 1].trimmed().toDouble(&ok);
+                validRow = validRow && ok && std::isfinite(values[static_cast<std::size_t>(column)]);
+            }
+            const QString direction = columns[5].trimmed().toLower();
+            if (!validRow || (direction != QStringLiteral("limb-into-yoke") &&
+                              direction != QStringLiteral("yoke-into-limb"))) continue;
+            auto& packets = stepLapPackets[static_cast<std::size_t>(jointNumber - 1)];
+            packets.push_back({
+                values[0] * 1.0e-3, values[1] * 1.0e-3,
+                values[2] * 1.0e-3, values[3] * 1.0e-3,
+                direction.toStdString()
+            });
+        }
+    }
+    inputs.coreJointStepLapPackets = std::move(stepLapPackets);
 
     for (std::uint32_t limb = 0; limb < 3; ++limb) {
         for (std::uint32_t gap = 0; gap < 3; ++gap) {
