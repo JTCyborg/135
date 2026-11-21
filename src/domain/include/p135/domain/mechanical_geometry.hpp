@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -94,6 +95,14 @@ struct WindingPackPhysicalGeometry {
     units::Length conductorInsulationBuild;
     std::uint32_t layerCount{};
     std::uint32_t sections{};
+    // Optional conductor-level construction inputs. When supplied, the set
+    // is validated as a whole; absent values are never synthesized by CAD.
+    std::optional<std::uint32_t> turns;
+    std::optional<std::uint32_t> turnsPerLayer;
+    std::optional<std::uint32_t> parallelConductors;
+    std::string conductorShape;
+    std::optional<units::Length> bareConductorDiameter;
+    std::optional<units::Length> insulatedConductorDiameter;
     std::string constructionDescription;
 };
 
