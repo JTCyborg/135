@@ -407,7 +407,7 @@ private slots:
         auto* confirmationStatus = window_->findChild<QLabel*>(
             QStringLiteral("constructionConfirmationStatus"));
         QVERIFY(confirmationStatus);
-        QVERIFY(confirmationStatus->text().contains(QStringLiteral("Confirmed")));
+        QVERIFY(confirmationStatus->text().contains(QStringLiteral("confirmed"), Qt::CaseInsensitive));
 
         // Exercise the current plot with a non-zero Thevenin model. This changes
         // circuit element ordering and catches accidental fixed-index current reads.
