@@ -192,36 +192,47 @@ if errorlevel 1 (
     set "PUBLISH_OK=STAGE_FAILED"
     goto END_LOCAL
 )
-git commit -m "Add Project135 validation report %STAMP%" >>"%LOG%" 2>&1
+git commit -m "Add Project135 validation report %STAMP%" > "BuildReports\commit_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
-    echo ERROR: Could not commit the report.
+    type "BuildReports\commit_%STAMP%.tmp"
     set "PUBLISH_OK=COMMIT_FAILED"
     goto END_LOCAL
 )
-git push origin main >>"%LOG%" 2>&1
+type "BuildReports\commit_%STAMP%.tmp"
+git push origin main > "BuildReports\push_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
+    type "BuildReports\push_%STAMP%.tmp"
     echo ERROR: Git push failed. The report commit is local only.
     set "PUBLISH_OK=PUSH_FAILED"
     goto END_LOCAL
 )
+type "BuildReports\push_%STAMP%.tmp" >>"%LOG%"
+del "BuildReports\commit_%STAMP%.tmp" 2>nul
+del "BuildReports\push_%STAMP%.tmp" 2>nul
 set "PUBLISH_OK=PUSHED"
 echo [GIT_PUSH] SUCCESS - validation report was pushed to origin/main.>>"%LOG%"
-rem Store the push result in Git too (second, report-only commit).
-git add -- "%LOG%" >>"%LOG%" 2>&1
+rem Publish the explicit synchronization result as a second report-only commit.
+git add -- "%LOG%" >nul 2>&1
 if errorlevel 1 (
     set "PUBLISH_OK=PUSHED_REPORT_STATUS_NOT_COMMITTED"
     goto END_LOCAL
 )
-git commit -m "Record Project135 report synchronization %STAMP%" >>"%LOG%" 2>&1
+git commit -m "Record Project135 report synchronization %STAMP%" > "BuildReports\commit_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
+    type "BuildReports\commit_%STAMP%.tmp"
     set "PUBLISH_OK=PUSHED_REPORT_STATUS_NOT_COMMITTED"
     goto END_LOCAL
 )
-git push origin main >>"%LOG%" 2>&1
+type "BuildReports\commit_%STAMP%.tmp"
+git push origin main > "BuildReports\push_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
+    type "BuildReports\push_%STAMP%.tmp"
     set "PUBLISH_OK=FIRST_PUSHED_SECOND_PUSH_FAILED"
     goto END_LOCAL
 )
+type "BuildReports\push_%STAMP%.tmp"
+del "BuildReports\commit_%STAMP%.tmp" 2>nul
+del "BuildReports\push_%STAMP%.tmp" 2>nul
 
 :END_LOCAL
 echo.
