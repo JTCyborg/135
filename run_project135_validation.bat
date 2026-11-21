@@ -276,4 +276,4 @@ if !RUN_RC! EQU 0 (
     echo [FAIL] %~1 (exit !RUN_RC!)
     echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
 )
-endlocal & exit /b %ERRORLEVEL%
+endlocal & exit /b %RUN_RC%
