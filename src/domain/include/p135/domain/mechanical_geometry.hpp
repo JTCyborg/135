@@ -95,6 +95,7 @@ struct WindingPackPhysicalGeometry {
     units::Length conductorInsulationBuild;
     std::uint32_t layerCount{};
     std::uint32_t sections{};
+    std::string constructionDescription;
     // Optional conductor-level construction inputs. When supplied, the set
     // is validated as a whole; absent values are never synthesized by CAD.
     std::optional<std::uint32_t> turns;
@@ -105,7 +106,6 @@ struct WindingPackPhysicalGeometry {
     std::optional<units::Length> insulatedConductorDiameter;
     std::optional<units::Length> bareConductorWidth;
     std::optional<units::Length> bareConductorThickness;
-    std::string constructionDescription;
 };
 
 struct ReactorPhysicalGeometry {
