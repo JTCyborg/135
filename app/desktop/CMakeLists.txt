@@ -1,6 +1,4 @@
-qt_add_executable(Project135
-    WIN32
-    src/main.cpp
+add_library(Project135DesktopUi STATIC
     src/main_window.cpp
     src/main_window.hpp
     src/cad_viewport_widget.cpp
@@ -8,9 +6,8 @@ qt_add_executable(Project135
     src/material_database_widget.cpp
     src/material_database_widget.hpp
 )
-
-target_link_libraries(Project135
-    PRIVATE
+target_link_libraries(Project135DesktopUi
+    PUBLIC
         Qt6::Widgets
         Project135::Core
         Project135::Circuit
@@ -20,7 +17,11 @@ target_link_libraries(Project135
         Project135::Thermal
         Project135::InfrastructureSqlite
 )
+target_compile_features(Project135DesktopUi PUBLIC cxx_std_20)
+set_target_properties(Project135DesktopUi PROPERTIES AUTOMOC ON)
 
+qt_add_executable(Project135 WIN32 src/main.cpp)
+target_link_libraries(Project135 PRIVATE Project135DesktopUi)
 target_compile_features(Project135 PRIVATE cxx_std_20)
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin/migrations")
@@ -37,6 +38,7 @@ configure_file(
 )
 
 if(MSVC)
+    target_compile_options(Project135DesktopUi PRIVATE /W4 /permissive- /Zc:__cplusplus)
     target_compile_options(Project135 PRIVATE /W4 /permissive- /Zc:__cplusplus)
 endif()
 
