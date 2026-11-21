@@ -443,7 +443,7 @@ private slots:
         QVERIFY(exportStep);
         QVERIFY(exportStep->isEnabled());
 
-        // Exercise the real UI export action. The timer accepts the native
+        // Exercise the real UI export action. The timer accepts the widget-backed
         // save dialog with a deterministic temporary path; the export itself
         // still runs through MainWindow's production click handler.
         QTemporaryDir exportDirectory;
@@ -454,7 +454,7 @@ private slots:
                 auto* dialog = qobject_cast<QFileDialog*>(widget);
                 if (!dialog || !dialog->isVisible()) continue;
                 dialog->selectFile(stepPath);
-                dialog->accept();
+                QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
                 return;
             }
         });
@@ -477,9 +477,6 @@ private slots:
             ++importedSolidCount;
         QCOMPARE(importedSolidCount, std::size_t(13)); // 7 core + 3 bobbins + 3 winding envelopes.
 
-        auto* cadStatus = window_->findChild<QLabel*>(
-            QStringLiteral("cadGenerationStatus"));
-        QVERIFY(cadStatus);
         QVERIFY2(cadStatus->text().contains(QStringLiteral("exported to")),
             qPrintable(QStringLiteral("Unexpected STEP export status: ") + cadStatus->text()));
     }
