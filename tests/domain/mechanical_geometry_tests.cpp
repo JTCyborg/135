@@ -227,8 +227,24 @@ int main()
     inconsistentTurnCount.windingPacks[0].turns = 21;
     assert(!validate(inconsistentTurnCount));
 
+    auto rectangularWinding = valid;
+    for (auto& winding : rectangularWinding.windingPacks) {
+        winding.turns = 120;
+        winding.turnsPerLayer = 12;
+        winding.parallelConductors = 2;
+        winding.conductorShape = "rectangular";
+        winding.bareConductorWidth = units::Length{0.002};
+        winding.bareConductorThickness = units::Length{0.00125};
+    }
+    // 120 turns cannot fit 8 layers x 12 turns/layer: the geometry is rejected.
+    assert(!validate(rectangularWinding));
+    for (auto& winding : rectangularWinding.windingPacks) {
+        winding.layerCount = 10;
+    }
+    assert(validate(rectangularWinding));
+
     auto unsupportedConductorShape = detailedWinding;
-    unsupportedConductorShape.windingPacks[0].conductorShape = "rectangular";
+    unsupportedConductorShape.windingPacks[0].conductorShape = "litz";
     assert(!validate(unsupportedConductorShape));
 
     auto impossibleInsulatedDiameter = detailedWinding;
