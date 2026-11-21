@@ -1,6 +1,7 @@
 #pragma once
 
 #include "p135/core/result.hpp"
+#include "p135/domain/mechanical_geometry.hpp"
 
 #include <array>
 #include <cstdint>
@@ -146,6 +147,10 @@ struct MaterialRecommendationSet {
 };
 
 [[nodiscard]] Result<void> validate(const ReactorDesignInputs& inputs);
+// Converts only explicit, complete physical dimensions. Missing inputs are errors;
+// electrical effective Ae/Aw/le values are never used as CAD dimensions.
+[[nodiscard]] Result<domain::ReactorPhysicalGeometry> makeReactorPhysicalGeometry(
+    const ReactorDesignInputs& inputs, const std::string& productId);
 [[nodiscard]] Result<void> validate(const MaterialRecommendationSet& recommendations);
 
 /// True when a user has changed a material/physical input relative to the
