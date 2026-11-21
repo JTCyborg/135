@@ -2,6 +2,7 @@
 
 #include "p135/core/result.hpp"
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -15,7 +16,7 @@ enum class RecommendationStatus { Preliminary, Verified, NotVerified };
 struct MaterialRevisionSelection {
     std::string revisionId;
     DesignInputOrigin origin{DesignInputOrigin::Recommended};
-    bool operator==(const InsulationTemperatureReference&) const = default;
+    bool operator==(const MaterialRevisionSelection&) const = default;
 };
 
 // Physical construction inputs are optional until supplied by a drawing,
@@ -42,6 +43,7 @@ struct InsulationTemperatureReference {
     double safetyMarginK{};
     double maximumDesignWindingTemperatureK{};
     DesignInputOrigin origin{DesignInputOrigin::Recommended};
+    bool operator==(const InsulationTemperatureReference&) const = default;
 };
 
 /// Explicit inputs for the physical reactor-design stage.
