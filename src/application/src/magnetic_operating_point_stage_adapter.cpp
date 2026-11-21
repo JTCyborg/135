@@ -17,6 +17,11 @@ bool positiveFinite(double value)
 {
     return std::isfinite(value) && value > 0.0;
 }
+
+bool singleLine(const std::string& value)
+{
+    return !value.empty() && value.find_first_of("\\r\\n") == std::string::npos;
+}
 }
 
 Result<std::string> makeMagneticOperatingPointStageArtifact(
@@ -29,7 +34,11 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
 
     if (!positiveFinite(request.stackingFactor) || request.stackingFactor > 1.0 ||
         request.filterMagnetic.filterBranchId == 0 ||
-        request.dimensionalSource.empty() || request.dimensionalRevision.empty() ||
+        !singleLine(request.dimensionalSource) ||
+        !singleLine(request.dimensionalRevision) ||
+        !singleLine(request.filterMagnetic.magnetic.material.id) ||
+        !singleLine(request.filterMagnetic.magnetic.material.sourceReference) ||
+        !singleLine(request.filterMagnetic.magnetic.material.datasetRevision) ||
         result.magneticAnalysis.filterBranchId != request.filterMagnetic.filterBranchId ||
         request.filterMagnetic.magnetic.material.id.empty() ||
         request.filterMagnetic.magnetic.material.sourceReference.empty() ||
