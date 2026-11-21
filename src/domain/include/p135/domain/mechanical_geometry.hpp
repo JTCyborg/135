@@ -103,6 +103,8 @@ struct WindingPackPhysicalGeometry {
     std::string conductorShape;
     std::optional<units::Length> bareConductorDiameter;
     std::optional<units::Length> insulatedConductorDiameter;
+    std::optional<units::Length> bareConductorWidth;
+    std::optional<units::Length> bareConductorThickness;
     std::string constructionDescription;
 };
 
