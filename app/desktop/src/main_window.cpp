@@ -2477,6 +2477,27 @@ QWidget* MainWindow::createResultsPage()
         lineage.insert(QStringLiteral("filterSnapshotId"), latestFilterSnapshotId_);
         lineage.insert(QStringLiteral("filterBranchId"), static_cast<qint64>(latestFilterBranchId_));
         lineage.insert(QStringLiteral("constructionPhysicalSizingStatus"), QStringLiteral("NOT_CONNECTED_TO_SOLVER"));
+        lineage.insert(QStringLiteral("physicalSizingStatus"), QStringLiteral("NOT_CALCULATED"));
+        lineage.insert(QStringLiteral("verificationStatus"),
+            resultsNote_ && resultsNote_->text().contains(QStringLiteral("NOT_VERIFIED"))
+                ? QStringLiteral("NOT_VERIFIED") : QStringLiteral("REVIEW_REQUIRED"));
+        QJsonArray materialRevisions;
+        const auto appendRevision = [this, &materialRevisions](const QString& objectName,
+                                                               const QString& role) {
+            const auto* selector = findChild<QComboBox*>(objectName);
+            if (!selector || selector->currentData().toString().isEmpty()) return;
+            QJsonObject reference;
+            reference.insert(QStringLiteral("role"), role);
+            reference.insert(QStringLiteral("revisionId"), selector->currentData().toString());
+            reference.insert(QStringLiteral("display"), selector->currentText());
+            materialRevisions.append(reference);
+        };
+        appendRevision(QStringLiteral("construction_coreMaterial"), QStringLiteral("core"));
+        appendRevision(QStringLiteral("construction_conductorMaterial"), QStringLiteral("conductor"));
+        appendRevision(QStringLiteral("construction_insulationMaterial"), QStringLiteral("insulation"));
+        appendRevision(QStringLiteral("capacitorComponent"), QStringLiteral("capacitor"));
+        appendRevision(QStringLiteral("resistorComponent"), QStringLiteral("damping_resistor"));
+        lineage.insert(QStringLiteral("materialRevisions"), materialRevisions);
         snapshot.insert(QStringLiteral("lineage"), lineage);
 #ifdef _DEBUG
         const QString outputDirectory = QStringLiteral("C:/Temp/trdos/135");
