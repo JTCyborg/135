@@ -122,7 +122,8 @@
 - [ ] После появления 2D generator убрать expected-failure и проверить содержимое/валидность 2D output artifact.
 - [ ] Проверить инвалидацию: геометрия → магнитные/тепловые/CAD/drawing результаты; материал → зависимые расчёты.
 - [ ] Проверить Debug и Release, сохранение/загрузку проекта, immutable snapshots.
-- [ ] Запустить desktop UI тест в Windows/MSVC Debug и Release; фиксировать результаты, не объявлять PASS без фактического запуска.
+- [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: CTest 1/1 passed (13.71 s), после исправления Qt platform plugin deployment; результат подтверждён пользователем.
+- [ ] Запустить desktop UI тест в Windows/MSVC Release; фиксировать результаты, не объявлять PASS без фактического запуска.
 
 ## 4. Критерии приёмки
 
