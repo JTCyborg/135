@@ -125,6 +125,17 @@ bool exportReactorAssemblyPdf(
     const QString& filePath,
     QString* error)
 {
+    const auto validation = p135::domain::validate(geometry);
+    if (!validation) {
+        if (error) *error = QString::fromStdString(validation.error().message);
+        return false;
+    }
+    for (std::size_t i = 0; i < geometry.core.joints.size(); ++i) {
+        if (geometry.core.joints[i].construction == p135::domain::CoreJointType::StepLap) {
+            if (error) *error = QObject::tr("PDF Step-Lap detail is not supported; drawing was not generated to avoid inventing packet geometry.");
+            return false;
+        }
+    }
     QPdfWriter pdf(filePath);
     pdf.setPageSize(QPageSize(QPageSize::A3));
     pdf.setPageOrientation(QPageLayout::Landscape);
@@ -239,12 +250,34 @@ bool exportReactorAssemblyPdf(
              QString::fromStdString(geometry.dimensionalRevision)));
     painter.drawText(60, infoY+110, QObject::tr("Product: %1")
         .arg(QString::fromStdString(geometry.productId)));
+    const auto segmentLabel = [](p135::domain::CoreSegment segment) {
+        switch (segment) {
+        case p135::domain::CoreSegment::LimbA: return QStringLiteral("LIMB A");
+        case p135::domain::CoreSegment::LimbB: return QStringLiteral("LIMB B");
+        case p135::domain::CoreSegment::LimbC: return QStringLiteral("LIMB C");
+        case p135::domain::CoreSegment::YokeTopAB: return QStringLiteral("YOKE TOP AB");
+        case p135::domain::CoreSegment::YokeTopBC: return QStringLiteral("YOKE TOP BC");
+        case p135::domain::CoreSegment::YokeBottomAB: return QStringLiteral("YOKE BOTTOM AB");
+        case p135::domain::CoreSegment::YokeBottomBC: return QStringLiteral("YOKE BOTTOM BC");
+        }
+        return QStringLiteral("UNKNOWN");
+    };
+    int gapLine = 0;
+    for (const auto& gap : core.airGaps) {
+        const QString line = QObject::tr("AIR GAP — %1: position %2 mm, length %3 mm")
+            .arg(segmentLabel(gap.segment))
+            .arg(mm(gap.positionFromSegmentStart.si()), 0, 'f', 2)
+            .arg(mm(gap.length.si()), 0, 'f', 2);
+        painter.drawText(60, infoY + 132 + gapLine * 17, line);
+        ++gapLine;
+    }
     painter.setPen(QPen(Qt::black, 1.0));
     painter.drawRect(QRectF(45, page.height()-100, page.width()-90, 55));
     painter.setFont(QFont(QStringLiteral("Arial"), 8));
     painter.drawText(QRectF(55,page.height()-92,page.width()-110,40),
         Qt::AlignLeft|Qt::AlignVCenter,
         QObject::tr("PRELIMINARY GEOMETRIC DRAWING. Winding envelopes are not conductor details. "
+                    "Air-gap locations are scheduled but cut-face geometry is not detailed in this PDF. "
                     "No tolerances, manufacturing instructions, thermal or magnetic approval are implied."));
     painter.end();
     return true;
