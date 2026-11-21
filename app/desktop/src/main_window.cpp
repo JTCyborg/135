@@ -3797,7 +3797,7 @@ QWidget* MainWindow::createCadPage()
     });
 
     connect(generateCad, &QPushButton::clicked, this,
-        [this, status, root, properties, viewport, generateCad, tree, transparency, assemblyModel] {
+        [this, status, properties, viewport, generateCad, exportStep, tree, transparency, assemblyModel] {
         if (constructionInputsDirty_) {
             status->setText(tr("CAD is blocked: confirm Construction again after the latest input change."));
             return;
