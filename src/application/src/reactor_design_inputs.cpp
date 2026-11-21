@@ -1,6 +1,7 @@
 #include "p135/application/reactor_design_inputs.hpp"
 
 #include <cmath>
+#include <array>
 #include <unordered_set>
 
 namespace p135::application {
@@ -83,6 +84,71 @@ Result<void> validate(const ReactorDesignInputs& inputs)
         !validPositive(inputs.layerInsulationBuildM) ||
         !validPositive(inputs.mainInsulationBuildM))
         return invalid("Specified conductor and insulation dimensions must be finite and greater than zero.");
+    const auto validArray = [](const auto& values) {
+        return !values || std::all_of(values->begin(), values->end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; });
+    };
+    if (!validArray(inputs.limbWidthsM) || !validArray(inputs.limbStackDepthsM) ||
+        !validArray(inputs.windowWidthsM) || !validArray(inputs.windowHeightsM) ||
+        !validArray(inputs.yokeThicknessesM) || !validArray(inputs.yokeDepthsM) ||
+        !validArray(inputs.limbCenterSpacingsM) || !validArray(inputs.bobbinInnerWidthsM) ||
+        !validArray(inputs.bobbinInnerHeightsM) || !validArray(inputs.bobbinAxialLengthsM) ||
+        !validArray(inputs.bobbinWallThicknessesM) || !validArray(inputs.windingRadialBuildsM) ||
+        !validArray(inputs.windingAxialHeightsM) || !validArray(inputs.windingEndClearancesM))
+        return invalid("Specified physical core, bobbin and winding dimensions must be finite and greater than zero.");
+    if (inputs.coreOverallHeightM &&
+        (!std::isfinite(*inputs.coreOverallHeightM) || *inputs.coreOverallHeightM <= 0.0))
+        return invalid("Core overall height must be finite and greater than zero.");
+    if (inputs.coreOverallWidthM &&
+        (!std::isfinite(*inputs.coreOverallWidthM) || *inputs.coreOverallWidthM <= 0.0))
+        return invalid("Core overall width must be finite and greater than zero.");
+    if (inputs.airGapCountPerLimb && inputs.totalAirGapLengthPerLimbM) {
+        for (std::size_t i = 0; i < 3; ++i) {
+            const auto count = (*inputs.airGapCountPerLimb)[i];
+            const auto total = (*inputs.totalAirGapLengthPerLimbM)[i];
+            if (!std::isfinite(total) || total < 0.0 || ((count == 0) != (total == 0.0)))
+                return invalid("Air-gap count and total length must agree per limb; zero gaps require zero total length.");
+        }
+    }
+    for (const auto& gap : inputs.airGaps) {
+        if (gap.limbIndex >= 3 || !std::isfinite(gap.positionFromLimbStartM) ||
+            !std::isfinite(gap.lengthM) || gap.positionFromLimbStartM < 0.0 || gap.lengthM <= 0.0)
+            return invalid("Each discrete air gap requires a valid limb, non-negative position and positive length.");
+    }
+    if (inputs.airGapCountPerLimb) {
+        std::array<std::uint32_t, 3> actual{};
+        for (const auto& gap : inputs.airGaps)
+            if (gap.limbIndex < 3) ++actual[gap.limbIndex];
+        if (!inputs.airGaps.empty() && actual != *inputs.airGapCountPerLimb)
+            return invalid("Discrete air-gap records must match the declared count on each limb.");
+    }
+    if (inputs.radialCoolingDuctCount && *inputs.radialCoolingDuctCount != inputs.coolingDucts.size())
+        return invalid("Cooling duct count must match the explicitly defined duct records.");
+    for (const auto& duct : inputs.coolingDucts) {
+        if (!std::isfinite(duct.positionFromWindingBottomM) ||
+            !std::isfinite(duct.thicknessM) || duct.positionFromWindingBottomM < 0.0 ||
+            duct.thicknessM <= 0.0 || duct.spacerMaterialRevisionId.empty() ||
+            duct.airflowDirection.empty())
+            return invalid("Each cooling duct requires position, positive thickness, spacer material revision and airflow direction.");
+    }
+    if (!validPositive(inputs.conductorBareDiameterM) ||
+        !validPositive(inputs.conductorInsulatedDiameterM) ||
+        !validPositive(inputs.conductorInsulationBuildM))
+        return invalid("Round conductor diameters and insulation build must be finite and greater than zero.");
+    if (inputs.conductorShape && *inputs.conductorShape == "round" &&
+        inputs.conductorBareDiameterM && inputs.conductorInsulatedDiameterM &&
+        *inputs.conductorInsulatedDiameterM < *inputs.conductorBareDiameterM)
+        return invalid("Insulated round-conductor diameter cannot be smaller than its bare diameter.");
+    if (inputs.insulationTemperatureReference) {
+        const auto& t = *inputs.insulationTemperatureReference;
+        if (t.thermalClass.empty() || t.standardReference.empty() ||
+            !std::isfinite(t.referenceTemperatureK) || t.referenceTemperatureK <= 0.0 ||
+            !std::isfinite(t.safetyMarginK) || t.safetyMarginK < 0.0 ||
+            !std::isfinite(t.maximumDesignWindingTemperatureK) ||
+            t.maximumDesignWindingTemperatureK <= 0.0 ||
+            t.maximumDesignWindingTemperatureK > t.referenceTemperatureK - t.safetyMarginK)
+            return invalid("Insulation thermal class reference and maximum design winding temperature are inconsistent or incomplete.");
+    }
     return Result<void>::success();
 }
 
@@ -136,7 +202,32 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.conductorThicknessM != accepted.conductorThicknessM ||
            current.turnInsulationBuildM != accepted.turnInsulationBuildM ||
            current.layerInsulationBuildM != accepted.layerInsulationBuildM ||
-           current.mainInsulationBuildM != accepted.mainInsulationBuildM;
+           current.mainInsulationBuildM != accepted.mainInsulationBuildM ||
+           current.limbWidthsM != accepted.limbWidthsM ||
+           current.limbStackDepthsM != accepted.limbStackDepthsM ||
+           current.windowWidthsM != accepted.windowWidthsM ||
+           current.windowHeightsM != accepted.windowHeightsM ||
+           current.yokeThicknessesM != accepted.yokeThicknessesM ||
+           current.yokeDepthsM != accepted.yokeDepthsM ||
+           current.limbCenterSpacingsM != accepted.limbCenterSpacingsM ||
+           current.coreOverallHeightM != accepted.coreOverallHeightM ||
+           current.coreOverallWidthM != accepted.coreOverallWidthM ||
+           current.airGapCountPerLimb != accepted.airGapCountPerLimb ||
+           current.totalAirGapLengthPerLimbM != accepted.totalAirGapLengthPerLimbM ||
+           current.airGaps != accepted.airGaps ||
+           current.bobbinInnerWidthsM != accepted.bobbinInnerWidthsM ||
+           current.bobbinInnerHeightsM != accepted.bobbinInnerHeightsM ||
+           current.bobbinAxialLengthsM != accepted.bobbinAxialLengthsM ||
+           current.bobbinWallThicknessesM != accepted.bobbinWallThicknessesM ||
+           current.windingRadialBuildsM != accepted.windingRadialBuildsM ||
+           current.windingAxialHeightsM != accepted.windingAxialHeightsM ||
+           current.windingEndClearancesM != accepted.windingEndClearancesM ||
+           current.radialCoolingDuctCount != accepted.radialCoolingDuctCount ||
+           current.coolingDucts != accepted.coolingDucts ||
+           current.conductorBareDiameterM != accepted.conductorBareDiameterM ||
+           current.conductorInsulatedDiameterM != accepted.conductorInsulatedDiameterM ||
+           current.conductorInsulationBuildM != accepted.conductorInsulationBuildM ||
+           current.insulationTemperatureReference != accepted.insulationTemperatureReference;
 }
 
 } // namespace p135::application
