@@ -1027,7 +1027,7 @@ QWidget* MainWindow::createProjectPage()
                     enteredGapTotalMm += length->value();
                 }
             }
-            if (count && count->value() != 0 && count->value() != enteredGapCount) {
+            if (count && count->value() != enteredGapCount) {
                 QMessageBox::warning(this, tr("Air-gap count mismatch"),
                     tr("Limb %1 declares %2 air gaps but %3 complete position/length records are entered.")
                         .arg(QChar('A' + limb)).arg(count->value()).arg(enteredGapCount));
