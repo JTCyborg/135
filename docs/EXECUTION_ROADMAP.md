@@ -128,7 +128,8 @@
 - [ ] Провести геометрический аудит DXF: сверить координаты и проекции с тем же OCCT B-Rep, проверить расположение размерных линий/текста, непересечения и корректность размерных баз для несимметричных стержней/окон/ярм.
 - [ ] Добавить отдельные листы/файлы деталей сердечника, каркасов и обмоточных пакетов только в пределах реально моделируемой геометрии; не детализировать проводник или пакет Step-Lap без соответствующих физических моделей.
 - [ ] Формировать BOM только из компонентной модели с подтверждёнными материалами, количеством и единицами; неизвестные массы/марки/покупные позиции оставлять NOT_PROVIDED.
-- [ ] Подтвердить Windows/MSVC Debug E2E нового synthetic fixture с одним ненулевым зазором Limb A: DXF schedule (position 80 mm, length 2 mm), число STEP solids (14) и корректность UI export. Затем добавить отдельный yoke-gap fixture и проверить его координаты cut faces в front/plan/side projections.
+- [x] Пользователь подтвердил Windows/MSVC Debug E2E для одного ненулевого зазора Limb A: DXF schedule (position 80 mm, length 2 mm), STEP round-trip и UI export; 9 passed, CTest 1/1, 14 solids.
+- [ ] Проверить Windows/MSVC Debug E2E нового сценария с двумя зазорами: Limb A (80/2 mm) и Top Yoke AB (40/2 mm); ожидаются DXF schedule (2), STEP round-trip с 15 solids и корректное отображение cut faces в front/plan projections.
 - [ ] Проверить инвалидацию: геометрия → магнитные/тепловые/CAD/drawing результаты; материал → зависимые расчёты.
 - [ ] Проверить Debug и Release, сохранение/загрузку проекта, immutable snapshots.
 - [x] Запустить desktop UI E2E тест в Windows/MSVC Debug: пользователь подтвердил commit `2d7e4bd`, сборка target успешна, CTest 1/1 passed (36.52 s; QtTest 9 passed, 0 failed; STEP round-trip и DXF UI export проверки PASS).
