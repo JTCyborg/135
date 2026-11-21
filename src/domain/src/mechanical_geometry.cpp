@@ -256,31 +256,39 @@ Result<void> validate(const WindingPackPhysicalGeometry& g)
 
     const bool hasConductorDetail = g.turns.has_value() || g.turnsPerLayer.has_value() ||
         g.parallelConductors.has_value() || !g.conductorShape.empty() ||
-        g.bareConductorDiameter.has_value() || g.insulatedConductorDiameter.has_value();
+        g.bareConductorDiameter.has_value() || g.insulatedConductorDiameter.has_value() ||
+        g.bareConductorWidth.has_value() || g.bareConductorThickness.has_value();
     if (hasConductorDetail) {
         if (!g.turns || !g.turnsPerLayer || !g.parallelConductors ||
-            g.conductorShape.empty() || !g.bareConductorDiameter ||
-            !g.insulatedConductorDiameter)
+            g.conductorShape.empty())
             return invalid("Detailed winding geometry requires turns, turns per layer, parallel conductors, conductor shape and both conductor diameters.",
                 "windingPack.conductorGeometry");
         if (*g.turns == 0 || *g.turnsPerLayer == 0 || *g.parallelConductors == 0 ||
-            *g.turns != g.layerCount * *g.turnsPerLayer)
+            static_cast<std::uint64_t>(*g.turns) !=
+                static_cast<std::uint64_t>(g.layerCount) * *g.turnsPerLayer)
             return invalid("Turns must equal layer count multiplied by turns per layer; all conductor counts must be positive.",
                 "windingPack.turns");
-        if (g.conductorShape != "round")
-            return invalid("Detailed CAD winding generation currently supports only explicitly dimensioned round conductors.",
+        if (g.conductorShape == "round") {
+            if (!g.bareConductorDiameter || !g.insulatedConductorDiameter ||
+                !positive(*g.bareConductorDiameter) || !positive(*g.insulatedConductorDiameter) ||
+                g.insulatedConductorDiameter->si() < g.bareConductorDiameter->si())
+                return invalid("Round conductor geometry requires positive bare/insulated diameters and insulated diameter cannot be smaller.",
+                    "windingPack.conductorDiameter");
+            const double expectedInsulation = 0.5 *
+                (g.insulatedConductorDiameter->si() - g.bareConductorDiameter->si());
+            const double tolerance = std::max(1.0e-9, expectedInsulation * 1.0e-6);
+            if (std::abs(expectedInsulation - g.conductorInsulationBuild.si()) > tolerance)
+                return invalid("Conductor insulation build must equal half the difference between insulated and bare diameters.",
+                    "windingPack.conductorInsulationBuild");
+        } else if (g.conductorShape == "rectangular" || g.conductorShape == "foil") {
+            if (!g.bareConductorWidth || !g.bareConductorThickness ||
+                !positive(*g.bareConductorWidth) || !positive(*g.bareConductorThickness))
+                return invalid("Rectangular/foil conductor geometry requires positive explicit width and thickness.",
+                    "windingPack.conductorCrossSection");
+        } else {
+            return invalid("Detailed winding geometry supports round, rectangular and foil conductor cross-sections.",
                 "windingPack.conductorShape");
-        if (!positive(*g.bareConductorDiameter) ||
-            !positive(*g.insulatedConductorDiameter) ||
-            g.insulatedConductorDiameter->si() < g.bareConductorDiameter->si())
-            return invalid("Round conductor diameters must be positive and insulated diameter cannot be smaller than bare diameter.",
-                "windingPack.conductorDiameter");
-        const double expectedInsulation = 0.5 *
-            (g.insulatedConductorDiameter->si() - g.bareConductorDiameter->si());
-        const double tolerance = std::max(1.0e-9, expectedInsulation * 1.0e-6);
-        if (std::abs(expectedInsulation - g.conductorInsulationBuild.si()) > tolerance)
-            return invalid("Conductor insulation build must equal half the difference between insulated and bare diameters.",
-                "windingPack.conductorInsulationBuild");
+        }
     }
     return Result<void>::success();
 }
