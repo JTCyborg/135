@@ -35,7 +35,7 @@ echo.
 rem Resolve VCPKG_ROOT before evaluating CMake presets.
 if not defined VCPKG_ROOT set "VCPKG_ROOT="
 if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
-    for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$c=@([Environment]::GetEnvironmentVariable('VCPKG_ROOT','User'),[Environment]::GetEnvironmentVariable('VCPKG_ROOT','Machine'),'C:\\vcpkg',\"$env:USERPROFILE\\vcpkg\"); $p=$c | Where-Object { $_ -and (Test-Path (Join-Path $_ 'scripts\\buildsystems\\vcpkg.cmake')) } | Select-Object -First 1; if($p){[IO.Path]::GetFullPath($p)}"`) do set "VCPKG_ROOT=%%V"
+    for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$c=@([Environment]::GetEnvironmentVariable('VCPKG_ROOT','User'),[Environment]::GetEnvironmentVariable('VCPKG_ROOT','Machine'),'C:\vcpkg',\"$env:USERPROFILE\\vcpkg\",\"$env:LOCALAPPDATA\\vcpkg\",'C:\dev\vcpkg','C:\src\vcpkg'); $p=$c | Where-Object { $_ -and (Test-Path (Join-Path $_ 'scripts\buildsystems\vcpkg.cmake')) } | Select-Object -First 1; if($p){[IO.Path]::GetFullPath($p)}"`) do set "VCPKG_ROOT=%%V"
 )
 if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
     echo ERROR: VCPKG_ROOT is not set and vcpkg.cmake was not found.
