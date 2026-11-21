@@ -225,6 +225,8 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.maximumWindingTemperatureK != accepted.maximumWindingTemperatureK ||
            current.coreGeometryFamily != accepted.coreGeometryFamily ||
            current.coreLaminationConstruction != accepted.coreLaminationConstruction ||
+           current.dimensionalSource != accepted.dimensionalSource ||
+           current.dimensionalRevision != accepted.dimensionalRevision ||
            current.conductorShape != accepted.conductorShape ||
            current.windingTechnology != accepted.windingTechnology ||
            current.coolingMethod != accepted.coolingMethod ||
