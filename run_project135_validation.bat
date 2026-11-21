@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions DisableDelayedExpansion
+setlocal EnableExtensions EnableDelayedExpansion
 title Project135 - Sync, Build and Test
 
 set "ROOT=%~dp0"
@@ -45,6 +45,57 @@ if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
     goto STOP_WITH_LOCAL_LOG
 )
 echo VCPKG_ROOT: %VCPKG_ROOT%>>"%LOG%"
+
+rem Refresh the vcpkg checkout itself: the version database files must match
+rem the current registry, not merely have the baseline commit object available.
+echo.
+echo [VCPKG] Updating vcpkg registry checkout...
+set "VCPKG_REMOTE="
+for /f "delims=" %%R in ('git -C "%VCPKG_ROOT%" remote get-url origin 2^>nul') do set "VCPKG_REMOTE=%%R"
+echo %VCPKG_REMOTE% | findstr /i "microsoft/vcpkg" >nul
+if errorlevel 1 (
+    echo ERROR: VCPKG_ROOT origin is not microsoft/vcpkg. No update was attempted.
+    echo [FATAL] Unexpected vcpkg origin: %VCPKG_REMOTE%>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+set "VCPKG_DIRTY="
+for /f "delims=" %%S in ('git -C "%VCPKG_ROOT%" status --porcelain') do set "VCPKG_DIRTY=1"
+if defined VCPKG_DIRTY (
+    echo ERROR: vcpkg checkout has local changes. Commit or stash them before validation.
+    echo [FATAL] vcpkg checkout is not clean; update aborted.>>"%LOG%"
+    git -C "%VCPKG_ROOT%" status --short >>"%LOG%" 2>&1
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+git -C "%VCPKG_ROOT%" fetch origin master >>"%LOG%" 2>&1
+if errorlevel 1 (
+    echo ERROR: Could not fetch microsoft/vcpkg master.
+    echo [FATAL] vcpkg master fetch failed.>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+git -C "%VCPKG_ROOT%" checkout --detach origin/master >>"%LOG%" 2>&1
+if errorlevel 1 (
+    echo ERROR: Could not update vcpkg checkout to origin/master.
+    echo [FATAL] vcpkg checkout update failed.>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+if not exist "%VCPKG_ROOT%\bootstrap-vcpkg.bat" (
+    echo ERROR: bootstrap-vcpkg.bat is missing.
+    echo [FATAL] vcpkg bootstrap script missing.>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+call "%VCPKG_ROOT%\bootstrap-vcpkg.bat" -disableMetrics >>"%LOG%" 2>&1
+if errorlevel 1 (
+    echo ERROR: vcpkg bootstrap failed.
+    echo [FATAL] vcpkg bootstrap failed.>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+echo [VCPKG] Registry checkout and executable updated.>>"%LOG%"
 
 rem Ensure the vcpkg baseline commit and its tree are present locally.
 echo.
@@ -305,17 +356,16 @@ pause
 exit /b 1
 
 :RUN
-setlocal DisableDelayedExpansion
 echo [RUN] %~1
 echo.>>"%LOG%"
 echo [RUN] %~1>>"%LOG%"
 call %RUN_CMD% >>"%LOG%" 2>&1
-set "RUN_RC=%ERRORLEVEL%"
-if "%RUN_RC%"=="0" (
+set "RUN_RC=!ERRORLEVEL!"
+if !RUN_RC! EQU 0 (
     echo [PASS] %~1
     echo [PASS] %~1>>"%LOG%"
 ) else (
-    echo [FAIL] %~1 (exit %RUN_RC%)
-    echo [FAIL] %~1 (exit %RUN_RC%)>>"%LOG%"
+    echo [FAIL] %~1 (exit !RUN_RC!)
+    echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
 )
-endlocal & exit /b %RUN_RC%
+exit /b !RUN_RC!
