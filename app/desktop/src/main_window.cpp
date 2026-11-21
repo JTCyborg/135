@@ -962,12 +962,6 @@ QWidget* MainWindow::createProjectPage()
         inputAvailability.insert(QStringLiteral("loadCurrentHarmonicSpectrum"),
             harmonicCurrentTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
         snapshot.insert(QStringLiteral("inputAvailability"), inputAvailability);
-        QJsonObject inputAvailability;
-        inputAvailability.insert(QStringLiteral("voltageHarmonicSpectrum"),
-            harmonicSpectrumTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
-        inputAvailability.insert(QStringLiteral("loadCurrentHarmonicSpectrum"),
-            harmonicCurrentTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
-        snapshot.insert(QStringLiteral("inputAvailability"), inputAvailability);
         snapshot.insert(QStringLiteral("topologyPreview"),
             tr("Three-phase shunt branch: series-tuned R-L-C, termination Wye (Y)"));
 
@@ -1640,6 +1634,12 @@ QWidget* MainWindow::createFilterPage()
         snapshot.insert(QStringLiteral("fields"), fields);
         snapshot.insert(QStringLiteral("fieldLabels"), fieldLabels);
         snapshot.insert(QStringLiteral("fieldUnits"), fieldUnits);
+        QJsonObject inputAvailability;
+        inputAvailability.insert(QStringLiteral("voltageHarmonicSpectrum"),
+            harmonicSpectrumTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
+        inputAvailability.insert(QStringLiteral("loadCurrentHarmonicSpectrum"),
+            harmonicCurrentTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
+        snapshot.insert(QStringLiteral("inputAvailability"), inputAvailability);
         QJsonObject inputAvailability;
         inputAvailability.insert(QStringLiteral("voltageHarmonicSpectrum"),
             harmonicSpectrumTable_->rowCount() == 0 ? QStringLiteral("NOT_PROVIDED") : QStringLiteral("PROVIDED"));
