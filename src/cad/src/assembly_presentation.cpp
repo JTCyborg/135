@@ -100,6 +100,18 @@ std::array<double, 3> presentationColor(
     return {0.72, 0.75, 0.79};
 }
 
+AssemblySurfaceFinish presentationFinish(
+    const std::string& id, const std::string& materialRevisionId)
+{
+    if (materialRevisionId == "SEED-TK-M235-35A-R1" || id.rfind("core.", 0) == 0)
+        return AssemblySurfaceFinish::ElectricalSteelSatin;
+    if (materialRevisionId == "SEED-CU-C10100-R1" || id.rfind("winding.", 0) == 0)
+        return AssemblySurfaceFinish::CopperPolished;
+    if (materialRevisionId == "SEED-DUPONT-NOMEX410-R1" || id.rfind("bobbin.", 0) == 0)
+        return AssemblySurfaceFinish::InsulatorMatte;
+    return AssemblySurfaceFinish::NeutralMatte;
+}
+
 void collectDisplayItems(
     const AssemblyPresentationNode& node,
     bool ancestorsVisible,
@@ -115,7 +127,8 @@ void collectDisplayItems(
     if (node.children.empty() && !node.shape.IsNull()) {
         items.push_back(AssemblyPresentationDisplayItem{
             node.id, node.shape, effectiveTransparency,
-            presentationColor(node.id, node.materialRevisionId), node.materialRevisionId
+            presentationColor(node.id, node.materialRevisionId),
+            presentationFinish(node.id, node.materialRevisionId), node.materialRevisionId
         });
         return;
     }
@@ -158,6 +171,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
     core.representation = AssemblyGeometryRepresentation::SimplifiedCoreSegment;
     core.shape = topLevel[0];
     core.materialRevisionId = geometry.coreMaterialRevisionId;
+    core.surfaceFinish = AssemblySurfaceFinish::ElectricalSteelSatin;
 
     constexpr std::array<const char*, 7> coreIds{
         "core.limb.A", "core.limb.B", "core.limb.C",
@@ -184,6 +198,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         component.representation = AssemblyGeometryRepresentation::SimplifiedCoreSegment;
         component.shape = it.Value();
         component.materialRevisionId = geometry.coreMaterialRevisionId;
+        component.surfaceFinish = AssemblySurfaceFinish::ElectricalSteelSatin;
         core.children.push_back(std::move(component));
         ++coreComponentCount;
     }
@@ -218,6 +233,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         bobbin.representation = AssemblyGeometryRepresentation::PhysicalSolid;
         bobbin.shape = topLevel[bobbinIndex];
         bobbin.materialRevisionId = geometry.bobbins[phase].material;
+        bobbin.surfaceFinish = AssemblySurfaceFinish::InsulatorMatte;
 
         AssemblyPresentationNode winding;
         winding.id = "winding." + phaseId + ".envelope";
@@ -226,6 +242,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         winding.representation = AssemblyGeometryRepresentation::WindingPackEnvelope;
         winding.shape = topLevel[windingIndex];
         winding.materialRevisionId = geometry.conductorMaterialRevisionId;
+        winding.surfaceFinish = AssemblySurfaceFinish::CopperPolished;
 
         phaseNode.children.push_back(std::move(bobbin));
         phaseNode.children.push_back(std::move(winding));
