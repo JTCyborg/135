@@ -25,7 +25,7 @@ bool finiteNonNegative(double value)
 
 bool singleLine(const std::string& value)
 {
-    return !value.empty() && value.find_first_of("\\r\\n") == std::string::npos;
+    return !value.empty() && value.find_first_of("\r\n") == std::string::npos;
 }
 }
 
