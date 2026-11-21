@@ -2962,8 +2962,12 @@ QWidget* MainWindow::createResultsPage()
     resultsBankCurrentPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBankCurrentPlot_);
 
-    auto* coreFluxPlotTitle = new QLabel(tr("Three-limb core peak flux density — frequency sweep"));
+    auto* coreFluxPlotTitle = new QLabel(tr("Three-limb core peak flux density — manual diagnostic frequency sweep"));
     coreFluxPlotTitle->setStyleSheet("font-weight: 600;");
+    coreFluxPlotTitle->setToolTip(tr(
+        "This chart uses the legacy manual Ae/le/B-H frequency-sweep model. "
+        "The Construction-revision-bound harmonic operating-point result is a different "
+        "calculation and is not plotted on this frequency axis."));
     layout->addWidget(coreFluxPlotTitle);
     resultsCoreFluxPlot_ = new PlotWidget;
     resultsCoreFluxPlot_->setObjectName(QStringLiteral("resultsCoreFluxPlot"));
