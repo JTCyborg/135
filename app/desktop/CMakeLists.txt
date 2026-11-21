@@ -94,7 +94,7 @@ if(P135_BUILD_TESTS)
     find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
 
     qt_add_executable(Project135DesktopWorkflowE2ETests
-        tests/desktop/workflow_e2e_tests.cpp
+        tests/workflow_e2e_tests.cpp
     )
     target_link_libraries(Project135DesktopWorkflowE2ETests
         PRIVATE
