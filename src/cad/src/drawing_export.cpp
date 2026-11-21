@@ -371,7 +371,22 @@ Result<void> exportReactorAssemblyDxf(
     const double sideX = 470.0, sideY = 285.0;
     dxf.text(sideX, sideY + totalHeight + 12.0, 3.5, "C - SIDE ELEVATION (PHASE B)", "ANNOTATION");
     const double depthB = mm(core.limbDepths[1].si());
-    dxf.rectangle(sideX, sideY, depthB, totalHeight, "OUTLINE");
+    // Side projection separates the central limb from all four yoke members.
+    // Each yoke keeps its own stack depth and thickness; no averaged depth is
+    // substituted for the physical top/bottom members.
+    verticalCoreMember(dxf, sideX, sideY + yokeBottom, depthB, limbHeight,
+        gapIntervalsFor(core, domain::CoreSegment::LimbB));
+    const std::array<double, 4> sideYokeDepths{
+        mm(core.yokeDepths[0].si()), mm(core.yokeDepths[1].si()),
+        mm(core.yokeDepths[2].si()), mm(core.yokeDepths[3].si())};
+    const std::array<double, 4> sideYokeY{
+        sideY + totalHeight - mm(core.yokeThicknesses[0].si()),
+        sideY + totalHeight - mm(core.yokeThicknesses[1].si()),
+        sideY, sideY};
+    for (std::size_t i = 0; i < sideYokeDepths.size(); ++i) {
+        dxf.rectangle(sideX, sideYokeY[i], sideYokeDepths[i],
+            mm(core.yokeThicknesses[i].si()), "OUTLINE");
+    }
     const auto& bobbinB = geometry.bobbins[1];
     const auto& windingB = geometry.windingPacks[1];
     const double bobbinYB = yokeBottom + 0.5 *
