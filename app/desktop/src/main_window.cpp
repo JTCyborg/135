@@ -2369,6 +2369,7 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(resultsTable_);
 
     auto* currentPlotTitle = new QLabel(tr("Inductor phase peak current — frequency sweep"));
+    currentPlotTitle->setObjectName(QStringLiteral("inductorCurrentPlotTitle"));
     currentPlotTitle->setStyleSheet("font-weight: 600;");
     layout->addWidget(currentPlotTitle);
     resultsBankCurrentPlot_ = new PlotWidget;
@@ -2404,6 +2405,105 @@ QWidget* MainWindow::createResultsPage()
     log_->setPlaceholderText(tr("Application and engineering activity log"));
     log_->setMinimumHeight(150);
     layout->addWidget(log_);
+
+    auto* calculationConfirmationRow = new QHBoxLayout;
+    auto* calculationConfirmationStatus = new QLabel(
+        tr("Calculation & design has not been confirmed."));
+    calculationConfirmationStatus->setObjectName(QStringLiteral("calculationDesignConfirmationStatus"));
+    calculationConfirmationStatus->setWordWrap(true);
+    auto* confirmCalculation = new QPushButton(tr("Confirm calculation & design"));
+    confirmCalculation->setObjectName(QStringLiteral("confirmCalculationDesign"));
+    calculationConfirmationRow->addWidget(calculationConfirmationStatus, 1);
+    calculationConfirmationRow->addWidget(confirmCalculation);
+    layout->addLayout(calculationConfirmationRow);
+
+    connect(confirmCalculation, &QPushButton::clicked, this,
+        [this, calculationConfirmationStatus] {
+        if (!resultsTable_ || !resultsTable_->property("calculationRunAvailable").toBool() ||
+            resultsTable_->rowCount() == 0) {
+            QMessageBox::warning(this, tr("Calculation not ready"),
+                tr("Run a successful calculation before confirming this tab."));
+            return;
+        }
+        if (latestFilterSnapshotId_.isEmpty()) {
+            QMessageBox::warning(this, tr("Calculation snapshot unavailable"),
+                tr("The calculation has no saved immutable filter snapshot. Check the calculation log and database."));
+            return;
+        }
+        QJsonObject snapshot;
+        snapshot.insert(QStringLiteral("schemaVersion"), 1);
+        snapshot.insert(QStringLiteral("tabId"), QStringLiteral("calculation_design"));
+        snapshot.insert(QStringLiteral("tabTitle"), QStringLiteral("Calculation & design"));
+        snapshot.insert(QStringLiteral("projectId"), projectId_);
+        snapshot.insert(QStringLiteral("confirmedAtUtc"),
+            QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+        snapshot.insert(QStringLiteral("buildConfiguration"),
+#ifdef _DEBUG
+            QStringLiteral("Debug")
+#else
+            QStringLiteral("Release")
+#endif
+        );
+        QJsonObject inputs;
+        inputs.insert(QStringLiteral("nominalVoltage_V"), nominalVoltage_ ? nominalVoltage_->value() : 0.0);
+        inputs.insert(QStringLiteral("fundamentalFrequency_Hz"), fundamentalFrequency_ ? fundamentalFrequency_->value() : 0.0);
+        inputs.insert(QStringLiteral("connection"), filterConnection_ ? filterConnection_->currentText() : QString{});
+        inputs.insert(QStringLiteral("targetReactivePower_kvar"), targetReactivePower_ ? targetReactivePower_->value() : 0.0);
+        inputs.insert(QStringLiteral("tuningHarmonicOrder"), tuningHarmonicOrder_ ? tuningHarmonicOrder_->value() : 0.0);
+        inputs.insert(QStringLiteral("qualityFactor"), qualityFactor_ ? qualityFactor_->value() : 0.0);
+        inputs.insert(QStringLiteral("sourceResistance_ohm"), sourceResistance_ ? sourceResistance_->value() : 0.0);
+        inputs.insert(QStringLiteral("sourceInductance_mH"), sourceInductance_ ? sourceInductance_->value() : 0.0);
+        snapshot.insert(QStringLiteral("inputs"), inputs);
+        QJsonArray results;
+        for (int row = 0; row < resultsTable_->rowCount(); ++row) {
+            QJsonObject item;
+            item.insert(QStringLiteral("parameter"), resultsTable_->item(row, 0)
+                ? resultsTable_->item(row, 0)->text() : QString{});
+            item.insert(QStringLiteral("value"), resultsTable_->item(row, 1)
+                ? resultsTable_->item(row, 1)->text() : QString{});
+            item.insert(QStringLiteral("unit"), resultsTable_->item(row, 2)
+                ? resultsTable_->item(row, 2)->text() : QString{});
+            results.append(item);
+        }
+        snapshot.insert(QStringLiteral("results"), results);
+        snapshot.insert(QStringLiteral("warnings"), resultsNote_ ? resultsNote_->text() : QString{});
+        snapshot.insert(QStringLiteral("calculationStatus"), status_ ? status_->text() : QStringLiteral("NOT_AVAILABLE"));
+        const bool sourceLimited = sourceResistance_ && sourceInductance_ &&
+            (sourceResistance_->value() > 0.0 || sourceInductance_->value() > 0.0);
+        snapshot.insert(QStringLiteral("currentResponseStatus"), sourceLimited
+            ? QStringLiteral("SOURCE_IMPEDANCE_INCLUDED_SINGLE_FREQUENCY_DIAGNOSTIC")
+            : QStringLiteral("IDEAL_SOURCE_DIAGNOSTIC_NOT_OPERATIONAL_STRESS"));
+        QJsonObject lineage;
+        lineage.insert(QStringLiteral("filterSnapshotId"), latestFilterSnapshotId_);
+        lineage.insert(QStringLiteral("filterBranchId"), static_cast<qint64>(latestFilterBranchId_));
+        lineage.insert(QStringLiteral("constructionPhysicalSizingStatus"), QStringLiteral("NOT_CONNECTED_TO_SOLVER"));
+        snapshot.insert(QStringLiteral("lineage"), lineage);
+#ifdef _DEBUG
+        const QString outputDirectory = QStringLiteral("C:/Temp/trdos/135");
+        if (!QDir().mkpath(outputDirectory)) {
+            QMessageBox::critical(this, tr("Cannot save calculation snapshot"),
+                tr("Cannot create the project output directory: %1").arg(outputDirectory));
+            return;
+        }
+        QSaveFile output(QDir(outputDirectory).filePath(QStringLiteral("04_calculation_design.json")));
+        if (!output.open(QIODevice::WriteOnly)) {
+            QMessageBox::critical(this, tr("Cannot save calculation snapshot"), output.errorString());
+            return;
+        }
+        const QByteArray json = QJsonDocument(snapshot).toJson(QJsonDocument::Indented);
+        if (output.write(json) != json.size() || !output.commit()) {
+            QMessageBox::critical(this, tr("Cannot save calculation snapshot"),
+                tr("Writing the calculation snapshot failed: %1").arg(output.errorString()));
+            return;
+        }
+        calculationConfirmationStatus->setText(
+            tr("Confirmed. Debug snapshot saved: C:/Temp/trdos/135/04_calculation_design.json"));
+#else
+        calculationConfirmationStatus->setText(tr("Confirmed. Release snapshot generation is disabled."));
+#endif
+        appendLog(tr("Calculation & design confirmed. Physical sizing remains NOT_CONNECTED_TO_SOLVER."));
+        if (tabs_) tabs_->setCurrentIndex(4);
+    });
 
     auto* scroll = new QScrollArea;
     scroll->setObjectName(QStringLiteral("calculationScrollArea"));
@@ -3371,6 +3471,9 @@ void MainWindow::markConstructionInputsChanged()
 
 void MainWindow::calculateFilter()
 {
+    if (resultsTable_) resultsTable_->setProperty("calculationRunAvailable", false);
+    if (auto* confirmation = findChild<QLabel*>(QStringLiteral("calculationDesignConfirmationStatus")))
+        confirmation->setText(tr("Calculation changed — confirmation is required again."));
     if (!nominalVoltage_ || !fundamentalFrequency_ || !targetReactivePower_ ||
         !filterConnection_ || !tuningHarmonicOrder_ || !qualityFactor_ ||
         !resultsTable_ || !resultsNote_) {
@@ -4849,8 +4952,19 @@ void MainWindow::calculateFilter()
 
         if (resultsBankCurrentPlot_) {
             resultsBankCurrentPlot_->setCurves({bankCurrentCurve},
-                tr("Frequency (Hz, logarithmic)"), tr("Source-limited diagnostic phase peak current (A)"));
+                tr("Frequency (Hz, logarithmic)"),
+                hasSourceImpedance
+                    ? tr("Source-impedance-included diagnostic phase peak current (A)")
+                    : tr("Ideal-source diagnostic phase peak current (A) — NOT operational stress"));
             resultsBankCurrentPlot_->setEngineeringGuides(resonanceBands);
+        }
+        if (auto* title = findChild<QLabel*>(QStringLiteral("inductorCurrentPlotTitle"))) {
+            title->setText(hasSourceImpedance
+                ? tr("Inductor phase peak current — source-impedance-included diagnostic sweep")
+                : tr("Inductor phase peak current — ideal-source diagnostic only (NOT operational stress)"));
+            title->setToolTip(hasSourceImpedance
+                ? tr("The entered Thevenin R/L is included. This remains a single-frequency diagnostic, not a multi-harmonic operating waveform.")
+                : tr("Thevenin source R/L is zero or unset. The curve is an ideal-voltage-source response and must not be interpreted as a network-limited or operating current."));
         }
         if (resultsBusImpedancePlot_) {
             resultsBusImpedancePlot_->setCurves(impedanceResult
@@ -5090,9 +5204,11 @@ void MainWindow::calculateFilter()
     }
 
     QStringList visibleWarnings;
-    visibleWarnings.push_back(tr("The frequency sweep includes the entered per-phase Thevenin R/L, but is still a single-frequency response. Do not treat its peak as the multi-harmonic operating stress; use the source-aware harmonic operating-point analysis for equipment loading."));
-    if (!hasSourceImpedance)
-        visibleWarnings.push_back(tr("Source impedance R/L is zero or unset. Resonance, bus-impedance scan and source-limited current response are NOT_VERIFIED."));
+    if (hasSourceImpedance) {
+        visibleWarnings.push_back(tr("The frequency sweep includes the entered per-phase Thevenin R/L, but is still a single-frequency diagnostic response. Do not treat its peak as multi-harmonic operating stress."));
+    } else {
+        visibleWarnings.push_back(tr("Source impedance R/L is zero or unset. The plotted current is an ideal-voltage-source diagnostic only; it is NOT source-limited and NOT operational stress. Resonance, bus-impedance scan and source-limited current response are NOT_VERIFIED."));
+    }
     if (!magneticCircuitBase && !threeLimbMagneticBase)
         visibleWarnings.push_back(tr("Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED."));
     if (!harmonicResult)
@@ -5118,6 +5234,7 @@ void MainWindow::calculateFilter()
         .arg(targetReactivePower_->value())
         .arg(tuningHarmonicOrder_->value(), 0, 'f', 3)
         .arg(filterConnection_->currentText()));
+    if (resultsTable_) resultsTable_->setProperty("calculationRunAvailable", true);
 }
 
 
