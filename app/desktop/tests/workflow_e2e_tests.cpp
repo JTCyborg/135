@@ -526,6 +526,18 @@ private slots:
             window_->findChild<QWidget*>(QStringLiteral("resultsBusImpedancePlot")),
             coreFluxPlot, historyPlot
         };
+
+        // The history page is intentionally lazy in the tab widget and may not
+        // receive a show/resize event during this workflow. Visit it once so its
+        // deferred Debug capture runs against its final, visible geometry. Return
+        // to the calculation page before validating the result plots.
+        const int workflowTabBeforeArtifactCapture = tabs->currentIndex();
+        tabs->setCurrentIndex(6);
+        QTRY_VERIFY_WITH_TIMEOUT(historyPlot->isVisible(), 3000);
+        QTest::qWait(150);
+        tabs->setCurrentIndex(workflowTabBeforeArtifactCapture);
+        QTest::qWait(150);
+
         for (std::size_t i = 0; i < plotFiles.size(); ++i) {
             QVERIFY(plotWidgets[i]);
             // Capture is debounced out of resizeEvent(). Wait for the PNG to
