@@ -69,6 +69,7 @@
 #include <QSizePolicy>
 #include <QPainterPath>
 #include <QPaintEvent>
+#include <QResizeEvent>
 #include <QFontMetrics>
 #include <QFrame>
 #include <QPushButton>
@@ -333,6 +334,16 @@ public:
         setAutoFillBackground(true);
     }
 
+    void setDebugImagePath(QString path)
+    {
+#if defined(_DEBUG) || !defined(NDEBUG)
+        setProperty("debugImagePath", std::move(path));
+        saveDebugImage();
+#else
+        Q_UNUSED(path);
+#endif
+    }
+
     void setCurves(std::vector<PlotCurve> curves, QString xLabel, QString yLabel)
     {
         curves_ = std::move(curves);
@@ -377,16 +388,34 @@ private:
         const QFileInfo info(path);
         if (!QDir().mkpath(info.absolutePath())) return;
         QImage image(size(), QImage::Format_ARGB32_Premultiplied);
-        image.fill(Qt::transparent);
+        image.fill(palette().color(QPalette::Base));
         QPainter imagePainter(&image);
         render(&imagePainter);
         imagePainter.end();
-        if (!image.save(path, "PNG"))
+
+        // Replace the previous artifact atomically: an interrupted write must
+        // never leave a truncated PNG that looks like a successfully saved plot.
+        QSaveFile output(path);
+        if (!output.open(QIODevice::WriteOnly) || !image.save(&output, "PNG") ||
+            !output.commit()) {
+            output.cancelWriting();
             qWarning("Project135: failed to save debug plot PNG: %s", qPrintable(path));
+        }
     }
 #endif
 
 protected:
+    void resizeEvent(QResizeEvent* event) override
+    {
+        QWidget::resizeEvent(event);
+#if defined(_DEBUG) || !defined(NDEBUG)
+        // Plot widgets are laid out after their initial data is assigned.
+        // Save again at the final on-screen size so the artifact is not a
+        // stale first-layout placeholder.
+        saveDebugImage();
+#endif
+    }
+
     void paintEvent(QPaintEvent*) override
     {
         QPainter painter(this);
@@ -6782,16 +6811,16 @@ void MainWindow::updateProjectTitle()
 {
 #if defined(_DEBUG) || !defined(NDEBUG)
     if (resultsBankCurrentPlot_)
-        resultsBankCurrentPlot_->setProperty("debugImagePath",
+        resultsBankCurrentPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_reactor_current.png")));
     if (resultsBusImpedancePlot_)
-        resultsBusImpedancePlot_->setProperty("debugImagePath",
+        resultsBusImpedancePlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_bus_impedance.png")));
     if (resultsCoreFluxPlot_)
-        resultsCoreFluxPlot_->setProperty("debugImagePath",
+        resultsCoreFluxPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux.png")));
     if (historyComparisonPlot_)
-        historyComparisonPlot_->setProperty("debugImagePath",
+        historyComparisonPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_history_comparison.png")));
 #endif
     const QString name = projectName_ ? projectName_->text().trimmed() : QString{};
