@@ -530,6 +530,15 @@ private slots:
             QVERIFY2(plotFiles[i].exists() && plotFiles[i].size() > 100,
                 "A Debug plot PNG was not automatically saved.");
             QVERIFY(plotWidgets[i]);
+            QVERIFY(plotWidgets[i]);
+            // The plot capture is intentionally deferred out of resizeEvent().
+            // Wait until the last layout-driven resize has produced its PNG;
+            // otherwise this check can observe a valid but stale earlier size.
+            QTRY_VERIFY_WITH_TIMEOUT(([&] {
+                const QImage latestImage(plotFiles[i].absoluteFilePath());
+                return !latestImage.isNull() &&
+                    latestImage.size() == plotWidgets[i]->size();
+            })(), 5000);
             QImage image(plotFiles[i].absoluteFilePath());
             QVERIFY2(!image.isNull(), "Saved Debug plot is not a decodable PNG.");
             QVERIFY(image.width() >= 120);
