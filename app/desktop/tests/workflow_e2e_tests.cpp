@@ -376,8 +376,15 @@ private slots:
             QVERIFY(setDouble(QStringLiteral("construction_windingEndClearance_%1").arg(i), 10.0));
         }
 
-        // Explicit thermal metadata; no cooling ducts or discrete air gaps are
-        // invented. Those features remain absent from this test geometry.
+        // One explicit limb-A air gap exercises the DXF cut-face projection,
+        // the air-gap schedule and the additional physical core solid.
+        QVERIFY(setInteger(QStringLiteral("construction_airGapCount_1"), 1));
+        QVERIFY(setDouble(QStringLiteral("construction_totalAirGap_1"), 2.0));
+        QVERIFY(setDouble(QStringLiteral("construction_airGapPosition_1_1"), 80.0));
+        QVERIFY(setDouble(QStringLiteral("construction_airGapLength_1_1"), 2.0));
+
+        // Explicit thermal metadata; no cooling ducts or other air gaps are
+        // invented. The single limb-A gap above is part of this synthetic fixture.
         QVERIFY(setDouble(QStringLiteral("construction_ambient"), 40.0));
         QVERIFY(setText(QStringLiteral("construction_insulationThermalStandard"),
             QStringLiteral("IEC 60085 (test metadata)")));
@@ -478,7 +485,7 @@ private slots:
         std::size_t importedSolidCount = 0;
         for (TopExp_Explorer it(importedAssembly, TopAbs_SOLID); it.More(); it.Next())
             ++importedSolidCount;
-        QCOMPARE(importedSolidCount, std::size_t(13)); // 7 core + 3 bobbins + 3 winding envelopes.
+        QCOMPARE(importedSolidCount, std::size_t(14)); // 8 core solids (limb A split by one gap) + 3 bobbins + 3 winding envelopes.
 
         QVERIFY2(cadStatus->text().contains(QStringLiteral("exported to")),
             qPrintable(QStringLiteral("Unexpected STEP export status: ") + cadStatus->text()));
@@ -524,7 +531,8 @@ private slots:
         QVERIFY(dxfContent.find("YOKE TOP BC PLAN") != std::string::npos);
         QVERIFY(dxfContent.find("YOKE BOTTOM AB PLAN") != std::string::npos);
         QVERIFY(dxfContent.find("YOKE BOTTOM BC PLAN") != std::string::npos);
-        QVERIFY(dxfContent.find("AIR GAP SCHEDULE (0)") != std::string::npos);
+        QVERIFY(dxfContent.find("AIR GAP SCHEDULE (1)") != std::string::npos);
+        QVERIFY(dxfContent.find("LIMB A - position 80.000000 mm; length 2.000000 mm") != std::string::npos);
         QVERIFY(dxfContent.find("Limb stack depths A/B/C") != std::string::npos);
         QVERIFY(dxfContent.find("BOBBIN B AXIAL LENGTH") != std::string::npos);
         QVERIFY(dxfContent.find("BOBBIN B DEPTH") != std::string::npos);
