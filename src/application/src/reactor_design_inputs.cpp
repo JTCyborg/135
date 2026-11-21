@@ -65,14 +65,15 @@ Result<void> validate(const ReactorDesignInputs& inputs)
     const auto validText = [](const auto& value) {
         return !value || !value->empty();
     };
-    if (!validText(inputs.coreGeometryFamily) || !validText(inputs.conductorShape) ||
-        !validText(inputs.windingTechnology) || !validText(inputs.coolingMethod) ||
-        !validText(inputs.bobbinMaterialId))
+    if (!validText(inputs.coreGeometryFamily) || !validText(inputs.coreLaminationConstruction) ||
+        !validText(inputs.conductorShape) || !validText(inputs.windingTechnology) ||
+        !validText(inputs.coolingMethod) || !validText(inputs.bobbinMaterialId))
         return invalid("Specified construction identifiers must not be empty.");
 
     const auto validCount = [](const auto& value) { return !value || *value > 0; };
     if (!validCount(inputs.turnsPerPhase) || !validCount(inputs.turnsPerLayer) ||
-        !validCount(inputs.windingLayers) || !validCount(inputs.parallelConductors))
+        !validCount(inputs.windingLayers) || !validCount(inputs.windingSections) ||
+        !validCount(inputs.parallelConductors))
         return invalid("Specified winding counts must be greater than zero.");
 
     const auto validPositive = [](const auto& value) {
@@ -195,6 +196,7 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.ambientTemperatureK != accepted.ambientTemperatureK ||
            current.maximumWindingTemperatureK != accepted.maximumWindingTemperatureK ||
            current.coreGeometryFamily != accepted.coreGeometryFamily ||
+           current.coreLaminationConstruction != accepted.coreLaminationConstruction ||
            current.conductorShape != accepted.conductorShape ||
            current.windingTechnology != accepted.windingTechnology ||
            current.coolingMethod != accepted.coolingMethod ||
@@ -203,6 +205,7 @@ bool requiresRecalculation(const ReactorDesignInputs& current,
            current.turnsPerPhase != accepted.turnsPerPhase ||
            current.turnsPerLayer != accepted.turnsPerLayer ||
            current.windingLayers != accepted.windingLayers ||
+           current.windingSections != accepted.windingSections ||
            current.parallelConductors != accepted.parallelConductors ||
            current.conductorCrossSectionM2 != accepted.conductorCrossSectionM2 ||
            current.conductorWidthM != accepted.conductorWidthM ||
