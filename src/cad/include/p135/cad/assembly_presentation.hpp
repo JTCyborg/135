@@ -4,6 +4,7 @@
 
 #include <TopoDS_Shape.hxx>
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -33,6 +34,8 @@ struct AssemblyPresentationDisplayItem {
     std::string id;
     TopoDS_Shape shape;
     double transparency{0.0};
+    // Presentation palette only; RGB values are not engineering material data.
+    std::array<double, 3> baseColor{0.72, 0.75, 0.79};
 };
 
 // Flatten the semantic tree into renderable leaf solids. Parent visibility
