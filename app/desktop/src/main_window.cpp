@@ -2661,6 +2661,14 @@ QWidget* MainWindow::createConstructionPage()
         }
 
 
+        const auto constructionInputs = collectReactorDesignInputs();
+        const auto constructionValidation = p135::application::validate(constructionInputs);
+        if (!constructionValidation) {
+            QMessageBox::warning(this, tr("Invalid construction inputs"),
+                QString::fromStdString(constructionValidation.error().message));
+            return;
+        }
+
         QJsonObject snapshot;
         snapshot.insert(QStringLiteral("schemaVersion"), 1);
         snapshot.insert(QStringLiteral("tabId"), QStringLiteral("construction"));
