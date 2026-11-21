@@ -26,7 +26,12 @@ bool finiteNonNegative(double value)
 
 bool singleLine(const std::string& value)
 {
-    return !value.empty() && value.find_first_of("\r\n") == std::string::npos;
+    return !value.empty() && value.find_first_of("=\\r\\n") == std::string::npos;
+}
+
+bool singleLineOrEmpty(const std::string& value)
+{
+    return value.find_first_of("=\\r\\n") == std::string::npos;
 }
 }
 
@@ -52,7 +57,7 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
         !singleLine(request.dimensionalSource) || !singleLine(request.dimensionalRevision) ||
         !singleLine(material.id) || !singleLine(material.manufacturer) ||
         !singleLine(material.grade) || !singleLine(material.sourceReference) ||
-        !singleLine(material.datasetRevision) || !singleLine(material.lossDataReference) ||
+        !singleLine(material.datasetRevision) || !singleLineOrEmpty(material.lossDataReference) ||
         !singleLine(request.physicalCore.laminationConstruction) ||
         result.magneticAnalysis.filterBranchId != request.filterMagnetic.filterBranchId ||
         material.id.empty() || material.sourceReference.empty() || material.datasetRevision.empty())
@@ -158,7 +163,8 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
         const auto& point = material.lossData[i];
         if (!std::isfinite(point.frequency.si()) || point.frequency.si() <= 0.0 ||
             !std::isfinite(point.peakFluxDensity.si()) || point.peakFluxDensity.si() < 0.0 ||
-            !std::isfinite(point.temperature.si()) || !std::isfinite(point.specificLoss.si()) ||
+            !std::isfinite(point.temperature.si()) || point.temperature.si() <= 0.0 ||
+            !std::isfinite(point.specificLoss.si()) ||
             point.specificLoss.si() < 0.0)
             return Result<std::string>::failure(invalidArtifact(
                 "Magnetic operating point contains invalid core-loss material data."));
