@@ -46,6 +46,12 @@ int main()
     request.filterMagnetic.magnetic.material.id = "core-revision-7";
     request.filterMagnetic.magnetic.material.sourceReference = "manufacturer B-H datasheet";
     request.filterMagnetic.magnetic.material.datasetRevision = "BH-REV-3";
+    request.filterMagnetic.magnetic.turns = {120, 120, 120};
+    request.filterMagnetic.magnetic.material.bhCurve = {
+        {units::MagneticFieldStrength{0.0}, units::FluxDensity{0.0}},
+        {units::MagneticFieldStrength{100.0}, units::FluxDensity{0.1}},
+        {units::MagneticFieldStrength{1000.0}, units::FluxDensity{1.0}}
+    };
 
     PhysicalFilterReactorMagneticResult result;
     result.magneticAnalysis.filterBranchId = 7;
@@ -66,11 +72,24 @@ int main()
     assert(artifact.value().find("dimensional_revision=REV-A") != std::string::npos);
     assert(artifact.value().find("bh_dataset_revision=BH-REV-3") != std::string::npos);
     assert(artifact.value().find("peak_absolute_flux_density_6_T=") != std::string::npos);
+    assert(artifact.value().find("physical_limb_width_0_m=0.04") != std::string::npos);
+    assert(artifact.value().find("physical_core_overall_width_m=0.24") != std::string::npos);
+    assert(artifact.value().find("turns_phase_0=120") != std::string::npos);
+    assert(artifact.value().find("bh_curve.2.B_T=1") != std::string::npos);
+    assert(artifact.value().find("magnetic_geometry.limb_area_m2=") != std::string::npos);
 
     auto zeroFluxBranch = result;
     zeroFluxBranch.magneticAnalysis.magneticCycle.peakAbsoluteFluxDensity[3] =
         units::FluxDensity{0.0};
     assert(makeMagneticOperatingPointStageArtifact(request, zeroFluxBranch));
+
+    auto missingTurns = request;
+    missingTurns.filterMagnetic.magnetic.turns[1] = 0;
+    assert(!makeMagneticOperatingPointStageArtifact(missingTurns, result));
+
+    auto missingBhCurve = request;
+    missingBhCurve.filterMagnetic.magnetic.material.bhCurve.clear();
+    assert(!makeMagneticOperatingPointStageArtifact(missingBhCurve, result));
 
     auto unconverged = result;
     unconverged.magneticAnalysis.magneticCycle.converged = false;
