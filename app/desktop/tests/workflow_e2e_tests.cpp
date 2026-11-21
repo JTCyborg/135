@@ -351,7 +351,7 @@ private slots:
         for (int i = 1; i <= 3; ++i) {
             QVERIFY(setDouble(QStringLiteral("construction_bobbinInnerWidth_%1").arg(i), 64.0));
             QVERIFY(setDouble(QStringLiteral("construction_bobbinInnerHeight_%1").arg(i), 46.0));
-            QVERIFY(setDouble(QStringLiteral("construction_bobbinAxialLength_%1").arg(i), 160.0));
+            QVERIFY(setDouble(QStringLiteral("construction_bobbinAxialLength_%1").arg(i), 168.0));
             QVERIFY(setDouble(QStringLiteral("construction_bobbinWallThickness_%1").arg(i), 3.0));
             QVERIFY(setDouble(QStringLiteral("construction_bobbinFlangeThickness_%1").arg(i), 4.0));
             QVERIFY(setDouble(QStringLiteral("construction_bobbinFlangeOuterWidth_%1").arg(i), 72.0));
