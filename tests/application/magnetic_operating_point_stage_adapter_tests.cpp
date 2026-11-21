@@ -44,6 +44,8 @@ int main()
     request.dimensionalRevision = "REV-A";
     request.filterMagnetic.filterBranchId = 7;
     request.filterMagnetic.magnetic.material.id = "core-revision-7";
+    request.filterMagnetic.magnetic.material.manufacturer = "Test Manufacturer";
+    request.filterMagnetic.magnetic.material.grade = "Test Electrical Steel";
     request.filterMagnetic.magnetic.material.sourceReference = "manufacturer B-H datasheet";
     request.filterMagnetic.magnetic.material.datasetRevision = "BH-REV-3";
     request.filterMagnetic.magnetic.turns = {120, 120, 120};
@@ -100,6 +102,10 @@ int main()
     assert(!makeMagneticOperatingPointStageArtifact(request, extrapolated));
 
     auto injectedProvenance = request;
+    injectedProvenance.filterMagnetic.magnetic.material.grade = "steel=forged";
+    assert(!makeMagneticOperatingPointStageArtifact(injectedProvenance, result));
+
+    injectedProvenance = request;
     injectedProvenance.dimensionalSource = "drawing\nforged_key=value";
     assert(!makeMagneticOperatingPointStageArtifact(injectedProvenance, result));
 
