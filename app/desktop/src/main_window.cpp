@@ -89,6 +89,7 @@
 #include <utility>
 #include <limits>
 #include <algorithm>
+#include <array>
 
 
 struct PlotCurve {
@@ -3489,6 +3490,57 @@ p135::application::ReactorDesignInputs MainWindow::collectReactorDesignInputs() 
     inputs.turnInsulationBuildM = lengthMetres("construction_turnInsulation");
     inputs.layerInsulationBuildM = lengthMetres("construction_layerInsulation");
     inputs.mainInsulationBuildM = lengthMetres("construction_mainInsulation");
+
+    const auto coreLength = [this](const QString& name) -> std::optional<double> {
+        const auto* field = findChild<QDoubleSpinBox*>(name);
+        if (!field || field->value() <= 0.0) return std::nullopt;
+        return field->value() * 1.0e-3;
+    };
+    const auto collectLengthArray = [&coreLength](const QString& prefix, std::size_t count)
+        -> std::optional<std::vector<double>> {
+        std::vector<double> values;
+        values.reserve(count);
+        for (std::size_t i = 0; i < count; ++i) {
+            const auto value = coreLength(prefix + QString::number(i + 1));
+            if (!value) return std::nullopt;
+            values.push_back(*value);
+        }
+        return values;
+    };
+    if (const auto values = collectLengthArray(QStringLiteral("construction_limbWidth_"), 3))
+        inputs.limbWidthsM = std::array<double, 3>{(*values)[0], (*values)[1], (*values)[2]};
+    if (const auto values = collectLengthArray(QStringLiteral("construction_limbDepth_"), 3))
+        inputs.limbStackDepthsM = std::array<double, 3>{(*values)[0], (*values)[1], (*values)[2]};
+    if (const auto values = collectLengthArray(QStringLiteral("construction_windowWidth_"), 2))
+        inputs.windowWidthsM = std::array<double, 2>{(*values)[0], (*values)[1]};
+    if (const auto values = collectLengthArray(QStringLiteral("construction_windowHeight_"), 2))
+        inputs.windowHeightsM = std::array<double, 2>{(*values)[0], (*values)[1]};
+    if (const auto values = collectLengthArray(QStringLiteral("construction_yokeThickness_"), 4))
+        inputs.yokeThicknessesM = std::array<double, 4>{(*values)[0], (*values)[1], (*values)[2], (*values)[3]};
+    if (const auto values = collectLengthArray(QStringLiteral("construction_yokeDepth_"), 4))
+        inputs.yokeDepthsM = std::array<double, 4>{(*values)[0], (*values)[1], (*values)[2], (*values)[3]};
+
+    std::array<std::uint32_t, 3> gapCounts{};
+    std::array<double, 3> totalGaps{};
+    bool hasGapCount = false;
+    bool hasTotalGap = false;
+    bool completeGapCounts = true;
+    bool completeTotalGaps = true;
+    for (std::size_t i = 0; i < 3; ++i) {
+        const QString suffix = QString::number(i + 1);
+        const auto* count = findChild<QSpinBox*>(QStringLiteral("construction_airGapCount_") + suffix);
+        const auto total = coreLength(QStringLiteral("construction_totalAirGap_") + suffix);
+        if (count) {
+            gapCounts[i] = static_cast<std::uint32_t>(count->value());
+            hasGapCount = hasGapCount || count->value() > 0;
+        } else completeGapCounts = false;
+        if (total) {
+            totalGaps[i] = *total;
+            hasTotalGap = true;
+        } else completeTotalGaps = false;
+    }
+    if (hasGapCount && completeGapCounts) inputs.airGapCountPerLimb = gapCounts;
+    if (hasTotalGap && completeTotalGaps) inputs.totalAirGapLengthPerLimbM = totalGaps;
     return inputs;
 }
 
