@@ -123,13 +123,21 @@ int main(int argc, char** argv)
     assert(n97.value().material.bhCurve.size() == 8);
     assert(n97.value().material.lossData.size() == 4);
 
-    // Published steel seed records do not contain a continuous B-H curve.
-    // They must not be silently converted into solver-ready core materials.
+    // M235-35A publishes minimum-polarization anchors rather than a continuous
+    // B-H table. The loader builds an explicitly estimated exploratory branch
+    // while preserving the source's NOT_PUBLISHED quality status.
     const auto incompleteSteel =
         loadCoreMaterialRevision(store, "SEED-TK-M235-35A-R1");
     assert(incompleteSteel);
-    assert(incompleteSteel.value().material.bhCurve.empty());
+    assert(incompleteSteel.value().material.bhCurve.size() == 49);
     assert(incompleteSteel.value().bhCurveStatus == "NOT_PUBLISHED_IN_IMPORTED_DATASET");
+    assert(incompleteSteel.value().bhCurveModelStatus ==
+           "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS");
+    assert(incompleteSteel.value().material.bhCurve.front().fieldStrength.si() == 0.0);
+    assert(incompleteSteel.value().material.bhCurve.front().fluxDensity.si() == 0.0);
+    assert(incompleteSteel.value().material.bhCurve.back().fieldStrength.si() == 10000.0);
+    assert(incompleteSteel.value().material.bhCurve.back().fluxDensity.si() >
+           1.70); // B = minimum polarization J + mu0*H
     assert(incompleteSteel.value().designReleaseStatus == "NOT_VERIFIED");
 
     // The Kobe Steel table contains measured DC initial-magnetization data,
