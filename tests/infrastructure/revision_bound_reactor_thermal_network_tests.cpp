@@ -1,6 +1,9 @@
 #include "p135/infrastructure/sqlite/migration_runner.hpp"
 #include "p135/infrastructure/sqlite/revision_bound_reactor_thermal_network.hpp"
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
+#include "p135/infrastructure/sqlite/canonical_json.hpp"
+
+#include <nlohmann/json.hpp>
 
 #include <cassert>
 #include <complex>
@@ -92,6 +95,34 @@ int main(int argc, char** argv)
     assert(result.value().thermal.phaseWindingLosses[0].si() > 0.0);
     assert(!result.value().thermal.network.modelProvenanceComplete);
     for (const auto& node : result.value().thermal.network.nodes)
+        assert(node.status == thermal::AssessmentStatus::NotVerified);
+
+    // Even if a reviewer toggles the material release flag, approximate
+    // core-loss digitization must never be promoted to a verified thermal result.
+    const auto baseCoreRevision = store.findRevision("SEED-TDK-N87-R1");
+    assert(baseCoreRevision && baseCoreRevision.value().has_value());
+    auto approximateCoreRevision = *baseCoreRevision.value();
+    approximateCoreRevision.revisionId = "TEST-N87-APPROXIMATE-LOSS-VERIFIED-FLAG";
+    approximateCoreRevision.materialId = "TEST-N87-APPROXIMATE-LOSS";
+    approximateCoreRevision.revisionNumber = 1;
+    auto approximatePayload = nlohmann::json::parse(approximateCoreRevision.payload);
+    approximatePayload["dataQuality"]["coreLossStatus"] = "APPROXIMATE_DIGITIZATION";
+    approximatePayload["dataQuality"]["designReleaseStatus"] = "VERIFIED";
+    const auto approximateCanonical = canonicalizeJson(approximatePayload.dump());
+    assert(approximateCanonical);
+    const auto approximateHash = sha256Hex(approximateCanonical.value());
+    assert(approximateHash);
+    approximateCoreRevision.payload = approximateCanonical.value();
+    approximateCoreRevision.contentHash = approximateHash.value();
+    assert(store.appendRevision(approximateCoreRevision));
+    const auto approximateThermal = analyzeRevisionBoundReactorThermalNetwork(
+        store, approximateCoreRevision.revisionId, coreLoss, windingLoss, configuration);
+    assert(approximateThermal);
+    assert(approximateThermal.value().coreMaterialRevision.designReleaseStatus == "VERIFIED");
+    assert(approximateThermal.value().coreMaterialRevision.coreLossStatus ==
+           "APPROXIMATE_DIGITIZATION");
+    assert(!approximateThermal.value().thermal.network.modelProvenanceComplete);
+    for (const auto& node : approximateThermal.value().thermal.network.nodes)
         assert(node.status == thermal::AssessmentStatus::NotVerified);
 
     auto missingCore = analyzeRevisionBoundReactorThermalNetwork(
