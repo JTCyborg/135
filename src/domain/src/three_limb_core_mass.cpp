@@ -160,4 +160,30 @@ Result<ThreeLimbCoreMassResult> calculateThreeLimbCoreMass(
     return Result<ThreeLimbCoreMassResult>::success(std::move(result));
 }
 
+Result<ThreeLimbCoreLossRequest> bindThreeLimbCoreMass(
+    const ThreeLimbCoreLossRequest& operatingPoint,
+    const ThreeLimbCoreMassResult& mass)
+{
+    ThreeLimbCoreLossRequest bound = operatingPoint;
+    for (std::size_t region = 0; region < mass.regionMasses.size(); ++region) {
+        const double value = mass.regionMasses[region].si();
+        if (!std::isfinite(value) || value <= 0.0 ||
+            mass.regionMassSourceReferences[region].empty()) {
+            Error error;
+            error.code = ErrorCode::InvalidInput;
+            error.message = "Calculated core region mass or its provenance is missing.";
+            error.diagnostics.push_back(Diagnostic{
+                Severity::Error, "THREE_LIMB_CORE_MASS_BINDING_INVALID",
+                error.message, "regions[" + std::to_string(region) + "]",
+                std::nullopt, std::nullopt
+            });
+            return Result<ThreeLimbCoreLossRequest>::failure(std::move(error));
+        }
+        bound.regionMasses[region] = mass.regionMasses[region];
+        bound.regionMassSourceReferences[region] =
+            mass.regionMassSourceReferences[region];
+    }
+    return Result<ThreeLimbCoreLossRequest>::success(std::move(bound));
+}
+
 } // namespace p135::domain
