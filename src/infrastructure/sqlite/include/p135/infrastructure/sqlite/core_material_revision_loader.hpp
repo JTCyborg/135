@@ -93,9 +93,14 @@ struct CoreMaterialRevisionSnapshot {
 /// [{fieldStrength_A_per_m, fluxDensity_T}] or
 /// [{fieldStrength_A_per_m, polarization_T}] may generate an explicitly
 /// estimated exploratory branch (B = J + mu0*H for polarization anchors).
-/// The legacy material.minimumPolarization_T map is also supported. Sparse
-/// estimates never upgrade bhCurveStatus or designReleaseStatus; a single
-/// anchor is preserved as insufficient rather than extrapolated.
+/// The legacy material.minimumPolarization_T map is also supported. If no
+/// anchors exist, material.initialRelativePermeability,
+/// material.saturationPolarization_T and
+/// material.modelMaximumFieldStrength_A_per_m generate a bounded
+/// anhysteretic tanh saturation model. The model is not a hysteresis loop.
+/// Sparse/parameter estimates never upgrade bhCurveStatus or
+/// designReleaseStatus; a single anchor is preserved as insufficient rather
+/// than extrapolated.
 [[nodiscard]] Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
     const SqliteMaterialRevisionStore& store,
     const std::string& revisionId);
