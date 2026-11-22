@@ -192,11 +192,12 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
                     }
                 }
             }
-            if (!anchors.empty()) {
+            if (anchors.size() == 1) {
+                bhCurveModelStatus = "INSUFFICIENT_MAGNETIC_ANCHORS";
+            }
+            if (anchors.size() >= 2) {
                 std::sort(anchors.begin(), anchors.end(),
                     [](const auto& left, const auto& right) { return left.first < right.first; });
-                if (anchors.size() < 2)
-                    throw std::invalid_argument("At least two magnetic anchors are required.");
                 material.bhCurve.push_back({units::MagneticFieldStrength{0.0},
                                             units::FluxDensity{0.0}});
                 double h0 = 0.0;
