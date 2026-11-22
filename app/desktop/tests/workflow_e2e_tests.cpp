@@ -226,9 +226,45 @@ private slots:
                 QStringLiteral("importBhCurveButton"));
             auto* payload = materialDialog->findChild<QPlainTextEdit*>(
                 QStringLiteral("materialPayloadJson"));
-            if (!import || !import->isEnabled() || !payload) {
+            auto* coreEditor = materialDialog->findChild<QPushButton*>(
+                QStringLiteral("coreMaterialEditorButton"));
+            if (!import || !import->isEnabled() || !payload ||
+                !coreEditor || !coreEditor->isEnabled()) {
                 materialDialog->reject();
-                QFAIL("New core material dialog is missing the enabled B-H import action or payload editor");
+                QFAIL("New core material dialog is missing the core editor, B-H import action or payload editor");
+                return;
+            }
+            QTimer::singleShot(0, [this, materialDialog] {
+                auto* coreDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+                if (!coreDialog) {
+                    materialDialog->reject();
+                    QFAIL("Core material editor dialog did not open");
+                    return;
+                }
+                auto* manufacturer = coreDialog->findChild<QLineEdit*>(
+                    QStringLiteral("coreMaterialManufacturer"));
+                auto* grade = coreDialog->findChild<QLineEdit*>(
+                    QStringLiteral("coreMaterialGrade"));
+                auto* density = coreDialog->findChild<QDoubleSpinBox*>(
+                    QStringLiteral("coreMaterialDensity"));
+                if (!manufacturer || !grade || !density) {
+                    coreDialog->reject();
+                    materialDialog->reject();
+                    QFAIL("Core material editor is missing required identity fields");
+                    return;
+                }
+                manufacturer->setText(QStringLiteral("TEST-MANUFACTURER"));
+                grade->setText(QStringLiteral("TEST-CORE-GRADE"));
+                density->setValue(7600.0);
+                coreDialog->accept();
+            });
+            QTest::mouseClick(coreEditor, Qt::LeftButton);
+            const auto basePayload = QJsonDocument::fromJson(payload->toPlainText().toUtf8());
+            if (!basePayload.isObject() ||
+                basePayload.object().value(QStringLiteral("schemaVersion")).toInt() != 1 ||
+                !basePayload.object().value(QStringLiteral("material")).isObject()) {
+                materialDialog->reject();
+                QFAIL("Core material editor did not create a valid revision-loader payload");
                 return;
             }
 
