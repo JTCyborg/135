@@ -297,7 +297,12 @@ private slots:
                     QStringLiteral("bhCurveQualityStatus"));
                 auto* curveType = bhDialog->findChild<QComboBox*>(
                     QStringLiteral("bhCurveType"));
-                if (!source || !points || !quality || !curveType) {
+                auto* frequency = bhDialog->findChild<QDoubleSpinBox*>(
+                    QStringLiteral("bhCurveFrequency"));
+                auto* temperature = bhDialog->findChild<QDoubleSpinBox*>(
+                    QStringLiteral("bhCurveTemperature"));
+                if (!source || !points || !quality || !curveType ||
+                    !frequency || !temperature) {
                     bhDialog->reject();
                     materialDialog->reject();
                     QFAIL("B-H import dialog is missing required controls");
@@ -320,6 +325,8 @@ private slots:
                     return;
                 }
                 curveType->setCurrentIndex(dynamicIndex);
+                frequency->setValue(50.0);
+                temperature->setValue(293.15);
                 points->setPlainText(QStringLiteral(
                     "\uFEFFH_A_per_m, B_T\n0, 0\n100, 0.25\n200, 0.40"));
                 const int manufacturerIndex = quality->findData(
