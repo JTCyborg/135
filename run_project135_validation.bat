@@ -135,7 +135,7 @@ echo Validation branch: %CURRENT_BRANCH%>>"%LOG%"
 set "DIRTY="
 rem Ignore only local project data and diagnostic artifacts; source-code changes still stop the pull.
 rem A pull that conflicts with locally modified JSON remains safely rejected by Git.
-for /f "delims=" %%S in ('git status --porcelain --untracked-files^=all -- . ":(exclude)BuildReports/**" ":(exclude)01_project.json" ":(exclude)02_filter_definition.json" ":(exclude)03_construction.json" ":(exclude)04_calculation_design.json" ":(exclude)Project135DesktopWorkflowE2ETests.exe_*.dmp" ":(exclude)windbg_analysis_*.txt"') do set "DIRTY=1"
+for /f "delims=" %%S in ('git status --porcelain --untracked-files^=all -- . ":(exclude)BuildReports/**" ":(exclude)CAD/**" ":(exclude)Debug/**" ":(exclude)Drawings/**" ":(exclude)01_project.json" ":(exclude)02_filter_definition.json" ":(exclude)03_construction.json" ":(exclude)04_calculation_design.json" ":(exclude)Project135DesktopWorkflowE2ETests.exe_*.dmp" ":(exclude)windbg_analysis_*.txt"') do set "DIRTY=1"
 if defined DIRTY (
     echo ERROR: Git has source changes outside the approved local data/diagnostic files.
     echo Commit or preserve those source changes before rerunning.
@@ -234,7 +234,7 @@ echo ==========================================================>>"%LOG%"
 rem Publish the report even if a build or test failed.
 echo.
 echo [6/6] Publishing validation report to GitHub branch %CURRENT_BRANCH%...
-git add -- "%LOG%" >>"%LOG%" 2>&1
+git add -- BuildReports CAD Debug Drawings >>"%LOG%" 2>&1
 if errorlevel 1 (
     echo ERROR: Could not stage the report.
     set "PUBLISH_OK=STAGE_FAILED"
