@@ -3861,6 +3861,24 @@ QWidget* MainWindow::createResultsPage()
     resultsCoreFluxPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsCoreFluxPlot_);
 
+    auto* materialBhPlotTitle = new QLabel(tr("Selected core material B-H characteristic"));
+    materialBhPlotTitle->setObjectName(QStringLiteral("materialBhPlotTitle"));
+    materialBhPlotTitle->setStyleSheet("font-weight: 600;");
+    materialBhPlotTitle->setToolTip(tr(
+        "Shows the exact B-H curve loaded from the selected, revision-pinned core material. "
+        "Calculated curves from sparse anchors are labelled ESTIMATED / NOT_VERIFIED."));
+    layout->addWidget(materialBhPlotTitle);
+    resultsMaterialBhPlot_ = new PlotWidget;
+    resultsMaterialBhPlot_->setObjectName(QStringLiteral("resultsMaterialBhPlot"));
+    resultsMaterialBhPlot_->setProperty("debugImagePath", projectArtifactPath(
+        QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_material_bh.png")));
+    resultsMaterialBhPlot_->setCurves({}, tr("Magnetic field strength H (A/m)"),
+        tr("Flux density B (T)"), false,
+        tr("NOT_CALCULATED: select a core material revision and run the magnetic analysis."));
+    resultsMaterialBhPlot_->setMinimumHeight(250);
+    resultsMaterialBhPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    layout->addWidget(resultsMaterialBhPlot_);
+
     auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
     impedancePlotTitle->setObjectName(QStringLiteral("busImpedancePlotTitle"));
     impedancePlotTitle->setStyleSheet("font-weight: 600;");
@@ -6269,6 +6287,9 @@ void MainWindow::calculateFilter()
     std::optional<std::array<double, 7>> constructionBoundPeakFluxDensityT;
     bool constructionBoundWithinMeasuredBhCurve = false;
     bool constructionBoundUsedEstimatedBhModel = false;
+    std::vector<std::pair<double, double>> constructionBoundBhCurve;
+    QString constructionBoundBhModelStatus;
+    QString constructionBoundBhSourceStatus;
     QString constructionBoundMagneticWarning;
 
     // Revision-bound magnetic analysis uses the exact accepted Construction
@@ -6311,6 +6332,15 @@ void MainWindow::calculateFilter()
                 constructionBoundUsedEstimatedBhModel =
                     magnetic.value().materialRevision.bhCurveModelStatus ==
                     "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
+                constructionBoundBhModelStatus = QString::fromStdString(
+                    magnetic.value().materialRevision.bhCurveModelStatus);
+                constructionBoundBhSourceStatus = QString::fromStdString(
+                    magnetic.value().materialRevision.bhCurveStatus);
+                constructionBoundBhCurve.reserve(
+                    magnetic.value().materialRevision.material.bhCurve.size());
+                for (const auto& point : magnetic.value().materialRevision.material.bhCurve)
+                    constructionBoundBhCurve.emplace_back(
+                        point.fieldStrength.si(), point.fluxDensity.si());
                 double maximumFluxDensity = 0.0;
                 for (const auto& density : cycle.peakAbsoluteFluxDensity)
                     maximumFluxDensity = std::max(maximumFluxDensity, density.si());
@@ -7617,6 +7647,35 @@ void MainWindow::calculateFilter()
         if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxPlotTitle"))) {
             title->setText(corePlotTitle);
             title->setToolTip(corePlotTooltip);
+        }
+        std::vector<PlotCurve> materialBhCurves;
+        if (!constructionBoundBhCurve.empty()) {
+            PlotCurve materialCurve{
+                constructionBoundUsedEstimatedBhModel
+                    ? tr("Estimated from sparse anchors — NOT_VERIFIED")
+                    : tr("Selected material revision — source curve"),
+                constructionBoundBhCurve
+            };
+            materialBhCurves.push_back(std::move(materialCurve));
+        }
+        const QString bhEmptyMessage = constructionBoundBhCurve.empty()
+            ? tr("NOT_CALCULATED: a revision-bound magnetic analysis must load the selected core material B-H data.")
+            : QString{};
+        resultsMaterialBhPlot_->setCurves(std::move(materialBhCurves),
+            tr("Magnetic field strength H (A/m)"),
+            tr("Flux density B (T)"), false, bhEmptyMessage);
+        resultsMaterialBhPlot_->setToolTip(
+            tr("B-H curve model status: %1; source data quality: %2. "
+               "The curve is the material input used by the revision-bound magnetic solver. "
+               "An estimated curve is exploratory and NOT_VERIFIED.")
+                .arg(constructionBoundBhModelStatus, constructionBoundBhSourceStatus));
+        if (auto* title = findChild<QLabel*>(QStringLiteral("materialBhPlotTitle"))) {
+            title->setText(constructionBoundBhCurve.empty()
+                ? tr("Selected core material B-H characteristic — NOT_CALCULATED")
+                : constructionBoundUsedEstimatedBhModel
+                    ? tr("Selected core material B-H characteristic — ESTIMATED / NOT_VERIFIED")
+                    : tr("Selected core material B-H characteristic — source curve"));
+            title->setToolTip(resultsMaterialBhPlot_->toolTip());
         }
     }
 
