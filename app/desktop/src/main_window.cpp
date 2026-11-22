@@ -1249,6 +1249,29 @@ void MainWindow::loadProjectArchive()
         return;
     }
 
+    // Validate known generated artifacts before creating or switching the active
+    // project. A malformed archive must not leave a half-imported workspace.
+    QList<QPair<QString, QByteArray>> pendingArtifacts;
+    for (const QJsonValue& value : archive.value(QStringLiteral("artifacts")).toArray()) {
+        if (!value.isObject()) continue;
+        const QJsonObject artifact = value.toObject();
+        const QString kind = artifact.value(QStringLiteral("kind")).toString();
+        if (kind != QStringLiteral("cadAssemblyStep") &&
+            kind != QStringLiteral("assemblyDrawingPdf"))
+            continue;
+        const QString encoded = artifact.value(QStringLiteral("contentBase64")).toString();
+        const auto decoded = QByteArray::fromBase64Encoding(encoded.toLatin1());
+        if (encoded.isEmpty() ||
+            decoded.decodingStatus != QByteArray::Base64DecodingStatus::Ok ||
+            decoded.decoded.isEmpty()) {
+            QMessageBox::warning(this, tr("Load project"),
+                tr("The project archive contains an invalid generated artifact (%1).")
+                    .arg(kind));
+            return;
+        }
+        pendingArtifacts.append(qMakePair(kind, decoded.decoded));
+    }
+
     const auto answer = QMessageBox::question(this, tr("Load project"),
         tr("Load this project as a new local project? The current project and the local SQLite database/history will remain unchanged."),
         QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes);
@@ -1274,28 +1297,23 @@ void MainWindow::loadProjectArchive()
 
     // Restore only the two known project-generated deliverables under paths derived
     // from the newly allocated project ID; archive paths are never used as filesystem paths.
-    const QJsonArray artifacts = archive.value(QStringLiteral("artifacts")).toArray();
-    for (const QJsonValue& value : artifacts) {
-        if (!value.isObject()) continue;
-        const QJsonObject artifact = value.toObject();
-        const QString kind = artifact.value(QStringLiteral("kind")).toString();
-        QString destination;
-        if (kind == QStringLiteral("cadAssemblyStep")) {
-            destination = QDir(projectOutputRoot()).filePath(
-                QStringLiteral("CAD/") + projectId_ + QStringLiteral("_assembly.step"));
-        } else if (kind == QStringLiteral("assemblyDrawingPdf")) {
-            destination = QDir(projectOutputRoot()).filePath(
+    QStringList artifactWarnings;
+    for (const auto& [kind, bytes] : pendingArtifacts) {
+        const QString destination = kind == QStringLiteral("cadAssemblyStep")
+            ? QDir(projectOutputRoot()).filePath(
+                QStringLiteral("CAD/") + projectId_ + QStringLiteral("_assembly.step"))
+            : QDir(projectOutputRoot()).filePath(
                 QStringLiteral("Drawings/") + projectId_ + QStringLiteral("_assembly.pdf"));
-        } else {
+        const QFileInfo destinationInfo(destination);
+        if (!QDir().mkpath(destinationInfo.absolutePath())) {
+            artifactWarnings.append(kind + QStringLiteral(": cannot create output directory"));
             continue;
         }
-        const QByteArray bytes = QByteArray::fromBase64(
-            artifact.value(QStringLiteral("contentBase64")).toString().toLatin1());
-        const QFileInfo destinationInfo(destination);
-        if (!QDir().mkpath(destinationInfo.absolutePath())) continue;
         QSaveFile output(destination);
-        if (output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size())
-            output.commit();
+        if (!output.open(QIODevice::WriteOnly) ||
+            output.write(bytes) != bytes.size() || !output.commit()) {
+            artifactWarnings.append(kind + QStringLiteral(": ") + output.errorString());
+        }
     }
 
     const QJsonObject controls = archive.value(QStringLiteral("controls")).toObject();
@@ -1357,8 +1375,14 @@ void MainWindow::loadProjectArchive()
     appendLog(tr("Project archive loaded as project %1. SQLite database and calculation history were not imported.")
         .arg(projectId_));
     status_->setText(tr("Project loaded"));
-    QMessageBox::information(this, tr("Load project"),
-        tr("Project loaded successfully. The local material database and calculation history were not changed."));
+    if (artifactWarnings.isEmpty()) {
+        QMessageBox::information(this, tr("Load project"),
+            tr("Project loaded successfully. The local material database and calculation history were not changed."));
+    } else {
+        QMessageBox::warning(this, tr("Load project"),
+            tr("Project inputs were loaded, but some generated files could not be restored:\n%1")
+                .arg(artifactWarnings.join(QLatin1Char('\n'))));
+    }
 }
 
 void MainWindow::loadProjectSettings()
