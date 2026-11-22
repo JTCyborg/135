@@ -7,6 +7,13 @@
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QAction>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
 #include <QImage>
 #include <QDir>
 #include <QApplication>
@@ -727,6 +734,126 @@ private slots:
         QVERIFY(dxfContent.find("PRELIMINARY / NOT VERIFIED") != std::string::npos);
         QVERIFY(dxfContent.find("TEST-01-SYNTHETIC-GEOMETRY-R1") != std::string::npos);
         QVERIFY(cadStatus->text().contains(QStringLiteral("DXF")));
+    }
+
+    void projectArchiveSaveLoadRoundTrip()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString archivePath = directory.filePath(QStringLiteral("roundtrip.p135project"));
+
+        auto* customer = window_->findChild<QLineEdit*>(QStringLiteral("projectCustomer"));
+        auto* voltage = window_->findChild<QDoubleSpinBox*>(QStringLiteral("filterNominalVoltageV"));
+        auto* spectrum = window_->findChild<QTableWidget*>(QStringLiteral("harmonicSpectrumTable"));
+        QVERIFY(customer);
+        QVERIFY(voltage);
+        QVERIFY(spectrum);
+
+        customer->setText(QStringLiteral("Archive round-trip customer"));
+        voltage->setValue(415.5);
+        spectrum->setRowCount(1);
+        spectrum->setColumnCount(2);
+        spectrum->setItem(0, 0, new QTableWidgetItem(QStringLiteral("5")));
+        spectrum->setItem(0, 1, new QTableWidgetItem(QStringLiteral("12.5")));
+
+        QSettings settings;
+        const QString originalProjectId = settings.value(QStringLiteral("project/currentId")).toString();
+        QVERIFY(!originalProjectId.isEmpty());
+
+        QAction* saveAction = nullptr;
+        QAction* loadAction = nullptr;
+        for (QAction* menuAction : window_->menuBar()->actions()) {
+            if (!menuAction->menu()) continue;
+            for (QAction* action : menuAction->menu()->actions()) {
+                if (action->text().contains(QStringLiteral("Save project")))
+                    saveAction = action;
+                if (action->text().contains(QStringLiteral("Load project")))
+                    loadAction = action;
+            }
+        }
+        QVERIFY(saveAction);
+        QVERIFY(loadAction);
+
+        // QFileDialog is modal; accept it from its nested event loop so this
+        // exercises the same menu actions as a user without manual interaction.
+        QTimer::singleShot(0, [archivePath] {
+            for (QWidget* widget : QApplication::topLevelWidgets()) {
+                auto* dialog = qobject_cast<QFileDialog*>(widget);
+                if (!dialog || !dialog->isVisible()) continue;
+                dialog->selectFile(archivePath);
+                QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
+                return;
+            }
+        });
+        QTimer::singleShot(5000, [] {
+            if (auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget()))
+                dialog->reject();
+        });
+        saveAction->trigger();
+
+        QFile archiveFile(archivePath);
+        QVERIFY2(archiveFile.open(QIODevice::ReadOnly), "Save action did not create the project archive");
+        QJsonParseError parseError;
+        const QJsonDocument savedDocument = QJsonDocument::fromJson(archiveFile.readAll(), &parseError);
+        QCOMPARE(parseError.error, QJsonParseError::NoError);
+        QVERIFY(savedDocument.isObject());
+        const QJsonObject saved = savedDocument.object();
+        QCOMPARE(saved.value(QStringLiteral("format")).toString(),
+            QStringLiteral("Project135.Project"));
+        QCOMPARE(saved.value(QStringLiteral("formatVersion")).toInt(), 1);
+        QVERIFY(saved.value(QStringLiteral("controls")).toObject().contains(
+            QStringLiteral("harmonicSpectrumTable")));
+        QVERIFY(!saved.contains(QStringLiteral("database")));
+        QVERIFY(!saved.contains(QStringLiteral("calculationHistory")));
+        archiveFile.close();
+
+        customer->setText(QStringLiteral("MUTATED"));
+        voltage->setValue(690.0);
+        spectrum->setItem(0, 1, new QTableWidgetItem(QStringLiteral("99.0")));
+
+        QTimer::singleShot(0, [archivePath] {
+            for (QWidget* widget : QApplication::topLevelWidgets()) {
+                auto* dialog = qobject_cast<QFileDialog*>(widget);
+                if (!dialog || !dialog->isVisible()) continue;
+                dialog->selectFile(archivePath);
+                QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
+                // Loading asks for confirmation and then displays a completion message.
+                QTimer::singleShot(0, [] {
+                    auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+                    if (!message) return;
+                    if (auto* yes = message->button(QMessageBox::Yes)) {
+                        QTimer::singleShot(0, [] {
+                            if (auto* done = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+                                done->accept();
+                        });
+                        yes->click();
+                    } else {
+                        message->accept();
+                    }
+                });
+                return;
+            }
+        });
+        QTimer::singleShot(5000, [] {
+            if (auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget()))
+                dialog->reject();
+            if (auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+                message->reject();
+        });
+        loadAction->trigger();
+
+        settings.sync();
+        const QString loadedProjectId = settings.value(QStringLiteral("project/currentId")).toString();
+        QVERIFY(!loadedProjectId.isEmpty());
+        QVERIFY(loadedProjectId != originalProjectId);
+        QCOMPARE(customer->text(), QStringLiteral("Archive round-trip customer"));
+        QCOMPARE(voltage->value(), 415.5);
+        QCOMPARE(spectrum->rowCount(), 1);
+        QCOMPARE(spectrum->columnCount(), 2);
+        QVERIFY(spectrum->item(0, 0));
+        QVERIFY(spectrum->item(0, 1));
+        QCOMPARE(spectrum->item(0, 0)->text(), QStringLiteral("5"));
+        QCOMPARE(spectrum->item(0, 1)->text(), QStringLiteral("12.5"));
     }
 
     void twoDimensionalDrawingStageIsPresent()
