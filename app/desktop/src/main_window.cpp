@@ -32,6 +32,9 @@
 #include "p135/thermal/filter_bridge.hpp"
 
 #include <QAbstractItemView>
+#include <QAbstractSpinBox>
+#include <QButtonGroup>
+#include <QEvent>
 #include <QItemSelectionModel>
 #include <QAction>
 #include <QComboBox>
@@ -326,19 +329,16 @@ public:
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override
     {
+        QWidget* field = qobject_cast<QWidget*>(watched);
+        while (field && !qobject_cast<QAbstractSpinBox*>(field) &&
+               !qobject_cast<QComboBox*>(field)) {
+            field = field->parentWidget();
+        }
+        if (!field) return QObject::eventFilter(watched, event);
+
         // A mouse wheel over a numeric field must never change an engineering
         // value accidentally. Explicit editing and the spin buttons remain enabled.
-        if (event->type() == QEvent::Wheel &&
-            (qobject_cast<QAbstractSpinBox*>(watched) ||
-             qobject_cast<QComboBox*>(watched))) {
-            return true;
-        }
-
-        QWidget* field = qobject_cast<QWidget*>(watched);
-        if (!field || !(qobject_cast<QAbstractSpinBox*>(field) ||
-                        qobject_cast<QComboBox*>(field))) {
-            return QObject::eventFilter(watched, event);
-        }
+        if (event->type() == QEvent::Wheel) return true;
 
         if (event->type() == QEvent::FocusIn ||
             event->type() == QEvent::MouseButtonPress) {
