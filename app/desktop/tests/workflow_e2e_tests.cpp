@@ -235,8 +235,8 @@ private slots:
             QTimer::singleShot(0, [this, materialDialog] {
                 auto* bhDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
                 if (!bhDialog) {
-                    QFAIL("B-H curve import dialog did not open");
                     materialDialog->reject();
+                    QFAIL("B-H curve import dialog did not open");
                     return;
                 }
                 auto* source = bhDialog->findChild<QLineEdit*>(
@@ -246,9 +246,9 @@ private slots:
                 auto* quality = bhDialog->findChild<QComboBox*>(
                     QStringLiteral("bhCurveQualityStatus"));
                 if (!source || !points || !quality) {
-                    QFAIL("B-H import dialog is missing required controls");
                     bhDialog->reject();
                     materialDialog->reject();
+                    QFAIL("B-H import dialog is missing required controls");
                     return;
                 }
                 source->setText(QStringLiteral("TEST-MANUFACTURER-DATASHEET-R1"));
@@ -257,9 +257,9 @@ private slots:
                 const int manufacturerIndex = quality->findData(
                     QStringLiteral("MANUFACTURER_TABULATED"));
                 if (manufacturerIndex < 0) {
-                    QFAIL("Manufacturer tabulated quality option is missing");
                     bhDialog->reject();
                     materialDialog->reject();
+                    QFAIL("Manufacturer tabulated quality option is missing");
                     return;
                 }
                 quality->setCurrentIndex(manufacturerIndex);
