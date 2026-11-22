@@ -48,11 +48,15 @@ analyzeRevisionBoundReactorThermalNetwork(
     const bool coreLossQualityAcceptable =
         coreSnapshot.coreLossStatus == "MANUFACTURER_TABULATED" ||
         coreSnapshot.coreLossStatus == "MEASURED_TABULAR";
+    const bool coreMassVerified =
+        coreLossRequest.coreMassVerificationStatus == "VERIFIED";
     thermalRequest.coreMaterialDesignReleaseStatus =
-        coreSnapshot.designReleaseStatus == "VERIFIED" && coreLossQualityAcceptable
+        coreSnapshot.designReleaseStatus == "VERIFIED" &&
+        coreLossQualityAcceptable && coreMassVerified
             ? "VERIFIED"
             : "NOT_VERIFIED (designReleaseStatus=" + coreSnapshot.designReleaseStatus +
-              "; coreLossStatus=" + coreSnapshot.coreLossStatus + ")";
+              "; coreLossStatus=" + coreSnapshot.coreLossStatus +
+              "; coreMassStatus=" + coreLossRequest.coreMassVerificationStatus + ")";
     thermalRequest.conductorMaterialDesignReleaseStatus =
         conductorSnapshot.designReleaseStatus;
 
