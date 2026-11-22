@@ -800,3 +800,9 @@ Release tests: PASS
 Source commit: 8a934c2f2e7ad0a583e7f4f49621d57b5e0aca26
 Finished: 22.11.2026 11:43:54,26
 ==========================================================
+warning: in the working copy of 'BuildReports/Project135_validation_20261122_113827.log', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/5341b53c-c5c1-4358-8e06-d9435ead8c08_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/8e0ad18d-f57c-4b6b-8a15-69f297ac6cec_assembly.step', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/JTCyborg/135
+   8a934c2..e7603b7  fix/core-flux-operating-point-plot -> fix/core-flux-operating-point-plot
+[GIT_PUSH] SUCCESS - validation report was pushed to origin/fix/core-flux-operating-point-plot.
