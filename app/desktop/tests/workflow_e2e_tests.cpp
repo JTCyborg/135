@@ -34,6 +34,8 @@
 #include <QTreeWidget>
 #include <QStringList>
 #include <QWidget>
+#include <QWheelEvent>
+#include <QToolButton>
 
 #include <array>
 #include <optional>
@@ -157,6 +159,45 @@ private slots:
                         .arg(tabIndex).arg(control->metaObject()->className())));
             }
         }
+    }
+
+    void filterInputModesAndWheelProtection()
+    {
+        auto* automatic = window_->findChild<QToolButton*>(
+            QStringLiteral("filterAutomaticMode"));
+        auto* manual = window_->findChild<QToolButton*>(
+            QStringLiteral("filterManualMode"));
+        auto* componentGroup = window_->findChild<QGroupBox*>(
+            QStringLiteral("filterComponentManualGroup"));
+        auto* advancedGroup = window_->findChild<QGroupBox*>(
+            QStringLiteral("filterAdvancedManualGroup"));
+        QVERIFY(automatic);
+        QVERIFY(manual);
+        QVERIFY(componentGroup);
+        QVERIFY(advancedGroup);
+
+        QVERIFY(automatic->isChecked());
+        QVERIFY(!componentGroup->isVisible());
+        QVERIFY(!advancedGroup->isVisible());
+
+        QTest::mouseClick(manual, Qt::LeftButton);
+        QTRY_VERIFY(componentGroup->isVisible());
+        QTRY_VERIFY(advancedGroup->isVisible());
+        QTest::mouseClick(automatic, Qt::LeftButton);
+        QTRY_VERIFY(!componentGroup->isVisible());
+        QTRY_VERIFY(!advancedGroup->isVisible());
+
+        auto* voltage = window_->findChild<QDoubleSpinBox*>(
+            QStringLiteral("nominalVoltage"));
+        QVERIFY(voltage);
+        const double original = voltage->value();
+        QWheelEvent wheel(
+            QPointF(2.0, 2.0),
+            QPointF(voltage->mapToGlobal(QPoint(2, 2))),
+            QPoint(), QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+            Qt::NoScrollPhase, false);
+        QApplication::sendEvent(voltage, &wheel);
+        QCOMPARE(voltage->value(), original);
     }
 
     void projectFilterAndConstructionConfirmationsAdvance()
