@@ -256,14 +256,21 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
 
 
 namespace {
-QString coreMaterialSnapshot(QWidget* parent, const QString& materialId)
+QString coreMaterialSnapshot(QWidget* parent, const QString& materialId,
+                              const QString& existingPayload)
 {
+    QJsonObject existingRoot;
+    const auto existingDocument = QJsonDocument::fromJson(existingPayload.toUtf8());
+    if (existingDocument.isObject()) existingRoot = existingDocument.object();
+    const QJsonObject existingMaterial = existingRoot.value(QStringLiteral("material")).toObject();
     QDialog dialog(parent);
     dialog.setWindowTitle(QObject::tr("Core material properties"));
     auto* form = new QFormLayout(&dialog);
-    auto* manufacturer = new QLineEdit(&dialog);
+    auto* manufacturer = new QLineEdit(
+        existingMaterial.value(QStringLiteral("manufacturer")).toString(), &dialog);
     manufacturer->setObjectName(QStringLiteral("coreMaterialManufacturer"));
-    auto* grade = new QLineEdit(&dialog);
+    auto* grade = new QLineEdit(
+        existingMaterial.value(QStringLiteral("grade")).toString(), &dialog);
     grade->setObjectName(QStringLiteral("coreMaterialGrade"));
     auto* family = new QComboBox(&dialog);
     family->setObjectName(QStringLiteral("coreMaterialFamily"));
@@ -280,7 +287,11 @@ QString coreMaterialSnapshot(QWidget* parent, const QString& materialId)
     density->setObjectName(QStringLiteral("coreMaterialDensity"));
     density->setRange(1.0, 30000.0);
     density->setDecimals(2);
-    density->setValue(7600.0);
+    density->setValue(existingMaterial.value(QStringLiteral("density_kg_per_m3"))
+        .toDouble(7600.0));
+    const QString existingFamily = existingMaterial.value(QStringLiteral("family")).toString();
+    const int existingFamilyIndex = family->findData(existingFamily);
+    if (existingFamilyIndex >= 0) family->setCurrentIndex(existingFamilyIndex);
     density->setSuffix(QObject::tr(" kg/m³"));
     form->addRow(QObject::tr("Manufacturer"), manufacturer);
     form->addRow(QObject::tr("Grade"), grade);
@@ -298,23 +309,27 @@ QString coreMaterialSnapshot(QWidget* parent, const QString& materialId)
             QObject::tr("Material ID, manufacturer and grade are required."));
         return {};
     }
-    const QJsonObject root{
-        {QStringLiteral("schemaVersion"), 1},
-        {QStringLiteral("material"), QJsonObject{
-            {QStringLiteral("id"), materialId.trimmed()},
-            {QStringLiteral("manufacturer"), manufacturer->text().trimmed()},
-            {QStringLiteral("grade"), grade->text().trimmed()},
-            {QStringLiteral("family"), family->currentData().toString()},
-            {QStringLiteral("density_kg_per_m3"), density->value()}
-        }},
-        {QStringLiteral("dataQuality"), QJsonObject{
-            {QStringLiteral("sourceStatus"), QStringLiteral("USER_ENTERED_UNVERIFIED")},
-            {QStringLiteral("bhCurveStatus"), QStringLiteral("NOT_PROVIDED")},
-            {QStringLiteral("coreLossStatus"), QStringLiteral("NOT_PROVIDED")},
-            {QStringLiteral("designReleaseStatus"), QStringLiteral("NOT_VERIFIED")},
-            {QStringLiteral("notes"), QStringLiteral("Core material identity and density entered by user. Verify all properties against cited source before design release.")}
-        }}
-    };
+    QJsonObject root = existingRoot;
+    root.insert(QStringLiteral("schemaVersion"), 1);
+    QJsonObject material = existingMaterial;
+    material.insert(QStringLiteral("id"), materialId.trimmed());
+    material.insert(QStringLiteral("manufacturer"), manufacturer->text().trimmed());
+    material.insert(QStringLiteral("grade"), grade->text().trimmed());
+    material.insert(QStringLiteral("family"), family->currentData().toString());
+    material.insert(QStringLiteral("density_kg_per_m3"), density->value());
+    root.insert(QStringLiteral("material"), material);
+    QJsonObject quality = root.value(QStringLiteral("dataQuality")).toObject();
+    if (!quality.contains(QStringLiteral("sourceStatus")))
+        quality.insert(QStringLiteral("sourceStatus"), QStringLiteral("USER_ENTERED_UNVERIFIED"));
+    if (!quality.contains(QStringLiteral("bhCurveStatus")))
+        quality.insert(QStringLiteral("bhCurveStatus"), QStringLiteral("NOT_PROVIDED"));
+    if (!quality.contains(QStringLiteral("coreLossStatus")))
+        quality.insert(QStringLiteral("coreLossStatus"), QStringLiteral("NOT_PROVIDED"));
+    quality.insert(QStringLiteral("designReleaseStatus"), QStringLiteral("NOT_VERIFIED"));
+    if (!quality.contains(QStringLiteral("notes")))
+        quality.insert(QStringLiteral("notes"),
+            QStringLiteral("Core material identity and density entered by user. Verify all properties against cited source before design release."));
+    root.insert(QStringLiteral("dataQuality"), quality);
     return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 } // namespace
@@ -772,7 +787,8 @@ void MaterialDatabaseWidget::createOrEditMaterial()
         coreEditor->setEnabled(type->currentData().toString() == "core-material");
     });
     connect(coreEditor, &QPushButton::clicked, &dialog, [id, payload, &dialog] {
-        const auto json = coreMaterialSnapshot(&dialog, id->text().trimmed());
+        const auto json = coreMaterialSnapshot(&dialog, id->text().trimmed(),
+            payload->toPlainText());
         if (json.isEmpty()) return;
         payload->setPlainText(json);
     });
