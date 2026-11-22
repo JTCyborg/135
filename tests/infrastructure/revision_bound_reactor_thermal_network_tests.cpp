@@ -155,6 +155,30 @@ int main(int argc, char** argv)
     // core-loss digitization must never be promoted to a verified thermal result.
     const auto baseCoreRevision = store.findRevision("SEED-TDK-N87-R1");
     assert(baseCoreRevision && baseCoreRevision.value().has_value());
+
+    // Even with apparently acceptable material/loss flags, a mass calculation
+    // that has not passed independent review must keep the thermal result unverified.
+    auto unverifiedMassCoreRevision = *baseCoreRevision.value();
+    unverifiedMassCoreRevision.revisionId = "TEST-N87-UNVERIFIED-MASS-GATE";
+    unverifiedMassCoreRevision.materialId = "TEST-N87-UNVERIFIED-MASS";
+    unverifiedMassCoreRevision.revisionNumber = 1;
+    auto unverifiedMassPayload = nlohmann::json::parse(unverifiedMassCoreRevision.payload);
+    unverifiedMassPayload["dataQuality"]["coreLossStatus"] = "MANUFACTURER_TABULATED";
+    unverifiedMassPayload["dataQuality"]["designReleaseStatus"] = "VERIFIED";
+    const auto unverifiedMassCanonical = canonicalizeJson(unverifiedMassPayload.dump());
+    assert(unverifiedMassCanonical);
+    const auto unverifiedMassHash = sha256Hex(unverifiedMassCanonical.value());
+    assert(unverifiedMassHash);
+    unverifiedMassCoreRevision.payload = unverifiedMassCanonical.value();
+    unverifiedMassCoreRevision.contentHash = unverifiedMassHash.value();
+    assert(store.appendRevision(unverifiedMassCoreRevision));
+    const auto unverifiedMassThermal = analyzeRevisionBoundReactorThermalNetwork(
+        store, unverifiedMassCoreRevision.revisionId, coreLoss, windingLoss, configuration);
+    assert(unverifiedMassThermal);
+    assert(!unverifiedMassThermal.value().thermal.network.modelProvenanceComplete);
+    for (const auto& node : unverifiedMassThermal.value().thermal.network.nodes)
+        assert(node.status == thermal::AssessmentStatus::NotVerified);
+
     auto approximateCoreRevision = *baseCoreRevision.value();
     approximateCoreRevision.revisionId = "TEST-N87-APPROXIMATE-LOSS-VERIFIED-FLAG";
     approximateCoreRevision.materialId = "TEST-N87-APPROXIMATE-LOSS";
