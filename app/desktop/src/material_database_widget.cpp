@@ -727,6 +727,11 @@ bool editCoreLossPayload(QWidget* parent, QPlainTextEdit* payloadEditor)
             QObject::tr("Manufacturer-tabulated and measured datasets require source-stated temperature conditions. Use exploratory classification if the source does not state temperature."));
         return false;
     }
+    if (waveformValue == QStringLiteral("OTHER") && notes->text().trimmed().isEmpty()) {
+        QMessageBox::warning(parent, QObject::tr("Core-loss waveform"),
+            QObject::tr("Describe the non-standard waveform in Notes."));
+        return false;
+    }
 
     QJsonArray parsed;
     std::set<double> frequencies, fluxes, temperatures;
@@ -773,14 +778,15 @@ bool editCoreLossPayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         });
     }
     const std::size_t expected = frequencies.size()*fluxes.size()*temperatures.size();
-    const bool singleConstantTemperature =
-        temperatures.size() == 1 &&
-        temperatureValue == QStringLiteral("CONSTANT_SOURCE_STATED");
-    if (frequencies.size()<2 || fluxes.size()<2 ||
-        (temperatures.size()<2 && !singleConstantTemperature) ||
+    const bool validTemperatureAxis =
+        (temperatureValue == QStringLiteral("CONSTANT_SOURCE_STATED") && temperatures.size() == 1) ||
+        (temperatureValue == QStringLiteral("PER_POINT") && temperatures.size() >= 2) ||
+        (temperatureValue == QStringLiteral("NOT_STATED_IN_SOURCE") &&
+         qualityValue == QStringLiteral("APPROXIMATE_DIGITIZATION") && temperatures.size() >= 2);
+    if (frequencies.size()<2 || fluxes.size()<2 || !validTemperatureAxis ||
         parsed.size()!=static_cast<int>(expected)) {
         QMessageBox::warning(parent, QObject::tr("Incomplete core-loss grid"),
-            QObject::tr("A complete rectangular grid is required: at least two frequencies and two flux-density values, plus either multiple temperature levels or one explicitly source-stated constant temperature. Every f × Bpeak × T combination must be present. Received %1 points; expected %2.")
+            QObject::tr("A complete rectangular grid is required: at least two frequencies and two flux-density values; temperature must have multiple levels when stated per point, or exactly one level when the source explicitly states a constant temperature. Every f × Bpeak × T combination must be present. Received %1 points; expected %2.")
                 .arg(parsed.size()).arg(static_cast<qulonglong>(expected)));
         return false;
     }
