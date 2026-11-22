@@ -2489,7 +2489,7 @@ QWidget* MainWindow::createFilterPage()
             harmonicCurrentTable_->removeRow(row);
     });
 
-    auto* sourceWarning = new QLabel(tr("Source impedance is deliberately unset by default. Enter values from a short-circuit study or measurement before running resonance and harmonic calculations; zero/zero leaves these analyses NOT_VERIFIED."));
+    auto* sourceWarning = new QLabel(tr("Source impedance is deliberately unset by default. Zero/zero selects an ideal voltage source: filter-bank impedance and magnetic operating-point calculations remain available, while source-limited network response and resonance against a Thevenin source are not modelled."));
     sourceWarning->setWordWrap(true);
     sourceWarning->setStyleSheet("color: #a66b00;");
     advancedLayout->addWidget(sourceWarning);
@@ -3851,7 +3851,7 @@ QWidget* MainWindow::createResultsPage()
     impedancePlotTitle->setStyleSheet("font-weight: 600;");
     impedancePlotTitle->setToolTip(tr(
         "Requires non-zero per-phase Thevenin source resistance R or inductance L. "
-        "Without source impedance the bus-impedance scan is NOT_VERIFIED."));
+        "With an ideal voltage source, the filter-bank impedance is shown; source-limited bus impedance is not modelled."));
     layout->addWidget(impedancePlotTitle);
     resultsBusImpedancePlot_ = new PlotWidget;
     resultsBusImpedancePlot_->setObjectName(QStringLiteral("resultsBusImpedancePlot"));
@@ -6234,11 +6234,8 @@ void MainWindow::calculateFilter()
         acceptedConstructionInputs_->dimensionalRevision.has_value() &&
         acceptedConstructionInputs_->sourceFilterSnapshotId == latestFilterSnapshotId_.toStdString() &&
         acceptedConstructionInputs_->filterBranchId == latestFilterBranchId_;
-    if (!hasSourceImpedance && (suppliedHarmonics > 0 || hasLoadCurrentInjection)) {
-        advancedWarning = tr("Harmonic analysis NOT_VERIFIED: enter source R and/or L from a network study.");
-    } else if (hasSourceImpedance &&
-               (suppliedHarmonics > 0 || hasLoadCurrentInjection || threeLimbMagneticBase.has_value() || acceptedPhysicalMagneticCandidate) &&
-               spectrumValid) {
+    if ((suppliedHarmonics > 0 || hasLoadCurrentInjection || threeLimbMagneticBase.has_value() || acceptedPhysicalMagneticCandidate) &&
+        spectrumValid) {
         const auto harmonics = p135::filter::analyzeHarmonics(harmonicRequest);
         if (harmonics) {
             harmonicResult = harmonics.value();
@@ -7558,12 +7555,12 @@ void MainWindow::calculateFilter()
     if (hasSourceImpedance) {
         visibleWarnings.push_back(tr("The frequency sweep includes the entered per-phase Thevenin R/L, but is still a single-frequency diagnostic response. Do not treat its peak as multi-harmonic operating stress."));
     } else {
-        visibleWarnings.push_back(tr("Source impedance R/L is zero or unset. The plotted current is an ideal-voltage-source diagnostic only; it is NOT source-limited and NOT operational stress. Resonance, bus-impedance scan and source-limited current response are NOT_VERIFIED."));
+        visibleWarnings.push_back(tr("Source impedance R/L is zero or unset: the network is modelled as an ideal voltage source. Filter-bank impedance and magnetic response to the supplied spectrum are calculated, but source-limited current response and Thevenin bus impedance are not modelled; the separate frequency-sweep current remains an ideal-source diagnostic, not operational stress."));
     }
     if (!magneticCircuitBase && !threeLimbMagneticBase)
         visibleWarnings.push_back(tr("Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED."));
-    if (!harmonicResult)
-        visibleWarnings.push_back(tr("No non-fundamental voltage harmonics were supplied. Harmonic distortion and harmonic component stress are NOT_VERIFIED."));
+    if (suppliedHarmonics == 0 && !hasLoadCurrentInjection)
+        visibleWarnings.push_back(tr("No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated."));
     if (!advancedWarning.isEmpty())
         visibleWarnings.push_back(advancedWarning);
     if (!componentAssessmentWarning.isEmpty())
