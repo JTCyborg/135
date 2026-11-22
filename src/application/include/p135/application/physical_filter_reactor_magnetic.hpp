@@ -15,6 +15,9 @@ struct PhysicalFilterReactorMagneticRequest {
     std::string dimensionalSource;
     std::string dimensionalRevision;
     FilterReactorMagneticRequest filterMagnetic;
+    // Explicit opt-in for exploratory analysis using a calculated B-H branch.
+    // False by default; calculated material models are never design-verified.
+    bool allowEstimatedBhModel{false};
 };
 
 struct PhysicalFilterReactorMagneticResult {
