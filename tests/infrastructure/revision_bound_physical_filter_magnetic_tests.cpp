@@ -107,6 +107,22 @@ int main(int argc, char** argv)
     assert(incompleteSteel.error().code == ErrorCode::MissingMaterialProperty);
     assert(incompleteSteel.error().message.find("NOT_PUBLISHED_IN_IMPORTED_DATASET") != std::string::npos);
 
+    // Manufacturer minimum-polarization anchors can produce an estimated
+    // exploratory B-H branch. The source quality remains NOT_PUBLISHED and
+    // the estimate is accepted only after an explicit caller opt-in.
+    auto exploratoryRequest = makeRequest();
+    exploratoryRequest.allowEstimatedBhModel = true;
+    const auto estimatedSteel = analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
+        store, "SEED-TK-M235-35A-R1", exploratoryRequest);
+    assert(estimatedSteel);
+    assert(estimatedSteel.value().materialRevision.bhCurveModelStatus ==
+           "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS");
+    assert(estimatedSteel.value().materialRevision.bhCurveStatus ==
+           "NOT_PUBLISHED_IN_IMPORTED_DATASET");
+    assert(estimatedSteel.value().materialRevision.material.bhCurve.size() == 49);
+    assert(estimatedSteel.value().materialRevision.material.bhCurve.front().fieldStrength.si() == 0.0);
+    assert(estimatedSteel.value().materialRevision.material.bhCurve.front().fluxDensity.si() == 0.0);
+
     const auto missingRevision = analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
         store, "NO-SUCH-REVISION", makeRequest());
     assert(!missingRevision);
