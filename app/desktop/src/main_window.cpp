@@ -6287,6 +6287,7 @@ void MainWindow::calculateFilter()
     std::optional<std::array<double, 7>> constructionBoundPeakFluxDensityT;
     bool constructionBoundWithinMeasuredBhCurve = false;
     bool constructionBoundUsedEstimatedBhModel = false;
+    bool constructionBoundMaterialBhEstimated = false;
     std::vector<std::pair<double, double>> constructionBoundBhCurve;
     QString constructionBoundBhModelStatus;
     QString constructionBoundBhSourceStatus;
@@ -6300,6 +6301,9 @@ void MainWindow::calculateFilter()
         if (materialRevision) {
             constructionBoundBhModelStatus =
                 QString::fromStdString(materialRevision.value().bhCurveModelStatus);
+            constructionBoundMaterialBhEstimated =
+                materialRevision.value().bhCurveModelStatus ==
+                "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
             constructionBoundBhSourceStatus =
                 QString::fromStdString(materialRevision.value().bhCurveStatus);
             constructionBoundBhCurve.reserve(materialRevision.value().material.bhCurve.size());
@@ -7671,7 +7675,7 @@ void MainWindow::calculateFilter()
         std::vector<PlotCurve> materialBhCurves;
         if (!constructionBoundBhCurve.empty()) {
             PlotCurve materialCurve{
-                constructionBoundUsedEstimatedBhModel
+                constructionBoundMaterialBhEstimated
                     ? tr("Estimated from sparse anchors — NOT_VERIFIED")
                     : tr("Selected material revision — source curve"),
                 constructionBoundBhCurve
@@ -7692,7 +7696,7 @@ void MainWindow::calculateFilter()
         if (auto* title = findChild<QLabel*>(QStringLiteral("materialBhPlotTitle"))) {
             title->setText(constructionBoundBhCurve.empty()
                 ? tr("Selected core material B-H characteristic — NOT_CALCULATED")
-                : constructionBoundUsedEstimatedBhModel
+                : constructionBoundMaterialBhEstimated
                     ? tr("Selected core material B-H characteristic — ESTIMATED / NOT_VERIFIED")
                     : tr("Selected core material B-H characteristic — source curve"));
             title->setToolTip(resultsMaterialBhPlot_->toolTip());
