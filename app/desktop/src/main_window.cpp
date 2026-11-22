@@ -2498,14 +2498,25 @@ QWidget* MainWindow::createFilterPage()
     modeRow->addWidget(new QLabel(tr("Input mode:")));
     modeRow->addWidget(automaticMode);
     modeRow->addWidget(manualMode);
+    auto* inputLegend = new QLabel(
+        tr("Green — editable input   Blue — active field   Grey — unavailable"));
+    inputLegend->setStyleSheet("color: palette(mid); font-size: 11px;");
+    modeRow->addWidget(inputLegend);
     modeRow->addStretch();
     layout->insertLayout(1, modeRow);
     componentGroup->setVisible(false);
     advanced->setVisible(false);
-    connect(automaticMode, &QToolButton::toggled, page, [componentGroup, advanced](bool automatic) {
-        componentGroup->setVisible(!automatic);
-        advanced->setVisible(!automatic);
-    });
+    if (auto* qualityLabel = form->labelForField(qualityFactor_))
+        qualityLabel->setVisible(false);
+    qualityFactor_->setVisible(false);
+    connect(automaticMode, &QToolButton::toggled, page,
+        [componentGroup, advanced, qualityFactor_, form](bool automatic) {
+            componentGroup->setVisible(!automatic);
+            advanced->setVisible(!automatic);
+            qualityFactor_->setVisible(!automatic);
+            if (auto* qualityLabel = form->labelForField(qualityFactor_))
+                qualityLabel->setVisible(!automatic);
+        });
     connect(manualMode, &QToolButton::clicked, page, [this] {
         appendLog(tr("Filter input mode changed to MANUAL; existing values are preserved."));
     });
