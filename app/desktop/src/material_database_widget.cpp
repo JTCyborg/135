@@ -601,6 +601,203 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         QJsonDocument(root).toJson(QJsonDocument::Indented)));
     return true;
 }
+
+
+namespace {
+bool editCoreLossPayload(QWidget* parent, QPlainTextEdit* payloadEditor)
+{
+    if (!payloadEditor) return false;
+    QJsonParseError parseError;
+    const auto document = QJsonDocument::fromJson(payloadEditor->toPlainText().toUtf8(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        QMessageBox::warning(parent, QObject::tr("Core-loss import"),
+            QObject::tr("Create a valid core-material snapshot before importing core-loss data."));
+        return false;
+    }
+    QJsonObject root = document.object();
+    const QJsonObject oldData = root.value(QStringLiteral("coreLossData")).toObject();
+    const QJsonObject oldProvenance = root.value(QStringLiteral("coreLossProvenance")).toObject();
+    const QJsonObject oldQuality = root.value(QStringLiteral("dataQuality")).toObject();
+
+    QDialog dialog(parent);
+    dialog.setWindowTitle(QObject::tr("Import core-loss table"));
+    dialog.resize(760, 760);
+    auto* form = new QFormLayout(&dialog);
+    auto* source = new QLineEdit(oldProvenance.value(QStringLiteral("sourceDocument")).toString(), &dialog);
+    source->setObjectName(QStringLiteral("coreLossSourceDocument"));
+    auto* page = new QLineEdit(oldProvenance.value(QStringLiteral("sourcePage")).toString(), &dialog);
+    page->setObjectName(QStringLiteral("coreLossSourcePage"));
+    auto* method = new QLineEdit(oldProvenance.value(QStringLiteral("measurementMethod")).toString(), &dialog);
+    method->setObjectName(QStringLiteral("coreLossMeasurementMethod"));
+    auto* direction = new QLineEdit(oldProvenance.value(QStringLiteral("sampleDirection")).toString(), &dialog);
+    direction->setObjectName(QStringLiteral("coreLossSampleDirection"));
+    auto* waveform = new QComboBox(&dialog);
+    waveform->setObjectName(QStringLiteral("coreLossWaveform"));
+    waveform->addItem(QObject::tr("Sinusoidal"), "SINUSOIDAL");
+    waveform->addItem(QObject::tr("PWM / non-sinusoidal"), "PWM_NON_SINUSOIDAL");
+    waveform->addItem(QObject::tr("Other — described in notes"), "OTHER");
+    const int waveformIndex = waveform->findData(oldProvenance.value(QStringLiteral("waveform")));
+    if (waveformIndex >= 0) waveform->setCurrentIndex(waveformIndex);
+    auto* temperatureStatus = new QComboBox(&dialog);
+    temperatureStatus->setObjectName(QStringLiteral("coreLossTemperatureStatus"));
+    temperatureStatus->addItem(QObject::tr("Temperature stated per point"), "PER_POINT");
+    temperatureStatus->addItem(QObject::tr("Constant temperature stated by source"), "CONSTANT_SOURCE_STATED");
+    temperatureStatus->addItem(QObject::tr("Temperature not stated — exploratory only"), "NOT_STATED_IN_SOURCE");
+    const int tempIndex = temperatureStatus->findData(oldProvenance.value(QStringLiteral("temperatureStatus")));
+    if (tempIndex >= 0) temperatureStatus->setCurrentIndex(tempIndex);
+    auto* quality = new QComboBox(&dialog);
+    quality->setObjectName(QStringLiteral("coreLossQualityStatus"));
+    quality->addItem(QObject::tr("Manufacturer tabulated values"), "MANUFACTURER_TABULATED");
+    quality->addItem(QObject::tr("Measured tabular dataset"), "MEASURED_TABULAR");
+    quality->addItem(QObject::tr("Approximate graph digitization — exploratory only"), "APPROXIMATE_DIGITIZATION");
+    const int qualityIndex = quality->findData(oldQuality.value(QStringLiteral("coreLossStatus")));
+    quality->setCurrentIndex(qualityIndex >= 0 ? qualityIndex : 2);
+    auto* notes = new QLineEdit(oldProvenance.value(QStringLiteral("notes")).toString(), &dialog);
+    notes->setObjectName(QStringLiteral("coreLossNotes"));
+    auto* points = new QPlainTextEdit(&dialog);
+    points->setObjectName(QStringLiteral("coreLossPoints"));
+    points->setMinimumHeight(280);
+    points->setPlaceholderText(QObject::tr(
+        "One point per line: frequency_Hz, peakFluxDensity_T, temperature_K, specificLoss_W_per_m3\n"
+        "CSV/TXT headers and # comments are accepted. Loss input unit is W/m³ (volumetric).\n"
+        "For a solver-ready 3D grid, provide every combination of frequency, flux density and temperature."));
+    auto* load = new QPushButton(QObject::tr("Load CSV / TXT file…"), &dialog);
+    load->setObjectName(QStringLiteral("coreLossLoadCsvButton"));
+    QObject::connect(load, &QPushButton::clicked, &dialog, [&dialog, points] {
+        const QString path = QFileDialog::getOpenFileName(&dialog,
+            QObject::tr("Load core-loss table"), {},
+            QObject::tr("Core-loss tables (*.csv *.txt);;All files (*.*)"));
+        if (path.isEmpty()) return;
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QMessageBox::warning(&dialog, QObject::tr("Load core-loss table"), file.errorString());
+            return;
+        }
+        points->setPlainText(QString::fromUtf8(file.readAll()));
+    });
+    const auto oldPoints = oldData.value(QStringLiteral("points")).toArray();
+    if (!oldPoints.isEmpty()) {
+        QStringList lines;
+        for (const auto& item : oldPoints) {
+            const auto point = item.toObject();
+            lines.push_back(QStringLiteral("%1, %2, %3, %4")
+                .arg(point.value(QStringLiteral("frequency_Hz")).toDouble(), 0, 'g', 16)
+                .arg(point.value(QStringLiteral("peakFluxDensity_T")).toDouble(), 0, 'g', 16)
+                .arg(point.value(QStringLiteral("temperature_K")).toDouble(), 0, 'g', 16)
+                .arg(point.value(QStringLiteral("specificLoss_W_per_m3")).toDouble(), 0, 'g', 16));
+        }
+        points->setPlainText(lines.join(QLatin1Char('\n')));
+    }
+    form->addRow(QObject::tr("Source document"), source);
+    form->addRow(QObject::tr("Source page / table"), page);
+    form->addRow(QObject::tr("Measurement method"), method);
+    form->addRow(QObject::tr("Sample direction"), direction);
+    form->addRow(QObject::tr("Waveform"), waveform);
+    form->addRow(QObject::tr("Temperature conditions"), temperatureStatus);
+    form->addRow(QObject::tr("Data quality"), quality);
+    form->addRow(QObject::tr("Notes"), notes);
+    auto* notice = new QLabel(QObject::tr(
+        "Input losses are volumetric W/m³. The revision loader converts them to W/kg using this material revision's density. "
+        "Only a complete rectangular 3D grid is accepted here. Approximate digitization remains exploratory; design release stays NOT_VERIFIED."));
+    notice->setWordWrap(true);
+    form->addRow(notice);
+    form->addRow(load);
+    form->addRow(QObject::tr("Core-loss points (f, Bpeak, T, Pv)"), points);
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+    form->addRow(buttons);
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    if (dialog.exec() != QDialog::Accepted) return false;
+
+    const QString sourceText = source->text().trimmed();
+    const QString methodText = method->text().trimmed();
+    const QString directionText = direction->text().trimmed();
+    const QString waveformValue = waveform->currentData().toString();
+    const QString temperatureValue = temperatureStatus->currentData().toString();
+    const QString qualityValue = quality->currentData().toString();
+    if (sourceText.isEmpty() || methodText.isEmpty() || directionText.isEmpty()) {
+        QMessageBox::warning(parent, QObject::tr("Core-loss provenance"),
+            QObject::tr("Source document, measurement method and sample direction are required."));
+        return false;
+    }
+    if (qualityValue == QStringLiteral("MEASURED_TABULAR") &&
+        (methodText.isEmpty() || directionText.isEmpty())) {
+        QMessageBox::warning(parent, QObject::tr("Core-loss provenance"),
+            QObject::tr("Measured datasets require measurement method and sample direction."));
+        return false;
+    }
+
+    QJsonArray parsed;
+    std::set<double> frequencies, fluxes, temperatures;
+    std::set<std::tuple<double,double,double>> coordinates;
+    int lineNumber = 0;
+    for (QString line : points->toPlainText().split(QLatin1Char('\n'))) {
+        ++lineNumber;
+        line = line.trimmed();
+        if (lineNumber == 1 && !line.isEmpty() && line.front() == QChar(0xFEFF))
+            line.remove(0, 1);
+        if (line.isEmpty() || line.startsWith(QLatin1Char('#'))) continue;
+        const auto columns = line.split(QRegularExpression(QStringLiteral("[,;\\t]")), Qt::KeepEmptyParts);
+        if (columns.size() != 4) {
+            QMessageBox::warning(parent, QObject::tr("Invalid core-loss table"),
+                QObject::tr("Line %1 must contain exactly four columns: f_Hz, Bpeak_T, T_K, Pv_W_per_m3.").arg(lineNumber));
+            return false;
+        }
+        const auto first = columns[0].trimmed().toLower();
+        const auto second = columns[1].trimmed().toLower();
+        if (parsed.isEmpty() &&
+            (first.startsWith("f") || first.contains("freq")) &&
+            (second.startsWith("b") || second.contains("flux"))) continue;
+        double v[4]{};
+        bool ok[4]{};
+        for (int i=0;i<4;++i) v[i]=columns[i].trimmed().toDouble(&ok[i]);
+        if (!ok[0] || !ok[1] || !ok[2] || !ok[3] ||
+            !std::isfinite(v[0]) || !std::isfinite(v[1]) ||
+            !std::isfinite(v[2]) || !std::isfinite(v[3]) ||
+            v[0] <= 0.0 || v[1] <= 0.0 || v[2] <= 0.0 || v[3] < 0.0) {
+            QMessageBox::warning(parent, QObject::tr("Invalid core-loss table"),
+                QObject::tr("Line %1 requires finite positive f, Bpeak and T, with non-negative Pv.").arg(lineNumber));
+            return false;
+        }
+        const auto key = std::make_tuple(v[0],v[1],v[2]);
+        if (!coordinates.insert(key).second) {
+            QMessageBox::warning(parent, QObject::tr("Duplicate core-loss point"),
+                QObject::tr("Line %1 duplicates an existing (frequency, flux density, temperature) coordinate.").arg(lineNumber));
+            return false;
+        }
+        frequencies.insert(v[0]); fluxes.insert(v[1]); temperatures.insert(v[2]);
+        parsed.append(QJsonObject{
+            {"frequency_Hz",v[0]}, {"peakFluxDensity_T",v[1]},
+            {"temperature_K",v[2]}, {"specificLoss_W_per_m3",v[3]}
+        });
+    }
+    const std::size_t expected = frequencies.size()*fluxes.size()*temperatures.size();
+    if (frequencies.size()<2 || fluxes.size()<2 || temperatures.size()<2 ||
+        parsed.size()!=static_cast<int>(expected)) {
+        QMessageBox::warning(parent, QObject::tr("Incomplete core-loss grid"),
+            QObject::tr("A complete 3D grid is required: at least two distinct values on each axis and every f × Bpeak × T combination. Received %1 points; expected %2.")
+                .arg(parsed.size()).arg(static_cast<qulonglong>(expected)));
+        return false;
+    }
+    root.insert(QStringLiteral("coreLossData"), QJsonObject{{QStringLiteral("points"),parsed}});
+    root.insert(QStringLiteral("coreLossProvenance"), QJsonObject{
+        {"sourceDocument",sourceText},
+        {"sourcePage",page->text().trimmed().isEmpty() ? QStringLiteral("NOT_STATED_IN_SOURCE") : page->text().trimmed()},
+        {"measurementMethod",methodText},
+        {"sampleDirection",directionText},
+        {"waveform",waveformValue},
+        {"temperatureStatus",temperatureValue},
+        {"notes",notes->text().trimmed().isEmpty() ? QStringLiteral("No additional notes supplied.") : notes->text().trimmed()}
+    });
+    QJsonObject dataQuality = oldQuality;
+    dataQuality.insert(QStringLiteral("coreLossStatus"),qualityValue);
+    dataQuality.insert(QStringLiteral("designReleaseStatus"),QStringLiteral("NOT_VERIFIED"));
+    root.insert(QStringLiteral("dataQuality"),dataQuality);
+    payloadEditor->setPlainText(QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Indented)));
+    return true;
+}
+} // namespace
+
 } // namespace
 
 MaterialDatabaseWidget::MaterialDatabaseWidget(SqliteMaterialRevisionStore& store, QWidget* parent)
@@ -796,6 +993,17 @@ void MaterialDatabaseWidget::createOrEditMaterial()
         if (json.isEmpty()) return;
         payload->setPlainText(json);
     });
+    auto* coreLossImport = new QPushButton(tr("Import core-loss table (f, B, T, Pv)"), &dialog);
+    coreLossImport->setObjectName(QStringLiteral("importCoreLossTableButton"));
+    form->addRow(coreLossImport);
+    coreLossImport->setEnabled(type->currentData().toString() == "core-material");
+    connect(type, &QComboBox::currentIndexChanged, &dialog, [type, coreLossImport] {
+        coreLossImport->setEnabled(type->currentData().toString() == "core-material");
+    });
+    connect(coreLossImport, &QPushButton::clicked, &dialog, [&dialog, payload] {
+        (void)editCoreLossPayload(&dialog, payload);
+    });
+
     auto* bhImport = new QPushButton(tr("Import B-H table (H, B)"), &dialog);
     bhImport->setObjectName(QStringLiteral("importBhCurveButton"));
     form->addRow(bhImport);
