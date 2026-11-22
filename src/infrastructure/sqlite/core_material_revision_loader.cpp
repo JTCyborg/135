@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <set>
 #include <string>
@@ -141,11 +142,75 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         material.sourceReference = revision.sourceReference;
         material.datasetRevision = revision.datasetRevision;
 
-        // A material revision may legitimately publish physical properties while
-        // omitting a solver-ready B-H curve. Preserve that incomplete record so
-        // the revision-bound analysis can reject it by bhCurveStatus with the
-        // domain-level MissingMaterialProperty diagnostic. Never synthesize points.
+        // Sparse magnetic anchors can be converted to an explicitly estimated
+        // exploratory B-H branch. This never changes the source quality status.
         const auto bhIt = root.find("bhCurve");
+        std::string bhCurveModelStatus = "SOURCE_TABULATED_OR_NOT_AVAILABLE";
+        if (bhIt == root.end()) {
+            std::vector<std::pair<double, double>> anchors;
+            constexpr double mu0 = 4.0e-7 * 3.14159265358979323846;
+            const auto generic = root.find("magneticAnchors");
+            if (generic != root.end() && generic->is_array()) {
+                for (const auto& anchor : *generic) {
+                    const double h = requiredNumber(anchor, "fieldStrength_A_per_m");
+                    double b = 0.0;
+                    if (anchor.contains("fluxDensity_T"))
+                        b = requiredNumber(anchor, "fluxDensity_T");
+                    else if (anchor.contains("polarization_T"))
+                        b = requiredNumber(anchor, "polarization_T") + mu0 * h;
+                    else
+                        throw std::invalid_argument("A magnetic anchor requires fluxDensity_T or polarization_T.");
+                    anchors.emplace_back(h, b);
+                }
+            } else {
+                const auto values = sourceMaterial.find("minimumPolarization_T");
+                if (values != sourceMaterial.end() && values->is_object()) {
+                    for (auto it = values->begin(); it != values->end(); ++it) {
+                        const std::string key = it.key();
+                        const std::string prefix = "at_";
+                        const std::string suffix = "_A_per_m";
+                        if (key.rfind(prefix, 0) != 0 ||
+                            key.size() <= prefix.size() + suffix.size() ||
+                            key.substr(key.size() - suffix.size()) != suffix ||
+                            !it.value().is_number())
+                            throw std::invalid_argument("Invalid minimum-polarization anchor: " + key);
+                        const double h = std::stod(key.substr(prefix.size(),
+                            key.size() - prefix.size() - suffix.size()));
+                        const double j = it.value().get<double>();
+                        if (!std::isfinite(h) || !std::isfinite(j) || h <= 0.0 || j <= 0.0)
+                            throw std::invalid_argument("Minimum-polarization anchors must be finite and positive.");
+                        anchors.emplace_back(h, j + mu0 * h);
+                    }
+                }
+            }
+            if (!anchors.empty()) {
+                std::sort(anchors.begin(), anchors.end(),
+                    [](const auto& left, const auto& right) { return left.first < right.first; });
+                if (anchors.size() < 2)
+                    throw std::invalid_argument("At least two magnetic anchors are required.");
+                material.bhCurve.push_back({units::MagneticFieldStrength{0.0},
+                                            units::FluxDensity{0.0}});
+                double h0 = 0.0;
+                double b0 = 0.0;
+                for (const auto& [h1, b1] : anchors) {
+                    if (!std::isfinite(h1) || !std::isfinite(b1) ||
+                        h1 <= h0 || b1 <= b0)
+                        throw std::invalid_argument("Magnetic anchors must increase strictly in H and B.");
+                    // Subdivide each source interval for stable solver input and
+                    // a useful plotted curve; subdivisions add no new evidence.
+                    for (int n = 1; n <= 16; ++n) {
+                        const double t = static_cast<double>(n) / 16.0;
+                        material.bhCurve.push_back({
+                            units::MagneticFieldStrength{h0 + t * (h1 - h0)},
+                            units::FluxDensity{b0 + t * (b1 - b0)}
+                        });
+                    }
+                    h0 = h1;
+                    b0 = b1;
+                }
+                bhCurveModelStatus = "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
+            }
+        }
         double bhFrequency = 0.0;
         double bhTemperature = 0.0;
         if (bhIt != root.end()) {
@@ -191,6 +256,7 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.sourceReference = revision.sourceReference;
         snapshot.datasetRevision = revision.datasetRevision;
         snapshot.bhCurveStatus = requiredString(quality, "bhCurveStatus");
+        snapshot.bhCurveModelStatus = bhCurveModelStatus;
         const json bhProvenance = root.value("bhCurveProvenance", json::object());
         // Older immutable revisions predate the provenance object. Keep them
         // readable while explicitly exposing missing provenance to callers.
