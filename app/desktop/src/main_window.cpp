@@ -1180,6 +1180,26 @@ void MainWindow::saveProjectArchive()
     archive.insert(QStringLiteral("projectSettings"), projectSettings);
     archive.insert(QStringLiteral("controls"), controls);
 
+    // Carry the automatically generated project-specific STEP/PDF deliverables.
+    // The material database and calculation-history store are intentionally not read.
+    QJsonArray artifacts;
+    const std::array<std::pair<QString, QString>, 2> artifactPaths{{
+        {QStringLiteral("cadAssemblyStep"),
+         QDir(projectOutputRoot()).filePath(QStringLiteral("CAD/") + projectId_ + QStringLiteral("_assembly.step"))},
+        {QStringLiteral("assemblyDrawingPdf"),
+         QDir(projectOutputRoot()).filePath(QStringLiteral("Drawings/") + projectId_ + QStringLiteral("_assembly.pdf"))}
+    }};
+    for (const auto& [kind, artifactPath] : artifactPaths) {
+        QFile artifactFile(artifactPath);
+        if (!artifactFile.exists() || !artifactFile.open(QIODevice::ReadOnly)) continue;
+        QJsonObject artifact;
+        artifact.insert(QStringLiteral("kind"), kind);
+        artifact.insert(QStringLiteral("contentBase64"),
+            QString::fromLatin1(artifactFile.readAll().toBase64()));
+        artifacts.append(artifact);
+    }
+    archive.insert(QStringLiteral("artifacts"), artifacts);
+
     const QString suggested = (projectName_ ? projectName_->text().trimmed() : QString{});
     const QString fileName = (suggested.isEmpty() ? QStringLiteral("Project135") : suggested)
         + QStringLiteral(".p135project");
@@ -1248,6 +1268,32 @@ void MainWindow::loadProjectArchive()
     projectId_ = newProjectId;
     loadingProjectSettings_ = true;
     loadProjectSettings();
+
+    // Restore only the two known project-generated deliverables under paths derived
+    // from the newly allocated project ID; archive paths are never used as filesystem paths.
+    const QJsonArray artifacts = archive.value(QStringLiteral("artifacts")).toArray();
+    for (const QJsonValue& value : artifacts) {
+        if (!value.isObject()) continue;
+        const QJsonObject artifact = value.toObject();
+        const QString kind = artifact.value(QStringLiteral("kind")).toString();
+        QString destination;
+        if (kind == QStringLiteral("cadAssemblyStep")) {
+            destination = QDir(projectOutputRoot()).filePath(
+                QStringLiteral("CAD/") + projectId_ + QStringLiteral("_assembly.step"));
+        } else if (kind == QStringLiteral("assemblyDrawingPdf")) {
+            destination = QDir(projectOutputRoot()).filePath(
+                QStringLiteral("Drawings/") + projectId_ + QStringLiteral("_assembly.pdf"));
+        } else {
+            continue;
+        }
+        const QByteArray bytes = QByteArray::fromBase64(
+            artifact.value(QStringLiteral("contentBase64")).toString().toLatin1());
+        const QFileInfo destinationInfo(destination);
+        if (!QDir().mkpath(destinationInfo.absolutePath())) continue;
+        QSaveFile output(destination);
+        if (output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size())
+            output.commit();
+    }
 
     const QJsonObject controls = archive.value(QStringLiteral("controls")).toObject();
     for (auto it = controls.begin(); it != controls.end(); ++it) {
