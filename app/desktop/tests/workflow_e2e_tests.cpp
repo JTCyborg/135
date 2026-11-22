@@ -645,6 +645,12 @@ private slots:
             field->setText(value);
             return field->text() == value;
         };
+        const auto setPlainText = [this](const QString& name, const QString& value) {
+            auto* field = window_->findChild<QPlainTextEdit*>(name);
+            if (!field) return false;
+            field->setPlainText(value);
+            return field->toPlainText() == value;
+        };
 
         // Pin exact, seeded material revisions. No "latest" or free-text
         // material aliases are accepted by this fixture.
@@ -771,6 +777,21 @@ private slots:
         sourceResistance->setValue(0.25);
         sourceInductance->setValue(1.2);
 
+        // Explicit synthetic magnetic inputs exercise the real coupled
+        // three-limb operating-point solver and its Results chart. These are
+        // regression-fixture values only, not manufacturer material data or
+        // an engineering-approved core design.
+        QVERIFY(setDouble(QStringLiteral("coreEffectiveAreaMm2"), 10000.0));
+        QVERIFY(setDouble(QStringLiteral("coreMeanMagneticPathMm"), 300.0));
+        QVERIFY(setDouble(QStringLiteral("coreTotalAirGapPerLimbMm"), 10.0));
+        QVERIFY(setDouble(QStringLiteral("coreYokeEffectiveAreaMm2"), 10000.0));
+        QVERIFY(setDouble(QStringLiteral("coreYokeSegmentPathMm"), 200.0));
+        QVERIFY(setInteger(QStringLiteral("filterInductorTurnsPerPhase"), 1));
+        QVERIFY(setText(QStringLiteral("coreBhCurveEvidence"),
+            QStringLiteral("TEST-01 synthetic B-H curve; regression fixture only")));
+        QVERIFY(setPlainText(QStringLiteral("coreBhCurvePoints"),
+            QStringLiteral("0, 0\\n1000, 0.1\\n10000, 0.8\\n50000, 1.4\\n100000, 1.55")));
+
         auto* recalculate = window_->findChild<QPushButton*>(
             QStringLiteral("recalculateProjectButton"));
         QVERIFY(recalculate);
@@ -844,12 +865,19 @@ private slots:
             QStringLiteral("resultsCoreFluxPlot"));
         QVERIFY(coreFluxPlot);
         const auto fluxCurves = coreFluxPlot->property("plotCurves").toList();
-        QCOMPARE(fluxCurves.size(), 4);
-        // This E2E scenario deliberately supplies no core geometry or measured
-        // B-H curve. The magnetic chart must remain explicitly NOT_VERIFIED,
-        // rather than displaying fabricated or stale data.
-        for (const auto& curveValue : fluxCurves) {
-            QVERIFY(curveValue.toMap().value(QStringLiteral("points")).toList().isEmpty());
+        QCOMPARE(fluxCurves.size(), 7);
+        // The graph must contain the seven actual section peaks returned by
+        // the converged multi-harmonic magnetic operating-point solver. A
+        // successful PNG capture with empty point arrays is not a passing test.
+        for (std::size_t section = 0; section < fluxCurves.size(); ++section) {
+            const auto curve = fluxCurves[static_cast<qsizetype>(section)].toMap();
+            const auto points = curve.value(QStringLiteral("points")).toList();
+            QCOMPARE(points.size(), 1);
+            const auto point = points.front().toList();
+            QCOMPARE(point.size(), 2);
+            QCOMPARE(point[0].toDouble(), static_cast<double>(section + 1));
+            QVERIFY(std::isfinite(point[1].toDouble()));
+            QVERIFY(point[1].toDouble() > 0.0);
         }
         auto* busTitle = window_->findChild<QLabel*>(
             QStringLiteral("busImpedancePlotTitle"));
@@ -858,7 +886,8 @@ private slots:
         auto* coreFluxTitle = window_->findChild<QLabel*>(
             QStringLiteral("coreFluxPlotTitle"));
         QVERIFY(coreFluxTitle);
-        QVERIFY(coreFluxTitle->text().contains(QStringLiteral("NOT_VERIFIED")));
+        QVERIFY(coreFluxTitle->text().contains(QStringLiteral("operating-point")));
+        QVERIFY(!coreFluxTitle->text().contains(QStringLiteral("NOT_VERIFIED")));
 
 #if defined(_DEBUG) || !defined(NDEBUG)
         QSettings artifactSettings;
@@ -920,7 +949,7 @@ private slots:
         }
 #endif
         for (const auto& curve : fluxCurves)
-            QVERIFY(curve.toMap().value(QStringLiteral("points")).toList().isEmpty());
+            QCOMPARE(curve.toMap().value(QStringLiteral("points")).toList().size(), 1);
 
         auto* confirmCalculation = window_->findChild<QPushButton*>(
             QStringLiteral("confirmCalculationDesign"));
