@@ -275,6 +275,7 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     auto* form = new QFormLayout(&dialog);
 
     auto* curveType = new QComboBox(&dialog);
+    curveType->setObjectName(QStringLiteral("bhCurveType"));
     curveType->addItem(QObject::tr("DC initial magnetization curve"),
                        QStringLiteral("DC initial magnetization curve"));
     curveType->addItem(QObject::tr("Dynamic magnetization curve"),
@@ -283,18 +284,21 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     if (existingType >= 0) curveType->setCurrentIndex(existingType);
 
     auto* frequency = new QDoubleSpinBox(&dialog);
+    frequency->setObjectName(QStringLiteral("bhCurveFrequency"));
     frequency->setRange(0.0, 1.0e9);
     frequency->setDecimals(3);
     frequency->setSuffix(QObject::tr(" Hz"));
     frequency->setValue(existingCurve.value(QStringLiteral("frequency_Hz")).toDouble(50.0));
 
     auto* temperature = new QDoubleSpinBox(&dialog);
+    temperature->setObjectName(QStringLiteral("bhCurveTemperature"));
     temperature->setRange(1.0, 2000.0);
     temperature->setDecimals(2);
     temperature->setSuffix(QObject::tr(" K"));
     temperature->setValue(existingCurve.value(QStringLiteral("temperature_K")).toDouble(293.15));
 
     auto* qualityStatus = new QComboBox(&dialog);
+    qualityStatus->setObjectName(QStringLiteral("bhCurveQualityStatus"));
     qualityStatus->addItem(QObject::tr("Manufacturer tabulated data (source table)"),
                            QStringLiteral("MANUFACTURER_TABULATED"));
     qualityStatus->addItem(QObject::tr("Measured tabular dataset"),
@@ -307,20 +311,26 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
 
     auto* sourceDocument = new QLineEdit(
         existingProvenance.value(QStringLiteral("sourceDocument")).toString(), &dialog);
+    sourceDocument->setObjectName(QStringLiteral("bhCurveSourceDocument"));
     sourceDocument->setPlaceholderText(QObject::tr("Manufacturer datasheet / report identifier"));
     auto* sourcePage = new QLineEdit(
         existingProvenance.value(QStringLiteral("sourcePage")).toString(), &dialog);
+    sourcePage->setObjectName(QStringLiteral("bhCurveSourcePage"));
     sourcePage->setPlaceholderText(QObject::tr("Page, table or figure; use NOT_STATED_IN_SOURCE if absent"));
     auto* measurementMethod = new QLineEdit(
         existingProvenance.value(QStringLiteral("measurementMethod")).toString(), &dialog);
+    measurementMethod->setObjectName(QStringLiteral("bhCurveMeasurementMethod"));
     measurementMethod->setPlaceholderText(QObject::tr("e.g. manufacturer's stated measurement method"));
     auto* sampleDirection = new QLineEdit(
         existingProvenance.value(QStringLiteral("sampleDirection")).toString(), &dialog);
+    sampleDirection->setObjectName(QStringLiteral("bhCurveSampleDirection"));
     sampleDirection->setPlaceholderText(QObject::tr("e.g. rolling direction / transverse / NOT_STATED_IN_SOURCE"));
     auto* notes = new QLineEdit(
         existingProvenance.value(QStringLiteral("notes")).toString(), &dialog);
+    notes->setObjectName(QStringLiteral("bhCurveNotes"));
 
     auto* points = new QPlainTextEdit(&dialog);
+    points->setObjectName(QStringLiteral("bhCurvePoints"));
     points->setPlaceholderText(QObject::tr(
         "One point per line: H_A_per_m, B_T\n"
         "Example:\n0, 0\n25, 0.12\n50, 0.24\n100, 0.38\n"
@@ -514,6 +524,7 @@ MaterialDatabaseWidget::MaterialDatabaseWidget(SqliteMaterialRevisionStore& stor
 
     auto* actions = new QHBoxLayout;
     auto* create = new QPushButton(tr("New material"));
+    create->setObjectName(QStringLiteral("materialNewButton"));
     auto* edit = new QPushButton(tr("New revision / edit"));
     auto* history = new QPushButton(tr("Revision history"));
     auto* compare = new QPushButton(tr("Compare selected (2)"));
@@ -636,6 +647,7 @@ void MaterialDatabaseWidget::createOrEditMaterial()
     auto* dataset = new QLineEdit(editing ? QString::fromStdString(base->datasetRevision) : "manual-1");
     auto* author = new QLineEdit("local-user");
     auto* payload = new QPlainTextEdit;
+    payload->setObjectName(QStringLiteral("materialPayloadJson"));
     payload->setTabChangesFocus(false);
     payload->setPlaceholderText(tr("Canonical JSON snapshot; engineering values must use SI units."));
     payload->setPlainText(editing ? QString::fromStdString(base->payload) : "{\n  \"name\": \"New material\"\n}");
