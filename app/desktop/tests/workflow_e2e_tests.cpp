@@ -250,7 +250,9 @@ private slots:
                     QStringLiteral("coreMaterialGrade"));
                 auto* density = coreDialog->findChild<QDoubleSpinBox*>(
                     QStringLiteral("coreMaterialDensity"));
-                if (!manufacturer || !grade || !density) {
+                auto* family = coreDialog->findChild<QComboBox*>(
+                    QStringLiteral("coreMaterialFamily"));
+                if (!manufacturer || !grade || !density || !family) {
                     coreDialog->reject();
                     materialDialog->reject();
                     QFAIL("Core material editor is missing required identity fields");
@@ -259,6 +261,15 @@ private slots:
                 manufacturer->setText(QStringLiteral("TEST-MANUFACTURER"));
                 grade->setText(QStringLiteral("TEST-CORE-GRADE"));
                 density->setValue(7600.0);
+                const int familyIndex = family->findData(
+                    QStringLiteral("non-grain-oriented electrical steel"));
+                if (familyIndex < 0) {
+                    coreDialog->reject();
+                    materialDialog->reject();
+                    QFAIL("Non-grain-oriented electrical steel option is missing");
+                    return;
+                }
+                family->setCurrentIndex(familyIndex);
                 coreDialog->accept();
             });
             QTest::mouseClick(coreEditor, Qt::LeftButton);
