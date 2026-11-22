@@ -142,6 +142,39 @@ int main(int argc, char** argv)
     assert(!incompleteSteel.value().bhCurveTemperature.has_value());
     assert(incompleteSteel.value().designReleaseStatus == "NOT_VERIFIED");
 
+    // Parameter-only material data can generate a bounded anhysteretic
+    // saturation branch. The requested maximum H is explicit; no domain
+    // extension or verified-data promotion is permitted.
+    const auto m235Revision = store.findRevision("SEED-TK-M235-35A-R1");
+    assert(m235Revision && m235Revision.value().has_value());
+    auto parameterModelRevision = *m235Revision.value();
+    parameterModelRevision.revisionId = "TEST-M235-PARAMETER-BH-R1";
+    parameterModelRevision.materialId = "TEST-M235-PARAMETER-BH";
+    parameterModelRevision.revisionNumber = 1;
+    auto parameterModelPayload = nlohmann::json::parse(parameterModelRevision.payload);
+    parameterModelPayload["material"].erase("minimumPolarization_T");
+    parameterModelPayload["material"]["initialRelativePermeability"] = 4000.0;
+    parameterModelPayload["material"]["saturationPolarization_T"] = 1.60;
+    parameterModelPayload["material"]["modelMaximumFieldStrength_A_per_m"] = 20000.0;
+    const auto parameterModelCanonical = canonicalizeJson(parameterModelPayload.dump());
+    assert(parameterModelCanonical);
+    const auto parameterModelHash = sha256Hex(parameterModelCanonical.value());
+    assert(parameterModelHash);
+    parameterModelRevision.payload = parameterModelCanonical.value();
+    parameterModelRevision.contentHash = parameterModelHash.value();
+    assert(store.appendRevision(parameterModelRevision));
+    const auto parameterModel = loadCoreMaterialRevision(
+        store, parameterModelRevision.revisionId);
+    assert(parameterModel);
+    assert(parameterModel.value().material.bhCurve.size() == 129);
+    assert(parameterModel.value().bhCurveModelStatus ==
+           "ESTIMATED_FROM_SATURATION_PARAMETERS");
+    assert(parameterModel.value().bhCurveStatus == "NOT_PUBLISHED_IN_IMPORTED_DATASET");
+    assert(parameterModel.value().material.bhCurve.front().fieldStrength.si() == 0.0);
+    assert(parameterModel.value().material.bhCurve.back().fieldStrength.si() == 20000.0);
+    assert(parameterModel.value().material.bhCurve.back().fluxDensity.si() > 1.62);
+    assert(parameterModel.value().designReleaseStatus == "NOT_VERIFIED");
+
     // The Kobe Steel table contains measured DC initial-magnetization data,
     // not an AC B-H loop or core-loss model. Preserve exactly that distinction.
     const auto steel35A300 =
