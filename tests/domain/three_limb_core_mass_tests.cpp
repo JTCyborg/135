@@ -25,7 +25,7 @@ ThreeLimbCorePhysicalGeometry validCore()
     };
     g.coreOverallHeight = units::Length{0.20};
     g.coreOverallWidth = units::Length{0.24};
-    g.laminationConstruction = "interleaved step-lap packets";
+    g.laminationConstruction = "stacked electrical-steel laminations; butt joints";
     for (const auto interface : {
              CoreJointInterface::TopYokeABToLimbA, CoreJointInterface::TopYokeABToLimbB,
              CoreJointInterface::TopYokeBCToLimbB, CoreJointInterface::TopYokeBCToLimbC,
