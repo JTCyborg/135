@@ -58,6 +58,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenuBar>
+#include <QKeySequence>
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPainter>
@@ -1185,15 +1186,18 @@ void MainWindow::saveProjectArchive()
     const QString path = QFileDialog::getSaveFileName(this, tr("Save complete project"),
         fileName, tr("Project135 project (*.p135project);;JSON (*.json)"));
     if (path.isEmpty()) return;
+    QString archivePath = path;
+    if (QFileInfo(archivePath).suffix().isEmpty())
+        archivePath += QStringLiteral(".p135project");
 
-    QSaveFile file(path);
+    QSaveFile file(archivePath);
     const QByteArray bytes = QJsonDocument(archive).toJson(QJsonDocument::Indented);
     if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size() || !file.commit()) {
         QMessageBox::critical(this, tr("Save project"),
             tr("Could not save project archive: %1").arg(file.errorString()));
         return;
     }
-    appendLog(tr("Project archive saved: %1 (SQLite database and calculation history excluded).").arg(path));
+    appendLog(tr("Project archive saved: %1 (SQLite database and calculation history excluded).").arg(archivePath));
     status_->setText(tr("Project saved"));
 }
 
