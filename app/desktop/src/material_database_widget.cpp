@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <tuple>
 
 using namespace p135;
 using namespace p135::application;
