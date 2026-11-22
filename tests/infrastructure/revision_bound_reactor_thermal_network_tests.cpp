@@ -13,6 +13,42 @@
 using namespace p135;
 using namespace p135::infrastructure::sqlite;
 
+namespace {
+
+domain::ThreeLimbCorePhysicalGeometry validButtCoreGeometry()
+{
+    domain::ThreeLimbCorePhysicalGeometry geometry;
+    geometry.limbWidths = {units::Length{0.04}, units::Length{0.04}, units::Length{0.04}};
+    geometry.limbDepths = {units::Length{0.08}, units::Length{0.08}, units::Length{0.08}};
+    geometry.windowWidths = {units::Length{0.06}, units::Length{0.06}};
+    geometry.windowHeights = {units::Length{0.13}, units::Length{0.13}};
+    geometry.yokeThicknesses = {
+        units::Length{0.03}, units::Length{0.03},
+        units::Length{0.04}, units::Length{0.04}
+    };
+    geometry.yokeDepths.fill(units::Length{0.08});
+    geometry.limbCenterSpacings = {
+        units::Length{0.10}, units::Length{0.10}, units::Length{0.20}
+    };
+    geometry.coreOverallHeight = units::Length{0.20};
+    geometry.coreOverallWidth = units::Length{0.24};
+    geometry.laminationConstruction = "stacked electrical-steel laminations; butt joints";
+    for (const auto interface : {
+             domain::CoreJointInterface::TopYokeABToLimbA,
+             domain::CoreJointInterface::TopYokeABToLimbB,
+             domain::CoreJointInterface::TopYokeBCToLimbB,
+             domain::CoreJointInterface::TopYokeBCToLimbC,
+             domain::CoreJointInterface::BottomYokeABToLimbA,
+             domain::CoreJointInterface::BottomYokeABToLimbB,
+             domain::CoreJointInterface::BottomYokeBCToLimbB,
+             domain::CoreJointInterface::BottomYokeBCToLimbC}) {
+        geometry.joints.push_back({interface, domain::CoreJointType::Butt, {}});
+    }
+    return geometry;
+}
+
+} // namespace
+
 int main(int argc, char** argv)
 {
     assert(argc == 3);
@@ -96,6 +132,20 @@ int main(int argc, char** argv)
     assert(!result.value().thermal.network.modelProvenanceComplete);
     for (const auto& node : result.value().thermal.network.nodes)
         assert(node.status == thermal::AssessmentStatus::NotVerified);
+
+    RevisionBoundCoreMassInputs coreMassInputs;
+    coreMassInputs.geometry = validButtCoreGeometry();
+    coreMassInputs.stackingFactor = 0.95;
+    coreMassInputs.dimensionalSource = "test-core-drawing";
+    coreMassInputs.dimensionalRevision = "REV-A";
+    coreMassInputs.stackingFactorSourceReference = "test-lamination-stack-measurement";
+    const auto massBoundResult = analyzeRevisionBoundReactorThermalNetwork(
+        store, "SEED-TDK-N87-R1", coreLoss, coreMassInputs, windingLoss, configuration);
+    assert(massBoundResult);
+    assert(massBoundResult.value().thermal.network.solved);
+    assert(massBoundResult.value().thermal.network.nodes.size() == 10);
+    assert(massBoundResult.value().thermal.network.nodes[0].loss.si() > 0.0);
+    assert(!massBoundResult.value().thermal.network.modelProvenanceComplete);
 
     // Even if a reviewer toggles the material release flag, approximate
     // core-loss digitization must never be promoted to a verified thermal result.
