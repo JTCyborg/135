@@ -931,18 +931,22 @@ private slots:
             artifactProjectId + QStringLiteral("_bus_impedance.png")));
         const QFileInfo coreFluxPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_core_flux.png")));
+        const QFileInfo materialBhPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_material_bh.png")));
         auto* historyPlot = window_->findChild<QWidget*>(
             QStringLiteral("historyComparisonPlot"));
         QVERIFY(historyPlot);
         const QFileInfo historyPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_history_comparison.png")));
-        const std::array<QFileInfo, 4> plotFiles{
-            currentPng, impedancePng, coreFluxPng, historyPng
+        const std::array<QFileInfo, 5> plotFiles{
+            currentPng, impedancePng, coreFluxPng, materialBhPng, historyPng
         };
-        const std::array<QWidget*, 4> plotWidgets{
+        const std::array<QWidget*, 5> plotWidgets{
             window_->findChild<QWidget*>(QStringLiteral("resultsBankCurrentPlot")),
             window_->findChild<QWidget*>(QStringLiteral("resultsBusImpedancePlot")),
-            coreFluxPlot, historyPlot
+            coreFluxPlot,
+            window_->findChild<QWidget*>(QStringLiteral("resultsMaterialBhPlot")),
+            historyPlot
         };
 
         // The history page is intentionally lazy in the tab widget and may not
