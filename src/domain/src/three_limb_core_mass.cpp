@@ -165,6 +165,7 @@ Result<ThreeLimbCoreLossRequest> bindThreeLimbCoreMass(
     const ThreeLimbCoreMassResult& mass)
 {
     ThreeLimbCoreLossRequest bound = operatingPoint;
+    bound.coreMassVerificationStatus = mass.verificationStatus;
     for (std::size_t region = 0; region < mass.regionMasses.size(); ++region) {
         const double value = mass.regionMasses[region].si();
         if (!std::isfinite(value) || value <= 0.0 ||
