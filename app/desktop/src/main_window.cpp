@@ -7504,7 +7504,7 @@ void MainWindow::calculateFilter()
             // to the legacy source-limited diagnostic sweep.
             const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
             const std::array<QString, 7> sectionNames{
-                tr("Limb A"), tr("Limb B"), tr("(") + tr("Limb C"),
+                tr("Limb A"), tr("Limb B"), tr("Limb C"),
                 tr("Top yoke A-B"), tr("Top yoke B-C"),
                 tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
             };
