@@ -1,0 +1,25 @@
+Project135 validation plot manifest
+Run: 20261122_213315
+Source commit: 65b23e7916a64a7d72b910fd6753712ec041e8dc
+Branch: main
+Generated PNG count: 
+18
+
+Debug\Plots\12928cf8-4948-4dae-8fd5-167062670b97_core_flux.png | 7070 bytes | 2026-11-22 21:35:25
+Debug\Plots\12928cf8-4948-4dae-8fd5-167062670b97_history_comparison.png | 4857 bytes | 2026-11-22 21:35:25
+Debug\Plots\2b7bdbe5-84c0-4a12-960f-246bc5f2fcce_core_flux.png | 7070 bytes | 2026-11-22 21:35:41
+Debug\Plots\2b7bdbe5-84c0-4a12-960f-246bc5f2fcce_history_comparison.png | 4857 bytes | 2026-11-22 21:35:41
+Debug\Plots\36fd16ef-f650-44eb-9ce6-d523cffb2709_core_flux.png | 7070 bytes | 2026-11-22 21:35:56
+Debug\Plots\36fd16ef-f650-44eb-9ce6-d523cffb2709_history_comparison.png | 4857 bytes | 2026-11-22 21:35:56
+Debug\Plots\47472432-38eb-4aec-a48d-01e958f7604a_core_flux.png | 7070 bytes | 2026-11-22 21:35:30
+Debug\Plots\47472432-38eb-4aec-a48d-01e958f7604a_history_comparison.png | 4857 bytes | 2026-11-22 21:35:30
+Debug\Plots\68839ea2-d35c-4fe7-8d0b-fa49d750df7c_core_flux.png | 7070 bytes | 2026-11-22 21:35:46
+Debug\Plots\68839ea2-d35c-4fe7-8d0b-fa49d750df7c_history_comparison.png | 4857 bytes | 2026-11-22 21:35:46
+Debug\Plots\6bce5c32-17ce-49bb-998e-b789f328838e_core_flux.png | 7070 bytes | 2026-11-22 21:36:11
+Debug\Plots\6bce5c32-17ce-49bb-998e-b789f328838e_history_comparison.png | 4857 bytes | 2026-11-22 21:36:10
+Debug\Plots\79fd2431-1c84-4e9b-b2fb-a34123e26bca_core_flux.png | 7070 bytes | 2026-11-22 21:35:37
+Debug\Plots\79fd2431-1c84-4e9b-b2fb-a34123e26bca_history_comparison.png | 4857 bytes | 2026-11-22 21:35:37
+Debug\Plots\e2cc0826-f079-4ab9-9599-4e36612f8dac_bus_impedance.png | 25342 bytes | 2026-11-22 21:37:14
+Debug\Plots\e2cc0826-f079-4ab9-9599-4e36612f8dac_core_flux.png | 13871 bytes | 2026-11-22 21:37:14
+Debug\Plots\e2cc0826-f079-4ab9-9599-4e36612f8dac_history_comparison.png | 4220 bytes | 2026-11-22 21:37:13
+Debug\Plots\e2cc0826-f079-4ab9-9599-4e36612f8dac_reactor_current.png | 23312 bytes | 2026-11-22 21:37:14
