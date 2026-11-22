@@ -32,6 +32,9 @@
 #include "p135/thermal/filter_bridge.hpp"
 
 #include <QAbstractItemView>
+#include <QAbstractSpinBox>
+#include <QButtonGroup>
+#include <QEvent>
 #include <QItemSelectionModel>
 #include <QAction>
 #include <QComboBox>
@@ -317,6 +320,55 @@ bool exportReactorAssemblyPdf(
 }
 
 } // namespace
+
+class InputInteractionFilter final : public QObject
+{
+public:
+    using QObject::QObject;
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override
+    {
+        QWidget* field = qobject_cast<QWidget*>(watched);
+        while (field && !qobject_cast<QAbstractSpinBox*>(field) &&
+               !qobject_cast<QComboBox*>(field)) {
+            field = field->parentWidget();
+        }
+        if (!field) return QObject::eventFilter(watched, event);
+
+        // A mouse wheel over a numeric field must never change an engineering
+        // value accidentally. Explicit editing and the spin buttons remain enabled.
+        if (event->type() == QEvent::Wheel) return true;
+
+        if ((event->type() == QEvent::Polish || event->type() == QEvent::Show) &&
+            field->styleSheet().isEmpty()) {
+            field->setStyleSheet(
+                "QAbstractSpinBox, QComboBox { background-color: #eef8f0; "
+                "border: 1px solid #78a987; border-radius: 3px; padding: 2px 4px; }"
+                "QAbstractSpinBox:disabled, QComboBox:disabled { "
+                "background-color: #eeeeee; color: #888888; border: 1px solid #cccccc; }");
+        } else if (event->type() == QEvent::FocusIn ||
+                   event->type() == QEvent::MouseButtonPress) {
+            field->setProperty("p135ActiveInput", true);
+            field->setStyleSheet(
+                "QAbstractSpinBox, QComboBox { background-color: #eef8f0; "
+                "border: 1px solid #78a987; border-radius: 3px; padding: 2px 4px; }"
+                "QAbstractSpinBox[p135ActiveInput=\"true\"], "
+                "QComboBox[p135ActiveInput=\"true\"] { background-color: #e7f1ff; "
+                "border: 2px solid #2878c8; }"
+                "QAbstractSpinBox:disabled, QComboBox:disabled { "
+                "background-color: #eeeeee; color: #888888; border: 1px solid #cccccc; }");
+        } else if (event->type() == QEvent::FocusOut) {
+            field->setProperty("p135ActiveInput", false);
+            field->setStyleSheet(
+                "QAbstractSpinBox, QComboBox { background-color: #eef8f0; "
+                "border: 1px solid #78a987; border-radius: 3px; padding: 2px 4px; }"
+                "QAbstractSpinBox:disabled, QComboBox:disabled { "
+                "background-color: #eeeeee; color: #888888; border: 1px solid #cccccc; }");
+        }
+        return QObject::eventFilter(watched, event);
+    }
+};
 
 struct PlotCurve {
     QString name;
@@ -847,6 +899,12 @@ bool resistorFromRevision(const p135::application::MaterialRevision& revision,
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
+    // Shared interaction policy for every numeric/drop-down input in the app.
+    // Keep the filter owned by QApplication so it also covers dynamically
+    // created Construction, Results and dialog controls.
+    static auto* inputInteractionFilter = new InputInteractionFilter(qApp);
+    qApp->installEventFilter(inputInteractionFilter);
+
     QSettings settings;
     projectId_ = settings.value(QStringLiteral("project/currentId")).toString();
     if (projectId_.isEmpty()) {
@@ -2026,27 +2084,32 @@ QWidget* MainWindow::createFilterPage()
     auto* form = new QFormLayout(group);
 
     nominalVoltage_ = new QDoubleSpinBox;
+    nominalVoltage_->setObjectName(QStringLiteral("nominalVoltage"));
     nominalVoltage_->setRange(1.0, 1000000.0);
     nominalVoltage_->setValue(400.0);
     nominalVoltage_->setSuffix(tr(" V L-L"));
     nominalVoltage_->setDecimals(1);
 
     fundamentalFrequency_ = new QDoubleSpinBox;
+    fundamentalFrequency_->setObjectName(QStringLiteral("fundamentalFrequency"));
     fundamentalFrequency_->setRange(1.0, 1000.0);
     fundamentalFrequency_->setValue(50.0);
     fundamentalFrequency_->setSuffix(tr(" Hz"));
 
     targetReactivePower_ = new QDoubleSpinBox;
+    targetReactivePower_->setObjectName(QStringLiteral("targetReactivePower"));
     targetReactivePower_->setRange(0.001, 100000000.0);
     targetReactivePower_->setValue(100.0);
     targetReactivePower_->setSuffix(tr(" kvar total"));
     targetReactivePower_->setDecimals(3);
 
     filterConnection_ = new QComboBox;
+    filterConnection_->setObjectName(QStringLiteral("filterConnection"));
     filterConnection_->addItem(tr("Wye (Y)"), static_cast<int>(p135::filter::Connection::Wye));
     filterConnection_->addItem(tr("Delta (Δ)"), static_cast<int>(p135::filter::Connection::Delta));
 
     tuningHarmonicOrder_ = new QDoubleSpinBox;
+    tuningHarmonicOrder_->setObjectName(QStringLiteral("tuningHarmonicOrder"));
     tuningHarmonicOrder_->setRange(2.0, 100.0);
     tuningHarmonicOrder_->setDecimals(3);
     tuningHarmonicOrder_->setSingleStep(0.05);
@@ -2054,6 +2117,7 @@ QWidget* MainWindow::createFilterPage()
     tuningHarmonicOrder_->setToolTip(tr("Fractional tuning order is supported, e.g. 4.75 for a filter tuned below the 5th harmonic."));
 
     qualityFactor_ = new QDoubleSpinBox;
+    qualityFactor_->setObjectName(QStringLiteral("qualityFactor"));
     qualityFactor_->setRange(0.1, 10000.0);
     qualityFactor_->setValue(50.0);
     qualityFactor_->setDecimals(2);
@@ -2088,6 +2152,7 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(group);
 
     auto* componentGroup = new QGroupBox(tr("Selected components and installation thermal data"));
+    componentGroup->setObjectName(QStringLiteral("filterComponentManualGroup"));
     auto* componentForm = new QFormLayout(componentGroup);
     capacitorComponent_ = new QComboBox;
     resistorComponent_ = new QComboBox;
@@ -2155,6 +2220,7 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(note);
 
     auto* advanced = new QGroupBox(tr("Source impedance, harmonics and magnetic core"));
+    advanced->setObjectName(QStringLiteral("filterAdvancedManualGroup"));
     auto* advancedLayout = new QVBoxLayout(advanced);
     auto* sourceForm = new QFormLayout;
 
@@ -2425,6 +2491,53 @@ QWidget* MainWindow::createFilterPage()
     sourceWarning->setStyleSheet("color: #a66b00;");
     advancedLayout->addWidget(sourceWarning);
     layout->addWidget(advanced);
+
+    // Automatic mode presents only the minimum network/filter requirements.
+    // Manual mode reveals component, thermal, source and magnetic overrides.
+    auto* modeRow = new QHBoxLayout;
+    auto* automaticMode = new QToolButton;
+    automaticMode->setObjectName(QStringLiteral("filterAutomaticMode"));
+    automaticMode->setText(tr("Automatic"));
+    automaticMode->setCheckable(true);
+    automaticMode->setChecked(true);
+    automaticMode->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    auto* manualMode = new QToolButton;
+    manualMode->setObjectName(QStringLiteral("filterManualMode"));
+    manualMode->setText(tr("Manual"));
+    manualMode->setCheckable(true);
+    manualMode->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    auto* modeGroup = new QButtonGroup(page);
+    modeGroup->setExclusive(true);
+    modeGroup->addButton(automaticMode);
+    modeGroup->addButton(manualMode);
+    modeRow->addWidget(new QLabel(tr("Input mode:")));
+    modeRow->addWidget(automaticMode);
+    modeRow->addWidget(manualMode);
+    auto* inputLegend = new QLabel(
+        tr("Green — editable input   Blue — active field   Grey — unavailable"));
+    inputLegend->setStyleSheet("color: palette(mid); font-size: 11px;");
+    modeRow->addWidget(inputLegend);
+    modeRow->addStretch();
+    layout->insertLayout(1, modeRow);
+    componentGroup->setVisible(false);
+    advanced->setVisible(false);
+    if (auto* qualityLabel = form->labelForField(qualityFactor_))
+        qualityLabel->setVisible(false);
+    qualityFactor_->setVisible(false);
+    connect(automaticMode, &QToolButton::toggled, page,
+        [componentGroup, advanced, qualityFactor_, form](bool automatic) {
+            componentGroup->setVisible(!automatic);
+            advanced->setVisible(!automatic);
+            qualityFactor_->setVisible(!automatic);
+            if (auto* qualityLabel = form->labelForField(qualityFactor_))
+                qualityLabel->setVisible(!automatic);
+        });
+    connect(manualMode, &QToolButton::clicked, page, [this] {
+        appendLog(tr("Filter input mode changed to MANUAL; existing values are preserved."));
+    });
+    connect(automaticMode, &QToolButton::clicked, page, [this] {
+        appendLog(tr("Filter input mode changed to AUTOMATIC; advanced values are preserved."));
+    });
 
     // Stable identifiers for the principal filter-definition inputs and editable tables.
     nominalVoltage_->setObjectName(QStringLiteral("filterNominalVoltageV"));
