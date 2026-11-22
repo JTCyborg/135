@@ -72,19 +72,27 @@ int main()
     assert(result.value().verificationStatus == "NOT_VERIFIED");
 
     const double limbVolume = 0.04 * 0.08 * 0.20 * 0.95;
-    const double yokeVolume = 0.06 * 0.03 * 0.08 * 0.95;
+    const std::array<double, 4> yokeVolumes{
+        0.06 * 0.03 * 0.08 * 0.95,
+        0.06 * 0.03 * 0.08 * 0.95,
+        0.06 * 0.04 * 0.08 * 0.95,
+        0.06 * 0.04 * 0.08 * 0.95
+    };
     for (std::size_t i = 0; i < 3; ++i) {
         assert(near(result.value().netSteelVolumes[i].si(), limbVolume));
         assert(near(result.value().regionMasses[i].si(), limbVolume * 7650.0));
     }
     for (std::size_t i = 3; i < 7; ++i) {
-        assert(near(result.value().netSteelVolumes[i].si(), yokeVolume));
-        assert(near(result.value().regionMasses[i].si(), yokeVolume * 7650.0));
+        const double expectedYokeVolume = yokeVolumes[i - 3];
+        assert(near(result.value().netSteelVolumes[i].si(), expectedYokeVolume));
+        assert(near(result.value().regionMasses[i].si(), expectedYokeVolume * 7650.0));
     }
     assert(near(result.value().totalNetSteelVolume.si(),
-                3.0 * limbVolume + 4.0 * yokeVolume));
+                3.0 * limbVolume + yokeVolumes[0] + yokeVolumes[1] +
+                    yokeVolumes[2] + yokeVolumes[3]));
     assert(near(result.value().totalMass.si(),
-                (3.0 * limbVolume + 4.0 * yokeVolume) * 7650.0));
+                (3.0 * limbVolume + yokeVolumes[0] + yokeVolumes[1] +
+                 yokeVolumes[2] + yokeVolumes[3]) * 7650.0));
     assert(result.value().regionMassSourceReferences[0].find("LIMB_OWNS_JOINTS") != std::string::npos);
 
     ThreeLimbCoreLossRequest operatingPoint;
