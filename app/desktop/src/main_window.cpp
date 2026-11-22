@@ -2528,12 +2528,15 @@ QWidget* MainWindow::createFilterPage()
         qualityLabel->setVisible(false);
     qualityFactor_->setVisible(false);
     connect(automaticMode, &QToolButton::toggled, page,
-        [componentGroup, advanced, qualityFactor_, form](bool automatic) {
+        [this, componentGroup, advanced, qualityFactor_, form](bool automatic) {
             componentGroup->setVisible(!automatic);
             advanced->setVisible(!automatic);
             qualityFactor_->setVisible(!automatic);
             if (auto* qualityLabel = form->labelForField(qualityFactor_))
                 qualityLabel->setVisible(!automatic);
+            if (auto* sizingAssumptions = findChild<QGroupBox*>(
+                    QStringLiteral("idealSizingAssumptionsGroup")))
+                sizingAssumptions->setVisible(!automatic);
         });
     connect(manualMode, &QToolButton::clicked, page, [this] {
         appendLog(tr("Filter input mode changed to MANUAL; existing values are preserved."));
@@ -3711,6 +3714,8 @@ QWidget* MainWindow::createResultsPage()
 
     auto* idealCriteria = new QGroupBox(
         tr("Automatic first-pass assumptions (editable in Manual mode)"), designGroup);
+    idealCriteria->setObjectName(QStringLiteral("idealSizingAssumptionsGroup"));
+    idealCriteria->setVisible(false);
     auto* idealCriteriaLayout = new QFormLayout(idealCriteria);
     const auto addIdealCriterion = [idealCriteria](const QString& objectName, double maximum,
                                                     int decimals, const QString& suffix,
