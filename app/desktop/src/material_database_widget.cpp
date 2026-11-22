@@ -602,7 +602,7 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         QJsonDocument(root).toJson(QJsonDocument::Indented)));
     return true;
 }
-
+} // namespace
 
 namespace {
 bool editCoreLossPayload(QWidget* parent, QPlainTextEdit* payloadEditor)
