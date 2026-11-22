@@ -2,6 +2,7 @@
 
 #include "p135/core/result.hpp"
 #include "p135/core/units.hpp"
+#include "p135/domain/core_loss.hpp"
 #include "p135/domain/magnetic_product.hpp"
 #include "p135/domain/mechanical_geometry.hpp"
 
@@ -43,5 +44,12 @@ struct ThreeLimbCoreMassResult {
 /// this avoids inventing or double-counting interleaved joint steel.
 [[nodiscard]] Result<ThreeLimbCoreMassResult> calculateThreeLimbCoreMass(
     const ThreeLimbCoreMassRequest& request);
+
+/// Replaces manually entered region masses in an operating-point request with
+/// the calculated, provenance-bearing masses. Frequency, Bpeak and temperature
+/// inputs are preserved unchanged.
+[[nodiscard]] Result<ThreeLimbCoreLossRequest> bindThreeLimbCoreMass(
+    const ThreeLimbCoreLossRequest& operatingPoint,
+    const ThreeLimbCoreMassResult& mass);
 
 } // namespace p135::domain
