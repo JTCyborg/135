@@ -894,6 +894,31 @@ private slots:
         QVERIFY(coreFluxTitle->text().contains(QStringLiteral("operating-point")));
         QVERIFY(!coreFluxTitle->text().contains(QStringLiteral("NOT_VERIFIED")));
 
+        // The exact pinned M235-35A revision must expose its automatically
+        // generated 49-point exploratory B-H branch in the Results graph,
+        // even though the operating-point opt-in remains disabled by default.
+        auto* materialBhPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsMaterialBhPlot"));
+        QVERIFY(materialBhPlot);
+        const auto bhCurves = materialBhPlot->property("plotCurves").toList();
+        QCOMPARE(bhCurves.size(), 1);
+        const auto bhPoints = bhCurves.front().toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(bhPoints.size(), 49);
+        const auto firstBhPoint = bhPoints.front().toList();
+        const auto lastBhPoint = bhPoints.back().toList();
+        QCOMPARE(firstBhPoint.size(), 2);
+        QCOMPARE(lastBhPoint.size(), 2);
+        QCOMPARE(firstBhPoint[0].toDouble(), 0.0);
+        QCOMPARE(firstBhPoint[1].toDouble(), 0.0);
+        QCOMPARE(lastBhPoint[0].toDouble(), 10000.0);
+        QVERIFY(lastBhPoint[1].toDouble() > 1.70);
+        auto* materialBhTitle = window_->findChild<QLabel*>(
+            QStringLiteral("materialBhPlotTitle"));
+        QVERIFY(materialBhTitle);
+        QVERIFY(materialBhTitle->text().contains(QStringLiteral("ESTIMATED")));
+        QVERIFY(materialBhTitle->text().contains(QStringLiteral("NOT_VERIFIED")));
+
 #if defined(_DEBUG) || !defined(NDEBUG)
         QSettings artifactSettings;
         const QString artifactProjectId =
