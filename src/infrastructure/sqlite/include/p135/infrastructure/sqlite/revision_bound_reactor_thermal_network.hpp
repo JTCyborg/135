@@ -6,6 +6,8 @@
 #include "p135/domain/three_limb_core_mass.hpp"
 #include "p135/thermal/reactor_thermal_network.hpp"
 
+#include <optional>
+
 namespace p135::infrastructure::sqlite {
 
 struct RevisionBoundCoreMassInputs {
@@ -20,6 +22,7 @@ struct RevisionBoundReactorThermalNetworkResult {
     CoreMaterialRevisionSnapshot coreMaterialRevision;
     ConductorMaterialRevisionSnapshot conductorMaterialRevision;
     thermal::ReactorThermalNetworkResult thermal;
+    std::optional<domain::ThreeLimbCoreMassResult> calculatedCoreMass;
 };
 
 /// End-to-end revision-bound reactor thermal analysis:
