@@ -1,0 +1,43 @@
+================================================================ 
+Project135 validation run 
+Started: 22.11.2026  9:06:03,33 
+Project: C:\Temp\trdos\135\ 
+================================================================ 
+VCPKG_ROOT: C:\vcpkg
+[VCPKG] OCCT archive found and will be preserved: C:\vcpkg\downloads\Open-Cascade-SAS-OCCT-V8_0_1.tar.gz
+[VCPKG] Using existing checkout and pinned baseline b94b6bdc326c0faea9070b4862e0e0d4e4ac5396.
+[VCPKG] Binary cache: C:\vcpkg\binary-cache
+[VCPKG] Persistent installed tree: C:\Temp\trdos\135\vcpkg_installed
+[VCPKG] Cached OCCT source archive and buildtrees are left untouched.
+[VCPKG] Tool checkout commit: b94b6bdc326c0faea9070b4862e0e0d4e4ac5396
+[ENVIRONMENT]
+Computer: DESKTOP-H1DJP3C
+User: JTCyb
+
+
+[RUN] CMake version
+cmake version 4.4.4
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+[PASS] CMake version
+[FAIL] CMake version (exit 0)
+
+[RUN] Git version
+git version 2.56.0.windows.4
+[PASS] Git version
+[FAIL] Git version (exit 0)
+[CLEAN] CAD, Drawings and Debug removed.
+Current branch: main
+[FATAL] Working tree is not clean after generated-folder cleanup. Pull was not run.
+ M 01_project.json
+ M 02_filter_definition.json
+ M 03_construction.json
+ M 04_calculation_design.json
+?? BuildReports/Project135_validation_20261122_090603.log
+?? Project135DesktopWorkflowE2ETests.exe_261121_235141.dmp
+?? windbg_analysis_5b3c_2026-11-21_23-58-20-516.txt
+?? windbg_analysis_5b3c_2026-11-21_23-58-56-373.txt
+
+Overall: FAILED
+Synchronization/build stopped before CMake configuration.
+Finished: 22.11.2026  9:06:05,23
