@@ -96,6 +96,7 @@ int main()
     assert(near(bound.value().frequency.si(), 250.0));
     assert(near(bound.value().peakFluxDensities[4].si(), 1.1));
     assert(near(bound.value().temperatures[4].si(), 333.15));
+    assert(bound.value().coreMassVerificationStatus == "NOT_VERIFIED");
     assert(near(bound.value().regionMasses[4].si(), result.value().regionMasses[4].si()));
     assert(bound.value().regionMassSourceReferences[4] ==
            result.value().regionMassSourceReferences[4]);
