@@ -1268,6 +1268,9 @@ void MainWindow::loadProjectArchive()
     projectId_ = newProjectId;
     loadingProjectSettings_ = true;
     loadProjectSettings();
+    // loadProjectSettings() releases its own guard. Keep autosave and dirty-state
+    // handlers suspended for the remainder of this archive restoration transaction.
+    loadingProjectSettings_ = true;
 
     // Restore only the two known project-generated deliverables under paths derived
     // from the newly allocated project ID; archive paths are never used as filesystem paths.
@@ -1299,6 +1302,7 @@ void MainWindow::loadProjectArchive()
     for (auto it = controls.begin(); it != controls.end(); ++it) {
         QWidget* widget = findChild<QWidget*>(it.key());
         if (!widget || !it.value().isObject()) continue;
+        const QSignalBlocker signalBlocker(widget);
         const QJsonObject state = it.value().toObject();
         const QString type = state.value(QStringLiteral("type")).toString();
         if (type == QStringLiteral("combo")) {
@@ -1340,7 +1344,6 @@ void MainWindow::loadProjectArchive()
             }
         }
     }
-    loadingProjectSettings_ = false;
     constructionInputsDirty_ = true;
     acceptedConstructionInputs_.reset();
     latestFilterSnapshotId_.clear();
@@ -1348,6 +1351,9 @@ void MainWindow::loadProjectArchive()
     updateProjectTitle();
     refreshComponentSelectors();
     if (tabs_) tabs_->setCurrentIndex(0);
+    loadingProjectSettings_ = false;
+    // Persist only the fully restored state, never intermediate widget values.
+    saveProjectSettings();
     appendLog(tr("Project archive loaded as project %1. SQLite database and calculation history were not imported.")
         .arg(projectId_));
     status_->setText(tr("Project loaded"));
@@ -1420,16 +1426,28 @@ void MainWindow::loadProjectSettings()
             int index = combo->findData(stored);
             // Keep an exact historical material revision selectable even if a newer revision
             // exists or the material identity has since been archived.
-            if (index < 0 && materialStore_ &&
+            if (index < 0 &&
                 (key == QStringLiteral("construction_coreMaterial") ||
                  key == QStringLiteral("construction_conductorMaterial") ||
                  key == QStringLiteral("construction_insulationMaterial"))) {
-                const auto revision = materialStore_->findRevision(stored.toString().toStdString());
-                if (revision && revision.value()) {
-                    const auto& item = *revision.value();
-                    combo->addItem(QString::fromStdString(item.materialId) +
-                        QStringLiteral(" — r%1 (pinned revision)").arg(item.revisionNumber),
-                        QString::fromStdString(item.revisionId));
+                const QString revisionId = stored.toString();
+                if (materialStore_) {
+                    const auto revision = materialStore_->findRevision(revisionId.toStdString());
+                    if (revision && revision.value()) {
+                        const auto& item = *revision.value();
+                        combo->addItem(QString::fromStdString(item.materialId) +
+                            QStringLiteral(" — r%1 (pinned revision)").arg(item.revisionNumber),
+                            QString::fromStdString(item.revisionId));
+                        index = combo->count() - 1;
+                    }
+                }
+                // The project archive deliberately excludes the local material DB.
+                // Preserve an unavailable revision as an explicit, selectable reference;
+                // never silently substitute the first/latest local material.
+                if (index < 0 && !revisionId.isEmpty()) {
+                    combo->addItem(
+                        tr("Unavailable material revision — %1 (NOT AVAILABLE)").arg(revisionId),
+                        revisionId);
                     index = combo->count() - 1;
                 }
             }
