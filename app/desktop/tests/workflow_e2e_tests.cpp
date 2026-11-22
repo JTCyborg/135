@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
+#include <QDialog>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
@@ -204,6 +205,82 @@ private slots:
         QVERIFY(std::abs(fluxLimit->value() - 1.3) < 1.0e-9);
         QTest::mouseClick(automatic, Qt::LeftButton);
         QTRY_VERIFY(assumptions->isHidden());
+    }
+
+    void coreMaterialBhCurveImportIsStructuredAndProvenanced()
+    {
+        auto* tabs = window_->findChild<QTabWidget*>();
+        QVERIFY(tabs);
+        tabs->setCurrentIndex(5);
+        auto* create = window_->findChild<QPushButton*>(
+            QStringLiteral("materialNewButton"));
+        QVERIFY(create);
+
+        QTimer::singleShot(0, [this] {
+            auto* materialDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+            QVERIFY2(materialDialog, "New material dialog did not open");
+            auto* import = materialDialog->findChild<QPushButton*>(
+                QStringLiteral("importBhCurveButton"));
+            QVERIFY2(import && import->isEnabled(),
+                "B-H import action must be enabled for a new core material");
+            auto* payload = materialDialog->findChild<QPlainTextEdit*>(
+                QStringLiteral("materialPayloadJson"));
+            QVERIFY(payload);
+
+            QTimer::singleShot(0, [this, materialDialog] {
+                auto* bhDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+                if (!bhDialog) {
+                    QFAIL("B-H curve import dialog did not open");
+                    materialDialog->reject();
+                    return;
+                }
+                auto* source = bhDialog->findChild<QLineEdit*>(
+                    QStringLiteral("bhCurveSourceDocument"));
+                auto* points = bhDialog->findChild<QPlainTextEdit*>(
+                    QStringLiteral("bhCurvePoints"));
+                auto* quality = bhDialog->findChild<QComboBox*>(
+                    QStringLiteral("bhCurveQualityStatus"));
+                if (!source || !points || !quality) {
+                    QFAIL("B-H import dialog is missing required controls");
+                    bhDialog->reject();
+                    materialDialog->reject();
+                    return;
+                }
+                source->setText(QStringLiteral("TEST-MANUFACTURER-DATASHEET-R1"));
+                points->setPlainText(QStringLiteral(
+                    "H_A_per_m, B_T\n0, 0\n100, 0.25\n200, 0.40"));
+                const int manufacturerIndex = quality->findData(
+                    QStringLiteral("MANUFACTURER_TABULATED"));
+                if (manufacturerIndex < 0) {
+                    QFAIL("Manufacturer tabulated quality option is missing");
+                    bhDialog->reject();
+                    materialDialog->reject();
+                    return;
+                }
+                quality->setCurrentIndex(manufacturerIndex);
+                bhDialog->accept();
+            });
+
+            QTest::mouseClick(import, Qt::LeftButton);
+            const auto document = QJsonDocument::fromJson(payload->toPlainText().toUtf8());
+            QVERIFY(document.isObject());
+            const auto root = document.object();
+            const auto curve = root.value(QStringLiteral("bhCurve")).toObject();
+            QCOMPARE(curve.value(QStringLiteral("frequency_Hz")).toDouble(), 50.0);
+            QCOMPARE(curve.value(QStringLiteral("points")).toArray().size(), 3);
+            QCOMPARE(root.value(QStringLiteral("dataQuality")).toObject()
+                         .value(QStringLiteral("bhCurveStatus")).toString(),
+                     QStringLiteral("MANUFACTURER_TABULATED"));
+            QCOMPARE(root.value(QStringLiteral("bhCurveProvenance")).toObject()
+                         .value(QStringLiteral("sourceDocument")).toString(),
+                     QStringLiteral("TEST-MANUFACTURER-DATASHEET-R1"));
+            QCOMPARE(root.value(QStringLiteral("dataQuality")).toObject()
+                         .value(QStringLiteral("designReleaseStatus")).toString(),
+                     QStringLiteral("NOT_VERIFIED"));
+            materialDialog->reject();
+        });
+
+        QTest::mouseClick(create, Qt::LeftButton);
     }
 
     void filterInputModesAndWheelProtection()
