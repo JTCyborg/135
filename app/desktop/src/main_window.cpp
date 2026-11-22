@@ -4327,7 +4327,8 @@ void MainWindow::compareSelectedCalculationGraphs()
     const auto selected = historyTable_->selectionModel()->selectedRows();
     if (selected.size() != 2) {
         historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"),
-            tr("Select exactly two calculations"));
+            tr("Selected metric"),
+            true, tr("Select exactly two calculation rows, then press Compare graphs."));
         return;
     }
 
@@ -4338,18 +4339,28 @@ void MainWindow::compareSelectedCalculationGraphs()
     const QString yLabel = currentMetric ? tr("Reactor branch peak current (A)") : tr("Bus impedance (Ω)");
     std::vector<PlotCurve> curves;
     QStringList comparisonIds;
+    QStringList diagnostics;
 
     for (const auto& selection : selected) {
         const int row = selection.row();
         const auto* idItem = historyTable_->item(row, 3);
-        if (!idItem) continue;
+        if (!idItem) {
+            diagnostics.push_back(tr("Selected row %1: calculation ID is missing.").arg(row + 1));
+            continue;
+        }
         const QString calculationId = idItem->data(Qt::UserRole).toString();
         const auto record = materialStore_->findCalculation(calculationId.toStdString());
-        if (!record || !record.value()) continue;
+        if (!record || !record.value()) {
+            diagnostics.push_back(tr("Calculation %1: snapshot could not be loaded.").arg(calculationId));
+            continue;
+        }
 
         const auto document = QJsonDocument::fromJson(
             QByteArray::fromStdString(record.value()->resultJson));
-        if (!document.isObject()) continue;
+        if (!document.isObject()) {
+            diagnostics.push_back(tr("Calculation %1: result JSON is invalid.").arg(calculationId.left(8)));
+            continue;
+        }
         const auto samples = document.object().value(arrayKey).toArray();
         PlotCurve curve;
         curve.name = QString::fromStdString(record.value()->projectName) +
@@ -4359,22 +4370,33 @@ void MainWindow::compareSelectedCalculationGraphs()
             const auto sample = sampleValue.toObject();
             const auto frequency = sample.value(QStringLiteral("frequency_Hz"));
             const auto ordinate = sample.value(metricKey);
-            if (!frequency.isDouble() || !ordinate.isDouble()) continue;
+            if (!frequency.isDouble() || !ordinate.isDouble() ||
+                !std::isfinite(frequency.toDouble()) || frequency.toDouble() <= 0.0 ||
+                !std::isfinite(ordinate.toDouble()) || ordinate.toDouble() < 0.0)
+                continue;
             curve.points.emplace_back(frequency.toDouble(), ordinate.toDouble());
         }
         if (curve.points.size() >= 2) {
+            diagnostics.push_back(tr("Calculation %1: %2 valid points.")
+                .arg(calculationId.left(8)).arg(curve.points.size()));
             curves.push_back(std::move(curve));
             comparisonIds.push_back(calculationId);
+        } else {
+            diagnostics.push_back(tr("Calculation %1: '%2' contains %3 usable points; at least 2 are required.")
+                .arg(calculationId.left(8), arrayKey)
+                .arg(curve.points.size()));
         }
     }
 
     if (curves.size() != 2) {
-        historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), yLabel);
-        historyDetails_->appendPlainText(tr("\nGraph comparison unavailable: one or both selected snapshots do not contain this frequency series. Older snapshots do not contain the corrected reactor-branch current series."));
+        const QString reason = diagnostics.join(QStringLiteral("\n"));
+        historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), yLabel,
+            true, tr("Comparison unavailable.\n%1").arg(reason));
+        historyDetails_->appendPlainText(tr("\nGraph comparison unavailable:\n%1").arg(reason));
         return;
     }
     historyComparisonPlot_->setCurves(std::move(curves),
-        tr("Frequency (Hz, logarithmic)"), yLabel);
+        tr("Frequency (Hz, logarithmic)"), yLabel, true);
     historyDetails_->appendPlainText(tr("\nGraph comparison: %1 vs %2 (%3).")
         .arg(comparisonIds[0], comparisonIds[1], yLabel));
 }
