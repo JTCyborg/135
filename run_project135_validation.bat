@@ -15,8 +15,8 @@ if not exist "BuildReports" mkdir "BuildReports"
 set "LOG=BuildReports\Project135_validation_%STAMP%.log"
 
 set "OVERALL=PASS"
-set "DEBUG_BUILD_OK=1"
-set "RELEASE_BUILD_OK=1"
+set "DEBUG_BUILD_OK=NOT_RUN"
+set "RELEASE_BUILD_OK=NOT_RUN"
 set "DEBUG_TEST_OK=SKIPPED"
 set "RELEASE_TEST_OK=SKIPPED"
 set "PUBLISH_OK=NOT_ATTEMPTED"
@@ -178,19 +178,23 @@ echo [4/6] Building Debug and Release...
 set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
 call :RUN "Build Debug"
 if errorlevel 1 (
-    set "DEBUG_BUILD_OK=0"
+    set "DEBUG_BUILD_OK=FAIL"
     set "OVERALL=FAILED"
+) else (
+    set "DEBUG_BUILD_OK=PASS"
 )
 set "RUN_CMD=cmake --build --preset build-desktop-release --parallel 4"
 call :RUN "Build Release"
 if errorlevel 1 (
-    set "RELEASE_BUILD_OK=0"
+    set "RELEASE_BUILD_OK=FAIL"
     set "OVERALL=FAILED"
+) else (
+    set "RELEASE_BUILD_OK=PASS"
 )
 
 echo.
 echo [5/6] Running CTest...
-if "!DEBUG_BUILD_OK!"=="1" (
+if "!DEBUG_BUILD_OK!"=="PASS" (
     set "RUN_CMD=ctest --preset test-desktop-debug"
     call :RUN "CTest Debug"
     if errorlevel 1 (
@@ -200,9 +204,9 @@ if "!DEBUG_BUILD_OK!"=="1" (
         set "DEBUG_TEST_OK=PASS"
     )
 ) else (
-    echo [SKIP] Debug tests skipped because Debug build failed.>>"%LOG%"
+    echo [SKIP] Debug tests skipped because Debug build status is !DEBUG_BUILD_OK!.>>"%LOG%"
 )
-if "!RELEASE_BUILD_OK!"=="1" (
+if "!RELEASE_BUILD_OK!"=="PASS" (
     set "RUN_CMD=ctest --preset test-desktop-release"
     call :RUN "CTest Release"
     if errorlevel 1 (
@@ -212,7 +216,7 @@ if "!RELEASE_BUILD_OK!"=="1" (
         set "RELEASE_TEST_OK=PASS"
     )
 ) else (
-    echo [SKIP] Release tests skipped because Release build failed.>>"%LOG%"
+    echo [SKIP] Release tests skipped because Release build status is !RELEASE_BUILD_OK!.>>"%LOG%"
 )
 
 :FINALIZE
