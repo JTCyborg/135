@@ -6124,6 +6124,12 @@ void MainWindow::calculateFilter()
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
     }
 
+    // Retain the exact Construction-bound result for the live plot and immutable
+    // calculation snapshot. It is distinct from the legacy manual diagnostic model.
+    std::optional<std::array<double, 7>> constructionBoundPeakFluxDensityT;
+    bool constructionBoundWithinMeasuredBhCurve = false;
+    QString constructionBoundMagneticWarning;
+
     // Revision-bound magnetic analysis uses the exact accepted Construction
     // core dimensions and exact selected material revision. It is deliberately
     // separate from the legacy manual Ae/le diagnostic controls above.
@@ -6131,8 +6137,9 @@ void MainWindow::calculateFilter()
         const auto& accepted = *acceptedConstructionInputs_;
         const auto physicalCore = p135::application::makeThreeLimbCorePhysicalGeometry(accepted);
         if (!physicalCore) {
-            appendLog(tr("[MAGNETIC] NOT_VERIFIED — accepted Construction core geometry: %1")
-                .arg(QString::fromStdString(physicalCore.error().message)));
+            constructionBoundMagneticWarning = tr("Accepted Construction core geometry NOT_VERIFIED: %1")
+                .arg(QString::fromStdString(physicalCore.error().message));
+            appendLog(tr("[MAGNETIC] %1").arg(constructionBoundMagneticWarning));
         } else {
             p135::application::PhysicalFilterReactorMagneticRequest magneticRequest;
             magneticRequest.physicalCore = physicalCore.value();
@@ -6150,17 +6157,28 @@ void MainWindow::calculateFilter()
                 analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
                     *materialStore_, accepted.coreMaterial->revisionId, magneticRequest);
             if (!magnetic) {
-                appendLog(tr("[MAGNETIC] NOT_VERIFIED — Construction revision %1; material %2: %3")
+                constructionBoundMagneticWarning = tr("Construction-bound magnetic analysis NOT_VERIFIED — Construction revision %1; material %2: %3")
                     .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
                     .arg(QString::fromStdString(accepted.coreMaterial->revisionId))
-                    .arg(QString::fromStdString(magnetic.error().message)));
+                    .arg(QString::fromStdString(magnetic.error().message));
+                appendLog(tr("[MAGNETIC] %1").arg(constructionBoundMagneticWarning));
             } else {
                 const auto& cycle = magnetic.value().magneticAnalysis.magneticAnalysis.magneticCycle;
                 double maximumFluxDensity = 0.0;
                 for (const auto& density : cycle.peakAbsoluteFluxDensity)
                     maximumFluxDensity = std::max(maximumFluxDensity, density.si());
                 const QString magneticState = cycle.converged
-                    ? tr("PASS") : tr("NOT_VERIFIED — peak flux density did not converge to the requested tolerance");
+                    ? (cycle.withinBhCurveRange ? tr("PASS") : tr("EXTRAPOLATED_NOT_VERIFIED"))
+                    : tr("NOT_VERIFIED — peak flux density did not converge to the requested tolerance");
+                if (cycle.converged) {
+                    std::array<double, 7> peakValues{};
+                    for (std::size_t section = 0; section < peakValues.size(); ++section)
+                        peakValues[section] = cycle.peakAbsoluteFluxDensity[section].si();
+                    constructionBoundPeakFluxDensityT = peakValues;
+                    constructionBoundWithinMeasuredBhCurve = cycle.withinBhCurveRange;
+                } else {
+                    constructionBoundMagneticWarning = magneticState;
+                }
                 appendLog(tr("[MAGNETIC] %1 — Construction %2; material %3; max |B|=%4 T; samples=%5; relative peak change=%6.")
                     .arg(magneticState)
                     .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
@@ -6171,7 +6189,8 @@ void MainWindow::calculateFilter()
             }
         }
     } else if (acceptedPhysicalMagneticCandidate) {
-        appendLog(tr("[MAGNETIC] NOT_VERIFIED — harmonic branch currents are unavailable; no magnetic result was produced."));
+        constructionBoundMagneticWarning = tr("Construction-bound magnetic operating point NOT_VERIFIED: harmonic branch currents are unavailable.");
+        appendLog(tr("[MAGNETIC] %1").arg(constructionBoundMagneticWarning));
     }
 
     // First-pass ideal area-product bound. Inputs are explicit user criteria.
@@ -7046,6 +7065,30 @@ void MainWindow::calculateFilter()
             }
         }
         resultSnapshot.insert(QStringLiteral("threeLimbMagneticSweep"), threeLimbSweepSnapshot);
+        QJsonObject constructionBoundOperatingSnapshot;
+        if (constructionBoundPeakFluxDensityT) {
+            const auto& peakB = *constructionBoundPeakFluxDensityT;
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("status"),
+                constructionBoundWithinMeasuredBhCurve
+                    ? QStringLiteral("VERIFIED_CONVERGED")
+                    : QStringLiteral("EXTRAPOLATED_NOT_VERIFIED"));
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("withinMeasuredBhCurve"),
+                constructionBoundWithinMeasuredBhCurve);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("limbA_peak_B_T"), peakB[0]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("limbB_peak_B_T"), peakB[1]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("limbC_peak_B_T"), peakB[2]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeTopAB_peak_B_T"), peakB[3]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeTopBC_peak_B_T"), peakB[4]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeBottomAB_peak_B_T"), peakB[5]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeBottomBC_peak_B_T"), peakB[6]);
+        } else {
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("status"), QStringLiteral("NOT_VERIFIED"));
+        }
+        if (!constructionBoundMagneticWarning.isEmpty())
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("warning"), constructionBoundMagneticWarning);
+        resultSnapshot.insert(QStringLiteral("constructionBoundMagneticOperatingPoint"),
+            constructionBoundOperatingSnapshot);
+
         QJsonObject threeLimbOperatingSnapshot;
         if (threeLimbOperatingPoint) {
             const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
@@ -7246,8 +7289,8 @@ void MainWindow::calculateFilter()
         // the combined multi-harmonic waveform and therefore has no single
         // frequency coordinate; plot the seven physical core sections on a
         // linear categorical index instead of fabricating a frequency sweep.
-        if (threeLimbOperatingPoint) {
-            const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
+        if (constructionBoundPeakFluxDensityT) {
+            const auto& peakB = *constructionBoundPeakFluxDensityT;
             const std::array<QString, 7> sectionNames{
                 tr("Limb A"), tr("Limb B"), tr("Limb C"),
                 tr("Top yoke A-B"), tr("Top yoke B-C"),
@@ -7257,18 +7300,18 @@ void MainWindow::calculateFilter()
             for (std::size_t section = 0; section < sectionNames.size(); ++section) {
                 PlotCurve curve{sectionNames[section], {}};
                 curve.points.emplace_back(static_cast<double>(section + 1),
-                    peakB[section].si());
+                    peakB[section]);
                 coreCurves.push_back(std::move(curve));
             }
             logarithmicCoreAxis = false;
-            corePlotTitle = threeLimbOperatingPoint->withinBhCurveRange
+            corePlotTitle = constructionBoundWithinMeasuredBhCurve
                 ? tr("Construction-bound operating-point peak flux density")
                 : tr("Construction-bound operating-point peak flux density — EXTRAPOLATED_NOT_VERIFIED");
             corePlotTooltip = tr("Seven independent peak |B| values from the accepted Construction revision "
                 "and combined harmonic operating waveform. X-axis indices: 1 Limb A, 2 Limb B, 3 Limb C, "
                 "4 Top yoke A-B, 5 Top yoke B-C, 6 Bottom yoke A-B, 7 Bottom yoke B-C. "
                 "These are discrete core sections, not a frequency-response curve.");
-            if (!threeLimbOperatingPoint->withinBhCurveRange)
+            if (!constructionBoundWithinMeasuredBhCurve)
                 corePlotTooltip += tr(" At least one section is outside the measured B-H curve; values are extrapolated and NOT_VERIFIED.");
         } else if (threeLimbMagneticBase && threeLimbSweepValid &&
                    !threeLimbFluxDensitySweep.empty()) {
@@ -7288,11 +7331,13 @@ void MainWindow::calculateFilter()
             corePlotTooltip = tr("Single-frequency diagnostic sweep using the manually supplied magnetic model. "
                 "It is separate from the Construction-bound multi-harmonic operating point.");
         } else {
-            coreEmptyMessage = !threeLimbOperatingPointWarning.isEmpty()
-                ? threeLimbOperatingPointWarning
-                : !threeLimbModelWarning.isEmpty()
-                    ? threeLimbModelWarning
-                    : tr("NOT_VERIFIED: accepted Construction geometry, material B-H revision and valid harmonic currents are required.");
+            coreEmptyMessage = !constructionBoundMagneticWarning.isEmpty()
+                ? constructionBoundMagneticWarning
+                : !threeLimbOperatingPointWarning.isEmpty()
+                    ? threeLimbOperatingPointWarning
+                    : !threeLimbModelWarning.isEmpty()
+                        ? threeLimbModelWarning
+                        : tr("NOT_VERIFIED: accepted Construction geometry, material B-H revision and valid harmonic currents are required.");
             corePlotTitle = tr("Core peak flux density — NOT_VERIFIED");
             corePlotTooltip = coreEmptyMessage;
         }
