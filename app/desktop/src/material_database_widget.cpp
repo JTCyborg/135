@@ -342,14 +342,14 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     points->setMinimumHeight(250);
     auto* loadCsv = new QPushButton(QObject::tr("Load CSV / TXT file…"), &dialog);
     loadCsv->setObjectName(QStringLiteral("bhCurveLoadCsvButton"));
-    QObject::connect(loadCsv, &QPushButton::clicked, &dialog, [parent, points] {
-        const QString path = QFileDialog::getOpenFileName(parent,
+    QObject::connect(loadCsv, &QPushButton::clicked, &dialog, [&dialog, points] {
+        const QString path = QFileDialog::getOpenFileName(&dialog,
             QObject::tr("Load B-H table"), {},
             QObject::tr("B-H tables (*.csv *.txt);;All files (*.*)"));
         if (path.isEmpty()) return;
         QFile file(path);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QMessageBox::warning(parent, QObject::tr("Load B-H table"), file.errorString());
+            QMessageBox::warning(&dialog, QObject::tr("Load B-H table"), file.errorString());
             return;
         }
         points->setPlainText(QString::fromUtf8(file.readAll()));
