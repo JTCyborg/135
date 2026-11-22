@@ -116,6 +116,32 @@ private slots:
         }
     }
 
+    void automaticAndManualFilterModesExposeTheExpectedInputs()
+    {
+        auto* mode = window_->findChild<QComboBox*>(QStringLiteral("filterCalculationMode"));
+        auto* advanced = window_->findChild<QGroupBox*>(QStringLiteral("filterEngineeringAdvanced"));
+        auto* components = window_->findChild<QGroupBox*>(QStringLiteral("filterComponentThermalAdvanced"));
+        auto* description = window_->findChild<QLabel*>(QStringLiteral("filterCalculationModeDescription"));
+        QVERIFY(mode);
+        QVERIFY(advanced);
+        QVERIFY(components);
+        QVERIFY(description);
+
+        QCOMPARE(mode->currentData().toString(), QStringLiteral("AUTO"));
+        QVERIFY(!advanced->isVisible());
+        QVERIFY(!components->isVisible());
+
+        mode->setCurrentIndex(1);
+        QTRY_VERIFY(advanced->isVisible());
+        QVERIFY(components->isVisible());
+        QCOMPARE(mode->currentData().toString(), QStringLiteral("MANUAL"));
+
+        mode->setCurrentIndex(0);
+        QTRY_VERIFY(!advanced->isVisible());
+        QVERIFY(!components->isVisible());
+        QCOMPARE(mode->currentData().toString(), QStringLiteral("AUTO"));
+    }
+
     void everyWorkflowTabCanBeSelected()
     {
         auto* tabs = window_->findChild<QTabWidget*>();
