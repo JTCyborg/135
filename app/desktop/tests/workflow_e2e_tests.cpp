@@ -68,6 +68,10 @@ private slots:
 
     void init()
     {
+        // QFileDialog's native Windows implementation is not exposed as a
+        // QWidget, so the deterministic modal-dialog driver below cannot find it.
+        // Use Qt's widget dialog for this E2E test only.
+        QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs, true);
         qInfo().noquote() << "[E2E-DIAG] init: before MainWindow construction";
         window_ = std::make_unique<MainWindow>();
         qInfo().noquote() << "[E2E-DIAG] init: MainWindow constructed";
