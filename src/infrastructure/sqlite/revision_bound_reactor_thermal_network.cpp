@@ -110,9 +110,13 @@ analyzeRevisionBoundReactorThermalNetwork(
 
     // The existing revision-bound path remains the single implementation of
     // loss-quality gating, winding copper loss and thermal-network assembly.
-    return analyzeRevisionBoundReactorThermalNetwork(
+    auto analyzed = analyzeRevisionBoundReactorThermalNetwork(
         store, coreMaterialRevisionId, boundOperatingPoint.value(),
         windingLossRequest, thermalConfiguration);
+    if (!analyzed)
+        return analyzed;
+    analyzed.value().calculatedCoreMass = calculatedMass.value();
+    return analyzed;
 }
 
 } // namespace p135::infrastructure::sqlite
