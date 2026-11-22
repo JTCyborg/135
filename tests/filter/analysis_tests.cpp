@@ -110,9 +110,16 @@ int main()
                         inductive.value().points.front().busImpedanceMagnitudeOhm) > 1.0e-9);
     }
     {
+        // An ideal source has zero Thevenin impedance, but the filter-bank
+        // driving-point impedance remains a valid and useful frequency curve.
         auto request = validRequest();
         request.source = {units::Resistance{0.0}, units::Inductance{0.0}};
-        assert(!analyzeFrequencyResponse(request));
+        const auto idealSource = analyzeFrequencyResponse(request);
+        assert(idealSource);
+        assert(idealSource.value().points.size() == request.points);
+        assert(idealSource.value().points.front().filterImpedanceMagnitudeOhm > 0.0);
+        assert(idealSource.value().points.front().sourceImpedanceMagnitudeOhm == 0.0);
+        assert(idealSource.value().points.front().busImpedanceMagnitudeOhm == 0.0);
     }
     {
         auto request = validRequest();
