@@ -790,7 +790,7 @@ private slots:
         QVERIFY(setText(QStringLiteral("coreBhCurveEvidence"),
             QStringLiteral("TEST-01 synthetic B-H curve; regression fixture only")));
         QVERIFY(setPlainText(QStringLiteral("coreBhCurvePoints"),
-            QStringLiteral("0, 0\\n1000, 0.1\\n10000, 0.8\\n50000, 1.4\\n100000, 1.55")));
+            QStringLiteral("0, 0\n1000, 0.1\n10000, 0.8\n50000, 1.4\n100000, 1.55")));
 
         auto* recalculate = window_->findChild<QPushButton*>(
             QStringLiteral("recalculateProjectButton"));
