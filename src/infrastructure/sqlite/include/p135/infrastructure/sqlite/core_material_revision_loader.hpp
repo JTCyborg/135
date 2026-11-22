@@ -72,6 +72,13 @@ struct CoreMaterialRevisionSnapshot {
     std::string bhCurveCaptureMethod;
     std::string bhCurveNotes;
     std::string coreLossStatus;
+    std::string coreLossSourceDocument;
+    std::string coreLossSourcePage;
+    std::string coreLossMeasurementMethod;
+    std::string coreLossSampleDirection;
+    std::string coreLossWaveform;
+    std::string coreLossTemperatureStatus;
+    std::string coreLossNotes;
     std::string designReleaseStatus;
     std::string notes;
     units::Frequency bhCurveFrequency;
