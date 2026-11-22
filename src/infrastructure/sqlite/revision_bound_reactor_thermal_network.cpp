@@ -69,4 +69,50 @@ analyzeRevisionBoundReactorThermalNetwork(
         std::move(result));
 }
 
+Result<RevisionBoundReactorThermalNetworkResult>
+analyzeRevisionBoundReactorThermalNetwork(
+    const SqliteMaterialRevisionStore& store,
+    const std::string& coreMaterialRevisionId,
+    const domain::ThreeLimbCoreLossRequest& operatingPoint,
+    const RevisionBoundCoreMassInputs& coreMassInputs,
+    const RevisionBoundWindingCopperLossRequest& windingLossRequest,
+    const thermal::ReactorThermalNetworkConfiguration& thermalConfiguration)
+{
+    const auto coreRevision = loadCoreMaterialRevision(store, coreMaterialRevisionId);
+    if (!coreRevision)
+        return Result<RevisionBoundReactorThermalNetworkResult>::failure(
+            coreRevision.error());
+
+    domain::ThreeLimbCoreMassRequest massRequest;
+    massRequest.geometry = &coreMassInputs.geometry;
+    massRequest.material = &coreRevision.value().material;
+    massRequest.stackingFactor = coreMassInputs.stackingFactor;
+    massRequest.dimensionalSource = coreMassInputs.dimensionalSource;
+    massRequest.dimensionalRevision = coreMassInputs.dimensionalRevision;
+    massRequest.materialRevisionReference =
+        coreRevision.value().revisionId + "#" + coreRevision.value().contentHash;
+    massRequest.densitySourceReference =
+        "core-material-revision:" + coreRevision.value().revisionId + "#" +
+        coreRevision.value().contentHash + "/material.density";
+    massRequest.stackingFactorSourceReference =
+        coreMassInputs.stackingFactorSourceReference;
+
+    const auto calculatedMass = domain::calculateThreeLimbCoreMass(massRequest);
+    if (!calculatedMass)
+        return Result<RevisionBoundReactorThermalNetworkResult>::failure(
+            calculatedMass.error());
+
+    const auto boundOperatingPoint = domain::bindThreeLimbCoreMass(
+        operatingPoint, calculatedMass.value());
+    if (!boundOperatingPoint)
+        return Result<RevisionBoundReactorThermalNetworkResult>::failure(
+            boundOperatingPoint.error());
+
+    // The existing revision-bound path remains the single implementation of
+    // loss-quality gating, winding copper loss and thermal-network assembly.
+    return analyzeRevisionBoundReactorThermalNetwork(
+        store, coreMaterialRevisionId, boundOperatingPoint.value(),
+        windingLossRequest, thermalConfiguration);
+}
+
 } // namespace p135::infrastructure::sqlite
