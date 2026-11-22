@@ -26,6 +26,7 @@
 #include <QRegularExpression>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QStringList>
 #include <QVBoxLayout>
 #include <QUuid>
 
