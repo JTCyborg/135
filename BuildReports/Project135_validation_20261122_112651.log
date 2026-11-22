@@ -952,3 +952,7 @@ Release tests: FAIL
 Source commit: 51a2d9866845a59beeeb785c1ff80e9a1380792c
 Finished: 22.11.2026 11:31:55,34
 ==========================================================
+warning: in the working copy of 'BuildReports/Project135_validation_20261122_112651.log', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/JTCyborg/135
+   51a2d98..fb1dd80  fix/core-flux-operating-point-plot -> fix/core-flux-operating-point-plot
+[GIT_PUSH] SUCCESS - validation report was pushed to origin/fix/core-flux-operating-point-plot.
