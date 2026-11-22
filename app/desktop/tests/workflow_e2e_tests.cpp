@@ -746,17 +746,29 @@ private slots:
 
         auto* customer = window_->findChild<QLineEdit*>(QStringLiteral("projectCustomer"));
         auto* voltage = window_->findChild<QDoubleSpinBox*>(QStringLiteral("filterNominalVoltageV"));
-        auto* spectrum = window_->findChild<QTableWidget*>(QStringLiteral("harmonicSpectrumTable"));
+        auto* spectrum = window_->findChild<QTableWidget*>(QStringLiteral("filterVoltageHarmonics"));
+        auto* currentHarmonics = window_->findChild<QTableWidget*>(
+            QStringLiteral("filterLoadCurrentHarmonics"));
         QVERIFY(customer);
         QVERIFY(voltage);
         QVERIFY(spectrum);
+        QVERIFY(currentHarmonics);
 
         customer->setText(QStringLiteral("Archive round-trip customer"));
         voltage->setValue(415.5);
         spectrum->setRowCount(1);
-        spectrum->setColumnCount(2);
+        spectrum->setColumnCount(4);
         spectrum->setItem(0, 0, new QTableWidgetItem(QStringLiteral("5")));
-        spectrum->setItem(0, 1, new QTableWidgetItem(QStringLiteral("12.5")));
+        spectrum->setItem(0, 1, new QTableWidgetItem(QStringLiteral("Negative")));
+        spectrum->setItem(0, 2, new QTableWidgetItem(QStringLiteral("12.5")));
+        spectrum->setItem(0, 3, new QTableWidgetItem(QStringLiteral("0")));
+        currentHarmonics->setRowCount(1);
+        currentHarmonics->setColumnCount(5);
+        currentHarmonics->setItem(0, 0, new QTableWidgetItem(QStringLiteral("LOAD-ARCHIVE-1")));
+        currentHarmonics->setItem(0, 1, new QTableWidgetItem(QStringLiteral("5")));
+        currentHarmonics->setItem(0, 2, new QTableWidgetItem(QStringLiteral("Negative")));
+        currentHarmonics->setItem(0, 3, new QTableWidgetItem(QStringLiteral("3.25")));
+        currentHarmonics->setItem(0, 4, new QTableWidgetItem(QStringLiteral("-15.0")));
 
         QSettings settings;
         const QString originalProjectId = settings.value(QStringLiteral("project/currentId")).toString();
@@ -804,7 +816,9 @@ private slots:
             QStringLiteral("Project135.Project"));
         QCOMPARE(saved.value(QStringLiteral("formatVersion")).toInt(), 1);
         QVERIFY(saved.value(QStringLiteral("controls")).toObject().contains(
-            QStringLiteral("harmonicSpectrumTable")));
+            QStringLiteral("filterVoltageHarmonics")));
+        QVERIFY(saved.value(QStringLiteral("controls")).toObject().contains(
+            QStringLiteral("filterLoadCurrentHarmonics")));
         QVERIFY(!saved.contains(QStringLiteral("database")));
         QVERIFY(!saved.contains(QStringLiteral("calculationHistory")));
 
@@ -829,7 +843,8 @@ private slots:
 
         customer->setText(QStringLiteral("MUTATED"));
         voltage->setValue(690.0);
-        spectrum->setItem(0, 1, new QTableWidgetItem(QStringLiteral("99.0")));
+        spectrum->setItem(0, 2, new QTableWidgetItem(QStringLiteral("99.0")));
+        currentHarmonics->setItem(0, 3, new QTableWidgetItem(QStringLiteral("99.0")));
 
         QTimer::singleShot(0, [archivePath] {
             for (QWidget* widget : QApplication::topLevelWidgets()) {
@@ -869,11 +884,22 @@ private slots:
         QCOMPARE(customer->text(), QStringLiteral("Archive round-trip customer"));
         QCOMPARE(voltage->value(), 415.5);
         QCOMPARE(spectrum->rowCount(), 1);
-        QCOMPARE(spectrum->columnCount(), 2);
+        QCOMPARE(spectrum->columnCount(), 4);
         QVERIFY(spectrum->item(0, 0));
         QVERIFY(spectrum->item(0, 1));
+        QVERIFY(spectrum->item(0, 2));
+        QVERIFY(spectrum->item(0, 3));
         QCOMPARE(spectrum->item(0, 0)->text(), QStringLiteral("5"));
-        QCOMPARE(spectrum->item(0, 1)->text(), QStringLiteral("12.5"));
+        QCOMPARE(spectrum->item(0, 1)->text(), QStringLiteral("Negative"));
+        QCOMPARE(spectrum->item(0, 2)->text(), QStringLiteral("12.5"));
+        QCOMPARE(spectrum->item(0, 3)->text(), QStringLiteral("0"));
+        QCOMPARE(currentHarmonics->rowCount(), 1);
+        QCOMPARE(currentHarmonics->columnCount(), 5);
+        QCOMPARE(currentHarmonics->item(0, 0)->text(), QStringLiteral("LOAD-ARCHIVE-1"));
+        QCOMPARE(currentHarmonics->item(0, 1)->text(), QStringLiteral("5"));
+        QCOMPARE(currentHarmonics->item(0, 2)->text(), QStringLiteral("Negative"));
+        QCOMPARE(currentHarmonics->item(0, 3)->text(), QStringLiteral("3.25"));
+        QCOMPARE(currentHarmonics->item(0, 4)->text(), QStringLiteral("-15.0"));
         auto* coreMaterial = window_->findChild<QComboBox*>(
             QStringLiteral("construction_coreMaterial"));
         QVERIFY(coreMaterial);
