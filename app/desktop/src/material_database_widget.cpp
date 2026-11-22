@@ -256,6 +256,71 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
 
 
 namespace {
+QString coreMaterialSnapshot(QWidget* parent, const QString& materialId)
+{
+    QDialog dialog(parent);
+    dialog.setWindowTitle(QObject::tr("Core material properties"));
+    auto* form = new QFormLayout(&dialog);
+    auto* manufacturer = new QLineEdit(&dialog);
+    manufacturer->setObjectName(QStringLiteral("coreMaterialManufacturer"));
+    auto* grade = new QLineEdit(&dialog);
+    grade->setObjectName(QStringLiteral("coreMaterialGrade"));
+    auto* family = new QComboBox(&dialog);
+    family->setObjectName(QStringLiteral("coreMaterialFamily"));
+    family->addItem(QObject::tr("Non-grain-oriented electrical steel"),
+                    QStringLiteral("non-grain-oriented electrical steel"));
+    family->addItem(QObject::tr("Grain-oriented electrical steel"),
+                    QStringLiteral("grain-oriented electrical steel"));
+    family->addItem(QObject::tr("MnZn ferrite"), QStringLiteral("MnZn ferrite"));
+    family->addItem(QObject::tr("Amorphous Fe-based ribbon"),
+                    QStringLiteral("amorphous Fe-based ribbon"));
+    family->addItem(QObject::tr("Nanocrystalline"), QStringLiteral("nanocrystalline"));
+    family->addItem(QObject::tr("Powder"), QStringLiteral("powder"));
+    auto* density = new QDoubleSpinBox(&dialog);
+    density->setObjectName(QStringLiteral("coreMaterialDensity"));
+    density->setRange(1.0, 30000.0);
+    density->setDecimals(2);
+    density->setValue(7600.0);
+    density->setSuffix(QObject::tr(" kg/m³"));
+    form->addRow(QObject::tr("Manufacturer"), manufacturer);
+    form->addRow(QObject::tr("Grade"), grade);
+    form->addRow(QObject::tr("Family"), family);
+    form->addRow(QObject::tr("Density"), density);
+    auto* buttons = new QDialogButtonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+    form->addRow(buttons);
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    if (dialog.exec() != QDialog::Accepted) return {};
+    if (materialId.trimmed().isEmpty() || manufacturer->text().trimmed().isEmpty() ||
+        grade->text().trimmed().isEmpty()) {
+        QMessageBox::warning(parent, QObject::tr("Core material"),
+            QObject::tr("Material ID, manufacturer and grade are required."));
+        return {};
+    }
+    const QJsonObject root{
+        {QStringLiteral("schemaVersion"), 1},
+        {QStringLiteral("material"), QJsonObject{
+            {QStringLiteral("id"), materialId.trimmed()},
+            {QStringLiteral("manufacturer"), manufacturer->text().trimmed()},
+            {QStringLiteral("grade"), grade->text().trimmed()},
+            {QStringLiteral("family"), family->currentData().toString()},
+            {QStringLiteral("density_kg_per_m3"), density->value()}
+        }},
+        {QStringLiteral("dataQuality"), QJsonObject{
+            {QStringLiteral("sourceStatus"), QStringLiteral("USER_ENTERED_UNVERIFIED")},
+            {QStringLiteral("bhCurveStatus"), QStringLiteral("NOT_PROVIDED")},
+            {QStringLiteral("coreLossStatus"), QStringLiteral("NOT_PROVIDED")},
+            {QStringLiteral("designReleaseStatus"), QStringLiteral("NOT_VERIFIED")},
+            {QStringLiteral("notes"), QStringLiteral("Core material identity and density entered by user. Verify all properties against cited source before design release.")}
+        }}
+    };
+    return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Indented));
+}
+} // namespace
+
+
+namespace {
 bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
 {
     if (!payloadEditor) return false;
@@ -699,6 +764,18 @@ void MaterialDatabaseWidget::createOrEditMaterial()
     form->addRow(typedEditor);
     typedEditor->setEnabled(type->currentData().toString() == "capacitor" ||
                             type->currentData().toString() == "resistor");
+    auto* coreEditor = new QPushButton(tr("Open core material editor"), &dialog);
+    coreEditor->setObjectName(QStringLiteral("coreMaterialEditorButton"));
+    form->addRow(coreEditor);
+    coreEditor->setEnabled(type->currentData().toString() == "core-material");
+    connect(type, &QComboBox::currentIndexChanged, &dialog, [type, coreEditor] {
+        coreEditor->setEnabled(type->currentData().toString() == "core-material");
+    });
+    connect(coreEditor, &QPushButton::clicked, &dialog, [id, payload, &dialog] {
+        const auto json = coreMaterialSnapshot(&dialog, id->text().trimmed());
+        if (json.isEmpty()) return;
+        payload->setPlainText(json);
+    });
     auto* bhImport = new QPushButton(tr("Import B-H table (H, B)"), &dialog);
     bhImport->setObjectName(QStringLiteral("importBhCurveButton"));
     form->addRow(bhImport);
