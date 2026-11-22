@@ -423,7 +423,7 @@ private slots:
             const auto lossProvenance = lossRoot.value(QStringLiteral("coreLossProvenance")).toObject();
             if (!withLoss.isObject() ||
                 lossData.value(QStringLiteral("points")).toArray().size() != 8 ||
-                lossData.value(QStringLiteral("points")).toArray().front().toObject()
+                lossData.value(QStringLiteral("points")).toArray().at(0).toObject()
                     .value(QStringLiteral("specificLoss_W_per_m3")).toDouble() != 10000.0 ||
                 lossProvenance.value(QStringLiteral("sourceDocument")).toString() !=
                     QStringLiteral("TEST-CORE-LOSS-DATASHEET-R1") ||
