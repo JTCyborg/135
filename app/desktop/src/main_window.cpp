@@ -2077,27 +2077,32 @@ QWidget* MainWindow::createFilterPage()
     auto* form = new QFormLayout(group);
 
     nominalVoltage_ = new QDoubleSpinBox;
+    nominalVoltage_->setObjectName(QStringLiteral("nominalVoltage"));
     nominalVoltage_->setRange(1.0, 1000000.0);
     nominalVoltage_->setValue(400.0);
     nominalVoltage_->setSuffix(tr(" V L-L"));
     nominalVoltage_->setDecimals(1);
 
     fundamentalFrequency_ = new QDoubleSpinBox;
+    fundamentalFrequency_->setObjectName(QStringLiteral("fundamentalFrequency"));
     fundamentalFrequency_->setRange(1.0, 1000.0);
     fundamentalFrequency_->setValue(50.0);
     fundamentalFrequency_->setSuffix(tr(" Hz"));
 
     targetReactivePower_ = new QDoubleSpinBox;
+    targetReactivePower_->setObjectName(QStringLiteral("targetReactivePower"));
     targetReactivePower_->setRange(0.001, 100000000.0);
     targetReactivePower_->setValue(100.0);
     targetReactivePower_->setSuffix(tr(" kvar total"));
     targetReactivePower_->setDecimals(3);
 
     filterConnection_ = new QComboBox;
+    filterConnection_->setObjectName(QStringLiteral("filterConnection"));
     filterConnection_->addItem(tr("Wye (Y)"), static_cast<int>(p135::filter::Connection::Wye));
     filterConnection_->addItem(tr("Delta (Δ)"), static_cast<int>(p135::filter::Connection::Delta));
 
     tuningHarmonicOrder_ = new QDoubleSpinBox;
+    tuningHarmonicOrder_->setObjectName(QStringLiteral("tuningHarmonicOrder"));
     tuningHarmonicOrder_->setRange(2.0, 100.0);
     tuningHarmonicOrder_->setDecimals(3);
     tuningHarmonicOrder_->setSingleStep(0.05);
@@ -2105,6 +2110,7 @@ QWidget* MainWindow::createFilterPage()
     tuningHarmonicOrder_->setToolTip(tr("Fractional tuning order is supported, e.g. 4.75 for a filter tuned below the 5th harmonic."));
 
     qualityFactor_ = new QDoubleSpinBox;
+    qualityFactor_->setObjectName(QStringLiteral("qualityFactor"));
     qualityFactor_->setRange(0.1, 10000.0);
     qualityFactor_->setValue(50.0);
     qualityFactor_->setDecimals(2);
