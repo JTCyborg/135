@@ -193,6 +193,14 @@ private slots:
         checkAssumption(QStringLiteral("idealSizing_Ku"), 35.0);
         checkAssumption(QStringLiteral("idealSizing_Ks"), 95.0);
         checkAssumption(QStringLiteral("idealSizing_AwAe"), 2.0);
+        auto* fluxLimit = window_->findChild<QDoubleSpinBox*>(
+            QStringLiteral("idealSizing_Bmax"));
+        QVERIFY(fluxLimit);
+        QTest::mouseClick(automatic, Qt::LeftButton);
+        QTRY_VERIFY(assumptions->isHidden());
+        QTest::mouseClick(manual, Qt::LeftButton);
+        QTRY_VERIFY(!assumptions->isHidden());
+        QVERIFY(std::abs(fluxLimit->value() - 1.32) < 1.0e-9);
         QTest::mouseClick(automatic, Qt::LeftButton);
         QTRY_VERIFY(assumptions->isHidden());
     }
