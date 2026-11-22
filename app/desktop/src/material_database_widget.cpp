@@ -803,8 +803,6 @@ bool editCoreLossPayload(QWidget* parent, QPlainTextEdit* payloadEditor)
 }
 } // namespace
 
-} // namespace
-
 MaterialDatabaseWidget::MaterialDatabaseWidget(SqliteMaterialRevisionStore& store, QWidget* parent)
     : QWidget(parent), store_(store)
 {
