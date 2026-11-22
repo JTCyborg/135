@@ -1,4 +1,5 @@
 #include "p135/infrastructure/sqlite/core_material_revision_loader.hpp"
+#include "p135/domain/core_loss.hpp"
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 
 #include <nlohmann/json.hpp>
