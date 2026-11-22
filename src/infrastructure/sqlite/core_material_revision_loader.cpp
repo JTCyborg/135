@@ -220,6 +220,43 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
                 }
                 bhCurveModelStatus = "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
             }
+            if (anchors.empty()) {
+                // Optional anhysteretic saturation model for materials whose
+                // datasheet gives initial relative permeability and saturation
+                // polarization but no tabulated B-H points. Hmax is mandatory:
+                // the loader never invents the model's operating domain.
+                const bool hasParameterModel =
+                    sourceMaterial.contains("initialRelativePermeability") &&
+                    sourceMaterial.contains("saturationPolarization_T") &&
+                    sourceMaterial.contains("modelMaximumFieldStrength_A_per_m");
+                if (hasParameterModel) {
+                    const double muR = requiredNumber(sourceMaterial, "initialRelativePermeability");
+                    const double js = requiredNumber(sourceMaterial, "saturationPolarization_T");
+                    const double hMax = requiredNumber(sourceMaterial, "modelMaximumFieldStrength_A_per_m");
+                    if (muR <= 1.0 || js <= 0.0 || hMax <= 0.0)
+                        throw std::invalid_argument(
+                            "Saturation model requires mu_r_initial > 1, J_s > 0 and H_max > 0.");
+                    if (sourceMaterial.contains("parameterModelFrequency_Hz"))
+                        bhFrequency = requiredNumber(sourceMaterial, "parameterModelFrequency_Hz");
+                    if (sourceMaterial.contains("parameterModelTemperature_K"))
+                        bhTemperature = requiredNumber(sourceMaterial, "parameterModelTemperature_K");
+                    const double hScale = js / (mu0 * (muR - 1.0));
+                    if (!std::isfinite(hScale) || hScale <= 0.0)
+                        throw std::invalid_argument("Invalid characteristic field derived from saturation parameters.");
+                    constexpr int samples = 128;
+                    material.bhCurve.reserve(samples + 1);
+                    for (int n = 0; n <= samples; ++n) {
+                        const double h = hMax * static_cast<double>(n) / samples;
+                        const double polarization = js * std::tanh(h / hScale);
+                        const double b = mu0 * h + polarization;
+                        material.bhCurve.push_back({
+                            units::MagneticFieldStrength{h},
+                            units::FluxDensity{b}
+                        });
+                    }
+                    bhCurveModelStatus = "ESTIMATED_FROM_SATURATION_PARAMETERS";
+                }
+            }
         }
         if (bhIt != root.end()) {
             const auto& sourceBh = *bhIt;
