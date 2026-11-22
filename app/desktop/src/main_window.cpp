@@ -2890,6 +2890,21 @@ QWidget* MainWindow::createConstructionPage()
     coreForm->addRow(tr("Core material revision"), coreMaterial);
     coreForm->addRow(tr("Core geometry family"), coreGeometry);
     coreForm->addRow(tr("Stacking factor"), stackingFactor);
+    auto* allowEstimatedBhModel = new QCheckBox(
+        tr("Allow calculated B-H model for exploratory analysis"));
+    allowEstimatedBhModel->setObjectName(
+        QStringLiteral("construction_allowEstimatedBhModel"));
+    allowEstimatedBhModel->setChecked(false);
+    allowEstimatedBhModel->setToolTip(tr(
+        "Explicitly permits a calculated B-H branch generated from sparse material anchors. "
+        "This is an exploratory model only: it does not upgrade source data quality or "
+        "design-release status and must not be used as verified manufacturing data."));
+    coreForm->addRow(tr("Magnetic model quality"), allowEstimatedBhModel);
+    auto* estimatedBhNotice = new QLabel(tr(
+        "OFF by default. When enabled, materials with sparse magnetic anchors may be used "
+        "for exploratory magnetic analysis. The result remains NOT_VERIFIED."));
+    estimatedBhNotice->setWordWrap(true);
+    coreForm->addRow(estimatedBhNotice);
 
     const auto addCoreLength = [coreForm](const QString& objectName, const QString& label) {
         auto* field = new QDoubleSpinBox;
@@ -6253,6 +6268,7 @@ void MainWindow::calculateFilter()
     // calculation snapshot. It is distinct from the legacy manual diagnostic model.
     std::optional<std::array<double, 7>> constructionBoundPeakFluxDensityT;
     bool constructionBoundWithinMeasuredBhCurve = false;
+    bool constructionBoundUsedEstimatedBhModel = false;
     QString constructionBoundMagneticWarning;
 
     // Revision-bound magnetic analysis uses the exact accepted Construction
@@ -6278,6 +6294,9 @@ void MainWindow::calculateFilter()
             };
             magneticRequest.filterMagnetic.relativePeakTolerance = 1.0e-3;
             magneticRequest.filterMagnetic.maximumSamples = 576;
+            if (const auto* estimatedModel = findChild<QCheckBox*>(
+                    QStringLiteral("construction_allowEstimatedBhModel")))
+                magneticRequest.allowEstimatedBhModel = estimatedModel->isChecked();
             const auto magnetic = p135::infrastructure::sqlite::
                 analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
                     *materialStore_, accepted.coreMaterial->revisionId, magneticRequest);
@@ -6289,6 +6308,9 @@ void MainWindow::calculateFilter()
                 appendLog(tr("[MAGNETIC] %1").arg(constructionBoundMagneticWarning));
             } else {
                 const auto& cycle = magnetic.value().magneticAnalysis.magneticAnalysis.magneticCycle;
+                constructionBoundUsedEstimatedBhModel =
+                    magnetic.value().materialRevision.bhCurveModelStatus ==
+                    "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
                 double maximumFluxDensity = 0.0;
                 for (const auto& density : cycle.peakAbsoluteFluxDensity)
                     maximumFluxDensity = std::max(maximumFluxDensity, density.si());
@@ -6304,10 +6326,12 @@ void MainWindow::calculateFilter()
                 } else {
                     constructionBoundMagneticWarning = magneticState;
                 }
-                appendLog(tr("[MAGNETIC] %1 — Construction %2; material %3; max |B|=%4 T; samples=%5; relative peak change=%6.")
+                appendLog(tr("[MAGNETIC] %1 — Construction %2; material %3; B-H model %4; source quality %5; max |B|=%6 T; samples=%7; relative peak change=%8.")
                     .arg(magneticState)
                     .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
                     .arg(QString::fromStdString(magnetic.value().materialRevision.revisionId))
+                    .arg(QString::fromStdString(magnetic.value().materialRevision.bhCurveModelStatus))
+                    .arg(QString::fromStdString(magnetic.value().materialRevision.bhCurveStatus))
                     .arg(maximumFluxDensity, 0, 'g', 7)
                     .arg(static_cast<qulonglong>(cycle.samplesUsed))
                     .arg(cycle.relativePeakChange, 0, 'g', 6));
@@ -7523,6 +7547,11 @@ void MainWindow::calculateFilter()
                 "X-axis indices: 1 Limb A, 2 Limb B, 3 Limb C, 4 Top yoke A-B, "
                 "5 Top yoke B-C, 6 Bottom yoke A-B, 7 Bottom yoke B-C. "
                 "This is the actual operating point, not a frequency-response sweep.");
+            if (constructionBoundUsedEstimatedBhModel) {
+                corePlotTitle += tr(" — ESTIMATED B-H / NOT_VERIFIED");
+                corePlotTooltip += tr(" Material curve was estimated from sparse source anchors; "
+                    "this operating point is exploratory and NOT_VERIFIED.");
+            }
             if (!threeLimbOperatingPoint->withinBhCurveRange)
                 corePlotTooltip += tr(" At least one section is outside the measured B-H curve; values are extrapolated and NOT_VERIFIED.");
         } else if (threeLimbMagneticBase && threeLimbSweepValid &&
@@ -7588,6 +7617,8 @@ void MainWindow::calculateFilter()
     }
     if (!magneticCircuitBase && !threeLimbMagneticBase)
         visibleWarnings.push_back(tr("Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED."));
+    if (constructionBoundUsedEstimatedBhModel)
+        visibleWarnings.push_back(tr("The Construction-bound magnetic result uses an estimated B-H branch derived from sparse material anchors. It is exploratory only; source data and design release remain NOT_VERIFIED."));
     if (suppliedHarmonics == 0 && !hasLoadCurrentInjection)
         visibleWarnings.push_back(tr("No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated."));
     if (!advancedWarning.isEmpty())
