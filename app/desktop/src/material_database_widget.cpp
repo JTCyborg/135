@@ -9,6 +9,8 @@
 #include <QJsonArray>
 #include <QComboBox>
 #include <QDateTime>
+#include <QFile>
+#include <QFileDialog>
 #include <QDoubleSpinBox>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -338,6 +340,20 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         "Example:\n0, 0\n25, 0.12\n50, 0.24\n100, 0.38\n"
         "Use source tabular values only for a verified source status. Header rows and # comments are ignored."));
     points->setMinimumHeight(250);
+    auto* loadCsv = new QPushButton(QObject::tr("Load CSV / TXT file…"), &dialog);
+    loadCsv->setObjectName(QStringLiteral("bhCurveLoadCsvButton"));
+    QObject::connect(loadCsv, &QPushButton::clicked, &dialog, [parent, points] {
+        const QString path = QFileDialog::getOpenFileName(parent,
+            QObject::tr("Load B-H table"), {},
+            QObject::tr("B-H tables (*.csv *.txt);;All files (*.*)"));
+        if (path.isEmpty()) return;
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QMessageBox::warning(parent, QObject::tr("Load B-H table"), file.errorString());
+            return;
+        }
+        points->setPlainText(QString::fromUtf8(file.readAll()));
+    });
     const auto oldPoints = existingCurve.value(QStringLiteral("points")).toArray();
     if (!oldPoints.isEmpty()) {
         QStringList lines;
@@ -359,6 +375,7 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     form->addRow(QObject::tr("Measurement method"), measurementMethod);
     form->addRow(QObject::tr("Sample direction"), sampleDirection);
     form->addRow(QObject::tr("Notes"), notes);
+    form->addRow(loadCsv);
     form->addRow(QObject::tr("B-H points (H, B)"), points);
 
     QObject::connect(curveType, &QComboBox::currentIndexChanged, &dialog,
