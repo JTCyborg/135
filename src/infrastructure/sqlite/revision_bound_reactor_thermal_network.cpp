@@ -97,7 +97,9 @@ analyzeRevisionBoundReactorThermalNetwork(
         coreRevision.value().revisionId + "#" + coreRevision.value().contentHash;
     massRequest.densitySourceReference =
         "core-material-revision:" + coreRevision.value().revisionId + "#" +
-        coreRevision.value().contentHash + "/material.density";
+        coreRevision.value().contentHash + "/material.density; sourceReference=" +
+        coreRevision.value().sourceReference + "; datasetRevision=" +
+        coreRevision.value().datasetRevision;
     massRequest.stackingFactorSourceReference =
         coreMassInputs.stackingFactorSourceReference;
 
