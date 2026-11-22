@@ -275,6 +275,8 @@ QString coreMaterialSnapshot(QWidget* parent, const QString& materialId,
     auto* family = new QComboBox(&dialog);
     family->setObjectName(QStringLiteral("coreMaterialFamily"));
     family->addItem(QObject::tr("Select material family…"), QString{});
+    family->addItem(QObject::tr("Electrical steel (unspecified subtype)"),
+                    QStringLiteral("electrical steel"));
     family->addItem(QObject::tr("Non-grain-oriented electrical steel"),
                     QStringLiteral("non-grain-oriented electrical steel"));
     family->addItem(QObject::tr("Grain-oriented electrical steel"),
