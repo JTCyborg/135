@@ -6790,6 +6790,12 @@ void MainWindow::calculateFilter()
         resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
     }
 
+    if (auto* title = findChild<QLabel*>(QStringLiteral("busImpedancePlotTitle"))) {
+        title->setText(impedanceResult
+            ? tr("Bus impedance — source/filter frequency scan")
+            : tr("Bus impedance — NOT_VERIFIED (source R/L required)"));
+    }
+
     // The magnetic plot is a live calculation result, not a persistence artifact.
     // Keep it independent of SQLite availability and snapshot-write success.
     if (resultsCoreFluxPlot_) {
@@ -6809,6 +6815,18 @@ void MainWindow::calculateFilter()
         }
         resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
             tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
+    }
+
+    if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxPlotTitle"))) {
+        const bool hasCoreSweep = threeLimbMagneticBase && threeLimbSweepValid &&
+            !threeLimbFluxDensitySweep.empty();
+        title->setText(hasCoreSweep
+            ? tr("Three-limb core peak flux density — calculated frequency sweep")
+            : tr("Three-limb core peak flux density — NOT_VERIFIED (magnetic inputs required)"));
+        title->setToolTip(!threeLimbModelWarning.isEmpty()
+            ? threeLimbModelWarning
+            : tr("Requires valid limb and yoke geometry, turns, measured B-H data with source reference, "
+                 "and non-zero Thevenin source R or L. No synthetic curve is generated."));
     }
 
     QStringList visibleWarnings;
