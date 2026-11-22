@@ -232,7 +232,7 @@ private slots:
         QTRY_VERIFY(advancedGroup->isHidden());
 
         auto* voltage = window_->findChild<QDoubleSpinBox*>(
-            QStringLiteral("filterNominalVoltageV"));
+            QStringLiteral("nominalVoltage"));
         QVERIFY(voltage);
         const double original = voltage->value();
         QWheelEvent wheel(
