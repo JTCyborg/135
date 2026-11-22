@@ -309,6 +309,7 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     const int qualityIndex = qualityStatus->findData(
         existingQuality.value(QStringLiteral("bhCurveStatus")));
     if (qualityIndex >= 0) qualityStatus->setCurrentIndex(qualityIndex);
+    else qualityStatus->setCurrentIndex(2); // Unclassified imports remain exploratory until explicitly sourced.
 
     auto* sourceDocument = new QLineEdit(
         existingProvenance.value(QStringLiteral("sourceDocument")).toString(), &dialog);
@@ -418,6 +419,10 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         bool hOk = false, bOk = false;
         const double h = columns[0].trimmed().toDouble(&hOk);
         const double b = columns[1].trimmed().toDouble(&bOk);
+        if ((!hOk || !bOk) && curvePoints.isEmpty() &&
+            (line.contains(QStringLiteral("H"), Qt::CaseInsensitive) ||
+             line.contains(QStringLiteral("B"), Qt::CaseInsensitive)))
+            continue;
         if (!hOk || !bOk || !std::isfinite(h) || !std::isfinite(b) ||
             h < 0.0 || b < 0.0 || h <= previousH || b < previousB) {
             QMessageBox::warning(parent, QObject::tr("Invalid B-H table"),
