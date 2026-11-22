@@ -365,6 +365,79 @@ private slots:
                 materialDialog->reject();
                 return;
             }
+            auto* coreLossImport = materialDialog->findChild<QPushButton*>(
+                QStringLiteral("importCoreLossTableButton"));
+            if (!coreLossImport || !coreLossImport->isEnabled()) {
+                materialDialog->reject();
+                QFAIL("Core-loss table import action is missing or disabled");
+                return;
+            }
+            QTimer::singleShot(0, [this, materialDialog] {
+                auto* lossDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+                if (!lossDialog) {
+                    materialDialog->reject();
+                    QFAIL("Core-loss import dialog did not open");
+                    return;
+                }
+                auto* source = lossDialog->findChild<QLineEdit*>(QStringLiteral("coreLossSourceDocument"));
+                auto* method = lossDialog->findChild<QLineEdit*>(QStringLiteral("coreLossMeasurementMethod"));
+                auto* direction = lossDialog->findChild<QLineEdit*>(QStringLiteral("coreLossSampleDirection"));
+                auto* points = lossDialog->findChild<QPlainTextEdit*>(QStringLiteral("coreLossPoints"));
+                auto* quality = lossDialog->findChild<QComboBox*>(QStringLiteral("coreLossQualityStatus"));
+                auto* waveform = lossDialog->findChild<QComboBox*>(QStringLiteral("coreLossWaveform"));
+                auto* temperatureStatus = lossDialog->findChild<QComboBox*>(QStringLiteral("coreLossTemperatureStatus"));
+                if (!source || !method || !direction || !points || !quality ||
+                    !waveform || !temperatureStatus) {
+                    lossDialog->reject();
+                    materialDialog->reject();
+                    QFAIL("Core-loss import dialog is missing provenance or data controls");
+                    return;
+                }
+                source->setText(QStringLiteral("TEST-CORE-LOSS-DATASHEET-R1"));
+                method->setText(QStringLiteral("Epstein frame test"));
+                direction->setText(QStringLiteral("Rolling direction"));
+                const int manufacturerIndex = quality->findData(QStringLiteral("MANUFACTURER_TABULATED"));
+                if (manufacturerIndex < 0) {
+                    lossDialog->reject();
+                    materialDialog->reject();
+                    QFAIL("Manufacturer core-loss quality option is missing");
+                    return;
+                }
+                quality->setCurrentIndex(manufacturerIndex);
+                points->setPlainText(QStringLiteral(
+                    "frequency_Hz, peakFluxDensity_T, temperature_K, specificLoss_W_per_m3\n"
+                    "50, 0.8, 293.15, 10000\n"
+                    "50, 0.8, 333.15, 11000\n"
+                    "50, 1.0, 293.15, 20000\n"
+                    "50, 1.0, 333.15, 22000\n"
+                    "100, 0.8, 293.15, 30000\n"
+                    "100, 0.8, 333.15, 33000\n"
+                    "100, 1.0, 293.15, 60000\n"
+                    "100, 1.0, 333.15, 66000"));
+                lossDialog->accept();
+            });
+            QTest::mouseClick(coreLossImport, Qt::LeftButton);
+            const auto withLoss = QJsonDocument::fromJson(payload->toPlainText().toUtf8());
+            const auto lossRoot = withLoss.object();
+            const auto lossData = lossRoot.value(QStringLiteral("coreLossData")).toObject();
+            const auto lossProvenance = lossRoot.value(QStringLiteral("coreLossProvenance")).toObject();
+            if (!withLoss.isObject() ||
+                lossData.value(QStringLiteral("points")).toArray().size() != 8 ||
+                lossData.value(QStringLiteral("points")).toArray().front().toObject()
+                    .value(QStringLiteral("specificLoss_W_per_m3")).toDouble() != 10000.0 ||
+                lossProvenance.value(QStringLiteral("sourceDocument")).toString() !=
+                    QStringLiteral("TEST-CORE-LOSS-DATASHEET-R1") ||
+                lossProvenance.value(QStringLiteral("waveform")).toString().isEmpty() ||
+                lossRoot.value(QStringLiteral("dataQuality")).toObject()
+                    .value(QStringLiteral("coreLossStatus")).toString() !=
+                    QStringLiteral("MANUFACTURER_TABULATED") ||
+                lossRoot.value(QStringLiteral("dataQuality")).toObject()
+                    .value(QStringLiteral("designReleaseStatus")).toString() !=
+                    QStringLiteral("NOT_VERIFIED")) {
+                materialDialog->reject();
+                QFAIL("Core-loss grid or provenance was not serialized correctly");
+                return;
+            }
             materialDialog->reject();
         });
 
