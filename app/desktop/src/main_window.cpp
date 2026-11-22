@@ -896,6 +896,8 @@ MainWindow::MainWindow(QWidget* parent)
         appendLog(tr("New project workspace created."));
         tabs_->setCurrentIndex(0);
     });
+    fileMenu->addAction(tr("Save project…"), this, [this] { saveProjectArchive(); }, QKeySequence::Save);
+    fileMenu->addAction(tr("Load project…"), this, [this] { loadProjectArchive(); }, QKeySequence::Open);
     fileMenu->addSeparator();
     fileMenu->addAction(tr("Exit"), this, &QWidget::close);
 
@@ -920,6 +922,8 @@ MainWindow::MainWindow(QWidget* parent)
         updateProjectTitle();
         tabs_->setCurrentIndex(0);
     });
+    toolbar->addAction(tr("Save project"), this, [this] { saveProjectArchive(); });
+    toolbar->addAction(tr("Load project"), this, [this] { loadProjectArchive(); });
     // Page navigation belongs to the tab bar; keep only workflow actions here.
     toolbar->addSeparator();
     toolbar->addAction(tr("Calculate"), this, [this] {
@@ -1033,6 +1037,211 @@ void MainWindow::saveProjectSettings()
     settings.endGroup();
     settings.endGroup();
     settings.setValue(QStringLiteral("project/currentId"), projectId_);
+}
+
+void MainWindow::saveProjectArchive()
+{
+    if (projectId_.isEmpty()) return;
+    saveProjectSettings();
+
+    QSettings settings;
+    const QString group = QStringLiteral("projects/") + projectId_;
+    settings.beginGroup(group);
+    QJsonObject projectSettings;
+    for (const QString& key : settings.allKeys())
+        projectSettings.insert(key, QJsonValue::fromVariant(settings.value(key)));
+    settings.endGroup();
+
+    // Capture named input controls across the workflow. Transient results, logs,
+    // CAD viewport state and calculation-history widgets are deliberately excluded.
+    QJsonObject controls;
+    const auto widgets = findChildren<QWidget*>();
+    for (QWidget* widget : widgets) {
+        const QString name = widget->objectName();
+        if (name.isEmpty() || name.startsWith(QStringLiteral("history")) ||
+            name.startsWith(QStringLiteral("results")) ||
+            name == QStringLiteral("log") ||
+            name == QStringLiteral("cadViewportWidget") ||
+            name == QStringLiteral("cadAssemblyTree"))
+            continue;
+
+        QJsonObject state;
+        bool supported = true;
+        if (const auto* combo = qobject_cast<QComboBox*>(widget)) {
+            state.insert(QStringLiteral("type"), QStringLiteral("combo"));
+            state.insert(QStringLiteral("data"), QJsonValue::fromVariant(combo->currentData()));
+            state.insert(QStringLiteral("text"), combo->currentText());
+        } else if (const auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
+            state.insert(QStringLiteral("type"), QStringLiteral("double"));
+            state.insert(QStringLiteral("value"), number->value());
+        } else if (const auto* integer = qobject_cast<QSpinBox*>(widget)) {
+            state.insert(QStringLiteral("type"), QStringLiteral("integer"));
+            state.insert(QStringLiteral("value"), integer->value());
+        } else if (const auto* line = qobject_cast<QLineEdit*>(widget)) {
+            state.insert(QStringLiteral("type"), QStringLiteral("line"));
+            state.insert(QStringLiteral("value"), line->text());
+        } else if (const auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) {
+            state.insert(QStringLiteral("type"), QStringLiteral("plainText"));
+            state.insert(QStringLiteral("value"), textEdit->toPlainText());
+        } else if (const auto* check = qobject_cast<QCheckBox*>(widget)) {
+            state.insert(QStringLiteral("type"), QStringLiteral("check"));
+            state.insert(QStringLiteral("value"), check->isChecked());
+        } else if (const auto* table = qobject_cast<QTableWidget*>(widget)) {
+            const bool isInputTable = name == QStringLiteral("harmonicSpectrumTable") ||
+                                      name == QStringLiteral("harmonicCurrentTable");
+            if (!isInputTable) continue;
+            state.insert(QStringLiteral("type"), QStringLiteral("table"));
+            state.insert(QStringLiteral("rows"), table->rowCount());
+            state.insert(QStringLiteral("columns"), table->columnCount());
+            QJsonArray cells;
+            for (int row = 0; row < table->rowCount(); ++row) {
+                QJsonArray rowCells;
+                for (int column = 0; column < table->columnCount(); ++column) {
+                    const auto* item = table->item(row, column);
+                    rowCells.append(item ? QJsonValue(item->text()) : QJsonValue(QJsonValue::Null));
+                }
+                cells.append(rowCells);
+            }
+            state.insert(QStringLiteral("cells"), cells);
+        } else {
+            supported = false;
+        }
+        if (supported) controls.insert(name, state);
+    }
+
+    QJsonObject archive;
+    archive.insert(QStringLiteral("format"), QStringLiteral("Project135.Project"));
+    archive.insert(QStringLiteral("formatVersion"), 1);
+    archive.insert(QStringLiteral("savedAtUtc"),
+        QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+    archive.insert(QStringLiteral("projectName"), projectName_ ? projectName_->text() : QString{});
+    archive.insert(QStringLiteral("projectSettings"), projectSettings);
+    archive.insert(QStringLiteral("controls"), controls);
+
+    const QString suggested = (projectName_ ? projectName_->text().trimmed() : QString{});
+    const QString fileName = (suggested.isEmpty() ? QStringLiteral("Project135") : suggested)
+        + QStringLiteral(".p135project");
+    const QString path = QFileDialog::getSaveFileName(this, tr("Save complete project"),
+        fileName, tr("Project135 project (*.p135project);;JSON (*.json)"));
+    if (path.isEmpty()) return;
+
+    QSaveFile file(path);
+    const QByteArray bytes = QJsonDocument(archive).toJson(QJsonDocument::Indented);
+    if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size() || !file.commit()) {
+        QMessageBox::critical(this, tr("Save project"),
+            tr("Could not save project archive: %1").arg(file.errorString()));
+        return;
+    }
+    appendLog(tr("Project archive saved: %1 (SQLite database and calculation history excluded).").arg(path));
+    status_->setText(tr("Project saved"));
+}
+
+void MainWindow::loadProjectArchive()
+{
+    const QString path = QFileDialog::getOpenFileName(this, tr("Load complete project"),
+        {}, tr("Project135 project (*.p135project *.json);;All files (*.*)"));
+    if (path.isEmpty()) return;
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, tr("Load project"), file.errorString());
+        return;
+    }
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        QMessageBox::warning(this, tr("Load project"),
+            tr("Invalid project archive: %1").arg(parseError.errorString()));
+        return;
+    }
+    const QJsonObject archive = document.object();
+    if (archive.value(QStringLiteral("format")).toString() != QStringLiteral("Project135.Project") ||
+        archive.value(QStringLiteral("formatVersion")).toInt() != 1 ||
+        !archive.value(QStringLiteral("projectSettings")).isObject() ||
+        !archive.value(QStringLiteral("controls")).isObject()) {
+        QMessageBox::warning(this, tr("Load project"),
+            tr("Unsupported project archive format or version."));
+        return;
+    }
+
+    const auto answer = QMessageBox::question(this, tr("Load project"),
+        tr("Load this project as a new local project? The current project and the local SQLite database/history will remain unchanged."),
+        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes);
+    if (answer != QMessageBox::Yes) return;
+
+    const QString newProjectId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    QSettings settings;
+    const QString group = QStringLiteral("projects/") + newProjectId;
+    settings.remove(group);
+    settings.beginGroup(group);
+    const QJsonObject projectSettings = archive.value(QStringLiteral("projectSettings")).toObject();
+    for (auto it = projectSettings.begin(); it != projectSettings.end(); ++it)
+        settings.setValue(it.key(), it.value().toVariant());
+    settings.endGroup();
+    settings.setValue(QStringLiteral("project/currentId"), newProjectId);
+
+    projectId_ = newProjectId;
+    loadingProjectSettings_ = true;
+    loadProjectSettings();
+
+    const QJsonObject controls = archive.value(QStringLiteral("controls")).toObject();
+    for (auto it = controls.begin(); it != controls.end(); ++it) {
+        QWidget* widget = findChild<QWidget*>(it.key());
+        if (!widget || !it.value().isObject()) continue;
+        const QJsonObject state = it.value().toObject();
+        const QString type = state.value(QStringLiteral("type")).toString();
+        if (type == QStringLiteral("combo")) {
+            if (auto* combo = qobject_cast<QComboBox*>(widget)) {
+                const QVariant data = state.value(QStringLiteral("data")).toVariant();
+                int index = combo->findData(data);
+                if (index < 0) index = combo->findText(state.value(QStringLiteral("text")).toString());
+                if (index >= 0) combo->setCurrentIndex(index);
+            }
+        } else if (type == QStringLiteral("double")) {
+            if (auto* number = qobject_cast<QDoubleSpinBox*>(widget))
+                number->setValue(state.value(QStringLiteral("value")).toDouble());
+        } else if (type == QStringLiteral("integer")) {
+            if (auto* integer = qobject_cast<QSpinBox*>(widget))
+                integer->setValue(state.value(QStringLiteral("value")).toInt());
+        } else if (type == QStringLiteral("line")) {
+            if (auto* line = qobject_cast<QLineEdit*>(widget))
+                line->setText(state.value(QStringLiteral("value")).toString());
+        } else if (type == QStringLiteral("plainText")) {
+            if (auto* textEdit = qobject_cast<QPlainTextEdit*>(widget))
+                textEdit->setPlainText(state.value(QStringLiteral("value")).toString());
+        } else if (type == QStringLiteral("check")) {
+            if (auto* check = qobject_cast<QCheckBox*>(widget))
+                check->setChecked(state.value(QStringLiteral("value")).toBool());
+        } else if (type == QStringLiteral("table")) {
+            if (auto* table = qobject_cast<QTableWidget*>(widget)) {
+                const int rows = std::clamp(state.value(QStringLiteral("rows")).toInt(), 0, 10000);
+                const int columns = std::clamp(state.value(QStringLiteral("columns")).toInt(), 0, 100);
+                table->setRowCount(rows);
+                table->setColumnCount(columns);
+                const QJsonArray cells = state.value(QStringLiteral("cells")).toArray();
+                for (int row = 0; row < rows && row < cells.size(); ++row) {
+                    const QJsonArray rowCells = cells.at(row).toArray();
+                    for (int column = 0; column < columns && column < rowCells.size(); ++column) {
+                        if (!rowCells.at(column).isNull())
+                            table->setItem(row, column, new QTableWidgetItem(rowCells.at(column).toString()));
+                    }
+                }
+            }
+        }
+    }
+    loadingProjectSettings_ = false;
+    constructionInputsDirty_ = true;
+    acceptedConstructionInputs_.reset();
+    latestFilterSnapshotId_.clear();
+    latestFilterBranchId_ = 0;
+    updateProjectTitle();
+    refreshComponentSelectors();
+    if (tabs_) tabs_->setCurrentIndex(0);
+    appendLog(tr("Project archive loaded as project %1. SQLite database and calculation history were not imported.")
+        .arg(projectId_));
+    status_->setText(tr("Project loaded"));
+    QMessageBox::information(this, tr("Load project"),
+        tr("Project loaded successfully. The local material database and calculation history were not changed."));
 }
 
 void MainWindow::loadProjectSettings()
