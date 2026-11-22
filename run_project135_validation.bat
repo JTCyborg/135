@@ -241,8 +241,16 @@ echo Finished: %DATE% %TIME%>>"%LOG%"
 echo ==========================================================>>"%LOG%"
 
 rem Publish the report even if a build or test failed.
-echo.
-echo [6/6] Publishing validation report to GitHub branch %CURRENT_BRANCH%...
+rem All UUID-named plots produced by the Debug E2E scenarios belong to this
+rem validation run. Keep them all; record their provenance instead of pruning
+rem all but the last project UUID (which would discard valid test evidence).
+echo [ARTIFACTS] Writing Debug plot manifest...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $root=Join-Path (Get-Location) 'Debug\Plots'; New-Item -ItemType Directory -Path $root -Force | Out-Null; $files=@(Get-ChildItem -LiteralPath $root -Filter '*.png' -File -Recurse | Sort-Object FullName); $lines=@('Project135 validation plot manifest','Run: %STAMP%','Source commit: %SOURCE_COMMIT%','Branch: %CURRENT_BRANCH%','Generated PNG count: '+$files.Count,''); foreach($f in $files){ $rel=$f.FullName.Substring((Get-Location).Path.Length+1); $lines+=('{0} | {1} bytes | {2:yyyy-MM-dd HH:mm:ss}' -f $rel,$f.Length,$f.LastWriteTime) }; [IO.File]::WriteAllLines((Join-Path $root 'validation_run.txt'),$lines,[Text.UTF8Encoding]::new($false)); Write-Output ('[ARTIFACTS] Debug plot PNG files: '+$files.Count)" >>"%LOG%" 2>&1
+if errorlevel 1 (
+    echo ERROR: Could not create Debug plot manifest.
+    set "PUBLISH_OK=MANIFEST_FAILED"
+    goto END_LOCAL
+)
 git add -- BuildReports CAD Debug Plots Drawings >>"%LOG%" 2>&1
 if errorlevel 1 (
     echo ERROR: Could not stage the report.
