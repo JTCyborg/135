@@ -145,12 +145,19 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         // Sparse magnetic anchors can be converted to an explicitly estimated
         // exploratory B-H branch. This never changes the source quality status.
         const auto bhIt = root.find("bhCurve");
-        std::string bhCurveModelStatus = "SOURCE_TABULATED_OR_NOT_AVAILABLE";
+        double bhFrequency = 0.0;
+        double bhTemperature = 0.0;
+        std::string bhCurveModelStatus = bhIt != root.end()
+            ? "SOURCE_CURVE_PRESENT" : "NO_SOURCE_BH_CURVE";
         if (bhIt == root.end()) {
             std::vector<std::pair<double, double>> anchors;
             constexpr double mu0 = 4.0e-7 * 3.14159265358979323846;
             const auto generic = root.find("magneticAnchors");
             if (generic != root.end() && generic->is_array()) {
+                if (root.contains("magneticAnchorFrequency_Hz"))
+                    bhFrequency = requiredNumber(root, "magneticAnchorFrequency_Hz");
+                if (root.contains("magneticAnchorTemperature_K"))
+                    bhTemperature = requiredNumber(root, "magneticAnchorTemperature_K");
                 for (const auto& anchor : *generic) {
                     const double h = requiredNumber(anchor, "fieldStrength_A_per_m");
                     double b = 0.0;
@@ -165,6 +172,8 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
             } else {
                 const auto values = sourceMaterial.find("minimumPolarization_T");
                 if (values != sourceMaterial.end() && values->is_object()) {
+                    if (sourceMaterial.contains("minimumPolarizationFrequency_Hz"))
+                        bhFrequency = requiredNumber(sourceMaterial, "minimumPolarizationFrequency_Hz");
                     for (auto it = values->begin(); it != values->end(); ++it) {
                         const std::string key = it.key();
                         const std::string prefix = "at_";
@@ -211,8 +220,6 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
                 bhCurveModelStatus = "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
             }
         }
-        double bhFrequency = 0.0;
-        double bhTemperature = 0.0;
         if (bhIt != root.end()) {
             const auto& sourceBh = *bhIt;
             bhFrequency = requiredNumber(sourceBh, "frequency_Hz");
