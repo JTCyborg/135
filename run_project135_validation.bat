@@ -113,25 +113,11 @@ call :RUN "CMake version"
 set "RUN_CMD=git --version"
 call :RUN "Git version"
 
-rem Remove only generated output folders requested by the user.
+rem Never delete CAD, Drawings, Debug, crash dumps, or user data during validation.
+rem Existing generated outputs are preserved; builds update only their own targets.
 echo.
-echo [1/6] Cleaning CAD, Drawings and Debug...
-for %%D in (CAD Drawings Debug) do (
-    if exist "%%D" (
-        echo Removing %%D...
-        rd /s /q "%%D"
-        if exist "%%D" (
-            echo ERROR: Could not remove %%D.
-            echo [FATAL] Could not remove %%D.>>"%LOG%"
-            set "OVERALL=FAILED"
-            goto STOP_WITH_LOCAL_LOG
-        )
-    )
-)
-echo [CLEAN] CAD, Drawings and Debug removed.>>"%LOG%"
-mkdir "CAD" 2>nul
-mkdir "Drawings" 2>nul
-mkdir "Debug" 2>nul
+echo [1/6] Preserving existing project outputs and diagnostics...
+echo [CLEAN] No project output or diagnostic directories were deleted.>>"%LOG%"
 
 rem Never overwrite local source changes with a pull.
 echo.
@@ -146,11 +132,13 @@ if not "%CURRENT_BRANCH%"=="main" (
     goto STOP_WITH_LOCAL_LOG
 )
 set "DIRTY="
-rem BuildReports is created by this script before the check; exclude only that generated directory.
-for /f "delims=" %%S in ('git status --porcelain --untracked-files^=all -- . ":(exclude)BuildReports/**"') do set "DIRTY=1"
+rem Ignore only local project data and diagnostic artifacts; source-code changes still stop the pull.
+rem A pull that conflicts with locally modified JSON remains safely rejected by Git.
+for /f "delims=" %%S in ('git status --porcelain --untracked-files^=all -- . ":(exclude)BuildReports/**" ":(exclude)01_project.json" ":(exclude)02_filter_definition.json" ":(exclude)03_construction.json" ":(exclude)04_calculation_design.json" ":(exclude)Project135DesktopWorkflowE2ETests.exe_*.dmp" ":(exclude)windbg_analysis_*.txt"') do set "DIRTY=1"
 if defined DIRTY (
-    echo ERROR: Git working tree is not clean. Commit or stash source changes, then rerun.
-    echo [FATAL] Working tree is not clean after generated-folder cleanup. Pull was not run.>>"%LOG%"
+    echo ERROR: Git has source changes outside the approved local data/diagnostic files.
+    echo Commit or preserve those source changes before rerunning.
+    echo [FATAL] Source working tree is not clean; pull was not run.>>"%LOG%"
     git status --short >>"%LOG%" 2>&1
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
@@ -191,13 +179,13 @@ if errorlevel 1 (
 
 echo.
 echo [4/6] Building Debug and Release...
-set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel"
+set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
 call :RUN "Build Debug"
 if errorlevel 1 (
     set "DEBUG_BUILD_OK=0"
     set "OVERALL=FAILED"
 )
-set "RUN_CMD=cmake --build --preset build-desktop-release --parallel"
+set "RUN_CMD=cmake --build --preset build-desktop-release --parallel 4"
 call :RUN "Build Release"
 if errorlevel 1 (
     set "RELEASE_BUILD_OK=0"
