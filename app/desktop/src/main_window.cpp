@@ -56,6 +56,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QList>
+#include <QPair>
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QKeySequence>
