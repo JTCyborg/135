@@ -125,7 +125,7 @@ int main()
     const double limbGapVolume = 0.001 * 0.04 * 0.08 * 0.95;
     const double yokeGapVolume = 0.001 * 0.03 * 0.08 * 0.95;
     assert(near(gapped.value().netSteelVolumes[0].si(), limbVolume - limbGapVolume));
-    assert(near(gapped.value().netSteelVolumes[3].si(), yokeVolume - yokeGapVolume));
+    assert(near(gapped.value().netSteelVolumes[3].si(), yokeVolumes[0] - yokeGapVolume));
 
     auto gapAcrossJoint = validCore();
     gapAcrossJoint.airGaps = {
