@@ -245,13 +245,24 @@ private slots:
                     QStringLiteral("bhCurvePoints"));
                 auto* quality = bhDialog->findChild<QComboBox*>(
                     QStringLiteral("bhCurveQualityStatus"));
-                if (!source || !points || !quality) {
+                auto* curveType = bhDialog->findChild<QComboBox*>(
+                    QStringLiteral("bhCurveType"));
+                if (!source || !points || !quality || !curveType) {
                     bhDialog->reject();
                     materialDialog->reject();
                     QFAIL("B-H import dialog is missing required controls");
                     return;
                 }
                 source->setText(QStringLiteral("TEST-MANUFACTURER-DATASHEET-R1"));
+                const int dynamicIndex = curveType->findData(
+                    QStringLiteral("dynamic magnetization"));
+                if (dynamicIndex < 0) {
+                    bhDialog->reject();
+                    materialDialog->reject();
+                    QFAIL("Dynamic B-H curve type option is missing");
+                    return;
+                }
+                curveType->setCurrentIndex(dynamicIndex);
                 points->setPlainText(QStringLiteral(
                     "H_A_per_m, B_T\n0, 0\n100, 0.25\n200, 0.40"));
                 const int manufacturerIndex = quality->findData(
