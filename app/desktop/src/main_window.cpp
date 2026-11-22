@@ -6063,7 +6063,10 @@ void MainWindow::calculateFilter()
     const double sourceInductance = sourceInductanceH;
     const bool hasSourceImpedance = sourceResistance > 0.0 || sourceInductance > 0.0;
 
-    if (hasSourceImpedance) {
+    // Always calculate the filter-bank driving-point impedance. With an ideal
+    // source the bus impedance is correctly zero, but the filter impedance curve
+    // is still real, useful engineering data and must not disappear from the UI.
+    {
         p135::filter::FrequencyResponseRequest impedanceRequest;
         impedanceRequest.design = result.value();
         impedanceRequest.source = {
@@ -6080,7 +6083,7 @@ void MainWindow::calculateFilter()
         if (impedance) {
             impedanceResult = impedance.value();
         } else {
-            advancedWarning = tr("Impedance scan NOT_VERIFIED: %1")
+            advancedWarning = tr("Filter/source impedance scan NOT_VERIFIED: %1")
                 .arg(QString::fromStdString(impedance.error().message));
         }
     }
@@ -7157,7 +7160,8 @@ void MainWindow::calculateFilter()
         }
 
         QJsonArray impedanceScanSnapshot;
-        PlotCurve busImpedanceCurve{tr("Current calculation"), {}};
+        PlotCurve busImpedanceCurve{
+            hasSourceImpedance ? tr("Source || filter bus impedance") : tr("Filter-bank impedance (ideal source)"), {}};
         if (impedanceResult) {
             for (const auto& point : impedanceResult->points) {
                 const double frequencyHz = point.frequency.si();
@@ -7167,7 +7171,9 @@ void MainWindow::calculateFilter()
                 sample.insert(QStringLiteral("filterImpedance_Ohm"), point.filterImpedanceMagnitudeOhm);
                 sample.insert(QStringLiteral("sourceImpedance_Ohm"), point.sourceImpedanceMagnitudeOhm);
                 impedanceScanSnapshot.append(sample);
-                busImpedanceCurve.points.emplace_back(frequencyHz, point.busImpedanceMagnitudeOhm);
+                busImpedanceCurve.points.emplace_back(frequencyHz,
+                    hasSourceImpedance ? point.busImpedanceMagnitudeOhm
+                                       : point.filterImpedanceMagnitudeOhm);
             }
         }
 
@@ -7422,25 +7428,31 @@ void MainWindow::calculateFilter()
         resultsBankCurrentPlot_->setEngineeringGuides(
             resonanceBands, saturationPeakReference, magneticKneePlotReference);
     }
-    PlotCurve liveBusImpedanceCurve{tr("Current calculation"), {}};
+    PlotCurve liveBusImpedanceCurve{
+        hasSourceImpedance ? tr("Source || filter bus impedance") : tr("Filter-bank impedance (ideal source)"), {}};
     if (impedanceResult) {
         for (const auto& point : impedanceResult->points)
             liveBusImpedanceCurve.points.emplace_back(
-                point.frequency.si(), point.busImpedanceMagnitudeOhm);
+                point.frequency.si(), hasSourceImpedance
+                    ? point.busImpedanceMagnitudeOhm
+                    : point.filterImpedanceMagnitudeOhm);
     }
     if (resultsBusImpedancePlot_) {
         resultsBusImpedancePlot_->setCurves(impedanceResult
             ? std::vector<PlotCurve>{liveBusImpedanceCurve} : std::vector<PlotCurve>{},
-            tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"), true,
+            tr("Frequency (Hz, logarithmic)"),
+            hasSourceImpedance ? tr("Bus impedance magnitude (Ω)") : tr("Filter-bank impedance magnitude (Ω)"), true,
             impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
-                            : tr("NOT_VERIFIED: bus impedance requires non-zero per-phase Thevenin source R or L. Set Source resistance or Source inductance, then recalculate."));
+                            : tr("NOT_VERIFIED: filter impedance scan failed."));
         resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
     }
 
     if (auto* title = findChild<QLabel*>(QStringLiteral("busImpedancePlotTitle"))) {
         title->setText(impedanceResult
-            ? tr("Bus impedance — source/filter frequency scan")
-            : tr("Bus impedance — NOT_VERIFIED (source R/L required)"));
+            ? (hasSourceImpedance
+                ? tr("Bus impedance — source/filter frequency scan")
+                : tr("Filter-bank impedance — ideal source (source R/L not modelled)"))
+            : tr("Filter-bank impedance — NOT_VERIFIED"));
     }
 
     // The magnetic plot is a live calculation result, not a persistence artifact.
