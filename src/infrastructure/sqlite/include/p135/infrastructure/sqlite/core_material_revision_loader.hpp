@@ -65,6 +65,8 @@ struct CoreMaterialRevisionSnapshot {
     std::string sourceReference;
     std::string datasetRevision;
     std::string bhCurveStatus;
+    /// Source curve or estimated branch status; estimation never upgrades source quality.
+    std::string bhCurveModelStatus;
     std::string bhCurveSourceDocument;
     std::string bhCurveSourcePage;
     std::string bhCurveMeasurementMethod;
