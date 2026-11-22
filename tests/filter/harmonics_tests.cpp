@@ -121,7 +121,24 @@ int main()
     {
         auto request = validRequest();
         request.source = {units::Resistance{0.0}, units::Inductance{0.0}};
-        assert(!analyzeHarmonics(request));
+        const auto idealSource = analyzeHarmonics(request);
+        assert(idealSource);
+        assert(idealSource.value().points.size() == 3);
+        // An ideal source fixes the PCC voltage to the supplied voltage phasor.
+        assert(std::abs(idealSource.value().points.front().busVoltageMagnitudeV -
+                        std::abs(request.sourceVoltageSpectrum.front().phaseVoltageRms)) < 1.0e-9);
+        // Its finite current is the filter-bank current (plus any load injection),
+        // evaluated from KCL rather than division by a zero source impedance.
+        assert(idealSource.value().sourceFundamentalCurrentA > 0.0);
+        assert(idealSource.value().branchStresses.front().totalRmsCurrentA > 0.0);
+
+        request.loadCurrentInjections = {
+            {"VFD-ideal", 5, HarmonicSequence::Negative, {12.0, -3.0}}
+        };
+        const auto idealLoaded = analyzeHarmonics(request);
+        assert(idealLoaded);
+        assert(idealLoaded.value().points[1].loadCurrentMagnitudeA > 0.0);
+        assert(idealLoaded.value().sourceCurrentThd >= 0.0);
     }
     {
         auto request = validRequest();
