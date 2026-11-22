@@ -375,14 +375,14 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     frequency->setRange(0.0, 1.0e9);
     frequency->setDecimals(3);
     frequency->setSuffix(QObject::tr(" Hz"));
-    frequency->setValue(existingCurve.value(QStringLiteral("frequency_Hz")).toDouble(50.0));
+    frequency->setValue(existingCurve.value(QStringLiteral("frequency_Hz")).toDouble(0.0));
 
     auto* temperature = new QDoubleSpinBox(&dialog);
     temperature->setObjectName(QStringLiteral("bhCurveTemperature"));
-    temperature->setRange(1.0, 2000.0);
+    temperature->setRange(0.0, 2000.0);
     temperature->setDecimals(2);
     temperature->setSuffix(QObject::tr(" K"));
-    temperature->setValue(existingCurve.value(QStringLiteral("temperature_K")).toDouble(293.15));
+    temperature->setValue(existingCurve.value(QStringLiteral("temperature_K")).toDouble(0.0));
 
     auto* qualityStatus = new QComboBox(&dialog);
     qualityStatus->setObjectName(QStringLiteral("bhCurveQualityStatus"));
@@ -475,7 +475,6 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
                 QStringLiteral("DC initial magnetization curve");
             frequency->setEnabled(!dc);
             if (dc) frequency->setValue(0.0);
-            else if (frequency->value() <= 0.0) frequency->setValue(50.0);
         });
     const bool initialDc = curveType->currentData().toString() ==
         QStringLiteral("DC initial magnetization curve");
