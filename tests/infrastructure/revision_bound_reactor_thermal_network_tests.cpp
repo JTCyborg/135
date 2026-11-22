@@ -146,6 +146,10 @@ int main(int argc, char** argv)
     assert(massBoundResult.value().thermal.network.nodes.size() == 10);
     assert(massBoundResult.value().thermal.network.nodes[0].loss.si() > 0.0);
     assert(!massBoundResult.value().thermal.network.modelProvenanceComplete);
+    assert(massBoundResult.value().calculatedCoreMass.has_value());
+    assert(massBoundResult.value().calculatedCoreMass->totalMass.si() > 0.0);
+    assert(massBoundResult.value().calculatedCoreMass->verificationStatus == "NOT_VERIFIED");
+    assert(!massBoundResult.value().calculatedCoreMass->regionMassSourceReferences[0].empty());
 
     // Even if a reviewer toggles the material release flag, approximate
     // core-loss digitization must never be promoted to a verified thermal result.
