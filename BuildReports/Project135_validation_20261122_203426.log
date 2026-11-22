@@ -855,3 +855,9 @@ Release tests: FAIL
 Source commit: ade7706397e8627538c3047080ae8d81bdbc68d0
 Finished: 22.11.2026 20:41:33,12
 ==========================================================
+warning: in the working copy of 'BuildReports/Project135_validation_20261122_203426.log', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/4c1267d5-5eb5-419e-976b-20aee4656c0d_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/d5d66823-43db-4e3b-9165-18928e6dd902_assembly.step', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/JTCyborg/135
+   ade7706..d068d9f  main -> main
+[GIT_PUSH] SUCCESS - validation report was pushed to origin/main.
