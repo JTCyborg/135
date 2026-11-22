@@ -21,9 +21,5 @@ compile_commands.json
 .DS_Store
 Thumbs.db
 
-# Generated engineering artifacts (recreated by the validation script)
-/CAD/
-/Drawings/
-/Debug/
 # Temporary output from the Windows validation script
 /BuildReports/*.tmp
