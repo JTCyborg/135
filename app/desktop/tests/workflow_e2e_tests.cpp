@@ -118,6 +118,11 @@ private slots:
             auto* button = window_->findChild<QPushButton*>(name);
             QVERIFY2(button, qPrintable(QStringLiteral("Missing workflow action: ") + name));
         }
+        auto* estimatedBh = window_->findChild<QCheckBox*>(
+            QStringLiteral("construction_allowEstimatedBhModel"));
+        QVERIFY2(estimatedBh, "Missing explicit estimated B-H model opt-in");
+        QVERIFY(!estimatedBh->isChecked());
+        QVERIFY(!estimatedBh->toolTip().isEmpty());
     }
 
     void everyWorkflowTabCanBeSelected()
