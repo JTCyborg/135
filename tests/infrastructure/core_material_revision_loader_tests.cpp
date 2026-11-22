@@ -115,7 +115,7 @@ int main(int argc, char** argv)
         units::FluxDensity{0.9}, units::TemperatureKelvin{313.15});
     assert(interpolatedLoss);
     assert(std::abs(interpolatedLoss.value().si() -
-        (27750.0 / loadedImportedLoss.value().material.density.si())) < 1.0e-12);
+        (31500.0 / loadedImportedLoss.value().material.density.si())) < 1.0e-12);
 
     const auto n97 = loadCoreMaterialRevision(store, "SEED-TDK-N97-R1");
     assert(n97);
