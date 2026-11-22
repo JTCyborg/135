@@ -292,6 +292,7 @@ std::vector<SeedRecord> starterRecords()
             {"maximumSpecificCoreLoss_W_per_kg", {
                 {"50Hz_1p0T", 0.95}, {"50Hz_1p5T", 2.35}
             }},
+            {"minimumPolarizationFrequency_Hz", 50.0},
             {"minimumPolarization_T", {
                 {"at_2500_A_per_m", 1.49}, {"at_5000_A_per_m", 1.60},
                 {"at_10000_A_per_m", 1.70}
@@ -322,6 +323,7 @@ std::vector<SeedRecord> starterRecords()
             {"maximumSpecificCoreLoss_W_per_kg", {
                 {"50Hz_1p0T", 1.05}, {"50Hz_1p5T", 2.50}
             }},
+            {"minimumPolarizationFrequency_Hz", 50.0},
             {"minimumPolarization_T", {
                 {"at_2500_A_per_m", 1.49}, {"at_5000_A_per_m", 1.60},
                 {"at_10000_A_per_m", 1.70}
@@ -352,6 +354,7 @@ std::vector<SeedRecord> starterRecords()
             {"maximumSpecificCoreLoss_W_per_kg", {
                 {"50Hz_1p0T", 1.10}, {"50Hz_1p5T", 2.70}
             }},
+            {"minimumPolarizationFrequency_Hz", 50.0},
             {"minimumPolarization_T", {
                 {"at_2500_A_per_m", 1.49}, {"at_5000_A_per_m", 1.60},
                 {"at_10000_A_per_m", 1.70}
@@ -685,7 +688,8 @@ std::vector<SeedRecord> starterRecords()
                 {"maximumSpecificCoreLoss_W_per_kg", {
                     {"50Hz_1p0T", loss10}, {"50Hz_1p5T", loss15}
                 }},
-                {"minimumPolarization_T", {
+                {"minimumPolarizationFrequency_Hz", 50.0},
+            {"minimumPolarization_T", {
                     {"at_2500_A_per_m", j2500}, {"at_5000_A_per_m", j5000},
                     {"at_10000_A_per_m", j10000}
                 }}
@@ -888,7 +892,8 @@ std::vector<SeedRecord> starterRecords()
                 {"standard", "EN 10107 / IEC 60404-8-7"},
                 {"laminationThickness_m", thicknessMm * 1.0e-3},
                 {"maximumSpecificCoreLoss_W_per_kg", {{"50Hz_1p7T", loss17}}},
-                {"minimumPolarization_T", {{"at_800_A_per_m", polarization800}}}
+                {"minimumPolarizationFrequency_Hz", 50.0},
+            {"minimumPolarization_T", {{"at_800_A_per_m", polarization800}}}
             }},
             {"sourceDocuments", json::array({tkGoSteelUrl,
                 "https://www.thyssenkrupp-steel.com/media/content_1/publikationen/epd/thyssenkrupp_epd_grain_oriented_electrical_steel_en_steel.pdf"})},
