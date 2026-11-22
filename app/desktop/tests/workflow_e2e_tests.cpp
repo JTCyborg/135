@@ -271,7 +271,7 @@ private slots:
                 }
                 curveType->setCurrentIndex(dynamicIndex);
                 points->setPlainText(QStringLiteral(
-                    "H_A_per_m, B_T\n0, 0\n100, 0.25\n200, 0.40"));
+                    "\uFEFFH_A_per_m, B_T\n0, 0\n100, 0.25\n200, 0.40"));
                 const int manufacturerIndex = quality->findData(
                     QStringLiteral("MANUFACTURER_TABULATED"));
                 if (manufacturerIndex < 0) {
