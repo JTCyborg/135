@@ -190,7 +190,7 @@ if errorlevel 1 (
 
 echo.
 echo [5/6] Running CTest...
-if "%DEBUG_BUILD_OK%"=="1" (
+if "!DEBUG_BUILD_OK!"=="1" (
     set "RUN_CMD=ctest --preset test-desktop-debug"
     call :RUN "CTest Debug"
     if errorlevel 1 (
@@ -202,7 +202,7 @@ if "%DEBUG_BUILD_OK%"=="1" (
 ) else (
     echo [SKIP] Debug tests skipped because Debug build failed.>>"%LOG%"
 )
-if "%RELEASE_BUILD_OK%"=="1" (
+if "!RELEASE_BUILD_OK!"=="1" (
     set "RUN_CMD=ctest --preset test-desktop-release"
     call :RUN "CTest Release"
     if errorlevel 1 (
@@ -218,11 +218,11 @@ if "%RELEASE_BUILD_OK%"=="1" (
 :FINALIZE
 echo.>>"%LOG%"
 echo ===================== FINAL SUMMARY =====================>>"%LOG%"
-echo Overall: %OVERALL%>>"%LOG%"
-echo Debug build: %DEBUG_BUILD_OK%>>"%LOG%"
-echo Debug tests: %DEBUG_TEST_OK%>>"%LOG%"
-echo Release build: %RELEASE_BUILD_OK%>>"%LOG%"
-echo Release tests: %RELEASE_TEST_OK%>>"%LOG%"
+echo Overall: !OVERALL!>>"%LOG%"
+echo Debug build: !DEBUG_BUILD_OK!>>"%LOG%"
+echo Debug tests: !DEBUG_TEST_OK!>>"%LOG%"
+echo Release build: !RELEASE_BUILD_OK!>>"%LOG%"
+echo Release tests: !RELEASE_TEST_OK!>>"%LOG%"
 echo Source commit: %SOURCE_COMMIT%>>"%LOG%"
 echo Finished: %DATE% %TIME%>>"%LOG%"
 echo ==========================================================>>"%LOG%"
@@ -282,8 +282,8 @@ del "BuildReports\push_%STAMP%.tmp" 2>nul
 echo.
 echo ================================================================
 echo Overall: %OVERALL%
-echo Debug build: %DEBUG_BUILD_OK%  Debug tests: %DEBUG_TEST_OK%
-echo Release build: %RELEASE_BUILD_OK%  Release tests: %RELEASE_TEST_OK%
+echo Debug build: !DEBUG_BUILD_OK!  Debug tests: !DEBUG_TEST_OK!
+echo Release build: !RELEASE_BUILD_OK!  Release tests: !RELEASE_TEST_OK!
 echo Report publication: %PUBLISH_OK%
 echo Log: %ROOT%%LOG%
 echo ================================================================
@@ -311,11 +311,12 @@ echo.>>"%LOG%"
 echo [RUN] %~1>>"%LOG%"
 call %RUN_CMD% >>"%LOG%" 2>&1
 set "RUN_RC=!ERRORLEVEL!"
-if !RUN_RC! EQU 0 (
-    echo [PASS] %~1
-    echo [PASS] %~1>>"%LOG%"
-) else (
-    echo [FAIL] %~1 (exit !RUN_RC!)
-    echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
-)
+if not "!RUN_RC!"=="0" goto RUN_FAILED
+echo [PASS] %~1
+echo [PASS] %~1>>"%LOG%"
+exit /b 0
+
+:RUN_FAILED
+echo [FAIL] %~1 (exit !RUN_RC!)
+echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
 exit /b !RUN_RC!
