@@ -162,6 +162,26 @@ private slots:
         }
     }
 
+    void automaticReactorSizingAssumptionsAreExplicitAndEditable()
+    {
+        const auto checkAssumption = [this](const QString& objectName, double expected) {
+            auto* field = window_->findChild<QDoubleSpinBox*>(objectName);
+            QVERIFY2(field, qPrintable(QStringLiteral("Missing field: ") + objectName));
+            QCOMPARE(field->value(), expected);
+            QCOMPARE(field->property("p135ValueOrigin").toString(),
+                     QStringLiteral("PRELIMINARY_ASSUMPTION"));
+            QVERIFY(!field->toolTip().isEmpty());
+            field->setValue(expected * 1.1);
+            QVERIFY(std::abs(field->value() - expected * 1.1) < 1.0e-9);
+        };
+
+        checkAssumption(QStringLiteral("idealSizing_Bmax"), 1.2);
+        checkAssumption(QStringLiteral("idealSizing_J"), 3.0);
+        checkAssumption(QStringLiteral("idealSizing_Ku"), 35.0);
+        checkAssumption(QStringLiteral("idealSizing_Ks"), 95.0);
+        checkAssumption(QStringLiteral("idealSizing_AwAe"), 2.0);
+    }
+
     void filterInputModesAndWheelProtection()
     {
         auto* automatic = window_->findChild<QToolButton*>(
