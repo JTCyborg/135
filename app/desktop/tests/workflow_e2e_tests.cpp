@@ -164,6 +164,19 @@ private slots:
 
     void automaticReactorSizingAssumptionsAreExplicitAndEditable()
     {
+        auto* manual = window_->findChild<QToolButton*>(
+            QStringLiteral("filterManualMode"));
+        auto* automatic = window_->findChild<QToolButton*>(
+            QStringLiteral("filterAutomaticMode"));
+        auto* assumptions = window_->findChild<QGroupBox*>(
+            QStringLiteral("idealSizingAssumptionsGroup"));
+        QVERIFY(manual);
+        QVERIFY(automatic);
+        QVERIFY(assumptions);
+        QVERIFY(assumptions->isHidden());
+        QTest::mouseClick(manual, Qt::LeftButton);
+        QTRY_VERIFY(!assumptions->isHidden());
+
         const auto checkAssumption = [this](const QString& objectName, double expected) {
             auto* field = window_->findChild<QDoubleSpinBox*>(objectName);
             QVERIFY2(field, qPrintable(QStringLiteral("Missing field: ") + objectName));
@@ -180,6 +193,8 @@ private slots:
         checkAssumption(QStringLiteral("idealSizing_Ku"), 35.0);
         checkAssumption(QStringLiteral("idealSizing_Ks"), 95.0);
         checkAssumption(QStringLiteral("idealSizing_AwAe"), 2.0);
+        QTest::mouseClick(automatic, Qt::LeftButton);
+        QTRY_VERIFY(assumptions->isHidden());
     }
 
     void filterInputModesAndWheelProtection()
