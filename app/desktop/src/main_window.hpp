@@ -107,6 +107,7 @@ private:
     PlotWidget* resultsBankCurrentPlot_{};
     PlotWidget* resultsBusImpedancePlot_{};
     PlotWidget* resultsCoreFluxPlot_{};
+    PlotWidget* resultsMaterialBhPlot_{};
     PlotWidget* historyComparisonPlot_{};
     QComboBox* historyPlotMetric_{};
     QTableWidget* historyTable_{};
