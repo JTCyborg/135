@@ -412,6 +412,14 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         return false;
     }
     const QString curveKind = curveType->currentData().toString();
+    const QString status = qualityStatus->currentData().toString();
+    if (status == QStringLiteral("MEASURED_TABULAR") &&
+        (measurementMethod->text().trimmed().isEmpty() ||
+         sampleDirection->text().trimmed().isEmpty())) {
+        QMessageBox::warning(parent, QObject::tr("B-H curve provenance"),
+            QObject::tr("Measured datasets require both a measurement method and sample direction."));
+        return false;
+    }
     if ((curveKind == QStringLiteral("DC initial magnetization curve") && frequency->value() != 0.0) ||
         (curveKind != QStringLiteral("DC initial magnetization curve") && frequency->value() <= 0.0) ||
         temperature->value() <= 0.0) {
@@ -467,7 +475,6 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         return false;
     }
 
-    const QString status = qualityStatus->currentData().toString();
     const QString captureMethod = status == QStringLiteral("MANUFACTURER_TABULATED")
         ? QStringLiteral("DIRECT_TABULAR_IMPORT")
         : status == QStringLiteral("MEASURED_TABULAR")
