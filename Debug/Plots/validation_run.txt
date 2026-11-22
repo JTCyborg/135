@@ -1,46 +1,46 @@
 Project135 validation plot manifest
-Run: 20261122_233514
-Source commit: 8a2a62255285ac3ddb7bba3680d184871789536f
+Run: 20261122_234455
+Source commit: d863caa3bf28d2b851df49d3d256b016257ec41d
 Branch: main
 Generated PNG count: 40
 
-Debug\Plots\2c9943cb-7313-430b-9e74-23a68c41723d_bus_impedance.png | 5339 bytes | 2026-11-22 23:40:03
-Debug\Plots\2c9943cb-7313-430b-9e74-23a68c41723d_core_flux.png | 7038 bytes | 2026-11-22 23:40:03
-Debug\Plots\2c9943cb-7313-430b-9e74-23a68c41723d_history_comparison.png | 4857 bytes | 2026-11-22 23:40:03
-Debug\Plots\2c9943cb-7313-430b-9e74-23a68c41723d_material_bh.png | 5564 bytes | 2026-11-22 23:40:02
-Debug\Plots\2c9943cb-7313-430b-9e74-23a68c41723d_reactor_current.png | 5669 bytes | 2026-11-22 23:40:03
-Debug\Plots\5d05df6b-873b-4de3-896f-097b7fa6a799_bus_impedance.png | 5339 bytes | 2026-11-22 23:39:41
-Debug\Plots\5d05df6b-873b-4de3-896f-097b7fa6a799_core_flux.png | 7038 bytes | 2026-11-22 23:39:41
-Debug\Plots\5d05df6b-873b-4de3-896f-097b7fa6a799_history_comparison.png | 4857 bytes | 2026-11-22 23:39:41
-Debug\Plots\5d05df6b-873b-4de3-896f-097b7fa6a799_material_bh.png | 5564 bytes | 2026-11-22 23:39:41
-Debug\Plots\5d05df6b-873b-4de3-896f-097b7fa6a799_reactor_current.png | 5669 bytes | 2026-11-22 23:39:41
-Debug\Plots\6f7fcfd9-b5af-43d1-beb1-4744c537dd55_bus_impedance.png | 5339 bytes | 2026-11-22 23:39:46
-Debug\Plots\6f7fcfd9-b5af-43d1-beb1-4744c537dd55_core_flux.png | 7038 bytes | 2026-11-22 23:39:46
-Debug\Plots\6f7fcfd9-b5af-43d1-beb1-4744c537dd55_history_comparison.png | 4857 bytes | 2026-11-22 23:39:46
-Debug\Plots\6f7fcfd9-b5af-43d1-beb1-4744c537dd55_material_bh.png | 5564 bytes | 2026-11-22 23:39:45
-Debug\Plots\6f7fcfd9-b5af-43d1-beb1-4744c537dd55_reactor_current.png | 5669 bytes | 2026-11-22 23:39:46
-Debug\Plots\89382ae5-c8bc-4393-b47d-985658cbabb8_bus_impedance.png | 5339 bytes | 2026-11-22 23:40:29
-Debug\Plots\89382ae5-c8bc-4393-b47d-985658cbabb8_core_flux.png | 7038 bytes | 2026-11-22 23:40:29
-Debug\Plots\89382ae5-c8bc-4393-b47d-985658cbabb8_history_comparison.png | 4857 bytes | 2026-11-22 23:40:28
-Debug\Plots\89382ae5-c8bc-4393-b47d-985658cbabb8_material_bh.png | 5564 bytes | 2026-11-22 23:40:28
-Debug\Plots\89382ae5-c8bc-4393-b47d-985658cbabb8_reactor_current.png | 5669 bytes | 2026-11-22 23:40:29
-Debug\Plots\b4fa3300-95c8-4a11-9caf-5c63157239da_bus_impedance.png | 5339 bytes | 2026-11-22 23:40:14
-Debug\Plots\b4fa3300-95c8-4a11-9caf-5c63157239da_core_flux.png | 7038 bytes | 2026-11-22 23:40:14
-Debug\Plots\b4fa3300-95c8-4a11-9caf-5c63157239da_history_comparison.png | 4857 bytes | 2026-11-22 23:40:14
-Debug\Plots\b4fa3300-95c8-4a11-9caf-5c63157239da_material_bh.png | 5564 bytes | 2026-11-22 23:40:13
-Debug\Plots\b4fa3300-95c8-4a11-9caf-5c63157239da_reactor_current.png | 5669 bytes | 2026-11-22 23:40:14
-Debug\Plots\c6fb0c22-ee2c-41a0-8d3d-b8a92c33d8be_bus_impedance.png | 5339 bytes | 2026-11-22 23:39:58
-Debug\Plots\c6fb0c22-ee2c-41a0-8d3d-b8a92c33d8be_core_flux.png | 7038 bytes | 2026-11-22 23:39:58
-Debug\Plots\c6fb0c22-ee2c-41a0-8d3d-b8a92c33d8be_history_comparison.png | 4857 bytes | 2026-11-22 23:39:58
-Debug\Plots\c6fb0c22-ee2c-41a0-8d3d-b8a92c33d8be_material_bh.png | 5564 bytes | 2026-11-22 23:39:57
-Debug\Plots\c6fb0c22-ee2c-41a0-8d3d-b8a92c33d8be_reactor_current.png | 5669 bytes | 2026-11-22 23:39:58
-Debug\Plots\d355ceb6-61dd-4f76-8485-bf7e44cdd157_bus_impedance.png | 25342 bytes | 2026-11-22 23:41:44
-Debug\Plots\d355ceb6-61dd-4f76-8485-bf7e44cdd157_core_flux.png | 12665 bytes | 2026-11-22 23:41:44
-Debug\Plots\d355ceb6-61dd-4f76-8485-bf7e44cdd157_history_comparison.png | 4220 bytes | 2026-11-22 23:41:43
-Debug\Plots\d355ceb6-61dd-4f76-8485-bf7e44cdd157_material_bh.png | 17153 bytes | 2026-11-22 23:41:44
-Debug\Plots\d355ceb6-61dd-4f76-8485-bf7e44cdd157_reactor_current.png | 19349 bytes | 2026-11-22 23:41:44
-Debug\Plots\f4444a08-173b-4af7-a2e0-2c3cb5715dc5_bus_impedance.png | 5339 bytes | 2026-11-22 23:39:53
-Debug\Plots\f4444a08-173b-4af7-a2e0-2c3cb5715dc5_core_flux.png | 7038 bytes | 2026-11-22 23:39:53
-Debug\Plots\f4444a08-173b-4af7-a2e0-2c3cb5715dc5_history_comparison.png | 4857 bytes | 2026-11-22 23:39:53
-Debug\Plots\f4444a08-173b-4af7-a2e0-2c3cb5715dc5_material_bh.png | 5564 bytes | 2026-11-22 23:39:52
-Debug\Plots\f4444a08-173b-4af7-a2e0-2c3cb5715dc5_reactor_current.png | 5669 bytes | 2026-11-22 23:39:53
+Debug\Plots\1255d12e-894a-458a-9f92-49c5b241d391_bus_impedance.png | 5339 bytes | 2026-11-22 23:47:47
+Debug\Plots\1255d12e-894a-458a-9f92-49c5b241d391_core_flux.png | 7038 bytes | 2026-11-22 23:47:47
+Debug\Plots\1255d12e-894a-458a-9f92-49c5b241d391_history_comparison.png | 4857 bytes | 2026-11-22 23:47:47
+Debug\Plots\1255d12e-894a-458a-9f92-49c5b241d391_material_bh.png | 5564 bytes | 2026-11-22 23:47:47
+Debug\Plots\1255d12e-894a-458a-9f92-49c5b241d391_reactor_current.png | 5669 bytes | 2026-11-22 23:47:47
+Debug\Plots\1c9476f4-ede3-455d-942c-5aee255cc62c_bus_impedance.png | 5339 bytes | 2026-11-22 23:48:08
+Debug\Plots\1c9476f4-ede3-455d-942c-5aee255cc62c_core_flux.png | 7038 bytes | 2026-11-22 23:48:08
+Debug\Plots\1c9476f4-ede3-455d-942c-5aee255cc62c_history_comparison.png | 4857 bytes | 2026-11-22 23:48:08
+Debug\Plots\1c9476f4-ede3-455d-942c-5aee255cc62c_material_bh.png | 5564 bytes | 2026-11-22 23:48:07
+Debug\Plots\1c9476f4-ede3-455d-942c-5aee255cc62c_reactor_current.png | 5669 bytes | 2026-11-22 23:48:08
+Debug\Plots\2a085f1b-2e29-46fc-aa50-910ce2506cef_bus_impedance.png | 5339 bytes | 2026-11-22 23:47:57
+Debug\Plots\2a085f1b-2e29-46fc-aa50-910ce2506cef_core_flux.png | 7038 bytes | 2026-11-22 23:47:57
+Debug\Plots\2a085f1b-2e29-46fc-aa50-910ce2506cef_history_comparison.png | 4857 bytes | 2026-11-22 23:47:57
+Debug\Plots\2a085f1b-2e29-46fc-aa50-910ce2506cef_material_bh.png | 5564 bytes | 2026-11-22 23:47:57
+Debug\Plots\2a085f1b-2e29-46fc-aa50-910ce2506cef_reactor_current.png | 5669 bytes | 2026-11-22 23:47:57
+Debug\Plots\33cc697c-69e1-4fda-a70c-1ce24e849143_bus_impedance.png | 5339 bytes | 2026-11-22 23:48:22
+Debug\Plots\33cc697c-69e1-4fda-a70c-1ce24e849143_core_flux.png | 7038 bytes | 2026-11-22 23:48:22
+Debug\Plots\33cc697c-69e1-4fda-a70c-1ce24e849143_history_comparison.png | 4857 bytes | 2026-11-22 23:48:22
+Debug\Plots\33cc697c-69e1-4fda-a70c-1ce24e849143_material_bh.png | 5564 bytes | 2026-11-22 23:48:22
+Debug\Plots\33cc697c-69e1-4fda-a70c-1ce24e849143_reactor_current.png | 5669 bytes | 2026-11-22 23:48:22
+Debug\Plots\3edf09cd-114f-4b7c-9456-6a7a19ef8cad_bus_impedance.png | 5339 bytes | 2026-11-22 23:47:40
+Debug\Plots\3edf09cd-114f-4b7c-9456-6a7a19ef8cad_core_flux.png | 7038 bytes | 2026-11-22 23:47:40
+Debug\Plots\3edf09cd-114f-4b7c-9456-6a7a19ef8cad_history_comparison.png | 4857 bytes | 2026-11-22 23:47:40
+Debug\Plots\3edf09cd-114f-4b7c-9456-6a7a19ef8cad_material_bh.png | 5564 bytes | 2026-11-22 23:47:39
+Debug\Plots\3edf09cd-114f-4b7c-9456-6a7a19ef8cad_reactor_current.png | 5669 bytes | 2026-11-22 23:47:40
+Debug\Plots\9e2da4d3-6ffd-4941-b677-5fcbe152b6d6_bus_impedance.png | 5339 bytes | 2026-11-22 23:47:52
+Debug\Plots\9e2da4d3-6ffd-4941-b677-5fcbe152b6d6_core_flux.png | 7038 bytes | 2026-11-22 23:47:52
+Debug\Plots\9e2da4d3-6ffd-4941-b677-5fcbe152b6d6_history_comparison.png | 4857 bytes | 2026-11-22 23:47:52
+Debug\Plots\9e2da4d3-6ffd-4941-b677-5fcbe152b6d6_material_bh.png | 5564 bytes | 2026-11-22 23:47:51
+Debug\Plots\9e2da4d3-6ffd-4941-b677-5fcbe152b6d6_reactor_current.png | 5669 bytes | 2026-11-22 23:47:52
+Debug\Plots\c2b3a25d-7a08-4cf6-8e5d-8c24d645977f_bus_impedance.png | 5339 bytes | 2026-11-22 23:47:34
+Debug\Plots\c2b3a25d-7a08-4cf6-8e5d-8c24d645977f_core_flux.png | 7038 bytes | 2026-11-22 23:47:34
+Debug\Plots\c2b3a25d-7a08-4cf6-8e5d-8c24d645977f_history_comparison.png | 4857 bytes | 2026-11-22 23:47:34
+Debug\Plots\c2b3a25d-7a08-4cf6-8e5d-8c24d645977f_material_bh.png | 5564 bytes | 2026-11-22 23:47:34
+Debug\Plots\c2b3a25d-7a08-4cf6-8e5d-8c24d645977f_reactor_current.png | 5669 bytes | 2026-11-22 23:47:34
+Debug\Plots\fe607fd3-79e6-4a88-a92a-cb424c2eba33_bus_impedance.png | 25342 bytes | 2026-11-22 23:49:39
+Debug\Plots\fe607fd3-79e6-4a88-a92a-cb424c2eba33_core_flux.png | 12665 bytes | 2026-11-22 23:49:39
+Debug\Plots\fe607fd3-79e6-4a88-a92a-cb424c2eba33_history_comparison.png | 4220 bytes | 2026-11-22 23:49:38
+Debug\Plots\fe607fd3-79e6-4a88-a92a-cb424c2eba33_material_bh.png | 17153 bytes | 2026-11-22 23:49:39
+Debug\Plots\fe607fd3-79e6-4a88-a92a-cb424c2eba33_reactor_current.png | 19349 bytes | 2026-11-22 23:49:39
