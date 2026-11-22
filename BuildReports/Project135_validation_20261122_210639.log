@@ -1,6 +1,6 @@
 ================================================================ 
 Project135 validation run 
-Started: 22.11.2026 11:02:02,16 
+Started: 22.11.2026 21:06:39,11 
 Project: C:\Temp\trdos\135\ 
 ================================================================ 
 VCPKG_ROOT: C:\vcpkg
@@ -24,13 +24,12 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 [RUN] Git version
 git version 2.56.0.windows.4
 [PASS] Git version
-[CLEAN] No project output or diagnostic directories were deleted.
 Current branch: main
 Validation branch: main
 
 [RUN] Git fetch origin
 [PASS] Git fetch origin
-Synchronized source commit: 679222d4786f36df56be4b07b83023fa05a98af7
+Synchronized source commit: 19ccfb50ca4552901254f5c73d8221f3f0da5ac1
 
 [RUN] Configure Debug
 -- Running vcpkg install
@@ -84,12 +83,12 @@ sqlite3 provides CMake targets:
     find_package(unofficial-sqlite3 CONFIG REQUIRED)
     target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
 
-All requested installations completed successfully in: 1.12 ms
+All requested installations completed successfully in: 625 us
 -- Running vcpkg install - done
 -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
 -- Project135: auto-detected Qt 6 at C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6
 -- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
--- Configuring done (7.2s)
+-- Configuring done (6.9s)
 -- Generating done (3.0s)
 -- Build files have been written to: C:/Temp/trdos/135/out/build/vs2026-desktop-debug
 [PASS] Configure Debug
@@ -146,7 +145,7 @@ sqlite3 provides CMake targets:
     find_package(unofficial-sqlite3 CONFIG REQUIRED)
     target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
 
-All requested installations completed successfully in: 1.03 ms
+All requested installations completed successfully in: 899 us
 -- Running vcpkg install - done
 -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
 -- Project135: auto-detected Qt 6 at C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6
@@ -162,52 +161,55 @@ All requested installations completed successfully in: 1.03 ms
   Project135Domain.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\domain\Debug\Project135Domain.lib
   Project135Circuit.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\circuit\Debug\Project135Circuit.lib
   Project135CoreTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreTests.exe
-  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\filter\Debug\Project135Filter.lib
-  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CircuitTests.exe
-  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ComponentCatalogTests.exe
-  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MechanicalGeometryTests.exe
   Project135DomainTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DomainTests.exe
   Project135DesignDependencyTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DesignDependencyTests.exe
-  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DesignParameterTests.exe
-  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbGeometryAdapterTests.exe
-  Project135ThreeLimbCoreLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbCoreLossTests.exe
-  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbSolverTests.exe
+  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CircuitTests.exe
   Project135Cad.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Debug\Project135Cad.lib
-  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbTest01Regression.exe
-  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectricalTests.exe
+  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DesignParameterTests.exe
+  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\filter\Debug\Project135Filter.lib
   Project135FilterAnalysisTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterAnalysisTests.exe
-  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\application\Debug\Project135Application.lib
-  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\thermal\Debug\Project135Thermal.lib
   Project135FilterHarmonicsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterHarmonicsTests.exe
-  Project135FilterNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterNetworkTests.exe
-  Project135CadTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CadTests.exe
+  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MechanicalGeometryTests.exe
+  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ComponentCatalogTests.exe
+  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\thermal\Debug\Project135Thermal.lib
   Project135FilterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterTests.exe
-  Project135IdealReactorSizingTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135IdealReactorSizingTests.exe
+  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\application\Debug\Project135Application.lib
+  Project135CadTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CadTests.exe
+  Project135FilterNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterNetworkTests.exe
+  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignExecutionTests.exe
+  Project135ReactorDesignInputsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignInputsTests.exe
+  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MagneticOperatingPointStageAdapterTests.exe
+  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignGraphTests.exe
   Project135PhysicalFilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135PhysicalFilterReactorMagneticTests.exe
+  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ApplicationTests.exe
+  Project135IdealReactorSizingTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135IdealReactorSizingTests.exe
+  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135Test01FilterSizingScenario.exe
   Project135FilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterReactorMagneticTests.exe
   Project135FilterExcitationStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterExcitationStageAdapterTests.exe
-  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MagneticOperatingPointStageAdapterTests.exe
-  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ApplicationTests.exe
-  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignExecutionTests.exe
-  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135Test01FilterSizingScenario.exe
+  Project135ThreeLimbCoreLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbCoreLossTests.exe
+  Project135ThreeLimbCoreMassTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbCoreMassTests.exe
+  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbGeometryAdapterTests.exe
   Project135ThermalSteadyStateTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalSteadyStateTests.exe
-  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorThermalNetworkTests.exe
-  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\infrastructure\Debug\Project135InfrastructureSqlite.lib
-  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectrothermalTests.exe
+  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbSolverTests.exe
   Project135ThermalFilterBridgeTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalFilterBridgeTests.exe
-  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreComponentGeometryLoaderTests.exe
-  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingCopperLossTests.exe
-  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135SqliteInfrastructureTests.exe
-  Project135DesktopUi.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Debug\Project135DesktopUi.lib
-  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingElectrothermalTests.exe
-  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreMaterialRevisionLoaderTests.exe
-  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundReactorThermalNetworkTests.exe
-  Project135DesktopWorkflowE2ETests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\tests\Project135DesktopWorkflowE2ETests.exe
+  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalNetworkTests.exe
+  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbTest01Regression.exe
+  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\infrastructure\Debug\Project135InfrastructureSqlite.lib
   Project135ConductorMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ConductorMaterialRevisionLoaderTests.exe
-  	Deploying Qt runtime for desktop workflow E2E tests	Deploying vcpkg runtime for desktop workflow E2E tests
+  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreMaterialRevisionLoaderTests.exe
+  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135SqliteInfrastructureTests.exe
+  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectricalTests.exe
+  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundPhysicalFilterMagneticTests.exe
+  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingElectrothermalTests.exe
+  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectrothermalTests.exe
+  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundReactorThermalNetworkTests.exe
+  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingCopperLossTests.exe
+  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorThermalNetworkTests.exe
+  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreComponentGeometryLoaderTests.exe
+  Project135DesktopUi.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Debug\Project135DesktopUi.lib
   Project135.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\Project135.exe
-  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignGraphTests.exe
-  Project135ReactorDesignInputsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignInputsTests.exe
+  Project135DesktopWorkflowE2ETests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\tests\Project135DesktopWorkflowE2ETests.exe
+  	Deploying Qt runtime for desktop workflow E2E tests	Deploying vcpkg runtime for desktop workflow E2E tests
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKOpenGl.dll
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKDESTEP.dll
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKXSBase.dll
@@ -254,7 +256,6 @@ All requested installations completed successfully in: 1.03 ms
   Adding in plugin type networkinformation for module: Qt6Network
   Adding in plugin type platforms for module: Qt6Gui
   Adding in plugin type styles for module: Qt6Widgets
-  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalNetworkTests.exe
   Adding in plugin type tls for module: Qt6Network
   Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
   Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Test Qt6Widgets
@@ -292,7 +293,6 @@ EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR 
   qmodernwindowsstyled.dll is up to date.
   qcertonlybackendd.dll is up to date.
   qschannelbackendd.dll is up to date.
-  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundPhysicalFilterMagneticTests.exe
   	Deploying Qt runtime for Project135	Deploying SQLite and OpenSSL runtime for Project135
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKOpenGl.dll
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKDESTEP.dll
@@ -384,55 +384,55 @@ EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR 
   Project135Domain.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\domain\Release\Project135Domain.lib
   Project135Circuit.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\circuit\Release\Project135Circuit.lib
   Project135CoreTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreTests.exe
-  Project135DomainTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DomainTests.exe
-  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ComponentCatalogTests.exe
-  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\filter\Release\Project135Filter.lib
-  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CircuitTests.exe
-  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MechanicalGeometryTests.exe
-  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DesignParameterTests.exe
   Project135DesignDependencyTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DesignDependencyTests.exe
   Project135Cad.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Release\Project135Cad.lib
-  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbGeometryAdapterTests.exe
+  Project135DomainTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DomainTests.exe
+  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MechanicalGeometryTests.exe
+  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CircuitTests.exe
+  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DesignParameterTests.exe
+  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ComponentCatalogTests.exe
+  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\filter\Release\Project135Filter.lib
   Project135ThreeLimbCoreLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbCoreLossTests.exe
-  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbSolverTests.exe
+  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\application\Release\Project135Application.lib
+  Project135FilterHarmonicsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterHarmonicsTests.exe
+  Project135ThreeLimbCoreMassTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbCoreMassTests.exe
+  Project135FilterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterTests.exe
+  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbGeometryAdapterTests.exe
   Project135FilterNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterNetworkTests.exe
   Project135FilterAnalysisTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterAnalysisTests.exe
-  Project135FilterHarmonicsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterHarmonicsTests.exe
-  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\thermal\Release\Project135Thermal.lib
-  Project135FilterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterTests.exe
-  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\application\Release\Project135Application.lib
-  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbTest01Regression.exe
-  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectricalTests.exe
-  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ApplicationTests.exe
-  Project135FilterExcitationStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterExcitationStageAdapterTests.exe
-  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135Test01FilterSizingScenario.exe
-  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignGraphTests.exe
-  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalNetworkTests.exe
-  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\infrastructure\Release\Project135InfrastructureSqlite.lib
   Project135ReactorDesignInputsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignInputsTests.exe
-  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectrothermalTests.exe
-  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorThermalNetworkTests.exe
-  Project135ThermalFilterBridgeTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalFilterBridgeTests.exe
-  Project135CadTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CadTests.exe
-  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignExecutionTests.exe
-  Project135ThermalSteadyStateTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalSteadyStateTests.exe
-  Project135PhysicalFilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135PhysicalFilterReactorMagneticTests.exe
-  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135SqliteInfrastructureTests.exe
-  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreMaterialRevisionLoaderTests.exe
-  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundPhysicalFilterMagneticTests.exe
-  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundReactorThermalNetworkTests.exe
-  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreComponentGeometryLoaderTests.exe
-  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingElectrothermalTests.exe
-  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingCopperLossTests.exe
-  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MagneticOperatingPointStageAdapterTests.exe
-  Project135DesktopUi.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Release\Project135DesktopUi.lib
-  Project135ConductorMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ConductorMaterialRevisionLoaderTests.exe
+  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbSolverTests.exe
+  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135Test01FilterSizingScenario.exe
+  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\thermal\Release\Project135Thermal.lib
   Project135IdealReactorSizingTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135IdealReactorSizingTests.exe
   Project135FilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterReactorMagneticTests.exe
+  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignExecutionTests.exe
+  Project135FilterExcitationStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterExcitationStageAdapterTests.exe
+  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbTest01Regression.exe
+  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignGraphTests.exe
+  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectricalTests.exe
+  Project135PhysicalFilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135PhysicalFilterReactorMagneticTests.exe
+  Project135CadTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CadTests.exe
+  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MagneticOperatingPointStageAdapterTests.exe
+  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ApplicationTests.exe
+  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectrothermalTests.exe
+  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalNetworkTests.exe
+  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorThermalNetworkTests.exe
+  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\infrastructure\Release\Project135InfrastructureSqlite.lib
+  Project135ThermalFilterBridgeTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalFilterBridgeTests.exe
+  Project135ThermalSteadyStateTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalSteadyStateTests.exe
+  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundPhysicalFilterMagneticTests.exe
+  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingElectrothermalTests.exe
+  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreMaterialRevisionLoaderTests.exe
+  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundReactorThermalNetworkTests.exe
+  Project135DesktopUi.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Release\Project135DesktopUi.lib
+  Project135ConductorMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ConductorMaterialRevisionLoaderTests.exe
+  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreComponentGeometryLoaderTests.exe
+  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingCopperLossTests.exe
+  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135SqliteInfrastructureTests.exe
+  Project135.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\Project135.exe
   Project135DesktopWorkflowE2ETests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\tests\Project135DesktopWorkflowE2ETests.exe
   	Deploying Qt runtime for desktop workflow E2E tests	Deploying vcpkg runtime for desktop workflow E2E tests
-  Project135.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\Project135.exe
-  	Deploying Qt runtime for Project135	Deploying SQLite and OpenSSL runtime for Project135
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKOpenGl.dll
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKDESTEP.dll
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKXSBase.dll
@@ -511,6 +511,7 @@ EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR 
   qmodernwindowsstyle.dll is up to date.
   qcertonlybackend.dll is up to date.
   qschannelbackend.dll is up to date.
+  	Deploying Qt runtime for Project135	Deploying SQLite and OpenSSL runtime for Project135
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKOpenGl.dll
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKDESTEP.dll
   Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKV3d.dll
@@ -593,181 +594,185 @@ EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR 
 [RUN] CTest Debug
 Test project C:/Temp/trdos/135/out/build/vs2026-desktop-debug
       Start  1: Project135CoreTests
- 1/41 Test  #1: Project135CoreTests ..................................   Passed    0.05 sec
+ 1/42 Test  #1: Project135CoreTests ..................................   Passed    0.10 sec
       Start  2: Project135CircuitTests
- 2/41 Test  #2: Project135CircuitTests ...............................   Passed    0.04 sec
+ 2/42 Test  #2: Project135CircuitTests ...............................   Passed    0.04 sec
       Start  3: Project135FilterTests
- 3/41 Test  #3: Project135FilterTests ................................   Passed    0.04 sec
+ 3/42 Test  #3: Project135FilterTests ................................   Passed    0.04 sec
       Start  4: Project135FilterNetworkTests
- 4/41 Test  #4: Project135FilterNetworkTests .........................   Passed    0.05 sec
+ 4/42 Test  #4: Project135FilterNetworkTests .........................   Passed    0.06 sec
       Start  5: Project135FilterAnalysisTests
- 5/41 Test  #5: Project135FilterAnalysisTests ........................   Passed    0.07 sec
+ 5/42 Test  #5: Project135FilterAnalysisTests ........................   Passed    0.07 sec
       Start  6: Project135FilterHarmonicsTests
- 6/41 Test  #6: Project135FilterHarmonicsTests .......................   Passed    0.05 sec
+ 6/42 Test  #6: Project135FilterHarmonicsTests .......................   Passed    0.05 sec
       Start  7: Project135ThermalSteadyStateTests
- 7/41 Test  #7: Project135ThermalSteadyStateTests ....................   Passed    0.05 sec
+ 7/42 Test  #7: Project135ThermalSteadyStateTests ....................   Passed    0.05 sec
       Start  8: Project135ThermalNetworkTests
- 8/41 Test  #8: Project135ThermalNetworkTests ........................   Passed    0.08 sec
+ 8/42 Test  #8: Project135ThermalNetworkTests ........................   Passed    0.06 sec
       Start  9: Project135ThermalFilterBridgeTests
- 9/41 Test  #9: Project135ThermalFilterBridgeTests ...................   Passed    0.07 sec
+ 9/42 Test  #9: Project135ThermalFilterBridgeTests ...................   Passed    0.06 sec
       Start 10: Project135DesignParameterTests
-10/41 Test #10: Project135DesignParameterTests .......................   Passed    0.05 sec
+10/42 Test #10: Project135DesignParameterTests .......................   Passed    0.05 sec
       Start 11: Project135DesignDependencyTests
-11/41 Test #11: Project135DesignDependencyTests ......................   Passed    0.05 sec
+11/42 Test #11: Project135DesignDependencyTests ......................   Passed    0.05 sec
       Start 12: Project135DomainTests
-12/41 Test #12: Project135DomainTests ................................   Passed    1.64 sec
+12/42 Test #12: Project135DomainTests ................................   Passed    1.62 sec
       Start 13: Project135ThreeLimbTest01Regression
-13/41 Test #13: Project135ThreeLimbTest01Regression ..................   Passed    0.45 sec
+13/42 Test #13: Project135ThreeLimbTest01Regression ..................   Passed    0.44 sec
       Start 14: Project135ThreeLimbSolverTests
-14/41 Test #14: Project135ThreeLimbSolverTests .......................   Passed    0.06 sec
+14/42 Test #14: Project135ThreeLimbSolverTests .......................   Passed    0.06 sec
       Start 15: Project135ThreeLimbGeometryAdapterTests
-15/41 Test #15: Project135ThreeLimbGeometryAdapterTests ..............   Passed    0.05 sec
+15/42 Test #15: Project135ThreeLimbGeometryAdapterTests ..............   Passed    0.05 sec
       Start 16: Project135ComponentCatalogTests
-16/41 Test #16: Project135ComponentCatalogTests ......................   Passed    0.05 sec
+16/42 Test #16: Project135ComponentCatalogTests ......................   Passed    0.05 sec
       Start 17: Project135ApplicationTests
-17/41 Test #17: Project135ApplicationTests ...........................   Passed    0.05 sec
+17/42 Test #17: Project135ApplicationTests ...........................   Passed    0.06 sec
       Start 18: Project135FilterReactorMagneticTests
-18/41 Test #18: Project135FilterReactorMagneticTests .................   Passed    0.32 sec
+18/42 Test #18: Project135FilterReactorMagneticTests .................   Passed    0.32 sec
       Start 19: Project135SqliteInfrastructureTests
-19/41 Test #19: Project135SqliteInfrastructureTests ..................   Passed    4.46 sec
+19/42 Test #19: Project135SqliteInfrastructureTests ..................   Passed    4.51 sec
       Start 20: Project135MechanicalGeometryTests
-20/41 Test #20: Project135MechanicalGeometryTests ....................   Passed    0.05 sec
+20/42 Test #20: Project135MechanicalGeometryTests ....................   Passed    0.05 sec
       Start 21: Project135CadTests
-21/41 Test #21: Project135CadTests ...................................   Passed   27.77 sec
+21/42 Test #21: Project135CadTests ...................................   Passed   27.76 sec
       Start 22: Project135ReactorDesignInputsTests
-22/41 Test #22: Project135ReactorDesignInputsTests ...................   Passed    0.05 sec
+22/42 Test #22: Project135ReactorDesignInputsTests ...................   Passed    0.06 sec
       Start 23: Project135ReactorDesignGraphTests
-23/41 Test #23: Project135ReactorDesignGraphTests ....................   Passed    0.06 sec
+23/42 Test #23: Project135ReactorDesignGraphTests ....................   Passed    0.06 sec
       Start 24: Project135ReactorDesignExecutionTests
-24/41 Test #24: Project135ReactorDesignExecutionTests ................   Passed    0.07 sec
+24/42 Test #24: Project135ReactorDesignExecutionTests ................   Passed    0.06 sec
       Start 25: Project135PhysicalFilterReactorMagneticTests
-25/41 Test #25: Project135PhysicalFilterReactorMagneticTests .........   Passed    0.12 sec
+25/42 Test #25: Project135PhysicalFilterReactorMagneticTests .........   Passed    0.12 sec
       Start 26: Project135CoreMaterialRevisionLoaderTests
-26/41 Test #26: Project135CoreMaterialRevisionLoaderTests ............   Passed    4.27 sec
+26/42 Test #26: Project135CoreMaterialRevisionLoaderTests ............   Passed    4.24 sec
       Start 27: Project135RevisionBoundPhysicalFilterMagneticTests
-27/41 Test #27: Project135RevisionBoundPhysicalFilterMagneticTests ...   Passed    4.60 sec
+27/42 Test #27: Project135RevisionBoundPhysicalFilterMagneticTests ...   Passed    4.22 sec
       Start 28: Project135ConductorMaterialRevisionLoaderTests
-28/41 Test #28: Project135ConductorMaterialRevisionLoaderTests .......   Passed    4.21 sec
+28/42 Test #28: Project135ConductorMaterialRevisionLoaderTests .......   Passed    4.23 sec
       Start 29: Project135WindingElectricalTests
-29/41 Test #29: Project135WindingElectricalTests .....................   Passed    0.05 sec
+29/42 Test #29: Project135WindingElectricalTests .....................   Passed    0.05 sec
       Start 30: Project135RevisionBoundWindingCopperLossTests
-30/41 Test #30: Project135RevisionBoundWindingCopperLossTests ........   Passed    4.24 sec
+30/42 Test #30: Project135RevisionBoundWindingCopperLossTests ........   Passed    4.20 sec
       Start 31: Project135WindingElectrothermalTests
-31/41 Test #31: Project135WindingElectrothermalTests .................   Passed    0.05 sec
+31/42 Test #31: Project135WindingElectrothermalTests .................   Passed    0.05 sec
       Start 32: Project135RevisionBoundWindingElectrothermalTests
-32/41 Test #32: Project135RevisionBoundWindingElectrothermalTests ....   Passed    4.12 sec
+32/42 Test #32: Project135RevisionBoundWindingElectrothermalTests ....   Passed    4.14 sec
       Start 33: Project135ThreeLimbCoreLossTests
-33/41 Test #33: Project135ThreeLimbCoreLossTests .....................   Passed    0.20 sec
-      Start 34: Project135ReactorThermalNetworkTests
-34/41 Test #34: Project135ReactorThermalNetworkTests .................   Passed    0.05 sec
-      Start 35: Project135RevisionBoundReactorThermalNetworkTests
-35/41 Test #35: Project135RevisionBoundReactorThermalNetworkTests ....   Passed    4.13 sec
-      Start 36: Project135IdealReactorSizingTests
-36/41 Test #36: Project135IdealReactorSizingTests ....................   Passed    0.05 sec
-      Start 37: Project135CoreComponentGeometryLoaderTests
-37/41 Test #37: Project135CoreComponentGeometryLoaderTests ...........   Passed    4.16 sec
-      Start 38: Project135Test01FilterSizingScenario
-38/41 Test #38: Project135Test01FilterSizingScenario .................   Passed    0.06 sec
-      Start 39: Project135FilterExcitationStageAdapterTests
-39/41 Test #39: Project135FilterExcitationStageAdapterTests ..........   Passed    0.05 sec
-      Start 40: Project135MagneticOperatingPointStageAdapterTests
-40/41 Test #40: Project135MagneticOperatingPointStageAdapterTests ....   Passed    0.05 sec
-      Start 41: Project135DesktopWorkflowE2ETests
-41/41 Test #41: Project135DesktopWorkflowE2ETests ....................   Passed   99.26 sec
+33/42 Test #33: Project135ThreeLimbCoreLossTests .....................   Passed    0.05 sec
+      Start 34: Project135ThreeLimbCoreMassTests
+34/42 Test #34: Project135ThreeLimbCoreMassTests .....................   Passed    0.05 sec
+      Start 35: Project135ReactorThermalNetworkTests
+35/42 Test #35: Project135ReactorThermalNetworkTests .................   Passed    0.19 sec
+      Start 36: Project135RevisionBoundReactorThermalNetworkTests
+36/42 Test #36: Project135RevisionBoundReactorThermalNetworkTests ....   Passed    4.23 sec
+      Start 37: Project135IdealReactorSizingTests
+37/42 Test #37: Project135IdealReactorSizingTests ....................   Passed    0.05 sec
+      Start 38: Project135CoreComponentGeometryLoaderTests
+38/42 Test #38: Project135CoreComponentGeometryLoaderTests ...........   Passed    4.17 sec
+      Start 39: Project135Test01FilterSizingScenario
+39/42 Test #39: Project135Test01FilterSizingScenario .................   Passed    0.05 sec
+      Start 40: Project135FilterExcitationStageAdapterTests
+40/42 Test #40: Project135FilterExcitationStageAdapterTests ..........   Passed    0.05 sec
+      Start 41: Project135MagneticOperatingPointStageAdapterTests
+41/42 Test #41: Project135MagneticOperatingPointStageAdapterTests ....   Passed    0.05 sec
+      Start 42: Project135DesktopWorkflowE2ETests
+42/42 Test #42: Project135DesktopWorkflowE2ETests ....................   Passed  145.18 sec
 
-100% tests passed out of 41
+100% tests passed out of 42
 
-Total Test time (real) = 165.48 sec
+Total Test time (real) = 211.15 sec
 [PASS] CTest Debug
 
 [RUN] CTest Release
 Test project C:/Temp/trdos/135/out/build/vs2026-desktop-release
       Start  1: Project135CoreTests
- 1/41 Test  #1: Project135CoreTests ..................................   Passed    0.04 sec
+ 1/42 Test  #1: Project135CoreTests ..................................   Passed    0.04 sec
       Start  2: Project135CircuitTests
- 2/41 Test  #2: Project135CircuitTests ...............................   Passed    0.05 sec
+ 2/42 Test  #2: Project135CircuitTests ...............................   Passed    0.05 sec
       Start  3: Project135FilterTests
- 3/41 Test  #3: Project135FilterTests ................................   Passed    0.05 sec
+ 3/42 Test  #3: Project135FilterTests ................................   Passed    0.04 sec
       Start  4: Project135FilterNetworkTests
- 4/41 Test  #4: Project135FilterNetworkTests .........................   Passed    0.05 sec
+ 4/42 Test  #4: Project135FilterNetworkTests .........................   Passed    0.05 sec
       Start  5: Project135FilterAnalysisTests
- 5/41 Test  #5: Project135FilterAnalysisTests ........................   Passed    0.05 sec
+ 5/42 Test  #5: Project135FilterAnalysisTests ........................   Passed    0.05 sec
       Start  6: Project135FilterHarmonicsTests
- 6/41 Test  #6: Project135FilterHarmonicsTests .......................   Passed    0.05 sec
+ 6/42 Test  #6: Project135FilterHarmonicsTests .......................   Passed    0.05 sec
       Start  7: Project135ThermalSteadyStateTests
- 7/41 Test  #7: Project135ThermalSteadyStateTests ....................   Passed    0.05 sec
+ 7/42 Test  #7: Project135ThermalSteadyStateTests ....................   Passed    0.05 sec
       Start  8: Project135ThermalNetworkTests
- 8/41 Test  #8: Project135ThermalNetworkTests ........................   Passed    0.05 sec
+ 8/42 Test  #8: Project135ThermalNetworkTests ........................   Passed    0.06 sec
       Start  9: Project135ThermalFilterBridgeTests
- 9/41 Test  #9: Project135ThermalFilterBridgeTests ...................   Passed    0.08 sec
+ 9/42 Test  #9: Project135ThermalFilterBridgeTests ...................   Passed    0.09 sec
       Start 10: Project135DesignParameterTests
-10/41 Test #10: Project135DesignParameterTests .......................   Passed    0.04 sec
+10/42 Test #10: Project135DesignParameterTests .......................   Passed    0.05 sec
       Start 11: Project135DesignDependencyTests
-11/41 Test #11: Project135DesignDependencyTests ......................   Passed    0.05 sec
+11/42 Test #11: Project135DesignDependencyTests ......................   Passed    0.05 sec
       Start 12: Project135DomainTests
-12/41 Test #12: Project135DomainTests ................................   Passed    0.21 sec
+12/42 Test #12: Project135DomainTests ................................   Passed    0.20 sec
       Start 13: Project135ThreeLimbTest01Regression
-13/41 Test #13: Project135ThreeLimbTest01Regression ..................   Passed    0.10 sec
+13/42 Test #13: Project135ThreeLimbTest01Regression ..................   Passed    0.10 sec
       Start 14: Project135ThreeLimbSolverTests
-14/41 Test #14: Project135ThreeLimbSolverTests .......................   Passed    0.05 sec
+14/42 Test #14: Project135ThreeLimbSolverTests .......................   Passed    0.05 sec
       Start 15: Project135ThreeLimbGeometryAdapterTests
-15/41 Test #15: Project135ThreeLimbGeometryAdapterTests ..............   Passed    0.06 sec
+15/42 Test #15: Project135ThreeLimbGeometryAdapterTests ..............   Passed    0.06 sec
       Start 16: Project135ComponentCatalogTests
-16/41 Test #16: Project135ComponentCatalogTests ......................   Passed    0.06 sec
+16/42 Test #16: Project135ComponentCatalogTests ......................   Passed    0.06 sec
       Start 17: Project135ApplicationTests
-17/41 Test #17: Project135ApplicationTests ...........................   Passed    0.07 sec
+17/42 Test #17: Project135ApplicationTests ...........................   Passed    0.07 sec
       Start 18: Project135FilterReactorMagneticTests
-18/41 Test #18: Project135FilterReactorMagneticTests .................   Passed    0.10 sec
+18/42 Test #18: Project135FilterReactorMagneticTests .................   Passed    0.09 sec
       Start 19: Project135SqliteInfrastructureTests
-19/41 Test #19: Project135SqliteInfrastructureTests ..................   Passed    3.67 sec
+19/42 Test #19: Project135SqliteInfrastructureTests ..................   Passed    3.63 sec
       Start 20: Project135MechanicalGeometryTests
-20/41 Test #20: Project135MechanicalGeometryTests ....................   Passed    0.05 sec
+20/42 Test #20: Project135MechanicalGeometryTests ....................   Passed    0.05 sec
       Start 21: Project135CadTests
-21/41 Test #21: Project135CadTests ...................................   Passed    2.87 sec
+21/42 Test #21: Project135CadTests ...................................   Passed    3.42 sec
       Start 22: Project135ReactorDesignInputsTests
-22/41 Test #22: Project135ReactorDesignInputsTests ...................   Passed    0.06 sec
+22/42 Test #22: Project135ReactorDesignInputsTests ...................   Passed    0.06 sec
       Start 23: Project135ReactorDesignGraphTests
-23/41 Test #23: Project135ReactorDesignGraphTests ....................   Passed    0.05 sec
+23/42 Test #23: Project135ReactorDesignGraphTests ....................   Passed    0.06 sec
       Start 24: Project135ReactorDesignExecutionTests
-24/41 Test #24: Project135ReactorDesignExecutionTests ................   Passed    0.05 sec
+24/42 Test #24: Project135ReactorDesignExecutionTests ................   Passed    0.06 sec
       Start 25: Project135PhysicalFilterReactorMagneticTests
-25/41 Test #25: Project135PhysicalFilterReactorMagneticTests .........   Passed    0.06 sec
+25/42 Test #25: Project135PhysicalFilterReactorMagneticTests .........   Passed    0.06 sec
       Start 26: Project135CoreMaterialRevisionLoaderTests
-26/41 Test #26: Project135CoreMaterialRevisionLoaderTests ............   Passed    3.49 sec
+26/42 Test #26: Project135CoreMaterialRevisionLoaderTests ............   Passed    3.53 sec
       Start 27: Project135RevisionBoundPhysicalFilterMagneticTests
-27/41 Test #27: Project135RevisionBoundPhysicalFilterMagneticTests ...   Passed    3.51 sec
+27/42 Test #27: Project135RevisionBoundPhysicalFilterMagneticTests ...   Passed    3.41 sec
       Start 28: Project135ConductorMaterialRevisionLoaderTests
-28/41 Test #28: Project135ConductorMaterialRevisionLoaderTests .......   Passed    3.43 sec
+28/42 Test #28: Project135ConductorMaterialRevisionLoaderTests .......   Passed    3.50 sec
       Start 29: Project135WindingElectricalTests
-29/41 Test #29: Project135WindingElectricalTests .....................   Passed    0.05 sec
+29/42 Test #29: Project135WindingElectricalTests .....................   Passed    0.05 sec
       Start 30: Project135RevisionBoundWindingCopperLossTests
-30/41 Test #30: Project135RevisionBoundWindingCopperLossTests ........   Passed    3.49 sec
+30/42 Test #30: Project135RevisionBoundWindingCopperLossTests ........   Passed    3.49 sec
       Start 31: Project135WindingElectrothermalTests
-31/41 Test #31: Project135WindingElectrothermalTests .................   Passed    0.05 sec
+31/42 Test #31: Project135WindingElectrothermalTests .................   Passed    0.05 sec
       Start 32: Project135RevisionBoundWindingElectrothermalTests
-32/41 Test #32: Project135RevisionBoundWindingElectrothermalTests ....   Passed    3.50 sec
+32/42 Test #32: Project135RevisionBoundWindingElectrothermalTests ....   Passed    3.64 sec
       Start 33: Project135ThreeLimbCoreLossTests
-33/41 Test #33: Project135ThreeLimbCoreLossTests .....................   Passed    0.06 sec
-      Start 34: Project135ReactorThermalNetworkTests
-34/41 Test #34: Project135ReactorThermalNetworkTests .................   Passed    0.05 sec
-      Start 35: Project135RevisionBoundReactorThermalNetworkTests
-35/41 Test #35: Project135RevisionBoundReactorThermalNetworkTests ....   Passed    3.35 sec
-      Start 36: Project135IdealReactorSizingTests
-36/41 Test #36: Project135IdealReactorSizingTests ....................   Passed    0.04 sec
-      Start 37: Project135CoreComponentGeometryLoaderTests
-37/41 Test #37: Project135CoreComponentGeometryLoaderTests ...........   Passed    3.53 sec
-      Start 38: Project135Test01FilterSizingScenario
-38/41 Test #38: Project135Test01FilterSizingScenario .................   Passed    0.05 sec
-      Start 39: Project135FilterExcitationStageAdapterTests
-39/41 Test #39: Project135FilterExcitationStageAdapterTests ..........   Passed    0.06 sec
-      Start 40: Project135MagneticOperatingPointStageAdapterTests
-40/41 Test #40: Project135MagneticOperatingPointStageAdapterTests ....   Passed    0.05 sec
-      Start 41: Project135DesktopWorkflowE2ETests
-41/41 Test #41: Project135DesktopWorkflowE2ETests ....................   Passed   17.46 sec
+33/42 Test #33: Project135ThreeLimbCoreLossTests .....................   Passed    0.06 sec
+      Start 34: Project135ThreeLimbCoreMassTests
+34/42 Test #34: Project135ThreeLimbCoreMassTests .....................   Passed    0.05 sec
+      Start 35: Project135ReactorThermalNetworkTests
+35/42 Test #35: Project135ReactorThermalNetworkTests .................   Passed    0.06 sec
+      Start 36: Project135RevisionBoundReactorThermalNetworkTests
+36/42 Test #36: Project135RevisionBoundReactorThermalNetworkTests ....   Passed    3.59 sec
+      Start 37: Project135IdealReactorSizingTests
+37/42 Test #37: Project135IdealReactorSizingTests ....................   Passed    0.05 sec
+      Start 38: Project135CoreComponentGeometryLoaderTests
+38/42 Test #38: Project135CoreComponentGeometryLoaderTests ...........   Passed    3.58 sec
+      Start 39: Project135Test01FilterSizingScenario
+39/42 Test #39: Project135Test01FilterSizingScenario .................   Passed    0.05 sec
+      Start 40: Project135FilterExcitationStageAdapterTests
+40/42 Test #40: Project135FilterExcitationStageAdapterTests ..........   Passed    0.05 sec
+      Start 41: Project135MagneticOperatingPointStageAdapterTests
+41/42 Test #41: Project135MagneticOperatingPointStageAdapterTests ....   Passed    0.06 sec
+      Start 42: Project135DesktopWorkflowE2ETests
+42/42 Test #42: Project135DesktopWorkflowE2ETests ....................   Passed   26.21 sec
 
-100% tests passed out of 41
+100% tests passed out of 42
 
-Total Test time (real) =  50.28 sec
+Total Test time (real) =  60.09 sec
 [PASS] CTest Release
 
 ===================== FINAL SUMMARY =====================
@@ -776,26 +781,6 @@ Debug build: PASS
 Debug tests: PASS
 Release build: PASS
 Release tests: PASS
-Source commit: 679222d4786f36df56be4b07b83023fa05a98af7
-Finished: 22.11.2026 11:06:34,88
+Source commit: 19ccfb50ca4552901254f5c73d8221f3f0da5ac1
+Finished: 22.11.2026 21:12:11,09
 ==========================================================
-warning: in the working copy of 'BuildReports/Project135_validation_20261122_090603.log', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'BuildReports/Project135_validation_20261122_092724.log', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'BuildReports/Project135_validation_20261122_110202.log', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/05a5a4b5-5686-4022-8f6a-112da689dc64_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/0d35ca3d-91fd-483a-b13e-6bccd5ce8ba0_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/1da4677a-90a4-40e5-b986-580f9306f99f_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/2022f7e3-b75d-4921-b59f-44fbe87db49e_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/267cb902-ddb3-4718-a993-a31355102693_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/48b70730-ca73-4e5b-b3ef-49e94813f775_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/4d857c16-937a-4528-8923-5cc53e697a70_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/538fc24d-96bd-49ed-ae68-1ca7989ad219_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/53febf5b-3cd8-43d6-a48e-92f411decefe_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/6476863a-58c1-46a8-bc2a-5a49a5c100be_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/b3e48a4e-f834-4b6f-bf1d-ce3f8f55405e_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/d744b6eb-06f7-4a56-823d-c543572bbf57_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/ef803b10-1e48-469d-96f5-44d61998ecda_assembly.step', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'CAD/f4533858-be3d-4ae3-9a72-3da788aa583c_assembly.step', LF will be replaced by CRLF the next time Git touches it
-To https://github.com/JTCyborg/135
-   679222d..f3a07c0  main -> main
-[GIT_PUSH] SUCCESS - validation report was pushed to origin/main.
