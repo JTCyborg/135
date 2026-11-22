@@ -507,8 +507,9 @@ protected:
         }
         if (!hasPoints) {
             painter.setPen(palette().color(QPalette::Text));
-            painter.drawText(area, Qt::AlignCenter, emptyMessage_.isEmpty()
-                ? tr("No valid frequency-response data available") : emptyMessage_);
+            const QString message = emptyMessage_.isEmpty()
+                ? tr("No valid plot data available") : emptyMessage_;
+            painter.drawText(area, Qt::AlignCenter | Qt::TextWordWrap, message);
             painter.drawText(QRectF(0, height() - 30, width(), 22), Qt::AlignCenter, xLabel_);
             return;
         }
@@ -3706,12 +3707,9 @@ QWidget* MainWindow::createResultsPage()
     coreFluxPlotTitle->setObjectName(QStringLiteral("coreFluxPlotTitle"));
     coreFluxPlotTitle->setStyleSheet("font-weight: 600;");
     coreFluxPlotTitle->setToolTip(tr(
-        "Requires valid limb and yoke geometry, turns, a measured B-H curve with source reference, "
-        "and non-zero Thevenin source R or L. Missing inputs are NOT_VERIFIED; no synthetic curve is generated."));
-    coreFluxPlotTitle->setToolTip(tr(
-        "This chart uses the legacy manual Ae/le/B-H frequency-sweep model. "
-        "The Construction-revision-bound harmonic operating-point result is a different "
-        "calculation and is not plotted on this frequency axis."));
+        "Displays the accepted Construction-revision-bound multi-harmonic operating point when available. "
+        "Without verified magnetic inputs, the plot remains NOT_VERIFIED and no synthetic values are generated. "
+        "The legacy manual frequency sweep is retained only as a separate diagnostic fallback."));
     layout->addWidget(coreFluxPlotTitle);
     resultsCoreFluxPlot_ = new PlotWidget;
     resultsCoreFluxPlot_->setObjectName(QStringLiteral("resultsCoreFluxPlot"));
@@ -7348,6 +7346,9 @@ void MainWindow::calculateFilter()
                     : !threeLimbModelWarning.isEmpty()
                         ? threeLimbModelWarning
                         : tr("NOT_VERIFIED: accepted Construction geometry, material B-H revision and valid harmonic currents are required.");
+            // No frequency-response data exists in this state. Do not label
+            // the empty plot with a logarithmic frequency axis.
+            logarithmicCoreAxis = false;
             corePlotTitle = tr("Core peak flux density — NOT_VERIFIED");
             corePlotTooltip = coreEmptyMessage;
         }
