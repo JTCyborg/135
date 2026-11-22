@@ -2139,6 +2139,7 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(group);
 
     auto* componentGroup = new QGroupBox(tr("Selected components and installation thermal data"));
+    componentGroup->setObjectName(QStringLiteral("filterComponentManualGroup"));
     auto* componentForm = new QFormLayout(componentGroup);
     capacitorComponent_ = new QComboBox;
     resistorComponent_ = new QComboBox;
@@ -2206,6 +2207,7 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(note);
 
     auto* advanced = new QGroupBox(tr("Source impedance, harmonics and magnetic core"));
+    advanced->setObjectName(QStringLiteral("filterAdvancedManualGroup"));
     auto* advancedLayout = new QVBoxLayout(advanced);
     auto* sourceForm = new QFormLayout;
 
