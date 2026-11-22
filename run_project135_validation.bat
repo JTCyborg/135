@@ -9,6 +9,16 @@ if errorlevel 1 (
     exit /b 10
 )
 
+rem Start every validation run from clean generated-output folders.
+rem Only the explicitly listed output folders are cleared; source/configuration files
+rem and the vcpkg caches are never touched.
+echo [CLEAN] Clearing previous validation artifacts...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $dirs=@('BuildReports','CAD','Cad','Debug','Plots','Drawings'); foreach($d in $dirs){ if(Test-Path -LiteralPath $d){ Get-ChildItem -LiteralPath $d -Force | Remove-Item -Recurse -Force -ErrorAction Stop }; New-Item -ItemType Directory -Path $d -Force | Out-Null }; New-Item -ItemType Directory -Path 'Debug\Plots' -Force | Out-Null"
+if errorlevel 1 (
+    echo ERROR: Failed to clear generated-output folders. No build was started.
+    exit /b 11
+)
+
 for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "STAMP=%%i"
 if not defined STAMP set "STAMP=%RANDOM%_%RANDOM%"
 if not exist "BuildReports" mkdir "BuildReports"
@@ -113,11 +123,10 @@ call :RUN "CMake version"
 set "RUN_CMD=git --version"
 call :RUN "Git version"
 
-rem Never delete CAD, Drawings, Debug, crash dumps, or user data during validation.
-rem Existing generated outputs are preserved; builds update only their own targets.
+rem Generated-output folders were cleared before the run; all new artifacts
+rem are collected and published after tests, including when tests fail.
 echo.
-echo [1/6] Preserving existing project outputs and diagnostics...
-echo [CLEAN] No project output or diagnostic directories were deleted.>>"%LOG%"
+echo [1/6] Generated-output folders are clean.
 
 rem Never overwrite local source changes with a pull.
 echo.
