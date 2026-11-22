@@ -227,8 +227,8 @@ private slots:
             auto* payload = materialDialog->findChild<QPlainTextEdit*>(
                 QStringLiteral("materialPayloadJson"));
             if (!import || !import->isEnabled() || !payload) {
-                QFAIL("New core material dialog is missing the enabled B-H import action or payload editor");
                 materialDialog->reject();
+                QFAIL("New core material dialog is missing the enabled B-H import action or payload editor");
                 return;
             }
 
@@ -280,8 +280,8 @@ private slots:
             QTest::mouseClick(import, Qt::LeftButton);
             const auto document = QJsonDocument::fromJson(payload->toPlainText().toUtf8());
             if (!document.isObject()) {
-                QFAIL("B-H import did not produce a valid JSON object");
                 materialDialog->reject();
+                QFAIL("B-H import did not produce a valid JSON object");
                 return;
             }
             const auto root = document.object();
