@@ -1587,7 +1587,7 @@ QWidget* MainWindow::createProjectPage()
     airflow->setSpecialValueText(tr("NOT SET"));
     airflow->setEnabled(false);
     airflow->setToolTip(tr("Enter the verified total airflow through the equipment enclosure, not the fan free-air rating."));
-    auto* coolingStatus = new QLabel(tr("Project assumptions are saved locally per project. They are not yet part of a portable project file and do not alter the thermal solver."));
+    auto* coolingStatus = new QLabel(tr("Project assumptions are saved locally and included in portable project files. They do not alter the thermal solver."));
     coolingStatus->setWordWrap(true);
     coolingStatus->setStyleSheet("color: #a66b00;");
     environmentForm->addRow(tr("Maximum ambient temperature"), ambient);
