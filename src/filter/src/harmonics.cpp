@@ -51,10 +51,9 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
         request.design.network.connection != Connection::Delta)
         return Result<HarmonicAnalysisResult>::failure(
             invalid("Unsupported filter connection."));
-    if (!nonNegativeFinite(sourceR) || !nonNegativeFinite(sourceL) ||
-        (sourceR == 0.0 && sourceL == 0.0))
+    if (!nonNegativeFinite(sourceR) || !nonNegativeFinite(sourceL))
         return Result<HarmonicAnalysisResult>::failure(
-            invalid("Source resistance and inductance must be finite, non-negative, and not both zero."));
+            invalid("Source resistance and inductance must be finite and non-negative."));
     if (request.design.branches.empty() || request.sourceVoltageSpectrum.empty())
         return Result<HarmonicAnalysisResult>::failure(
             invalid("At least one filter branch and one source harmonic are required."));
@@ -155,22 +154,29 @@ Result<HarmonicAnalysisResult> analyzeHarmonics(
         // Sequence is retained in the input contract for traceability; zero sequence
         // is intentionally unsupported because its path depends on grounding/topology.
         const Complex sourceImpedance{sourceR, omega * sourceL};
-        const Complex divider = Complex{1.0, 0.0} + sourceImpedance * bankAdmittance;
-        if (!finite(divider) || std::abs(divider) <= std::numeric_limits<double>::min())
-            return Result<HarmonicAnalysisResult>::failure(
-                invalid("The source/filter voltage divider is singular."));
         Complex loadCurrent{};
         for (const auto& injection : request.loadCurrentInjections) {
             if (injection.order == harmonic.order && injection.sequence == harmonic.sequence)
                 loadCurrent += injection.phaseCurrentRms;
         }
-        // KCL at the PCC: (Vs - Vbus)/Zs = Yfilter*Vbus + Iload.
-        // The load current is a sink from the bus; its phasor is therefore
-        // subtracted from the Thevenin voltage before applying the divider.
-        const Complex busVoltage =
-            (harmonic.phaseVoltageRms - sourceImpedance * loadCurrent) / divider;
-        const Complex sourceCurrent =
-            (harmonic.phaseVoltageRms - busVoltage) / sourceImpedance;
+
+        Complex busVoltage{};
+        Complex sourceCurrent{};
+        if (sourceR == 0.0 && sourceL == 0.0) {
+            // Ideal Thevenin source: the PCC voltage is fixed at Vs. Source
+            // current follows directly from KCL and remains finite; dividing
+            // by Zs here would incorrectly reject the valid ideal-source case.
+            busVoltage = harmonic.phaseVoltageRms;
+            sourceCurrent = bankAdmittance * busVoltage + loadCurrent;
+        } else {
+            const Complex divider = Complex{1.0, 0.0} + sourceImpedance * bankAdmittance;
+            if (!finite(divider) || std::abs(divider) <= std::numeric_limits<double>::min())
+                return Result<HarmonicAnalysisResult>::failure(
+                    invalid("The source/filter voltage divider is singular."));
+            // KCL at the PCC: (Vs - Vbus)/Zs = Yfilter*Vbus + Iload.
+            busVoltage = (harmonic.phaseVoltageRms - sourceImpedance * loadCurrent) / divider;
+            sourceCurrent = (harmonic.phaseVoltageRms - busVoltage) / sourceImpedance;
+        }
         const Complex filterCurrent = busVoltage * bankAdmittance;
         if (!finite(busVoltage) || !finite(sourceCurrent) || !finite(filterCurrent) || !finite(loadCurrent))
             return Result<HarmonicAnalysisResult>::failure(
