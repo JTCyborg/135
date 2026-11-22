@@ -3709,10 +3709,12 @@ QWidget* MainWindow::createResultsPage()
     designStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
     designLayout->addWidget(designStatus);
 
-    auto* idealCriteria = new QGroupBox(tr("Ideal first-pass sizing criteria (user supplied)"), designGroup);
+    auto* idealCriteria = new QGroupBox(
+        tr("Automatic first-pass assumptions (editable in Manual mode)"), designGroup);
     auto* idealCriteriaLayout = new QFormLayout(idealCriteria);
     const auto addIdealCriterion = [idealCriteria](const QString& objectName, double maximum,
-                                                    int decimals, const QString& suffix) {
+                                                    int decimals, const QString& suffix,
+                                                    double initialValue) {
         auto* control = new QDoubleSpinBox(idealCriteria);
         control->setObjectName(objectName);
         control->setRange(0.0, maximum);
@@ -3720,22 +3722,26 @@ QWidget* MainWindow::createResultsPage()
         control->setSingleStep(decimals <= 2 ? 0.01 : 0.1);
         control->setSpecialValueText(QObject::tr("NOT PROVIDED"));
         control->setSuffix(suffix);
-        control->setValue(0.0);
+        control->setValue(initialValue);
+        control->setProperty("p135ValueOrigin", QStringLiteral("PRELIMINARY_ASSUMPTION"));
+        control->setToolTip(QObject::tr(
+            "Preliminary engineering assumption for an ideal lower-bound estimate only. "
+            "Not a measured material or construction property; verify or replace in Manual mode."));
         return control;
     };
-    idealCriteriaLayout->addRow(tr("Allowable peak flux density Bmax:"), 
-        addIdealCriterion(QStringLiteral("idealSizing_Bmax"), 2.0, 4, tr(" T")));
-    idealCriteriaLayout->addRow(tr("Allowable current density J:"), 
-        addIdealCriterion(QStringLiteral("idealSizing_J"), 100.0, 3, tr(" A/mm²")));
-    idealCriteriaLayout->addRow(tr("Window utilization Ku:"), 
-        addIdealCriterion(QStringLiteral("idealSizing_Ku"), 100.0, 2, tr(" %")));
-    idealCriteriaLayout->addRow(tr("Stacking factor Ks:"),
-        addIdealCriterion(QStringLiteral("idealSizing_Ks"), 100.0, 2, tr(" %")));
-    idealCriteriaLayout->addRow(tr("Window / core area ratio Aw/Ae:"),
-        addIdealCriterion(QStringLiteral("idealSizing_AwAe"), 1000.0, 4, QString{}));
+    idealCriteriaLayout->addRow(tr("Allowable peak flux density Bmax (assumed):"),
+        addIdealCriterion(QStringLiteral("idealSizing_Bmax"), 2.0, 4, tr(" T"), 1.2));
+    idealCriteriaLayout->addRow(tr("Allowable current density J (assumed):"),
+        addIdealCriterion(QStringLiteral("idealSizing_J"), 100.0, 3, tr(" A/mm²"), 3.0));
+    idealCriteriaLayout->addRow(tr("Window utilization Ku (assumed):"),
+        addIdealCriterion(QStringLiteral("idealSizing_Ku"), 100.0, 2, tr(" %"), 35.0));
+    idealCriteriaLayout->addRow(tr("Stacking factor Ks (assumed):"),
+        addIdealCriterion(QStringLiteral("idealSizing_Ks"), 100.0, 2, tr(" %"), 95.0));
+    idealCriteriaLayout->addRow(tr("Window / core area ratio Aw/Ae (assumed):"),
+        addIdealCriterion(QStringLiteral("idealSizing_AwAe"), 1000.0, 4, QString{}, 2.0));
     designLayout->addWidget(idealCriteria);
 
-    auto* idealSizingResult = new QLabel(tr("Ideal area-product estimate: NOT CALCULATED — enter all five criteria and recalculate."));
+    auto* idealSizingResult = new QLabel(tr("Ideal area-product estimate: awaiting electrical synthesis. Preliminary assumptions are explicitly labelled; this is not a selected core or verified winding design."));
     idealSizingResult->setObjectName(QStringLiteral("idealSizingResult"));
     idealSizingResult->setWordWrap(true);
     idealSizingResult->setTextInteractionFlags(Qt::TextSelectableByMouse);
