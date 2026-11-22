@@ -312,6 +312,9 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         existingQuality.value(QStringLiteral("bhCurveStatus")));
     if (qualityIndex >= 0) qualityStatus->setCurrentIndex(qualityIndex);
     else qualityStatus->setCurrentIndex(2); // Unclassified imports remain exploratory until explicitly sourced.
+    qualityStatus->setToolTip(QObject::tr(
+        "This classification is an explicit source declaration, not independent authentication. "
+        "Approximate graph digitization is always exploratory and is rejected by verified magnetic analysis."));
 
     auto* sourceDocument = new QLineEdit(
         existingProvenance.value(QStringLiteral("sourceDocument")).toString(), &dialog);
@@ -370,6 +373,10 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     form->addRow(QObject::tr("Frequency"), frequency);
     form->addRow(QObject::tr("Temperature"), temperature);
     form->addRow(QObject::tr("Data quality"), qualityStatus);
+    auto* reviewNotice = new QLabel(QObject::tr(
+        "Source classification is not independently authenticated. Material design-release status remains NOT_VERIFIED; review the cited source and imported points before relying on this dataset."));
+    reviewNotice->setWordWrap(true);
+    form->addRow(reviewNotice);
     form->addRow(QObject::tr("Source document"), sourceDocument);
     form->addRow(QObject::tr("Source page / table"), sourcePage);
     form->addRow(QObject::tr("Measurement method"), measurementMethod);
