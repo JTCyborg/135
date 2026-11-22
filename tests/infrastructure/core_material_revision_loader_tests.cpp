@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <filesystem>
 #include <string>
 
@@ -56,6 +57,64 @@ int main(int argc, char** argv)
     assert(n87.value().bhCurveTemperature->si() == 298.15);
     assert(n87.value().material.lossData.front().specificLoss.si() > 0.0);
     assert(n87.value().material.lossData.front().specificLoss.si() == 57000.0 / 4850.0);
+
+    // User-imported core-loss data retains explicit provenance and converts
+    // volumetric W/m^3 to the solver's mass-specific W/kg using this revision's density.
+    const auto n87Revision = store.findRevision("SEED-TDK-N87-R1");
+    assert(n87Revision && n87Revision.value().has_value());
+    auto importedLossRevision = *n87Revision.value();
+    importedLossRevision.revisionId = "TEST-TDK-N87-CORE-LOSS-IMPORT";
+    importedLossRevision.materialId = "TEST-TDK-N87-CORE-LOSS";
+    importedLossRevision.revisionNumber = 1;
+    auto importedLossPayload = nlohmann::json::parse(importedLossRevision.payload);
+    importedLossPayload["coreLossData"]["points"] = nlohmann::json::array({
+        {{"frequency_Hz",50.0},{"peakFluxDensity_T",0.8},{"temperature_K",293.15},{"specificLoss_W_per_m3",10000.0}},
+        {{"frequency_Hz",50.0},{"peakFluxDensity_T",0.8},{"temperature_K",333.15},{"specificLoss_W_per_m3",11000.0}},
+        {{"frequency_Hz",50.0},{"peakFluxDensity_T",1.0},{"temperature_K",293.15},{"specificLoss_W_per_m3",20000.0}},
+        {{"frequency_Hz",50.0},{"peakFluxDensity_T",1.0},{"temperature_K",333.15},{"specificLoss_W_per_m3",22000.0}},
+        {{"frequency_Hz",100.0},{"peakFluxDensity_T",0.8},{"temperature_K",293.15},{"specificLoss_W_per_m3",30000.0}},
+        {{"frequency_Hz",100.0},{"peakFluxDensity_T",0.8},{"temperature_K",333.15},{"specificLoss_W_per_m3",33000.0}},
+        {{"frequency_Hz",100.0},{"peakFluxDensity_T",1.0},{"temperature_K",293.15},{"specificLoss_W_per_m3",60000.0}},
+        {{"frequency_Hz",100.0},{"peakFluxDensity_T",1.0},{"temperature_K",333.15},{"specificLoss_W_per_m3",66000.0}}
+    });
+    importedLossPayload["coreLossProvenance"] = {
+        {"sourceDocument","TEST-CORE-LOSS-DATASHEET-R1"},
+        {"sourcePage","Table 4"},
+        {"measurementMethod","Epstein frame test"},
+        {"sampleDirection","Rolling direction"},
+        {"waveform","SINUSOIDAL"},
+        {"temperatureStatus","PER_POINT"},
+        {"notes","E2E loader fixture"}
+    };
+    importedLossPayload["dataQuality"]["coreLossStatus"] = "MANUFACTURER_TABULATED";
+    importedLossPayload["dataQuality"]["designReleaseStatus"] = "NOT_VERIFIED";
+    const auto importedLossCanonical = canonicalizeJson(importedLossPayload.dump());
+    assert(importedLossCanonical);
+    const auto importedLossHash = sha256Hex(importedLossCanonical.value());
+    assert(importedLossHash);
+    importedLossRevision.payload = importedLossCanonical.value();
+    importedLossRevision.contentHash = importedLossHash.value();
+    assert(store.appendRevision(importedLossRevision));
+    const auto loadedImportedLoss = loadCoreMaterialRevision(
+        store, importedLossRevision.revisionId);
+    assert(loadedImportedLoss);
+    assert(loadedImportedLoss.value().material.lossData.size() == 8);
+    assert(loadedImportedLoss.value().coreLossStatus == "MANUFACTURER_TABULATED");
+    assert(loadedImportedLoss.value().coreLossSourceDocument == "TEST-CORE-LOSS-DATASHEET-R1");
+    assert(loadedImportedLoss.value().coreLossSourcePage == "Table 4");
+    assert(loadedImportedLoss.value().coreLossMeasurementMethod == "Epstein frame test");
+    assert(loadedImportedLoss.value().coreLossSampleDirection == "Rolling direction");
+    assert(loadedImportedLoss.value().coreLossWaveform == "SINUSOIDAL");
+    assert(loadedImportedLoss.value().coreLossTemperatureStatus == "PER_POINT");
+    assert(loadedImportedLoss.value().designReleaseStatus == "NOT_VERIFIED");
+    assert(loadedImportedLoss.value().material.lossData.front().specificLoss.si() ==
+           10000.0 / loadedImportedLoss.value().material.density.si());
+    const auto interpolatedLoss = domain::evaluateCoreLossData(
+        loadedImportedLoss.value().material, units::Frequency{75.0},
+        units::FluxDensity{0.9}, units::TemperatureKelvin{313.15});
+    assert(interpolatedLoss);
+    assert(std::abs(interpolatedLoss.value().si() -
+        (27750.0 / loadedImportedLoss.value().material.density.si())) < 1.0e-12);
 
     const auto n97 = loadCoreMaterialRevision(store, "SEED-TDK-N97-R1");
     assert(n97);
