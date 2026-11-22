@@ -748,7 +748,8 @@ void MaterialDatabaseWidget::createOrEditMaterial()
     dialog.resize(720, 560);
     auto* form = new QFormLayout(&dialog);
     auto* id = new QLineEdit(editing ? QString::fromStdString(base->materialId) : QString{});
-    id->setPlaceholderText(tr("e.g. MAT-CU-001"));
+    id->setObjectName(QStringLiteral("materialId"));
+    id->setPlaceholderText(tr("e.g. MAT-CORE-001"));
     if (editing) id->setReadOnly(true);
     auto* type = new QComboBox;
     type->addItem(tr("Core material"), "core-material");
