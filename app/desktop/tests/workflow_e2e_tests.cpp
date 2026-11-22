@@ -34,6 +34,7 @@
 #include <QTreeWidget>
 #include <QStringList>
 #include <QWidget>
+#include <QGroupBox>
 #include <QWheelEvent>
 #include <QToolButton>
 
