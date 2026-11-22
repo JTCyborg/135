@@ -220,7 +220,7 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
                 }
                 bhCurveModelStatus = "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
             }
-            if (anchors.size() < 2) {
+            if (anchors.empty()) {
                 // Optional anhysteretic saturation model for materials whose
                 // datasheet gives initial relative permeability and saturation
                 // polarization but no tabulated B-H points. Hmax is mandatory:
