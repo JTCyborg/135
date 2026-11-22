@@ -201,6 +201,14 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.bhCurveCaptureMethod = provenanceString(bhProvenance, "captureMethod");
         snapshot.bhCurveNotes = provenanceString(bhProvenance, "notes");
         snapshot.coreLossStatus = requiredString(quality, "coreLossStatus");
+        const json lossProvenance = root.value("coreLossProvenance", json::object());
+        snapshot.coreLossSourceDocument = provenanceString(lossProvenance, "sourceDocument");
+        snapshot.coreLossSourcePage = provenanceString(lossProvenance, "sourcePage");
+        snapshot.coreLossMeasurementMethod = provenanceString(lossProvenance, "measurementMethod");
+        snapshot.coreLossSampleDirection = provenanceString(lossProvenance, "sampleDirection");
+        snapshot.coreLossWaveform = provenanceString(lossProvenance, "waveform");
+        snapshot.coreLossTemperatureStatus = provenanceString(lossProvenance, "temperatureStatus");
+        snapshot.coreLossNotes = provenanceString(lossProvenance, "notes");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
         if (bhIt != root.end()) {
