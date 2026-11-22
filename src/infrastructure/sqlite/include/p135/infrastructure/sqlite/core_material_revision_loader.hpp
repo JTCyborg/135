@@ -88,8 +88,14 @@ struct CoreMaterialRevisionSnapshot {
 };
 
 /// Loads one exact immutable revision (never "latest") and converts its
-/// supported JSON schema to the domain material model. Unsupported or
-/// incomplete datasets fail explicitly; no B-H or loss data is synthesized.
+/// supported JSON schema to the domain material model. If no continuous
+/// bhCurve is present, two or more generic magneticAnchors
+/// [{fieldStrength_A_per_m, fluxDensity_T}] or
+/// [{fieldStrength_A_per_m, polarization_T}] may generate an explicitly
+/// estimated exploratory branch (B = J + mu0*H for polarization anchors).
+/// The legacy material.minimumPolarization_T map is also supported. Sparse
+/// estimates never upgrade bhCurveStatus or designReleaseStatus; a single
+/// anchor is preserved as insufficient rather than extrapolated.
 [[nodiscard]] Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
     const SqliteMaterialRevisionStore& store,
     const std::string& revisionId);
