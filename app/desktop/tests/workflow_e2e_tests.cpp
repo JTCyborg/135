@@ -500,6 +500,20 @@ private slots:
         QVERIFY(coreFluxPlot);
         const auto fluxCurves = coreFluxPlot->property("plotCurves").toList();
         QCOMPARE(fluxCurves.size(), 4);
+        // This E2E scenario deliberately supplies no core geometry or measured
+        // B-H curve. The magnetic chart must remain explicitly NOT_VERIFIED,
+        // rather than displaying fabricated or stale data.
+        for (const auto& curveValue : fluxCurves) {
+            QVERIFY(curveValue.toMap().value(QStringLiteral("points")).toList().isEmpty());
+        }
+        auto* busTitle = window_->findChild<QLabel*>(
+            QStringLiteral("busImpedancePlotTitle"));
+        QVERIFY(busTitle);
+        QVERIFY(busTitle->text().contains(QStringLiteral("source/filter frequency scan")));
+        auto* coreFluxTitle = window_->findChild<QLabel*>(
+            QStringLiteral("coreFluxPlotTitle"));
+        QVERIFY(coreFluxTitle);
+        QVERIFY(coreFluxTitle->text().contains(QStringLiteral("NOT_VERIFIED")));
 
 #if defined(_DEBUG) || !defined(NDEBUG)
         QSettings artifactSettings;
