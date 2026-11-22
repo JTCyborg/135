@@ -138,6 +138,8 @@ int main(int argc, char** argv)
     assert(incompleteSteel.value().material.bhCurve.back().fieldStrength.si() == 10000.0);
     assert(incompleteSteel.value().material.bhCurve.back().fluxDensity.si() >
            1.70); // B = minimum polarization J + mu0*H
+    assert(incompleteSteel.value().bhCurveFrequency.si() == 50.0);
+    assert(!incompleteSteel.value().bhCurveTemperature.has_value());
     assert(incompleteSteel.value().designReleaseStatus == "NOT_VERIFIED");
 
     // The Kobe Steel table contains measured DC initial-magnetization data,
