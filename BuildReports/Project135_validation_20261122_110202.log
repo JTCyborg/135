@@ -779,3 +779,23 @@ Release tests: PASS
 Source commit: 679222d4786f36df56be4b07b83023fa05a98af7
 Finished: 22.11.2026 11:06:34,88
 ==========================================================
+warning: in the working copy of 'BuildReports/Project135_validation_20261122_090603.log', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'BuildReports/Project135_validation_20261122_092724.log', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'BuildReports/Project135_validation_20261122_110202.log', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/05a5a4b5-5686-4022-8f6a-112da689dc64_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/0d35ca3d-91fd-483a-b13e-6bccd5ce8ba0_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/1da4677a-90a4-40e5-b986-580f9306f99f_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/2022f7e3-b75d-4921-b59f-44fbe87db49e_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/267cb902-ddb3-4718-a993-a31355102693_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/48b70730-ca73-4e5b-b3ef-49e94813f775_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/4d857c16-937a-4528-8923-5cc53e697a70_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/538fc24d-96bd-49ed-ae68-1ca7989ad219_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/53febf5b-3cd8-43d6-a48e-92f411decefe_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/6476863a-58c1-46a8-bc2a-5a49a5c100be_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/b3e48a4e-f834-4b6f-bf1d-ce3f8f55405e_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/d744b6eb-06f7-4a56-823d-c543572bbf57_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/ef803b10-1e48-469d-96f5-44d61998ecda_assembly.step', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CAD/f4533858-be3d-4ae3-9a72-3da788aa583c_assembly.step', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/JTCyborg/135
+   679222d..f3a07c0  main -> main
+[GIT_PUSH] SUCCESS - validation report was pushed to origin/main.
