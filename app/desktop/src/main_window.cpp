@@ -2528,7 +2528,7 @@ QWidget* MainWindow::createFilterPage()
         qualityLabel->setVisible(false);
     qualityFactor_->setVisible(false);
     connect(automaticMode, &QToolButton::toggled, page,
-        [this, componentGroup, advanced, qualityFactor_, form](bool automatic) {
+        [this, componentGroup, advanced, form](bool automatic) {
             componentGroup->setVisible(!automatic);
             advanced->setVisible(!automatic);
             qualityFactor_->setVisible(!automatic);
