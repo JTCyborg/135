@@ -253,6 +253,13 @@ private slots:
                     QFAIL("B-H import dialog is missing required controls");
                     return;
                 }
+                if (quality->currentData().toString() !=
+                    QStringLiteral("APPROXIMATE_DIGITIZATION")) {
+                    bhDialog->reject();
+                    materialDialog->reject();
+                    QFAIL("New B-H imports must default to exploratory, not verified, quality");
+                    return;
+                }
                 source->setText(QStringLiteral("TEST-MANUFACTURER-DATASHEET-R1"));
                 const int dynamicIndex = curveType->findData(
                     QStringLiteral("dynamic magnetization"));
