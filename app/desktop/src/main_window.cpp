@@ -902,8 +902,11 @@ MainWindow::MainWindow(QWidget* parent)
     // Shared interaction policy for every numeric/drop-down input in the app.
     // Keep the filter owned by QApplication so it also covers dynamically
     // created Construction, Results and dialog controls.
-    static auto* inputInteractionFilter = new InputInteractionFilter(qApp);
-    qApp->installEventFilter(inputInteractionFilter);
+    auto* application = QCoreApplication::instance();
+    if (application) {
+        static auto* inputInteractionFilter = new InputInteractionFilter(application);
+        application->installEventFilter(inputInteractionFilter);
+    }
 
     QSettings settings;
     projectId_ = settings.value(QStringLiteral("project/currentId")).toString();
