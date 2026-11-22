@@ -7496,6 +7496,35 @@ void MainWindow::calculateFilter()
                 "These are discrete core sections, not a frequency-response curve.");
             if (!constructionBoundWithinMeasuredBhCurve)
                 corePlotTooltip += tr(" At least one section is outside the measured B-H curve; values are extrapolated and NOT_VERIFIED.");
+        } else if (threeLimbOperatingPoint) {
+            // The coupled multi-harmonic operating point is available even when
+            // the source is ideal (Rth = Lth = 0). It is a set of seven discrete
+            // section peaks, not a frequency sweep. Plot the actual values
+            // already reported in the results table instead of falling through
+            // to the legacy source-limited diagnostic sweep.
+            const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
+            const std::array<QString, 7> sectionNames{
+                tr("Limb A"), tr("Limb B"), tr("(") + tr("Limb C"),
+                tr("Top yoke A-B"), tr("Top yoke B-C"),
+                tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
+            };
+            coreCurves.reserve(sectionNames.size());
+            for (std::size_t section = 0; section < sectionNames.size(); ++section) {
+                PlotCurve curve{sectionNames[section], {}};
+                curve.points.emplace_back(static_cast<double>(section + 1),
+                    peakB[section].si());
+                coreCurves.push_back(std::move(curve));
+            }
+            logarithmicCoreAxis = false;
+            corePlotTitle = threeLimbOperatingPoint->withinBhCurveRange
+                ? tr("Three-limb multi-harmonic operating-point peak flux density")
+                : tr("Three-limb multi-harmonic operating-point peak flux density — EXTRAPOLATED_NOT_VERIFIED");
+            corePlotTooltip = tr("Seven discrete peak |B| values from the converged multi-harmonic operating point. "
+                "X-axis indices: 1 Limb A, 2 Limb B, 3 Limb C, 4 Top yoke A-B, "
+                "5 Top yoke B-C, 6 Bottom yoke A-B, 7 Bottom yoke B-C. "
+                "This is the actual operating point, not a frequency-response sweep.");
+            if (!threeLimbOperatingPoint->withinBhCurveRange)
+                corePlotTooltip += tr(" At least one section is outside the measured B-H curve; values are extrapolated and NOT_VERIFIED.");
         } else if (threeLimbMagneticBase && threeLimbSweepValid &&
                    !threeLimbFluxDensitySweep.empty()) {
             coreCurves = {
