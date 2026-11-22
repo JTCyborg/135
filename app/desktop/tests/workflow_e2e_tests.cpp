@@ -184,8 +184,9 @@ private slots:
             QCOMPARE(field->property("p135ValueOrigin").toString(),
                      QStringLiteral("PRELIMINARY_ASSUMPTION"));
             QVERIFY(!field->toolTip().isEmpty());
-            field->setValue(expected * 1.1);
-            QVERIFY(std::abs(field->value() - expected * 1.1) < 1.0e-9);
+            const double editedValue = expected + 0.1;
+            field->setValue(editedValue);
+            QVERIFY(std::abs(field->value() - editedValue) < 1.0e-9);
         };
 
         checkAssumption(QStringLiteral("idealSizing_Bmax"), 1.2);
@@ -200,7 +201,7 @@ private slots:
         QTRY_VERIFY(assumptions->isHidden());
         QTest::mouseClick(manual, Qt::LeftButton);
         QTRY_VERIFY(!assumptions->isHidden());
-        QVERIFY(std::abs(fluxLimit->value() - 1.32) < 1.0e-9);
+        QVERIFY(std::abs(fluxLimit->value() - 1.3) < 1.0e-9);
         QTest::mouseClick(automatic, Qt::LeftButton);
         QTRY_VERIFY(assumptions->isHidden());
     }
@@ -232,7 +233,7 @@ private slots:
         QTRY_VERIFY(advancedGroup->isHidden());
 
         auto* voltage = window_->findChild<QDoubleSpinBox*>(
-            QStringLiteral("nominalVoltage"));
+            QStringLiteral("filterNominalVoltageV"));
         QVERIFY(voltage);
         const double original = voltage->value();
         QWheelEvent wheel(
