@@ -4,6 +4,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QGroupBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFile>
@@ -114,6 +115,32 @@ private slots:
             auto* button = window_->findChild<QPushButton*>(name);
             QVERIFY2(button, qPrintable(QStringLiteral("Missing workflow action: ") + name));
         }
+    }
+
+    void automaticAndManualFilterModesExposeTheExpectedInputs()
+    {
+        auto* mode = window_->findChild<QComboBox*>(QStringLiteral("filterCalculationMode"));
+        auto* advanced = window_->findChild<QGroupBox*>(QStringLiteral("filterEngineeringAdvanced"));
+        auto* components = window_->findChild<QGroupBox*>(QStringLiteral("filterComponentThermalAdvanced"));
+        auto* description = window_->findChild<QLabel*>(QStringLiteral("filterCalculationModeDescription"));
+        QVERIFY(mode);
+        QVERIFY(advanced);
+        QVERIFY(components);
+        QVERIFY(description);
+
+        QCOMPARE(mode->currentData().toString(), QStringLiteral("AUTO"));
+        QVERIFY(advanced->isHidden());
+        QVERIFY(components->isHidden());
+
+        mode->setCurrentIndex(1);
+        QTRY_VERIFY(!advanced->isHidden());
+        QVERIFY(!components->isHidden());
+        QCOMPARE(mode->currentData().toString(), QStringLiteral("MANUAL"));
+
+        mode->setCurrentIndex(0);
+        QTRY_VERIFY(advanced->isHidden());
+        QVERIFY(!components->isVisible());
+        QCOMPARE(mode->currentData().toString(), QStringLiteral("AUTO"));
     }
 
     void everyWorkflowTabCanBeSelected()

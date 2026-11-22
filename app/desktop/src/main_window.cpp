@@ -2022,6 +2022,25 @@ QWidget* MainWindow::createFilterPage()
     heading->setStyleSheet("font-size: 20px; font-weight: 600;");
     layout->addWidget(heading);
 
+    // Both workflows feed the same engineering model. Automatic mode exposes
+    // only the minimum filter specification; manual mode reveals optional data.
+    auto* modeRow = new QWidget;
+    auto* modeLayout = new QHBoxLayout(modeRow);
+    modeLayout->setContentsMargins(0, 0, 0, 0);
+    auto* modeLabel = new QLabel(tr("Calculation mode"));
+    auto* calculationMode = new QComboBox;
+    calculationMode->setObjectName(QStringLiteral("filterCalculationMode"));
+    calculationMode->addItem(tr("Automatic — minimum input"), QStringLiteral("AUTO"));
+    calculationMode->addItem(tr("Manual — advanced input"), QStringLiteral("MANUAL"));
+    calculationMode->setToolTip(tr("Both modes use the same solver. Automatic mode hides optional inputs; manual mode exposes them without discarding their values."));
+    modeLayout->addWidget(modeLabel);
+    modeLayout->addWidget(calculationMode, 1);
+    layout->addWidget(modeRow);
+    auto* modeDescription = new QLabel(tr("Enter network voltage, frequency, target reactive power and tuning harmonic. Optional engineering data can be added later in Manual mode."));
+    modeDescription->setObjectName(QStringLiteral("filterCalculationModeDescription"));
+    modeDescription->setWordWrap(true);
+    layout->addWidget(modeDescription);
+
     auto* group = new QGroupBox(tr("Network and branch parameters"));
     auto* form = new QFormLayout(group);
 
@@ -2088,6 +2107,7 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(group);
 
     auto* componentGroup = new QGroupBox(tr("Selected components and installation thermal data"));
+    componentGroup->setObjectName(QStringLiteral("filterComponentThermalAdvanced"));
     auto* componentForm = new QFormLayout(componentGroup);
     capacitorComponent_ = new QComboBox;
     resistorComponent_ = new QComboBox;
@@ -2155,6 +2175,7 @@ QWidget* MainWindow::createFilterPage()
     layout->addWidget(note);
 
     auto* advanced = new QGroupBox(tr("Source impedance, harmonics and magnetic core"));
+    advanced->setObjectName(QStringLiteral("filterEngineeringAdvanced"));
     auto* advancedLayout = new QVBoxLayout(advanced);
     auto* sourceForm = new QFormLayout;
 
@@ -2425,6 +2446,20 @@ QWidget* MainWindow::createFilterPage()
     sourceWarning->setStyleSheet("color: #a66b00;");
     advancedLayout->addWidget(sourceWarning);
     layout->addWidget(advanced);
+
+    const auto applyCalculationMode = [this, componentGroup, advanced, modeDescription](int index) {
+        const bool manual = index == 1;
+        componentGroup->setVisible(manual);
+        advanced->setVisible(manual);
+        modeDescription->setText(manual
+            ? tr("Manual mode: optional source impedance, harmonics, component thermal data and magnetic-core inputs are available. Empty values remain NOT_PROVIDED; they are never treated as measured data.")
+            : tr("Automatic mode: enter only the network voltage, frequency, target reactive power and tuning harmonic. The same solver is used; unavailable physical data remains explicitly NOT_VERIFIED."));
+        if (!projectId_.isEmpty() && !loadingProjectSettings_) saveProjectSettings();
+    };
+    connect(calculationMode, qOverload<int>(&QComboBox::currentIndexChanged),
+        this, applyCalculationMode);
+    calculationMode->setCurrentIndex(0);
+    applyCalculationMode(0);
 
     // Stable identifiers for the principal filter-definition inputs and editable tables.
     nominalVoltage_->setObjectName(QStringLiteral("filterNominalVoltageV"));
