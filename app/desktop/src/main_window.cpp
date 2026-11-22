@@ -3288,7 +3288,11 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(resultsBankCurrentPlot_);
 
     auto* coreFluxPlotTitle = new QLabel(tr("Three-limb core peak flux density — manual diagnostic frequency sweep"));
+    coreFluxPlotTitle->setObjectName(QStringLiteral("coreFluxPlotTitle"));
     coreFluxPlotTitle->setStyleSheet("font-weight: 600;");
+    coreFluxPlotTitle->setToolTip(tr(
+        "Requires valid limb and yoke geometry, turns, a measured B-H curve with source reference, "
+        "and non-zero Thevenin source R or L. Missing inputs are NOT_VERIFIED; no synthetic curve is generated."));
     coreFluxPlotTitle->setToolTip(tr(
         "This chart uses the legacy manual Ae/le/B-H frequency-sweep model. "
         "The Construction-revision-bound harmonic operating-point result is a different "
@@ -3303,7 +3307,11 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(resultsCoreFluxPlot_);
 
     auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
+    impedancePlotTitle->setObjectName(QStringLiteral("busImpedancePlotTitle"));
     impedancePlotTitle->setStyleSheet("font-weight: 600;");
+    impedancePlotTitle->setToolTip(tr(
+        "Requires non-zero per-phase Thevenin source resistance R or inductance L. "
+        "Without source impedance the bus-impedance scan is NOT_VERIFIED."));
     layout->addWidget(impedancePlotTitle);
     resultsBusImpedancePlot_ = new PlotWidget;
     resultsBusImpedancePlot_->setObjectName(QStringLiteral("resultsBusImpedancePlot"));
@@ -6567,25 +6575,6 @@ void MainWindow::calculateFilter()
                 tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
             resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
         }
-        if (resultsCoreFluxPlot_) {
-            std::vector<PlotCurve> coreCurves{
-                PlotCurve{tr("Limb A |B|"), {}},
-                PlotCurve{tr("Limb B |B|"), {}},
-                PlotCurve{tr("Limb C |B|"), {}},
-                PlotCurve{tr("Maximum yoke |B|"), {}}
-            };
-            if (threeLimbMagneticBase && threeLimbSweepValid) {
-                for (const auto& sample : threeLimbFluxDensitySweep) {
-                    for (std::size_t phase = 0; phase < 3; ++phase)
-                        coreCurves[phase].points.emplace_back(sample[0], sample[phase + 1]);
-                    const double maximumYoke = *std::max_element(sample.begin() + 4, sample.end());
-                    coreCurves[3].points.emplace_back(sample[0], maximumYoke);
-                }
-            }
-            resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
-                tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
-        }
-
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
@@ -6799,6 +6788,27 @@ void MainWindow::calculateFilter()
             ? std::vector<PlotCurve>{liveBusImpedanceCurve} : std::vector<PlotCurve>{},
             tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
         resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
+    }
+
+    // The magnetic plot is a live calculation result, not a persistence artifact.
+    // Keep it independent of SQLite availability and snapshot-write success.
+    if (resultsCoreFluxPlot_) {
+        std::vector<PlotCurve> coreCurves{
+            PlotCurve{tr("Limb A |B|"), {}},
+            PlotCurve{tr("Limb B |B|"), {}},
+            PlotCurve{tr("Limb C |B|"), {}},
+            PlotCurve{tr("Maximum yoke |B|"), {}}
+        };
+        if (threeLimbMagneticBase && threeLimbSweepValid) {
+            for (const auto& sample : threeLimbFluxDensitySweep) {
+                for (std::size_t phase = 0; phase < 3; ++phase)
+                    coreCurves[phase].points.emplace_back(sample[0], sample[phase + 1]);
+                const double maximumYoke = *std::max_element(sample.begin() + 4, sample.end());
+                coreCurves[3].points.emplace_back(sample[0], maximumYoke);
+            }
+        }
+        resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
+            tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
     }
 
     QStringList visibleWarnings;
