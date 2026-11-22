@@ -972,6 +972,27 @@ MainWindow::MainWindow(QWidget* parent)
         if (index == 6) refreshCalculationHistory();
     });
 
+    for (QWidget* widget : findChildren<QWidget*>()) {
+        const QString name = widget->objectName();
+        if (name.isEmpty() || name.startsWith(QStringLiteral("history")) ||
+            name.startsWith(QStringLiteral("results")) || name == QStringLiteral("log"))
+            continue;
+        if (auto* line = qobject_cast<QLineEdit*>(widget))
+            connect(line, &QLineEdit::textChanged, this, [this] { saveProjectSettings(); });
+        else if (auto* combo = qobject_cast<QComboBox*>(widget))
+            connect(combo, qOverload<int>(&QComboBox::currentIndexChanged), this, [this] { saveProjectSettings(); });
+        else if (auto* number = qobject_cast<QDoubleSpinBox*>(widget))
+            connect(number, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
+        else if (auto* integer = qobject_cast<QSpinBox*>(widget))
+            connect(integer, qOverload<int>(&QSpinBox::valueChanged), this, [this] { saveProjectSettings(); });
+        else if (auto* check = qobject_cast<QCheckBox*>(widget))
+            connect(check, &QCheckBox::toggled, this, [this] { saveProjectSettings(); });
+        else if (auto* textEdit = qobject_cast<QPlainTextEdit*>(widget))
+            connect(textEdit, &QPlainTextEdit::textChanged, this, [this] { saveProjectSettings(); });
+        else if (auto* table = qobject_cast<QTableWidget*>(widget))
+            connect(table, &QTableWidget::itemChanged, this, [this] { saveProjectSettings(); });
+    }
+
     loadProjectSettings();
 
     status_ = new QLabel(tr("Ready — filter synthesis available"));
@@ -1033,6 +1054,46 @@ void MainWindow::saveProjectSettings()
             settings.setValue(key, textEdit->toPlainText());
         else if (const auto* check = qobject_cast<QCheckBox*>(widget))
             settings.setValue(key, check->isChecked());
+    }
+    settings.endGroup();
+    settings.beginGroup(QStringLiteral("ui"));
+    for (QWidget* widget : findChildren<QWidget*>()) {
+        const QString name = widget->objectName();
+        if (name.isEmpty() || name.startsWith(QStringLiteral("history")) ||
+            name.startsWith(QStringLiteral("results")) || name == QStringLiteral("log") ||
+            name == QStringLiteral("cadViewportWidget") || name == QStringLiteral("cadAssemblyTree"))
+            continue;
+        QJsonObject state;
+        if (const auto* combo = qobject_cast<QComboBox*>(widget)) {
+            state.insert("type", "combo"); state.insert("data", QJsonValue::fromVariant(combo->currentData()));
+            state.insert("text", combo->currentText());
+        } else if (const auto* number = qobject_cast<QDoubleSpinBox*>(widget)) {
+            state.insert("type", "double"); state.insert("value", number->value());
+        } else if (const auto* integer = qobject_cast<QSpinBox*>(widget)) {
+            state.insert("type", "integer"); state.insert("value", integer->value());
+        } else if (const auto* line = qobject_cast<QLineEdit*>(widget)) {
+            state.insert("type", "line"); state.insert("value", line->text());
+        } else if (const auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) {
+            state.insert("type", "plainText"); state.insert("value", textEdit->toPlainText());
+        } else if (const auto* check = qobject_cast<QCheckBox*>(widget)) {
+            state.insert("type", "check"); state.insert("value", check->isChecked());
+        } else if (const auto* table = qobject_cast<QTableWidget*>(widget)) {
+            if (name != QStringLiteral("harmonicSpectrumTable") &&
+                name != QStringLiteral("harmonicCurrentTable")) continue;
+            state.insert("type", "table"); state.insert("rows", table->rowCount());
+            state.insert("columns", table->columnCount());
+            QJsonArray cells;
+            for (int row = 0; row < table->rowCount(); ++row) {
+                QJsonArray rowCells;
+                for (int column = 0; column < table->columnCount(); ++column) {
+                    const auto* item = table->item(row, column);
+                    rowCells.append(item ? QJsonValue(item->text()) : QJsonValue(QJsonValue::Null));
+                }
+                cells.append(rowCells);
+            }
+            state.insert("cells", cells);
+        } else continue;
+        settings.setValue(name, QString::fromUtf8(QJsonDocument(state).toJson(QJsonDocument::Compact)));
     }
     settings.endGroup();
     settings.endGroup();
@@ -1341,6 +1402,49 @@ void MainWindow::loadProjectSettings()
         const auto* method = findChild<QComboBox*>(QStringLiteral("projectCoolingMethod"));
         flow->setEnabled(method && method->currentData().toString() == QStringLiteral("AF"));
     }
+    QSettings uiSettings;
+    uiSettings.beginGroup(QStringLiteral("projects/") + projectId_ + QStringLiteral("/ui"));
+    for (const QString& name : uiSettings.allKeys()) {
+        QWidget* widget = findChild<QWidget*>(name);
+        if (!widget) continue;
+        QJsonParseError stateError;
+        const auto stateDocument = QJsonDocument::fromJson(uiSettings.value(name).toString().toUtf8(), &stateError);
+        if (stateError.error != QJsonParseError::NoError || !stateDocument.isObject()) continue;
+        const QJsonObject state = stateDocument.object();
+        const QString type = state.value("type").toString();
+        if (type == "combo") {
+            if (auto* combo = qobject_cast<QComboBox*>(widget)) {
+                int index = combo->findData(state.value("data").toVariant());
+                if (index < 0) index = combo->findText(state.value("text").toString());
+                if (index >= 0) combo->setCurrentIndex(index);
+            }
+        } else if (type == "double") {
+            if (auto* number = qobject_cast<QDoubleSpinBox*>(widget)) number->setValue(state.value("value").toDouble());
+        } else if (type == "integer") {
+            if (auto* integer = qobject_cast<QSpinBox*>(widget)) integer->setValue(state.value("value").toInt());
+        } else if (type == "line") {
+            if (auto* line = qobject_cast<QLineEdit*>(widget)) line->setText(state.value("value").toString());
+        } else if (type == "plainText") {
+            if (auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) textEdit->setPlainText(state.value("value").toString());
+        } else if (type == "check") {
+            if (auto* check = qobject_cast<QCheckBox*>(widget)) check->setChecked(state.value("value").toBool());
+        } else if (type == "table") {
+            if (auto* table = qobject_cast<QTableWidget*>(widget)) {
+                const int rows = std::clamp(state.value("rows").toInt(), 0, 10000);
+                const int columns = std::clamp(state.value("columns").toInt(), 0, 100);
+                table->setRowCount(rows); table->setColumnCount(columns);
+                const QJsonArray cells = state.value("cells").toArray();
+                for (int row = 0; row < rows && row < cells.size(); ++row) {
+                    const QJsonArray rowCells = cells.at(row).toArray();
+                    for (int column = 0; column < columns && column < rowCells.size(); ++column)
+                        if (!rowCells.at(column).isNull())
+                            table->setItem(row, column, new QTableWidgetItem(rowCells.at(column).toString()));
+                }
+            }
+        }
+    }
+    uiSettings.endGroup();
+
     // Inherit Project environmental inputs unless the user has overridden Construction.
     const QString projectCooling = get("coolingMethod", QStringLiteral("AN")).toString();
     auto* constructionAmbient = findChild<QDoubleSpinBox*>(QStringLiteral("construction_ambient"));
