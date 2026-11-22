@@ -3825,7 +3825,7 @@ QWidget* MainWindow::createResultsPage()
     resultsBankCurrentPlot_ = new PlotWidget;
     resultsBankCurrentPlot_->setObjectName(QStringLiteral("resultsBankCurrentPlot"));
     resultsBankCurrentPlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_reactor_current.png")));
-    resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Reactor branch peak current (A)"));
+    resultsBankCurrentPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Reactor branch peak current (A)"), true, tr("NOT_CALCULATED: run the electrical filter calculation to generate the 151-point current sweep."));
     resultsBankCurrentPlot_->setMinimumHeight(250);
     resultsBankCurrentPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBankCurrentPlot_);
@@ -3841,7 +3841,7 @@ QWidget* MainWindow::createResultsPage()
     resultsCoreFluxPlot_ = new PlotWidget;
     resultsCoreFluxPlot_->setObjectName(QStringLiteral("resultsCoreFluxPlot"));
     resultsCoreFluxPlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux.png")));
-    resultsCoreFluxPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
+    resultsCoreFluxPlot_->setCurves({}, tr("Core section / frequency"), tr("Peak flux density |B| (T)"), false, tr("NOT_VERIFIED: a validated magnetic geometry, winding turns, measured B-H material data and operating current waveform are required."));
     resultsCoreFluxPlot_->setMinimumHeight(250);
     resultsCoreFluxPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsCoreFluxPlot_);
@@ -3856,7 +3856,7 @@ QWidget* MainWindow::createResultsPage()
     resultsBusImpedancePlot_ = new PlotWidget;
     resultsBusImpedancePlot_->setObjectName(QStringLiteral("resultsBusImpedancePlot"));
     resultsBusImpedancePlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_bus_impedance.png")));
-    resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+    resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"), true, tr("NOT_VERIFIED: enter non-zero per-phase Thevenin source resistance R or inductance L to calculate the bus-impedance scan."));
     resultsBusImpedancePlot_->setMinimumHeight(250);
     resultsBusImpedancePlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBusImpedancePlot_);
@@ -4065,7 +4065,7 @@ QWidget* MainWindow::createHistoryPage()
     historyComparisonPlot_ = new PlotWidget;
     historyComparisonPlot_->setObjectName(QStringLiteral("historyComparisonPlot"));
     historyComparisonPlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_history_comparison.png")));
-    historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Selected metric"));
+    historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Selected metric"), true, tr("No comparison yet: select exactly two calculation-history rows, then press Compare graphs."));
     layout->addWidget(historyComparisonPlot_);
 
     auto* loadInputs = new QPushButton(tr("Load selected inputs into editor"));
@@ -7153,7 +7153,9 @@ void MainWindow::calculateFilter()
         if (resultsBusImpedancePlot_) {
             resultsBusImpedancePlot_->setCurves(impedanceResult
                 ? std::vector<PlotCurve>{busImpedanceCurve} : std::vector<PlotCurve>{},
-                tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+                tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"), true,
+                impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
+                                : tr("NOT_VERIFIED: bus impedance requires non-zero per-phase Thevenin source R or L. Set Source resistance or Source inductance, then recalculate."));
             resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
         }
         QJsonObject resultSnapshot;
@@ -7391,7 +7393,9 @@ void MainWindow::calculateFilter()
     if (resultsBusImpedancePlot_) {
         resultsBusImpedancePlot_->setCurves(impedanceResult
             ? std::vector<PlotCurve>{liveBusImpedanceCurve} : std::vector<PlotCurve>{},
-            tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"));
+            tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"), true,
+            impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
+                            : tr("NOT_VERIFIED: bus impedance requires non-zero per-phase Thevenin source R or L. Set Source resistance or Source inductance, then recalculate."));
         resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
     }
 
