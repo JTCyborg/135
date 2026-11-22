@@ -243,7 +243,7 @@ echo ==========================================================>>"%LOG%"
 rem Publish the report even if a build or test failed.
 echo.
 echo [6/6] Publishing validation report to GitHub branch %CURRENT_BRANCH%...
-git add -- BuildReports CAD Debug Drawings >>"%LOG%" 2>&1
+git add -- BuildReports CAD Debug Plots Drawings >>"%LOG%" 2>&1
 if errorlevel 1 (
     echo ERROR: Could not stage the report.
     set "PUBLISH_OK=STAGE_FAILED"
