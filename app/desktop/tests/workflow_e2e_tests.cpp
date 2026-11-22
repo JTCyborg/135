@@ -218,14 +218,19 @@ private slots:
 
         QTimer::singleShot(0, [this] {
             auto* materialDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
-            QVERIFY2(materialDialog, "New material dialog did not open");
+            if (!materialDialog) {
+                QFAIL("New material dialog did not open");
+                return;
+            }
             auto* import = materialDialog->findChild<QPushButton*>(
                 QStringLiteral("importBhCurveButton"));
-            QVERIFY2(import && import->isEnabled(),
-                "B-H import action must be enabled for a new core material");
             auto* payload = materialDialog->findChild<QPlainTextEdit*>(
                 QStringLiteral("materialPayloadJson"));
-            QVERIFY(payload);
+            if (!import || !import->isEnabled() || !payload) {
+                QFAIL("New core material dialog is missing the enabled B-H import action or payload editor");
+                materialDialog->reject();
+                return;
+            }
 
             QTimer::singleShot(0, [this, materialDialog] {
                 auto* bhDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
@@ -263,20 +268,28 @@ private slots:
 
             QTest::mouseClick(import, Qt::LeftButton);
             const auto document = QJsonDocument::fromJson(payload->toPlainText().toUtf8());
-            QVERIFY(document.isObject());
+            if (!document.isObject()) {
+                QFAIL("B-H import did not produce a valid JSON object");
+                materialDialog->reject();
+                return;
+            }
             const auto root = document.object();
             const auto curve = root.value(QStringLiteral("bhCurve")).toObject();
-            QCOMPARE(curve.value(QStringLiteral("frequency_Hz")).toDouble(), 50.0);
-            QCOMPARE(curve.value(QStringLiteral("points")).toArray().size(), 3);
-            QCOMPARE(root.value(QStringLiteral("dataQuality")).toObject()
-                         .value(QStringLiteral("bhCurveStatus")).toString(),
-                     QStringLiteral("MANUFACTURER_TABULATED"));
-            QCOMPARE(root.value(QStringLiteral("bhCurveProvenance")).toObject()
-                         .value(QStringLiteral("sourceDocument")).toString(),
-                     QStringLiteral("TEST-MANUFACTURER-DATASHEET-R1"));
-            QCOMPARE(root.value(QStringLiteral("dataQuality")).toObject()
-                         .value(QStringLiteral("designReleaseStatus")).toString(),
-                     QStringLiteral("NOT_VERIFIED"));
+            if (curve.value(QStringLiteral("frequency_Hz")).toDouble() != 50.0 ||
+                curve.value(QStringLiteral("points")).toArray().size() != 3 ||
+                root.value(QStringLiteral("dataQuality")).toObject()
+                    .value(QStringLiteral("bhCurveStatus")).toString() !=
+                        QStringLiteral("MANUFACTURER_TABULATED") ||
+                root.value(QStringLiteral("bhCurveProvenance")).toObject()
+                    .value(QStringLiteral("sourceDocument")).toString() !=
+                        QStringLiteral("TEST-MANUFACTURER-DATASHEET-R1") ||
+                root.value(QStringLiteral("dataQuality")).toObject()
+                    .value(QStringLiteral("designReleaseStatus")).toString() !=
+                        QStringLiteral("NOT_VERIFIED")) {
+                QFAIL("B-H curve data or provenance fields were not serialized as expected");
+                materialDialog->reject();
+                return;
+            }
             materialDialog->reject();
         });
 
