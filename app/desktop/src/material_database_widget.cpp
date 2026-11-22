@@ -720,10 +720,10 @@ bool editCoreLossPayload(QWidget* parent, QPlainTextEdit* payloadEditor)
             QObject::tr("Source document, measurement method and sample direction are required."));
         return false;
     }
-    if (qualityValue == QStringLiteral("MEASURED_TABULAR") &&
-        (methodText.isEmpty() || directionText.isEmpty())) {
-        QMessageBox::warning(parent, QObject::tr("Core-loss provenance"),
-            QObject::tr("Measured datasets require measurement method and sample direction."));
+    if (temperatureValue == QStringLiteral("NOT_STATED_IN_SOURCE") &&
+        qualityValue != QStringLiteral("APPROXIMATE_DIGITIZATION")) {
+        QMessageBox::warning(parent, QObject::tr("Core-loss temperature"),
+            QObject::tr("Manufacturer-tabulated and measured datasets require source-stated temperature conditions. Use exploratory classification if the source does not state temperature."));
         return false;
     }
 
@@ -772,10 +772,14 @@ bool editCoreLossPayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         });
     }
     const std::size_t expected = frequencies.size()*fluxes.size()*temperatures.size();
-    if (frequencies.size()<2 || fluxes.size()<2 || temperatures.size()<2 ||
+    const bool singleConstantTemperature =
+        temperatures.size() == 1 &&
+        temperatureValue == QStringLiteral("CONSTANT_SOURCE_STATED");
+    if (frequencies.size()<2 || fluxes.size()<2 ||
+        (temperatures.size()<2 && !singleConstantTemperature) ||
         parsed.size()!=static_cast<int>(expected)) {
         QMessageBox::warning(parent, QObject::tr("Incomplete core-loss grid"),
-            QObject::tr("A complete 3D grid is required: at least two distinct values on each axis and every f × Bpeak × T combination. Received %1 points; expected %2.")
+            QObject::tr("A complete rectangular grid is required: at least two frequencies and two flux-density values, plus either multiple temperature levels or one explicitly source-stated constant temperature. Every f × Bpeak × T combination must be present. Received %1 points; expected %2.")
                 .arg(parsed.size()).arg(static_cast<qulonglong>(expected)));
         return false;
     }
