@@ -359,11 +359,14 @@ public:
 #endif
     }
 
-    void setCurves(std::vector<PlotCurve> curves, QString xLabel, QString yLabel)
+    void setCurves(std::vector<PlotCurve> curves, QString xLabel, QString yLabel,
+                   bool logarithmicX = true, QString emptyMessage = {})
     {
         curves_ = std::move(curves);
         xLabel_ = std::move(xLabel);
         yLabel_ = std::move(yLabel);
+        logarithmicX_ = logarithmicX;
+        emptyMessage_ = std::move(emptyMessage);
         QVariantList serializedCurves;
         for (const auto& curve : curves_) {
             QVariantMap serializedCurve;
@@ -504,24 +507,28 @@ protected:
         }
         if (!hasPoints) {
             painter.setPen(palette().color(QPalette::Text));
-            painter.drawText(area, Qt::AlignCenter, tr("No valid frequency-response data available"));
+            painter.drawText(area, Qt::AlignCenter, emptyMessage_.isEmpty()
+                ? tr("No valid frequency-response data available") : emptyMessage_);
             painter.drawText(QRectF(0, height() - 30, width(), 22), Qt::AlignCenter, xLabel_);
             return;
         }
 
-        double logMin = std::log10(minX);
-        double logMax = std::log10(maxX);
-        if (!(logMax > logMin)) {
-            logMin -= 0.5;
-            logMax += 0.5;
+        double axisMin = logarithmicX_ ? std::log10(minX) : minX;
+        double axisMax = logarithmicX_ ? std::log10(maxX) : maxX;
+        if (!(axisMax > axisMin)) {
+            axisMin -= 0.5;
+            axisMax += 0.5;
         }
+        const auto xFraction = [this, axisMin, axisMax](double value) {
+            const double coordinate = logarithmicX_ ? std::log10(value) : value;
+            return (coordinate - axisMin) / (axisMax - axisMin);
+        };
         const double dataYMax = maxY > 0.0 ? maxY * 1.08 : 1.0;
         const double yMax = std::max({dataYMax,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
             magneticKneeCurrentA_.value_or(0.0) * 1.08});
-        const auto xPixel = [&area, logMin, logMax](double frequency) {
-            return area.left() + (std::log10(frequency) - logMin) /
-                (logMax - logMin) * area.width();
+        const auto xPixel = [&area, &xFraction](double value) {
+            return area.left() + xFraction(value) * area.width();
         };
         for (const auto& band : resonanceBands_) {
             if (!std::isfinite(band.startHz) || !std::isfinite(band.stopHz) ||
@@ -547,7 +554,9 @@ protected:
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
             painter.drawText(QRectF(26, y - 9, 56, 18), Qt::AlignRight | Qt::AlignVCenter,
                 QString::number(yMax * fraction, 'g', 4));
-            const double xValue = std::pow(10.0, logMin + (logMax - logMin) * fraction);
+            const double xValue = logarithmicX_
+                ? std::pow(10.0, axisMin + (axisMax - axisMin) * fraction)
+                : minX + (maxX - minX) * fraction;
             const double x = area.left() + fraction * area.width();
             painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
             painter.drawText(QRectF(x - 42, area.bottom() + 6, 84, 18),
@@ -591,8 +600,7 @@ protected:
                     started = false;
                     continue;
                 }
-                const double x = area.left() +
-                    (std::log10(xValue) - logMin) / (logMax - logMin) * area.width();
+                const double x = xPixel(xValue);
                 const double y = area.bottom() - (yValue / yMax) * area.height();
                 onlyPoint = QPointF(x, y);
                 ++validPointCount;
@@ -631,6 +639,8 @@ private:
     std::vector<PlotCurve> curves_;
     QString xLabel_;
     QString yLabel_;
+    QString emptyMessage_;
+    bool logarithmicX_{true};
     std::vector<PlotBand> resonanceBands_;
     std::optional<double> saturationPeakCurrentA_;
     std::optional<double> magneticKneeCurrentA_;
@@ -4317,7 +4327,8 @@ void MainWindow::compareSelectedCalculationGraphs()
     const auto selected = historyTable_->selectionModel()->selectedRows();
     if (selected.size() != 2) {
         historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"),
-            tr("Select exactly two calculations"));
+            tr("Selected metric"),
+            true, tr("Select exactly two calculation rows, then press Compare graphs."));
         return;
     }
 
@@ -4328,18 +4339,28 @@ void MainWindow::compareSelectedCalculationGraphs()
     const QString yLabel = currentMetric ? tr("Reactor branch peak current (A)") : tr("Bus impedance (Ω)");
     std::vector<PlotCurve> curves;
     QStringList comparisonIds;
+    QStringList diagnostics;
 
     for (const auto& selection : selected) {
         const int row = selection.row();
         const auto* idItem = historyTable_->item(row, 3);
-        if (!idItem) continue;
+        if (!idItem) {
+            diagnostics.push_back(tr("Selected row %1: calculation ID is missing.").arg(row + 1));
+            continue;
+        }
         const QString calculationId = idItem->data(Qt::UserRole).toString();
         const auto record = materialStore_->findCalculation(calculationId.toStdString());
-        if (!record || !record.value()) continue;
+        if (!record || !record.value()) {
+            diagnostics.push_back(tr("Calculation %1: snapshot could not be loaded.").arg(calculationId));
+            continue;
+        }
 
         const auto document = QJsonDocument::fromJson(
             QByteArray::fromStdString(record.value()->resultJson));
-        if (!document.isObject()) continue;
+        if (!document.isObject()) {
+            diagnostics.push_back(tr("Calculation %1: result JSON is invalid.").arg(calculationId.left(8)));
+            continue;
+        }
         const auto samples = document.object().value(arrayKey).toArray();
         PlotCurve curve;
         curve.name = QString::fromStdString(record.value()->projectName) +
@@ -4349,22 +4370,33 @@ void MainWindow::compareSelectedCalculationGraphs()
             const auto sample = sampleValue.toObject();
             const auto frequency = sample.value(QStringLiteral("frequency_Hz"));
             const auto ordinate = sample.value(metricKey);
-            if (!frequency.isDouble() || !ordinate.isDouble()) continue;
+            if (!frequency.isDouble() || !ordinate.isDouble() ||
+                !std::isfinite(frequency.toDouble()) || frequency.toDouble() <= 0.0 ||
+                !std::isfinite(ordinate.toDouble()) || ordinate.toDouble() < 0.0)
+                continue;
             curve.points.emplace_back(frequency.toDouble(), ordinate.toDouble());
         }
         if (curve.points.size() >= 2) {
+            diagnostics.push_back(tr("Calculation %1: %2 valid points.")
+                .arg(calculationId.left(8)).arg(curve.points.size()));
             curves.push_back(std::move(curve));
             comparisonIds.push_back(calculationId);
+        } else {
+            diagnostics.push_back(tr("Calculation %1: '%2' contains %3 usable points; at least 2 are required.")
+                .arg(calculationId.left(8), arrayKey)
+                .arg(curve.points.size()));
         }
     }
 
     if (curves.size() != 2) {
-        historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), yLabel);
-        historyDetails_->appendPlainText(tr("\nGraph comparison unavailable: one or both selected snapshots do not contain this frequency series. Older snapshots do not contain the corrected reactor-branch current series."));
+        const QString reason = diagnostics.join(QStringLiteral("\n"));
+        historyComparisonPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), yLabel,
+            true, tr("Comparison unavailable.\n%1").arg(reason));
+        historyDetails_->appendPlainText(tr("\nGraph comparison unavailable:\n%1").arg(reason));
         return;
     }
     historyComparisonPlot_->setCurves(std::move(curves),
-        tr("Frequency (Hz, logarithmic)"), yLabel);
+        tr("Frequency (Hz, logarithmic)"), yLabel, true);
     historyDetails_->appendPlainText(tr("\nGraph comparison: %1 vs %2 (%3).")
         .arg(comparisonIds[0], comparisonIds[1], yLabel));
 }
@@ -6092,6 +6124,12 @@ void MainWindow::calculateFilter()
         advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
     }
 
+    // Retain the exact Construction-bound result for the live plot and immutable
+    // calculation snapshot. It is distinct from the legacy manual diagnostic model.
+    std::optional<std::array<double, 7>> constructionBoundPeakFluxDensityT;
+    bool constructionBoundWithinMeasuredBhCurve = false;
+    QString constructionBoundMagneticWarning;
+
     // Revision-bound magnetic analysis uses the exact accepted Construction
     // core dimensions and exact selected material revision. It is deliberately
     // separate from the legacy manual Ae/le diagnostic controls above.
@@ -6099,8 +6137,9 @@ void MainWindow::calculateFilter()
         const auto& accepted = *acceptedConstructionInputs_;
         const auto physicalCore = p135::application::makeThreeLimbCorePhysicalGeometry(accepted);
         if (!physicalCore) {
-            appendLog(tr("[MAGNETIC] NOT_VERIFIED — accepted Construction core geometry: %1")
-                .arg(QString::fromStdString(physicalCore.error().message)));
+            constructionBoundMagneticWarning = tr("Accepted Construction core geometry NOT_VERIFIED: %1")
+                .arg(QString::fromStdString(physicalCore.error().message));
+            appendLog(tr("[MAGNETIC] %1").arg(constructionBoundMagneticWarning));
         } else {
             p135::application::PhysicalFilterReactorMagneticRequest magneticRequest;
             magneticRequest.physicalCore = physicalCore.value();
@@ -6118,17 +6157,28 @@ void MainWindow::calculateFilter()
                 analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
                     *materialStore_, accepted.coreMaterial->revisionId, magneticRequest);
             if (!magnetic) {
-                appendLog(tr("[MAGNETIC] NOT_VERIFIED — Construction revision %1; material %2: %3")
+                constructionBoundMagneticWarning = tr("Construction-bound magnetic analysis NOT_VERIFIED — Construction revision %1; material %2: %3")
                     .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
                     .arg(QString::fromStdString(accepted.coreMaterial->revisionId))
-                    .arg(QString::fromStdString(magnetic.error().message)));
+                    .arg(QString::fromStdString(magnetic.error().message));
+                appendLog(tr("[MAGNETIC] %1").arg(constructionBoundMagneticWarning));
             } else {
                 const auto& cycle = magnetic.value().magneticAnalysis.magneticAnalysis.magneticCycle;
                 double maximumFluxDensity = 0.0;
                 for (const auto& density : cycle.peakAbsoluteFluxDensity)
                     maximumFluxDensity = std::max(maximumFluxDensity, density.si());
                 const QString magneticState = cycle.converged
-                    ? tr("PASS") : tr("NOT_VERIFIED — peak flux density did not converge to the requested tolerance");
+                    ? (cycle.withinBhCurveRange ? tr("PASS") : tr("EXTRAPOLATED_NOT_VERIFIED"))
+                    : tr("NOT_VERIFIED — peak flux density did not converge to the requested tolerance");
+                if (cycle.converged) {
+                    std::array<double, 7> peakValues{};
+                    for (std::size_t section = 0; section < peakValues.size(); ++section)
+                        peakValues[section] = cycle.peakAbsoluteFluxDensity[section].si();
+                    constructionBoundPeakFluxDensityT = peakValues;
+                    constructionBoundWithinMeasuredBhCurve = cycle.withinBhCurveRange;
+                } else {
+                    constructionBoundMagneticWarning = magneticState;
+                }
                 appendLog(tr("[MAGNETIC] %1 — Construction %2; material %3; max |B|=%4 T; samples=%5; relative peak change=%6.")
                     .arg(magneticState)
                     .arg(QString::fromStdString(accepted.dimensionalRevision.value()))
@@ -6139,7 +6189,8 @@ void MainWindow::calculateFilter()
             }
         }
     } else if (acceptedPhysicalMagneticCandidate) {
-        appendLog(tr("[MAGNETIC] NOT_VERIFIED — harmonic branch currents are unavailable; no magnetic result was produced."));
+        constructionBoundMagneticWarning = tr("Construction-bound magnetic operating point NOT_VERIFIED: harmonic branch currents are unavailable.");
+        appendLog(tr("[MAGNETIC] %1").arg(constructionBoundMagneticWarning));
     }
 
     // First-pass ideal area-product bound. Inputs are explicit user criteria.
@@ -7014,6 +7065,30 @@ void MainWindow::calculateFilter()
             }
         }
         resultSnapshot.insert(QStringLiteral("threeLimbMagneticSweep"), threeLimbSweepSnapshot);
+        QJsonObject constructionBoundOperatingSnapshot;
+        if (constructionBoundPeakFluxDensityT) {
+            const auto& peakB = *constructionBoundPeakFluxDensityT;
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("status"),
+                constructionBoundWithinMeasuredBhCurve
+                    ? QStringLiteral("VERIFIED_CONVERGED")
+                    : QStringLiteral("EXTRAPOLATED_NOT_VERIFIED"));
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("withinMeasuredBhCurve"),
+                constructionBoundWithinMeasuredBhCurve);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("limbA_peak_B_T"), peakB[0]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("limbB_peak_B_T"), peakB[1]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("limbC_peak_B_T"), peakB[2]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeTopAB_peak_B_T"), peakB[3]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeTopBC_peak_B_T"), peakB[4]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeBottomAB_peak_B_T"), peakB[5]);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("yokeBottomBC_peak_B_T"), peakB[6]);
+        } else {
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("status"), QStringLiteral("NOT_VERIFIED"));
+        }
+        if (!constructionBoundMagneticWarning.isEmpty())
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("warning"), constructionBoundMagneticWarning);
+        resultSnapshot.insert(QStringLiteral("constructionBoundMagneticOperatingPoint"),
+            constructionBoundOperatingSnapshot);
+
         QJsonObject threeLimbOperatingSnapshot;
         if (threeLimbOperatingPoint) {
             const auto& peakB = threeLimbOperatingPoint->peakAbsoluteFluxDensity;
@@ -7204,34 +7279,90 @@ void MainWindow::calculateFilter()
     // The magnetic plot is a live calculation result, not a persistence artifact.
     // Keep it independent of SQLite availability and snapshot-write success.
     if (resultsCoreFluxPlot_) {
-        std::vector<PlotCurve> coreCurves{
-            PlotCurve{tr("Limb A |B|"), {}},
-            PlotCurve{tr("Limb B |B|"), {}},
-            PlotCurve{tr("Limb C |B|"), {}},
-            PlotCurve{tr("Maximum yoke |B|"), {}}
-        };
-        if (threeLimbMagneticBase && threeLimbSweepValid) {
+        std::vector<PlotCurve> coreCurves;
+        QString corePlotTitle;
+        QString corePlotTooltip;
+        QString coreEmptyMessage;
+        bool logarithmicCoreAxis = true;
+
+        // Prefer the accepted Construction-bound operating point. It represents
+        // the combined multi-harmonic waveform and therefore has no single
+        // frequency coordinate; plot the seven physical core sections on a
+        // linear categorical index instead of fabricating a frequency sweep.
+        if (constructionBoundPeakFluxDensityT) {
+            const auto& peakB = *constructionBoundPeakFluxDensityT;
+            const std::array<QString, 7> sectionNames{
+                tr("Limb A"), tr("Limb B"), tr("Limb C"),
+                tr("Top yoke A-B"), tr("Top yoke B-C"),
+                tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
+            };
+            coreCurves.reserve(sectionNames.size());
+            for (std::size_t section = 0; section < sectionNames.size(); ++section) {
+                PlotCurve curve{sectionNames[section], {}};
+                curve.points.emplace_back(static_cast<double>(section + 1),
+                    peakB[section]);
+                coreCurves.push_back(std::move(curve));
+            }
+            logarithmicCoreAxis = false;
+            corePlotTitle = constructionBoundWithinMeasuredBhCurve
+                ? tr("Construction-bound operating-point peak flux density")
+                : tr("Construction-bound operating-point peak flux density — EXTRAPOLATED_NOT_VERIFIED");
+            corePlotTooltip = tr("Seven independent peak |B| values from the accepted Construction revision "
+                "and combined harmonic operating waveform. X-axis indices: 1 Limb A, 2 Limb B, 3 Limb C, "
+                "4 Top yoke A-B, 5 Top yoke B-C, 6 Bottom yoke A-B, 7 Bottom yoke B-C. "
+                "These are discrete core sections, not a frequency-response curve.");
+            if (!constructionBoundWithinMeasuredBhCurve)
+                corePlotTooltip += tr(" At least one section is outside the measured B-H curve; values are extrapolated and NOT_VERIFIED.");
+        } else if (threeLimbMagneticBase && threeLimbSweepValid &&
+                   !threeLimbFluxDensitySweep.empty()) {
+            coreCurves = {
+                PlotCurve{tr("Limb A |B|"), {}},
+                PlotCurve{tr("Limb B |B|"), {}},
+                PlotCurve{tr("Limb C |B|"), {}},
+                PlotCurve{tr("Maximum yoke |B|"), {}}
+            };
             for (const auto& sample : threeLimbFluxDensitySweep) {
                 for (std::size_t phase = 0; phase < 3; ++phase)
                     coreCurves[phase].points.emplace_back(sample[0], sample[phase + 1]);
                 const double maximumYoke = *std::max_element(sample.begin() + 4, sample.end());
                 coreCurves[3].points.emplace_back(sample[0], maximumYoke);
             }
+            corePlotTitle = tr("Three-limb core peak flux density — diagnostic frequency sweep");
+            corePlotTooltip = tr("Single-frequency diagnostic sweep using the manually supplied magnetic model. "
+                "It is separate from the Construction-bound multi-harmonic operating point.");
+        } else {
+            // Keep the four legacy section series present even when no verified
+            // magnetic inputs exist. Their point lists stay empty; the plot's
+            // NOT_VERIFIED message explains which inputs are missing. This
+            // preserves the public plot-data contract used by the TEST-01 E2E.
+            coreCurves = {
+                PlotCurve{tr("Limb A |B|"), {}},
+                PlotCurve{tr("Limb B |B|"), {}},
+                PlotCurve{tr("Limb C |B|"), {}},
+                PlotCurve{tr("Maximum yoke |B|"), {}}
+            };
+            coreEmptyMessage = !constructionBoundMagneticWarning.isEmpty()
+                ? constructionBoundMagneticWarning
+                : !threeLimbOperatingPointWarning.isEmpty()
+                    ? threeLimbOperatingPointWarning
+                    : !threeLimbModelWarning.isEmpty()
+                        ? threeLimbModelWarning
+                        : tr("NOT_VERIFIED: accepted Construction geometry, material B-H revision and valid harmonic currents are required.");
+            corePlotTitle = tr("Core peak flux density — NOT_VERIFIED");
+            corePlotTooltip = coreEmptyMessage;
         }
-        resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
-            tr("Frequency (Hz, logarithmic)"), tr("Peak flux density |B| (T)"));
-    }
 
-    if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxPlotTitle"))) {
-        const bool hasCoreSweep = threeLimbMagneticBase && threeLimbSweepValid &&
-            !threeLimbFluxDensitySweep.empty();
-        title->setText(hasCoreSweep
-            ? tr("Three-limb core peak flux density — calculated frequency sweep")
-            : tr("Three-limb core peak flux density — NOT_VERIFIED (magnetic inputs required)"));
-        title->setToolTip(!threeLimbModelWarning.isEmpty()
-            ? threeLimbModelWarning
-            : tr("Requires valid limb and yoke geometry, turns, measured B-H data with source reference, "
-                 "and non-zero Thevenin source R or L. No synthetic curve is generated."));
+        resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
+            logarithmicCoreAxis
+                ? tr("Frequency (Hz, logarithmic)")
+                : tr("Core section index (see legend)"),
+            tr("Peak flux density |B| (T)"),
+            logarithmicCoreAxis, coreEmptyMessage);
+        resultsCoreFluxPlot_->setToolTip(corePlotTooltip);
+        if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxPlotTitle"))) {
+            title->setText(corePlotTitle);
+            title->setToolTip(corePlotTooltip);
+        }
     }
 
     QStringList visibleWarnings;
