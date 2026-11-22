@@ -39,8 +39,10 @@ analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
     if (!material)
         return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(material.error());
 
-    const bool estimatedModelAllowed = request.allowEstimatedBhModel &&
-        material.value().bhCurveModelStatus == "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
+    const bool isEstimatedBhModel =
+        material.value().bhCurveModelStatus == "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS" ||
+        material.value().bhCurveModelStatus == "ESTIMATED_FROM_SATURATION_PARAMETERS";
+    const bool estimatedModelAllowed = request.allowEstimatedBhModel && isEstimatedBhModel;
     if (!hasVerifiedBhCurveStatus(material.value().bhCurveStatus) && !estimatedModelAllowed) {
         return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(
             materialQualityError(
