@@ -178,15 +178,15 @@ private slots:
         QVERIFY(advancedGroup);
 
         QVERIFY(automatic->isChecked());
-        QVERIFY(!componentGroup->isVisible());
-        QVERIFY(!advancedGroup->isVisible());
+        QVERIFY(componentGroup->isHidden());
+        QVERIFY(advancedGroup->isHidden());
 
         QTest::mouseClick(manual, Qt::LeftButton);
-        QTRY_VERIFY(componentGroup->isVisible());
-        QTRY_VERIFY(advancedGroup->isVisible());
+        QTRY_VERIFY(!componentGroup->isHidden());
+        QTRY_VERIFY(!advancedGroup->isHidden());
         QTest::mouseClick(automatic, Qt::LeftButton);
-        QTRY_VERIFY(!componentGroup->isVisible());
-        QTRY_VERIFY(!advancedGroup->isVisible());
+        QTRY_VERIFY(componentGroup->isHidden());
+        QTRY_VERIFY(advancedGroup->isHidden());
 
         auto* voltage = window_->findChild<QDoubleSpinBox*>(
             QStringLiteral("nominalVoltage"));
