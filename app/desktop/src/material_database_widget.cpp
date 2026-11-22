@@ -439,22 +439,21 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
         const auto columns = line.split(QRegularExpression(QStringLiteral("[,;\\t]")),
                                         Qt::KeepEmptyParts);
         if (columns.size() != 2) {
-            // A single textual header row is permitted; malformed numeric rows are not.
-            if (curvePoints.isEmpty() &&
-                (line.contains(QStringLiteral("H"), Qt::CaseInsensitive) ||
-                 line.contains(QStringLiteral("B"), Qt::CaseInsensitive)))
-                continue;
             QMessageBox::warning(parent, QObject::tr("Invalid B-H table"),
                 QObject::tr("Line %1 must contain exactly two columns: H_A_per_m,B_T.").arg(lineNumber));
             return false;
         }
+        const QString firstHeader = columns[0].trimmed().toLower();
+        const QString secondHeader = columns[1].trimmed().toLower();
+        const bool headerLine =
+            (firstHeader.contains(QStringLiteral("field")) ||
+             firstHeader.startsWith(QStringLiteral("h"))) &&
+            (secondHeader.contains(QStringLiteral("flux")) ||
+             secondHeader.startsWith(QStringLiteral("b")));
+        if (curvePoints.isEmpty() && headerLine) continue;
         bool hOk = false, bOk = false;
         const double h = columns[0].trimmed().toDouble(&hOk);
         const double b = columns[1].trimmed().toDouble(&bOk);
-        if ((!hOk || !bOk) && curvePoints.isEmpty() &&
-            (line.contains(QStringLiteral("H"), Qt::CaseInsensitive) ||
-             line.contains(QStringLiteral("B"), Qt::CaseInsensitive)))
-            continue;
         if (!hOk || !bOk || !std::isfinite(h) || !std::isfinite(b) ||
             h < 0.0 || b < 0.0 || h <= previousH || b < previousB) {
             QMessageBox::warning(parent, QObject::tr("Invalid B-H table"),
