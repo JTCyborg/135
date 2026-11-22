@@ -39,13 +39,16 @@ analyzePhysicalFilterReactorMagneticCycleWithMaterialRevision(
     if (!material)
         return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(material.error());
 
-    if (!hasVerifiedBhCurveStatus(material.value().bhCurveStatus)) {
+    const bool estimatedModelAllowed = request.allowEstimatedBhModel &&
+        material.value().bhCurveModelStatus == "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
+    if (!hasVerifiedBhCurveStatus(material.value().bhCurveStatus) && !estimatedModelAllowed) {
         return Result<RevisionBoundPhysicalFilterMagneticResult>::failure(
             materialQualityError(
                 "The selected material revision does not contain a verified tabulated B-H curve "
                 "(bhCurveStatus=" + material.value().bhCurveStatus +
                 "). Approximate digitization or missing B-H data cannot be used for a verified "
-                "magnetic design calculation.",
+                "magnetic design calculation. Enable allowEstimatedBhModel only for exploratory use; "
+                "the generated branch remains NOT_VERIFIED.",
                 "materialRevision.bhCurveStatus"));
     }
 
