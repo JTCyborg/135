@@ -87,6 +87,23 @@ int main()
                 (3.0 * limbVolume + 4.0 * yokeVolume) * 7650.0));
     assert(result.value().regionMassSourceReferences[0].find("LIMB_OWNS_JOINTS") != std::string::npos);
 
+    ThreeLimbCoreLossRequest operatingPoint;
+    operatingPoint.frequency = units::Frequency{250.0};
+    operatingPoint.peakFluxDensities.fill(units::FluxDensity{1.1});
+    operatingPoint.temperatures.fill(units::TemperatureKelvin{333.15});
+    const auto bound = bindThreeLimbCoreMass(operatingPoint, result.value());
+    assert(bound);
+    assert(near(bound.value().frequency.si(), 250.0));
+    assert(near(bound.value().peakFluxDensities[4].si(), 1.1));
+    assert(near(bound.value().temperatures[4].si(), 333.15));
+    assert(near(bound.value().regionMasses[4].si(), result.value().regionMasses[4].si()));
+    assert(bound.value().regionMassSourceReferences[4] ==
+           result.value().regionMassSourceReferences[4]);
+
+    auto invalidMassResult = result.value();
+    invalidMassResult.regionMasses[2] = units::Mass{};
+    assert(!bindThreeLimbCoreMass(operatingPoint, invalidMassResult));
+
     auto withGaps = validCore();
     withGaps.airGaps = {
         {CoreSegment::LimbA, units::Length{0.02}, units::Length{0.001}},
