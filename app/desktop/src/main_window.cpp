@@ -6302,8 +6302,10 @@ void MainWindow::calculateFilter()
             constructionBoundBhModelStatus =
                 QString::fromStdString(materialRevision.value().bhCurveModelStatus);
             constructionBoundMaterialBhEstimated =
-                materialRevision.value().bhCurveModelStatus ==
-                "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
+                (materialRevision.value().bhCurveModelStatus ==
+                    "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS" ||
+                 materialRevision.value().bhCurveModelStatus ==
+                    "ESTIMATED_FROM_SATURATION_PARAMETERS");
             constructionBoundBhSourceStatus =
                 QString::fromStdString(materialRevision.value().bhCurveStatus);
             constructionBoundBhCurve.reserve(materialRevision.value().material.bhCurve.size());
@@ -6354,8 +6356,10 @@ void MainWindow::calculateFilter()
             } else {
                 const auto& cycle = magnetic.value().magneticAnalysis.magneticAnalysis.magneticCycle;
                 constructionBoundUsedEstimatedBhModel =
-                    magnetic.value().materialRevision.bhCurveModelStatus ==
-                    "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
+                    (magnetic.value().materialRevision.bhCurveModelStatus ==
+                    "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS" ||
+                 magnetic.value().materialRevision.bhCurveModelStatus ==
+                    "ESTIMATED_FROM_SATURATION_PARAMETERS");
                 constructionBoundBhModelStatus = QString::fromStdString(
                     magnetic.value().materialRevision.bhCurveModelStatus);
                 constructionBoundBhSourceStatus = QString::fromStdString(
