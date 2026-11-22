@@ -434,7 +434,9 @@ bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
     int lineNumber = 0;
     for (const QString& rawLine : points->toPlainText().split(QLatin1Char('\n'))) {
         ++lineNumber;
-        const QString line = rawLine.trimmed();
+        QString line = rawLine.trimmed();
+        if (lineNumber == 1 && !line.isEmpty() && line.front() == QChar(0xFEFF))
+            line.remove(0, 1); // UTF-8 BOM commonly added by spreadsheet exports.
         if (line.isEmpty() || line.startsWith(QLatin1Char('#'))) continue;
         const auto columns = line.split(QRegularExpression(QStringLiteral("[,;\\t]")),
                                         Qt::KeepEmptyParts);
