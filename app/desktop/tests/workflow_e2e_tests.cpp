@@ -6,7 +6,16 @@
 #include <QDebug>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
+#include <QFile>
 #include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QAbstractButton>
+#include <QAction>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
 #include <QImage>
 #include <QDir>
 #include <QApplication>
@@ -59,6 +68,10 @@ private slots:
 
     void init()
     {
+        // QFileDialog's native Windows implementation is not exposed as a
+        // QWidget, so the deterministic modal-dialog driver below cannot find it.
+        // Use Qt's widget dialog for this E2E test only.
+        QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs, true);
         qInfo().noquote() << "[E2E-DIAG] init: before MainWindow construction";
         window_ = std::make_unique<MainWindow>();
         qInfo().noquote() << "[E2E-DIAG] init: MainWindow constructed";
@@ -727,6 +740,175 @@ private slots:
         QVERIFY(dxfContent.find("PRELIMINARY / NOT VERIFIED") != std::string::npos);
         QVERIFY(dxfContent.find("TEST-01-SYNTHETIC-GEOMETRY-R1") != std::string::npos);
         QVERIFY(cadStatus->text().contains(QStringLiteral("DXF")));
+    }
+
+    void projectArchiveSaveLoadRoundTrip()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString archivePath = directory.filePath(QStringLiteral("roundtrip.p135project"));
+
+        auto* customer = window_->findChild<QLineEdit*>(QStringLiteral("projectCustomer"));
+        auto* voltage = window_->findChild<QDoubleSpinBox*>(QStringLiteral("filterNominalVoltageV"));
+        auto* spectrum = window_->findChild<QTableWidget*>(QStringLiteral("filterVoltageHarmonics"));
+        auto* currentHarmonics = window_->findChild<QTableWidget*>(
+            QStringLiteral("filterLoadCurrentHarmonics"));
+        QVERIFY(customer);
+        QVERIFY(voltage);
+        QVERIFY(spectrum);
+        QVERIFY(currentHarmonics);
+
+        customer->setText(QStringLiteral("Archive round-trip customer"));
+        voltage->setValue(415.5);
+        spectrum->setRowCount(1);
+        spectrum->setColumnCount(4);
+        spectrum->setItem(0, 0, new QTableWidgetItem(QStringLiteral("5")));
+        spectrum->setItem(0, 1, new QTableWidgetItem(QStringLiteral("Negative")));
+        spectrum->setItem(0, 2, new QTableWidgetItem(QStringLiteral("12.5")));
+        spectrum->setItem(0, 3, new QTableWidgetItem(QStringLiteral("0")));
+        currentHarmonics->setRowCount(1);
+        currentHarmonics->setColumnCount(5);
+        currentHarmonics->setItem(0, 0, new QTableWidgetItem(QStringLiteral("LOAD-ARCHIVE-1")));
+        currentHarmonics->setItem(0, 1, new QTableWidgetItem(QStringLiteral("5")));
+        currentHarmonics->setItem(0, 2, new QTableWidgetItem(QStringLiteral("Negative")));
+        currentHarmonics->setItem(0, 3, new QTableWidgetItem(QStringLiteral("3.25")));
+        currentHarmonics->setItem(0, 4, new QTableWidgetItem(QStringLiteral("-15.0")));
+
+        QSettings settings;
+        const QString originalProjectId = settings.value(QStringLiteral("project/currentId")).toString();
+        QVERIFY(!originalProjectId.isEmpty());
+
+        QAction* saveAction = nullptr;
+        QAction* loadAction = nullptr;
+        for (QAction* menuAction : window_->menuBar()->actions()) {
+            if (!menuAction->menu()) continue;
+            for (QAction* action : menuAction->menu()->actions()) {
+                if (action->text().contains(QStringLiteral("Save project")))
+                    saveAction = action;
+                if (action->text().contains(QStringLiteral("Load project")))
+                    loadAction = action;
+            }
+        }
+        QVERIFY(saveAction);
+        QVERIFY(loadAction);
+
+        // QFileDialog is modal; accept it from its nested event loop so this
+        // exercises the same menu actions as a user without manual interaction.
+        QTimer::singleShot(0, [archivePath] {
+            for (QWidget* widget : QApplication::topLevelWidgets()) {
+                auto* dialog = qobject_cast<QFileDialog*>(widget);
+                if (!dialog || !dialog->isVisible()) continue;
+                dialog->selectFile(archivePath);
+                QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
+                return;
+            }
+        });
+        QTimer::singleShot(5000, [] {
+            if (auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget()))
+                dialog->reject();
+        });
+        saveAction->trigger();
+
+        QFile archiveFile(archivePath);
+        QVERIFY2(archiveFile.open(QIODevice::ReadOnly), "Save action did not create the project archive");
+        QJsonParseError parseError;
+        const QJsonDocument savedDocument = QJsonDocument::fromJson(archiveFile.readAll(), &parseError);
+        QCOMPARE(parseError.error, QJsonParseError::NoError);
+        QVERIFY(savedDocument.isObject());
+        const QJsonObject saved = savedDocument.object();
+        QCOMPARE(saved.value(QStringLiteral("format")).toString(),
+            QStringLiteral("Project135.Project"));
+        QCOMPARE(saved.value(QStringLiteral("formatVersion")).toInt(), 1);
+        QVERIFY(saved.value(QStringLiteral("controls")).toObject().contains(
+            QStringLiteral("filterVoltageHarmonics")));
+        QVERIFY(saved.value(QStringLiteral("controls")).toObject().contains(
+            QStringLiteral("filterLoadCurrentHarmonics")));
+        QVERIFY(!saved.contains(QStringLiteral("database")));
+        QVERIFY(!saved.contains(QStringLiteral("calculationHistory")));
+
+        // Simulate a machine whose local material database does not contain the
+        // archived pinned revision. The revision ID must remain visible and must
+        // not be silently replaced with a seeded/default material.
+        QJsonObject modifiedArchive = saved;
+        QJsonObject projectSettings = saved.value(QStringLiteral("projectSettings")).toObject();
+        const QString missingRevisionId = QStringLiteral("MISSING-ARCHIVED-MATERIAL-REVISION");
+        projectSettings.insert(QStringLiteral("construction/construction_coreMaterial"), missingRevisionId);
+        modifiedArchive.insert(QStringLiteral("projectSettings"), projectSettings);
+        QJsonObject controls = saved.value(QStringLiteral("controls")).toObject();
+        QJsonObject coreMaterialState = controls.value(QStringLiteral("construction_coreMaterial")).toObject();
+        coreMaterialState.insert(QStringLiteral("data"), missingRevisionId);
+        coreMaterialState.insert(QStringLiteral("text"), QStringLiteral("Missing archived revision"));
+        controls.insert(QStringLiteral("construction_coreMaterial"), coreMaterialState);
+        modifiedArchive.insert(QStringLiteral("controls"), controls);
+        archiveFile.close();
+        QVERIFY(archiveFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        QCOMPARE(archiveFile.write(QJsonDocument(modifiedArchive).toJson(QJsonDocument::Indented)) > 0, true);
+        archiveFile.close();
+
+        customer->setText(QStringLiteral("MUTATED"));
+        voltage->setValue(690.0);
+        spectrum->setItem(0, 2, new QTableWidgetItem(QStringLiteral("99.0")));
+        currentHarmonics->setItem(0, 3, new QTableWidgetItem(QStringLiteral("99.0")));
+
+        QTimer::singleShot(0, [archivePath] {
+            for (QWidget* widget : QApplication::topLevelWidgets()) {
+                auto* dialog = qobject_cast<QFileDialog*>(widget);
+                if (!dialog || !dialog->isVisible()) continue;
+                dialog->selectFile(archivePath);
+                QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
+                // Loading asks for confirmation and then displays a completion message.
+                QTimer::singleShot(0, [] {
+                    auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+                    if (!message) return;
+                    if (auto* yes = message->button(QMessageBox::Yes)) {
+                        QTimer::singleShot(0, [] {
+                            if (auto* done = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+                                done->accept();
+                        });
+                        yes->click();
+                    } else {
+                        message->accept();
+                    }
+                });
+                return;
+            }
+        });
+        QTimer::singleShot(5000, [] {
+            if (auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget()))
+                dialog->reject();
+            if (auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+                message->reject();
+        });
+        loadAction->trigger();
+
+        settings.sync();
+        const QString loadedProjectId = settings.value(QStringLiteral("project/currentId")).toString();
+        QVERIFY(!loadedProjectId.isEmpty());
+        QVERIFY(loadedProjectId != originalProjectId);
+        QCOMPARE(customer->text(), QStringLiteral("Archive round-trip customer"));
+        QCOMPARE(voltage->value(), 415.5);
+        QCOMPARE(spectrum->rowCount(), 1);
+        QCOMPARE(spectrum->columnCount(), 4);
+        QVERIFY(spectrum->item(0, 0));
+        QVERIFY(spectrum->item(0, 1));
+        QVERIFY(spectrum->item(0, 2));
+        QVERIFY(spectrum->item(0, 3));
+        QCOMPARE(spectrum->item(0, 0)->text(), QStringLiteral("5"));
+        QCOMPARE(spectrum->item(0, 1)->text(), QStringLiteral("Negative"));
+        QCOMPARE(spectrum->item(0, 2)->text(), QStringLiteral("12.5"));
+        QCOMPARE(spectrum->item(0, 3)->text(), QStringLiteral("0"));
+        QCOMPARE(currentHarmonics->rowCount(), 1);
+        QCOMPARE(currentHarmonics->columnCount(), 5);
+        QCOMPARE(currentHarmonics->item(0, 0)->text(), QStringLiteral("LOAD-ARCHIVE-1"));
+        QCOMPARE(currentHarmonics->item(0, 1)->text(), QStringLiteral("5"));
+        QCOMPARE(currentHarmonics->item(0, 2)->text(), QStringLiteral("Negative"));
+        QCOMPARE(currentHarmonics->item(0, 3)->text(), QStringLiteral("3.25"));
+        QCOMPARE(currentHarmonics->item(0, 4)->text(), QStringLiteral("-15.0"));
+        auto* coreMaterial = window_->findChild<QComboBox*>(
+            QStringLiteral("construction_coreMaterial"));
+        QVERIFY(coreMaterial);
+        QCOMPARE(coreMaterial->currentData().toString(), missingRevisionId);
+        QVERIFY(coreMaterial->currentText().contains(QStringLiteral("NOT AVAILABLE")));
     }
 
     void twoDimensionalDrawingStageIsPresent()

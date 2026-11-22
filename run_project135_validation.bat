@@ -15,8 +15,8 @@ if not exist "BuildReports" mkdir "BuildReports"
 set "LOG=BuildReports\Project135_validation_%STAMP%.log"
 
 set "OVERALL=PASS"
-set "DEBUG_BUILD_OK=1"
-set "RELEASE_BUILD_OK=1"
+set "DEBUG_BUILD_OK=NOT_RUN"
+set "RELEASE_BUILD_OK=NOT_RUN"
 set "DEBUG_TEST_OK=SKIPPED"
 set "RELEASE_TEST_OK=SKIPPED"
 set "PUBLISH_OK=NOT_ATTEMPTED"
@@ -121,16 +121,17 @@ echo [CLEAN] No project output or diagnostic directories were deleted.>>"%LOG%"
 
 rem Never overwrite local source changes with a pull.
 echo.
-echo [2/6] Checking Git state and synchronizing main...
+echo [2/6] Checking Git state on the current branch...
 set "CURRENT_BRANCH="
 for /f %%B in ('git branch --show-current 2^>nul') do set "CURRENT_BRANCH=%%B"
 echo Current branch: %CURRENT_BRANCH%>>"%LOG%"
-if not "%CURRENT_BRANCH%"=="main" (
-    echo ERROR: Current branch is "%CURRENT_BRANCH%", expected "main".
-    echo [FATAL] Expected branch main; found %CURRENT_BRANCH%.>>"%LOG%"
+if not defined CURRENT_BRANCH (
+    echo ERROR: Detached HEAD state; switch to a named branch before validation.
+    echo [FATAL] Detached HEAD; no branch name available.>>"%LOG%"
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
+echo Validation branch: %CURRENT_BRANCH%>>"%LOG%"
 set "DIRTY="
 rem Ignore only local project data and diagnostic artifacts; source-code changes still stop the pull.
 rem A pull that conflicts with locally modified JSON remains safely rejected by Git.
@@ -150,12 +151,7 @@ if errorlevel 1 (
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
-set "RUN_CMD=git pull --ff-only origin main"
-call :RUN "Git pull --ff-only origin main"
-if errorlevel 1 (
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
+rem Do not pull or switch branches during validation. Test the exact checked-out commit.
 for /f %%H in ('git rev-parse HEAD') do set "SOURCE_COMMIT=%%H"
 echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
 
@@ -182,19 +178,23 @@ echo [4/6] Building Debug and Release...
 set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
 call :RUN "Build Debug"
 if errorlevel 1 (
-    set "DEBUG_BUILD_OK=0"
+    set "DEBUG_BUILD_OK=FAIL"
     set "OVERALL=FAILED"
+) else (
+    set "DEBUG_BUILD_OK=PASS"
 )
 set "RUN_CMD=cmake --build --preset build-desktop-release --parallel 4"
 call :RUN "Build Release"
 if errorlevel 1 (
-    set "RELEASE_BUILD_OK=0"
+    set "RELEASE_BUILD_OK=FAIL"
     set "OVERALL=FAILED"
+) else (
+    set "RELEASE_BUILD_OK=PASS"
 )
 
 echo.
 echo [5/6] Running CTest...
-if "%DEBUG_BUILD_OK%"=="1" (
+if "!DEBUG_BUILD_OK!"=="PASS" (
     set "RUN_CMD=ctest --preset test-desktop-debug"
     call :RUN "CTest Debug"
     if errorlevel 1 (
@@ -204,9 +204,9 @@ if "%DEBUG_BUILD_OK%"=="1" (
         set "DEBUG_TEST_OK=PASS"
     )
 ) else (
-    echo [SKIP] Debug tests skipped because Debug build failed.>>"%LOG%"
+    echo [SKIP] Debug tests skipped because Debug build status is !DEBUG_BUILD_OK!.>>"%LOG%"
 )
-if "%RELEASE_BUILD_OK%"=="1" (
+if "!RELEASE_BUILD_OK!"=="PASS" (
     set "RUN_CMD=ctest --preset test-desktop-release"
     call :RUN "CTest Release"
     if errorlevel 1 (
@@ -216,24 +216,24 @@ if "%RELEASE_BUILD_OK%"=="1" (
         set "RELEASE_TEST_OK=PASS"
     )
 ) else (
-    echo [SKIP] Release tests skipped because Release build failed.>>"%LOG%"
+    echo [SKIP] Release tests skipped because Release build status is !RELEASE_BUILD_OK!.>>"%LOG%"
 )
 
 :FINALIZE
 echo.>>"%LOG%"
 echo ===================== FINAL SUMMARY =====================>>"%LOG%"
-echo Overall: %OVERALL%>>"%LOG%"
-echo Debug build: %DEBUG_BUILD_OK%>>"%LOG%"
-echo Debug tests: %DEBUG_TEST_OK%>>"%LOG%"
-echo Release build: %RELEASE_BUILD_OK%>>"%LOG%"
-echo Release tests: %RELEASE_TEST_OK%>>"%LOG%"
+echo Overall: !OVERALL!>>"%LOG%"
+echo Debug build: !DEBUG_BUILD_OK!>>"%LOG%"
+echo Debug tests: !DEBUG_TEST_OK!>>"%LOG%"
+echo Release build: !RELEASE_BUILD_OK!>>"%LOG%"
+echo Release tests: !RELEASE_TEST_OK!>>"%LOG%"
 echo Source commit: %SOURCE_COMMIT%>>"%LOG%"
 echo Finished: %DATE% %TIME%>>"%LOG%"
 echo ==========================================================>>"%LOG%"
 
 rem Publish the report even if a build or test failed.
 echo.
-echo [6/6] Publishing validation report to GitHub...
+echo [6/6] Publishing validation report to GitHub branch %CURRENT_BRANCH%...
 git add -- "%LOG%" >>"%LOG%" 2>&1
 if errorlevel 1 (
     echo ERROR: Could not stage the report.
@@ -247,7 +247,7 @@ if errorlevel 1 (
     goto END_LOCAL
 )
 type "BuildReports\commit_%STAMP%.tmp"
-git push origin main > "BuildReports\push_%STAMP%.tmp" 2>&1
+git push origin "%CURRENT_BRANCH%" > "BuildReports\push_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
     type "BuildReports\push_%STAMP%.tmp"
     echo ERROR: Git push failed. The report commit is local only.
@@ -258,7 +258,7 @@ type "BuildReports\push_%STAMP%.tmp" >>"%LOG%"
 del "BuildReports\commit_%STAMP%.tmp" 2>nul
 del "BuildReports\push_%STAMP%.tmp" 2>nul
 set "PUBLISH_OK=PUSHED"
-echo [GIT_PUSH] SUCCESS - validation report was pushed to origin/main.>>"%LOG%"
+echo [GIT_PUSH] SUCCESS - validation report was pushed to origin/%CURRENT_BRANCH%.>>"%LOG%"
 rem Publish the explicit synchronization result as a second report-only commit.
 git add -- "%LOG%" >nul 2>&1
 if errorlevel 1 (
@@ -272,7 +272,7 @@ if errorlevel 1 (
     goto END_LOCAL
 )
 type "BuildReports\commit_%STAMP%.tmp"
-git push origin main > "BuildReports\push_%STAMP%.tmp" 2>&1
+git push origin "%CURRENT_BRANCH%" > "BuildReports\push_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
     type "BuildReports\push_%STAMP%.tmp"
     set "PUBLISH_OK=FIRST_PUSHED_SECOND_PUSH_FAILED"
@@ -286,8 +286,8 @@ del "BuildReports\push_%STAMP%.tmp" 2>nul
 echo.
 echo ================================================================
 echo Overall: %OVERALL%
-echo Debug build: %DEBUG_BUILD_OK%  Debug tests: %DEBUG_TEST_OK%
-echo Release build: %RELEASE_BUILD_OK%  Release tests: %RELEASE_TEST_OK%
+echo Debug build: !DEBUG_BUILD_OK!  Debug tests: !DEBUG_TEST_OK!
+echo Release build: !RELEASE_BUILD_OK!  Release tests: !RELEASE_TEST_OK!
 echo Report publication: %PUBLISH_OK%
 echo Log: %ROOT%%LOG%
 echo ================================================================
@@ -315,11 +315,12 @@ echo.>>"%LOG%"
 echo [RUN] %~1>>"%LOG%"
 call %RUN_CMD% >>"%LOG%" 2>&1
 set "RUN_RC=!ERRORLEVEL!"
-if !RUN_RC! EQU 0 (
-    echo [PASS] %~1
-    echo [PASS] %~1>>"%LOG%"
-) else (
-    echo [FAIL] %~1 (exit !RUN_RC!)
-    echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
-)
+if not "!RUN_RC!"=="0" goto RUN_FAILED
+echo [PASS] %~1
+echo [PASS] %~1>>"%LOG%"
+exit /b 0
+
+:RUN_FAILED
+echo [FAIL] %~1 (exit !RUN_RC!)
+echo [FAIL] %~1 (exit !RUN_RC!)>>"%LOG%"
 exit /b !RUN_RC!

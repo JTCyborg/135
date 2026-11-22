@@ -51,6 +51,8 @@ private:
     void updateProjectTitle();
     void saveProjectSettings();
     void loadProjectSettings();
+    void saveProjectArchive();
+    void loadProjectArchive();
     void appendLog(const QString& message);
     void calculateFilter();
     [[nodiscard]] p135::application::ReactorDesignInputs collectReactorDesignInputs() const;
