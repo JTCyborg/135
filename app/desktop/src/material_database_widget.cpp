@@ -23,6 +23,7 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
