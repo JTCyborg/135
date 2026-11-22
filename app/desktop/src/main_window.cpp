@@ -6292,6 +6292,26 @@ void MainWindow::calculateFilter()
     QString constructionBoundBhSourceStatus;
     QString constructionBoundMagneticWarning;
 
+    // Plot the pinned material curve independently of whether the operating-point
+    // solve can run. A missing/invalid geometry must not hide available material data.
+    if (acceptedPhysicalMagneticCandidate) {
+        const auto materialRevision = p135::infrastructure::sqlite::loadCoreMaterialRevision(
+            *materialStore_, acceptedConstructionInputs_->coreMaterial->revisionId);
+        if (materialRevision) {
+            constructionBoundBhModelStatus =
+                QString::fromStdString(materialRevision.value().bhCurveModelStatus);
+            constructionBoundBhSourceStatus =
+                QString::fromStdString(materialRevision.value().bhCurveStatus);
+            constructionBoundBhCurve.reserve(materialRevision.value().material.bhCurve.size());
+            for (const auto& point : materialRevision.value().material.bhCurve)
+                constructionBoundBhCurve.emplace_back(
+                    point.fieldStrength.si(), point.fluxDensity.si());
+        } else {
+            constructionBoundMagneticWarning = tr("Selected core material B-H data could not be loaded: %1")
+                .arg(QString::fromStdString(materialRevision.error().message));
+        }
+    }
+
     // Revision-bound magnetic analysis uses the exact accepted Construction
     // core dimensions and exact selected material revision. It is deliberately
     // separate from the legacy manual Ae/le diagnostic controls above.
