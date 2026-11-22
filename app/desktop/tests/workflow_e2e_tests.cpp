@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -805,6 +806,24 @@ private slots:
             QStringLiteral("harmonicSpectrumTable")));
         QVERIFY(!saved.contains(QStringLiteral("database")));
         QVERIFY(!saved.contains(QStringLiteral("calculationHistory")));
+
+        // Simulate a machine whose local material database does not contain the
+        // archived pinned revision. The revision ID must remain visible and must
+        // not be silently replaced with a seeded/default material.
+        QJsonObject modifiedArchive = saved;
+        QJsonObject projectSettings = saved.value(QStringLiteral("projectSettings")).toObject();
+        const QString missingRevisionId = QStringLiteral("MISSING-ARCHIVED-MATERIAL-REVISION");
+        projectSettings.insert(QStringLiteral("construction/construction_coreMaterial"), missingRevisionId);
+        modifiedArchive.insert(QStringLiteral("projectSettings"), projectSettings);
+        QJsonObject controls = saved.value(QStringLiteral("controls")).toObject();
+        QJsonObject coreMaterialState = controls.value(QStringLiteral("construction_coreMaterial")).toObject();
+        coreMaterialState.insert(QStringLiteral("data"), missingRevisionId);
+        coreMaterialState.insert(QStringLiteral("text"), QStringLiteral("Missing archived revision"));
+        controls.insert(QStringLiteral("construction_coreMaterial"), coreMaterialState);
+        modifiedArchive.insert(QStringLiteral("controls"), controls);
+        archiveFile.close();
+        QVERIFY(archiveFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        QCOMPARE(archiveFile.write(QJsonDocument(modifiedArchive).toJson(QJsonDocument::Indented)) > 0, true);
         archiveFile.close();
 
         customer->setText(QStringLiteral("MUTATED"));
@@ -854,6 +873,11 @@ private slots:
         QVERIFY(spectrum->item(0, 1));
         QCOMPARE(spectrum->item(0, 0)->text(), QStringLiteral("5"));
         QCOMPARE(spectrum->item(0, 1)->text(), QStringLiteral("12.5"));
+        auto* coreMaterial = window_->findChild<QComboBox*>(
+            QStringLiteral("construction_coreMaterial"));
+        QVERIFY(coreMaterial);
+        QCOMPARE(coreMaterial->currentData().toString(), missingRevisionId);
+        QVERIFY(coreMaterial->currentText().contains(QStringLiteral("NOT AVAILABLE")));
     }
 
     void twoDimensionalDrawingStageIsPresent()
