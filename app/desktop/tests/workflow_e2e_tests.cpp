@@ -283,6 +283,14 @@ private slots:
         QVERIFY2(results, "Calculation results table was not created");
         QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
 
+        auto* idealSizing = window_->findChild<QLabel*>(
+            QStringLiteral("idealSizingResult"));
+        QVERIFY2(idealSizing, "Automatic ideal sizing result label is missing");
+        QTRY_VERIFY_WITH_TIMEOUT(
+            idealSizing->text().contains(QStringLiteral("Gross Ae×Aw")),
+            10000);
+        QVERIFY(!idealSizing->text().contains(QStringLiteral("NOT CALCULATED")));
+
         // TEST-01 numeric regression: 400 V L-L, 50 Hz, 100 kvar, Wye,
         // 5th-harmonic tuning and Qf=50. These values are calculated from
         // the independent series-RLC sizing equations, not copied from UI text.
