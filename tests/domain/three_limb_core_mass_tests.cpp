@@ -1,5 +1,6 @@
 #include "p135/domain/three_limb_core_mass.hpp"
 
+#include <array>
 #include <cassert>
 #include <cmath>
 
