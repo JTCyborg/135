@@ -121,16 +121,17 @@ echo [CLEAN] No project output or diagnostic directories were deleted.>>"%LOG%"
 
 rem Never overwrite local source changes with a pull.
 echo.
-echo [2/6] Checking Git state and synchronizing main...
+echo [2/6] Checking Git state on the current branch...
 set "CURRENT_BRANCH="
 for /f %%B in ('git branch --show-current 2^>nul') do set "CURRENT_BRANCH=%%B"
 echo Current branch: %CURRENT_BRANCH%>>"%LOG%"
-if not "%CURRENT_BRANCH%"=="main" (
-    echo ERROR: Current branch is "%CURRENT_BRANCH%", expected "main".
-    echo [FATAL] Expected branch main; found %CURRENT_BRANCH%.>>"%LOG%"
+if not defined CURRENT_BRANCH (
+    echo ERROR: Detached HEAD state; switch to a named branch before validation.
+    echo [FATAL] Detached HEAD; no branch name available.>>"%LOG%"
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
+echo Validation branch: %CURRENT_BRANCH%>>"%LOG%"
 set "DIRTY="
 rem Ignore only local project data and diagnostic artifacts; source-code changes still stop the pull.
 rem A pull that conflicts with locally modified JSON remains safely rejected by Git.
@@ -150,12 +151,7 @@ if errorlevel 1 (
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
-set "RUN_CMD=git pull --ff-only origin main"
-call :RUN "Git pull --ff-only origin main"
-if errorlevel 1 (
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
+rem Do not pull or switch branches during validation. Test the exact checked-out commit.
 for /f %%H in ('git rev-parse HEAD') do set "SOURCE_COMMIT=%%H"
 echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
 
@@ -233,7 +229,7 @@ echo ==========================================================>>"%LOG%"
 
 rem Publish the report even if a build or test failed.
 echo.
-echo [6/6] Publishing validation report to GitHub...
+echo [6/6] Publishing validation report to GitHub branch %CURRENT_BRANCH%...
 git add -- "%LOG%" >>"%LOG%" 2>&1
 if errorlevel 1 (
     echo ERROR: Could not stage the report.
@@ -247,7 +243,7 @@ if errorlevel 1 (
     goto END_LOCAL
 )
 type "BuildReports\commit_%STAMP%.tmp"
-git push origin main > "BuildReports\push_%STAMP%.tmp" 2>&1
+git push origin "%CURRENT_BRANCH%" > "BuildReports\push_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
     type "BuildReports\push_%STAMP%.tmp"
     echo ERROR: Git push failed. The report commit is local only.
@@ -258,7 +254,7 @@ type "BuildReports\push_%STAMP%.tmp" >>"%LOG%"
 del "BuildReports\commit_%STAMP%.tmp" 2>nul
 del "BuildReports\push_%STAMP%.tmp" 2>nul
 set "PUBLISH_OK=PUSHED"
-echo [GIT_PUSH] SUCCESS - validation report was pushed to origin/main.>>"%LOG%"
+echo [GIT_PUSH] SUCCESS - validation report was pushed to origin/%CURRENT_BRANCH%.>>"%LOG%"
 rem Publish the explicit synchronization result as a second report-only commit.
 git add -- "%LOG%" >nul 2>&1
 if errorlevel 1 (
@@ -272,7 +268,7 @@ if errorlevel 1 (
     goto END_LOCAL
 )
 type "BuildReports\commit_%STAMP%.tmp"
-git push origin main > "BuildReports\push_%STAMP%.tmp" 2>&1
+git push origin "%CURRENT_BRANCH%" > "BuildReports\push_%STAMP%.tmp" 2>&1
 if errorlevel 1 (
     type "BuildReports\push_%STAMP%.tmp"
     set "PUBLISH_OK=FIRST_PUSHED_SECOND_PUSH_FAILED"
