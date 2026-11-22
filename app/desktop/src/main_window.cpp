@@ -925,8 +925,6 @@ MainWindow::MainWindow(QWidget* parent)
         updateProjectTitle();
         tabs_->setCurrentIndex(0);
     });
-    toolbar->addAction(tr("Save project"), this, [this] { saveProjectArchive(); });
-    toolbar->addAction(tr("Load project"), this, [this] { loadProjectArchive(); });
     // Page navigation belongs to the tab bar; keep only workflow actions here.
     toolbar->addSeparator();
     toolbar->addAction(tr("Calculate"), this, [this] {
