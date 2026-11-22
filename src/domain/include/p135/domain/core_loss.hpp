@@ -80,6 +80,9 @@ struct ThreeLimbCoreLossRequest {
     std::array<units::TemperatureKelvin, 7> temperatures{};
     std::array<units::Mass, 7> regionMasses{};
     std::array<std::string, 7> regionMassSourceReferences{};
+    /// Independent review status for the physical mass calculation. A
+    /// provenance string alone never promotes a mass estimate to VERIFIED.
+    std::string coreMassVerificationStatus{"NOT_VERIFIED"};
 };
 
 struct ThreeLimbCoreLossResult {
