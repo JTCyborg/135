@@ -4,6 +4,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QGroupBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFile>
@@ -128,16 +129,16 @@ private slots:
         QVERIFY(description);
 
         QCOMPARE(mode->currentData().toString(), QStringLiteral("AUTO"));
-        QVERIFY(!advanced->isVisible());
-        QVERIFY(!components->isVisible());
+        QVERIFY(advanced->isHidden());
+        QVERIFY(components->isHidden());
 
         mode->setCurrentIndex(1);
-        QTRY_VERIFY(advanced->isVisible());
-        QVERIFY(components->isVisible());
+        QTRY_VERIFY(!advanced->isHidden());
+        QVERIFY(!components->isHidden());
         QCOMPARE(mode->currentData().toString(), QStringLiteral("MANUAL"));
 
         mode->setCurrentIndex(0);
-        QTRY_VERIFY(!advanced->isVisible());
+        QTRY_VERIFY(advanced->isHidden());
         QVERIFY(!components->isVisible());
         QCOMPARE(mode->currentData().toString(), QStringLiteral("AUTO"));
     }
