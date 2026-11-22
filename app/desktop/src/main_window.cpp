@@ -6741,6 +6741,44 @@ void MainWindow::calculateFilter()
         appendLog(threeLimbOperatingPointWarning);
     }
 
+    // Construction-bound magnetic results were previously plotted and persisted,
+    // but omitted from the visible calculation-results table.
+    if (constructionBoundPeakFluxDensityT) {
+        const auto& peakB = *constructionBoundPeakFluxDensityT;
+        addResult(tr("Construction operating-point peak B — limb A"), peakB[0], tr("T"));
+        addResult(tr("Construction operating-point peak B — limb B"), peakB[1], tr("T"));
+        addResult(tr("Construction operating-point peak B — limb C"), peakB[2], tr("T"));
+        addResult(tr("Construction operating-point peak B — top yoke A-B"), peakB[3], tr("T"));
+        addResult(tr("Construction operating-point peak B — top yoke B-C"), peakB[4], tr("T"));
+        addResult(tr("Construction operating-point peak B — bottom yoke A-B"), peakB[5], tr("T"));
+        addResult(tr("Construction operating-point peak B — bottom yoke B-C"), peakB[6], tr("T"));
+        addTextResult(tr("Construction magnetic verification"),
+            constructionBoundWithinMeasuredBhCurve
+                ? tr("VERIFIED_CONVERGED — all seven core sections remain within the measured B-H dataset.")
+                : tr("EXTRAPOLATED_NOT_VERIFIED — at least one core section is outside the measured B-H dataset."));
+    } else if (!threeLimbOperatingPoint && !threeLimbSweepValid &&
+               !magneticSweepValid) {
+        const QString reason = !constructionBoundMagneticWarning.isEmpty()
+            ? constructionBoundMagneticWarning
+            : !threeLimbOperatingPointWarning.isEmpty()
+                ? threeLimbOperatingPointWarning
+                : !threeLimbModelWarning.isEmpty()
+                    ? threeLimbModelWarning
+                    : !magneticModelWarning.isEmpty()
+                        ? magneticModelWarning
+                        : tr("Validated magnetic geometry, winding turns, measured B-H data and operating current waveform are required.");
+        addTextResult(tr("Core magnetic operating point"), tr("NOT_VERIFIED — %1").arg(reason));
+    }
+
+    if (!impedanceResult) {
+        addTextResult(tr("Bus impedance scan"), tr(
+            "NOT_VERIFIED — enter non-zero per-phase Thevenin source resistance R or inductance L, then recalculate."));
+    }
+    if (!harmonicResult) {
+        addTextResult(tr("Harmonic analysis"), tr(
+            "NOT_VERIFIED — harmonic analysis requires non-zero source R/L and a valid non-fundamental voltage spectrum or load-current injection."));
+    }
+
     if (impedanceResult) {
         addResult(tr("Source/filter impedance scan points"),
                   static_cast<double>(impedanceResult->points.size()), tr("points"));
