@@ -250,6 +250,227 @@ QString typedComponentSnapshot(const QString& recordType, QWidget* parent,
 }
 }
 
+
+namespace {
+bool editBhCurvePayload(QWidget* parent, QPlainTextEdit* payloadEditor)
+{
+    if (!payloadEditor) return false;
+    QJsonParseError parseError;
+    QJsonDocument currentDocument = QJsonDocument::fromJson(
+        payloadEditor->toPlainText().toUtf8(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !currentDocument.isObject()) {
+        QMessageBox::warning(parent, QObject::tr("B-H curve import"),
+            QObject::tr("The material snapshot must be a valid JSON object before importing a B-H curve."));
+        return false;
+    }
+    QJsonObject root = currentDocument.object();
+    const QJsonObject existingCurve = root.value(QStringLiteral("bhCurve")).toObject();
+    const QJsonObject existingProvenance = root.value(QStringLiteral("bhCurveProvenance")).toObject();
+    const QJsonObject existingQuality = root.value(QStringLiteral("dataQuality")).toObject();
+
+    QDialog dialog(parent);
+    dialog.setWindowTitle(QObject::tr("Import tabulated B-H curve"));
+    dialog.resize(760, 720);
+    auto* form = new QFormLayout(&dialog);
+
+    auto* curveType = new QComboBox(&dialog);
+    curveType->addItem(QObject::tr("DC initial magnetization curve"),
+                       QStringLiteral("DC initial magnetization curve"));
+    curveType->addItem(QObject::tr("Dynamic magnetization curve"),
+                       QStringLiteral("dynamic magnetization"));
+    const int existingType = curveType->findData(existingCurve.value(QStringLiteral("curveType")));
+    if (existingType >= 0) curveType->setCurrentIndex(existingType);
+
+    auto* frequency = new QDoubleSpinBox(&dialog);
+    frequency->setRange(0.0, 1.0e9);
+    frequency->setDecimals(3);
+    frequency->setSuffix(QObject::tr(" Hz"));
+    frequency->setValue(existingCurve.value(QStringLiteral("frequency_Hz")).toDouble(50.0));
+
+    auto* temperature = new QDoubleSpinBox(&dialog);
+    temperature->setRange(1.0, 2000.0);
+    temperature->setDecimals(2);
+    temperature->setSuffix(QObject::tr(" K"));
+    temperature->setValue(existingCurve.value(QStringLiteral("temperature_K")).toDouble(293.15));
+
+    auto* qualityStatus = new QComboBox(&dialog);
+    qualityStatus->addItem(QObject::tr("Manufacturer tabulated data (source table)"),
+                           QStringLiteral("MANUFACTURER_TABULATED"));
+    qualityStatus->addItem(QObject::tr("Measured tabular dataset"),
+                           QStringLiteral("MEASURED_TABULAR"));
+    qualityStatus->addItem(QObject::tr("Approximate digitization from graph — exploratory only"),
+                           QStringLiteral("APPROXIMATE_DIGITIZATION"));
+    const int qualityIndex = qualityStatus->findData(
+        existingQuality.value(QStringLiteral("bhCurveStatus")));
+    if (qualityIndex >= 0) qualityStatus->setCurrentIndex(qualityIndex);
+
+    auto* sourceDocument = new QLineEdit(
+        existingProvenance.value(QStringLiteral("sourceDocument")).toString(), &dialog);
+    sourceDocument->setPlaceholderText(QObject::tr("Manufacturer datasheet / report identifier"));
+    auto* sourcePage = new QLineEdit(
+        existingProvenance.value(QStringLiteral("sourcePage")).toString(), &dialog);
+    sourcePage->setPlaceholderText(QObject::tr("Page, table or figure; use NOT_STATED_IN_SOURCE if absent"));
+    auto* measurementMethod = new QLineEdit(
+        existingProvenance.value(QStringLiteral("measurementMethod")).toString(), &dialog);
+    measurementMethod->setPlaceholderText(QObject::tr("e.g. manufacturer's stated measurement method"));
+    auto* sampleDirection = new QLineEdit(
+        existingProvenance.value(QStringLiteral("sampleDirection")).toString(), &dialog);
+    sampleDirection->setPlaceholderText(QObject::tr("e.g. rolling direction / transverse / NOT_STATED_IN_SOURCE"));
+    auto* notes = new QLineEdit(
+        existingProvenance.value(QStringLiteral("notes")).toString(), &dialog);
+
+    auto* points = new QPlainTextEdit(&dialog);
+    points->setPlaceholderText(QObject::tr(
+        "One point per line: H_A_per_m, B_T\n"
+        "Example:\n0, 0\n25, 0.12\n50, 0.24\n100, 0.38\n"
+        "Use source tabular values only for a verified source status. Header rows and # comments are ignored."));
+    points->setMinimumHeight(250);
+    const auto oldPoints = existingCurve.value(QStringLiteral("points")).toArray();
+    if (!oldPoints.isEmpty()) {
+        QStringList lines;
+        for (const auto& item : oldPoints) {
+            const auto point = item.toObject();
+            lines.push_back(QStringLiteral("%1, %2")
+                .arg(point.value(QStringLiteral("fieldStrength_A_per_m")).toDouble(), 0, 'g', 16)
+                .arg(point.value(QStringLiteral("fluxDensity_T")).toDouble(), 0, 'g', 16));
+        }
+        points->setPlainText(lines.join(QLatin1Char('\n')));
+    }
+
+    form->addRow(QObject::tr("Curve type"), curveType);
+    form->addRow(QObject::tr("Frequency"), frequency);
+    form->addRow(QObject::tr("Temperature"), temperature);
+    form->addRow(QObject::tr("Data quality"), qualityStatus);
+    form->addRow(QObject::tr("Source document"), sourceDocument);
+    form->addRow(QObject::tr("Source page / table"), sourcePage);
+    form->addRow(QObject::tr("Measurement method"), measurementMethod);
+    form->addRow(QObject::tr("Sample direction"), sampleDirection);
+    form->addRow(QObject::tr("Notes"), notes);
+    form->addRow(QObject::tr("B-H points (H, B)"), points);
+
+    QObject::connect(curveType, &QComboBox::currentIndexChanged, &dialog,
+        [curveType, frequency](int) {
+            const bool dc = curveType->currentData().toString() ==
+                QStringLiteral("DC initial magnetization curve");
+            frequency->setEnabled(!dc);
+            if (dc) frequency->setValue(0.0);
+            else if (frequency->value() <= 0.0) frequency->setValue(50.0);
+        });
+    const bool initialDc = curveType->currentData().toString() ==
+        QStringLiteral("DC initial magnetization curve");
+    frequency->setEnabled(!initialDc);
+    if (initialDc) frequency->setValue(0.0);
+
+    auto* buttons = new QDialogButtonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+    form->addRow(buttons);
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    if (dialog.exec() != QDialog::Accepted) return false;
+
+    const QString source = sourceDocument->text().trimmed();
+    if (source.isEmpty()) {
+        QMessageBox::warning(parent, QObject::tr("B-H curve import"),
+            QObject::tr("Source document is required. A curve without traceable source cannot be imported."));
+        return false;
+    }
+    const QString curveKind = curveType->currentData().toString();
+    if ((curveKind == QStringLiteral("DC initial magnetization curve") && frequency->value() != 0.0) ||
+        (curveKind != QStringLiteral("DC initial magnetization curve") && frequency->value() <= 0.0) ||
+        temperature->value() <= 0.0) {
+        QMessageBox::warning(parent, QObject::tr("B-H curve import"),
+            QObject::tr("DC curves require 0 Hz; dynamic curves require positive frequency; temperature must be positive."));
+        return false;
+    }
+
+    QJsonArray curvePoints;
+    double previousH = -1.0;
+    double previousB = -1.0;
+    int lineNumber = 0;
+    for (const QString& rawLine : points->toPlainText().split(QLatin1Char('\n'))) {
+        ++lineNumber;
+        const QString line = rawLine.trimmed();
+        if (line.isEmpty() || line.startsWith(QLatin1Char('#'))) continue;
+        const auto columns = line.split(QRegularExpression(QStringLiteral("[,;\\t]")),
+                                        Qt::KeepEmptyParts);
+        if (columns.size() != 2) {
+            // A single textual header row is permitted; malformed numeric rows are not.
+            if (curvePoints.isEmpty() &&
+                (line.contains(QStringLiteral("H"), Qt::CaseInsensitive) ||
+                 line.contains(QStringLiteral("B"), Qt::CaseInsensitive)))
+                continue;
+            QMessageBox::warning(parent, QObject::tr("Invalid B-H table"),
+                QObject::tr("Line %1 must contain exactly two columns: H_A_per_m,B_T.").arg(lineNumber));
+            return false;
+        }
+        bool hOk = false, bOk = false;
+        const double h = columns[0].trimmed().toDouble(&hOk);
+        const double b = columns[1].trimmed().toDouble(&bOk);
+        if (!hOk || !bOk || !std::isfinite(h) || !std::isfinite(b) ||
+            h < 0.0 || b < 0.0 || h <= previousH || b < previousB) {
+            QMessageBox::warning(parent, QObject::tr("Invalid B-H table"),
+                QObject::tr("Line %1 must contain finite non-negative values; H must increase strictly and B must not decrease.")
+                    .arg(lineNumber));
+            return false;
+        }
+        curvePoints.append(QJsonObject{
+            {QStringLiteral("fieldStrength_A_per_m"), h},
+            {QStringLiteral("fluxDensity_T"), b}
+        });
+        previousH = h;
+        previousB = b;
+    }
+    if (curvePoints.size() < 2) {
+        QMessageBox::warning(parent, QObject::tr("Invalid B-H table"),
+            QObject::tr("At least two valid B-H points are required."));
+        return false;
+    }
+
+    const QString status = qualityStatus->currentData().toString();
+    const QString captureMethod = status == QStringLiteral("MANUFACTURER_TABULATED")
+        ? QStringLiteral("DIRECT_TABULAR_IMPORT")
+        : status == QStringLiteral("MEASURED_TABULAR")
+            ? QStringLiteral("MEASURED_TABULAR_IMPORT")
+            : QStringLiteral("APPROXIMATE_DIGITIZATION_FROM_GRAPH");
+    root.insert(QStringLiteral("bhCurve"), QJsonObject{
+        {QStringLiteral("curveType"), curveKind},
+        {QStringLiteral("frequency_Hz"), frequency->value()},
+        {QStringLiteral("temperature_K"), temperature->value()},
+        {QStringLiteral("points"), curvePoints}
+    });
+    root.insert(QStringLiteral("bhCurveProvenance"), QJsonObject{
+        {QStringLiteral("sourceDocument"), source},
+        {QStringLiteral("sourcePage"), sourcePage->text().trimmed().isEmpty()
+            ? QStringLiteral("NOT_STATED_IN_SOURCE") : sourcePage->text().trimmed()},
+        {QStringLiteral("measurementMethod"), measurementMethod->text().trimmed().isEmpty()
+            ? QStringLiteral("NOT_STATED_IN_SOURCE") : measurementMethod->text().trimmed()},
+        {QStringLiteral("sampleDirection"), sampleDirection->text().trimmed().isEmpty()
+            ? QStringLiteral("NOT_STATED_IN_SOURCE") : sampleDirection->text().trimmed()},
+        {QStringLiteral("captureMethod"), captureMethod},
+        {QStringLiteral("notes"), notes->text().trimmed().isEmpty()
+            ? QStringLiteral("No additional notes supplied.") : notes->text().trimmed()}
+    });
+    QJsonObject quality = existingQuality;
+    quality.insert(QStringLiteral("sourceStatus"),
+        status == QStringLiteral("MEASURED_TABULAR")
+            ? QStringLiteral("MEASURED_RESEARCH_DATASET")
+            : QStringLiteral("MANUFACTURER_DATASHEET"));
+    quality.insert(QStringLiteral("bhCurveStatus"), status);
+    if (!quality.contains(QStringLiteral("coreLossStatus")))
+        quality.insert(QStringLiteral("coreLossStatus"), QStringLiteral("NOT_PROVIDED"));
+    quality.insert(QStringLiteral("designReleaseStatus"), QStringLiteral("NOT_VERIFIED"));
+    if (!quality.contains(QStringLiteral("notes")) ||
+        quality.value(QStringLiteral("notes")).toString().isEmpty()) {
+        quality.insert(QStringLiteral("notes"),
+            QStringLiteral("B-H curve imported with source provenance. Material and complete design remain NOT_VERIFIED until independently reviewed."));
+    }
+    root.insert(QStringLiteral("dataQuality"), quality);
+    payloadEditor->setPlainText(QString::fromUtf8(
+        QJsonDocument(root).toJson(QJsonDocument::Indented)));
+    return true;
+}
+} // namespace
+
 MaterialDatabaseWidget::MaterialDatabaseWidget(SqliteMaterialRevisionStore& store, QWidget* parent)
     : QWidget(parent), store_(store)
 {
@@ -427,6 +648,16 @@ void MaterialDatabaseWidget::createOrEditMaterial()
     form->addRow(typedEditor);
     typedEditor->setEnabled(type->currentData().toString() == "capacitor" ||
                             type->currentData().toString() == "resistor");
+    auto* bhImport = new QPushButton(tr("Import B-H table (H, B)"), &dialog);
+    bhImport->setObjectName(QStringLiteral("importBhCurveButton"));
+    form->addRow(bhImport);
+    bhImport->setEnabled(type->currentData().toString() == "core-material");
+    connect(type, &QComboBox::currentIndexChanged, &dialog, [type, bhImport] {
+        bhImport->setEnabled(type->currentData().toString() == "core-material");
+    });
+    connect(bhImport, &QPushButton::clicked, &dialog, [&dialog, payload] {
+        (void)editBhCurvePayload(&dialog, payload);
+    });
     connect(type, &QComboBox::currentIndexChanged, &dialog, [type, typedEditor] {
         const auto selectedType = type->currentData().toString();
         typedEditor->setEnabled(selectedType == "capacitor" || selectedType == "resistor");
