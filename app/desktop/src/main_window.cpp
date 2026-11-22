@@ -1079,8 +1079,8 @@ void MainWindow::saveProjectSettings()
         } else if (const auto* check = qobject_cast<QCheckBox*>(widget)) {
             state.insert("type", "check"); state.insert("value", check->isChecked());
         } else if (const auto* table = qobject_cast<QTableWidget*>(widget)) {
-            if (name != QStringLiteral("harmonicSpectrumTable") &&
-                name != QStringLiteral("harmonicCurrentTable")) continue;
+            if (name != QStringLiteral("filterVoltageHarmonics") &&
+                name != QStringLiteral("filterLoadCurrentHarmonics")) continue;
             state.insert("type", "table"); state.insert("rows", table->rowCount());
             state.insert("columns", table->columnCount());
             QJsonArray cells;
@@ -1149,8 +1149,8 @@ void MainWindow::saveProjectArchive()
             state.insert(QStringLiteral("type"), QStringLiteral("check"));
             state.insert(QStringLiteral("value"), check->isChecked());
         } else if (const auto* table = qobject_cast<QTableWidget*>(widget)) {
-            const bool isInputTable = name == QStringLiteral("harmonicSpectrumTable") ||
-                                      name == QStringLiteral("harmonicCurrentTable");
+            const bool isInputTable = name == QStringLiteral("filterVoltageHarmonics") ||
+                                      name == QStringLiteral("filterLoadCurrentHarmonics");
             if (!isInputTable) continue;
             state.insert(QStringLiteral("type"), QStringLiteral("table"));
             state.insert(QStringLiteral("rows"), table->rowCount());
