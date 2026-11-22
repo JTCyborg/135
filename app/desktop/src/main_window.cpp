@@ -3856,7 +3856,7 @@ QWidget* MainWindow::createResultsPage()
     resultsBusImpedancePlot_ = new PlotWidget;
     resultsBusImpedancePlot_->setObjectName(QStringLiteral("resultsBusImpedancePlot"));
     resultsBusImpedancePlot_->setProperty("debugImagePath", projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_bus_impedance.png")));
-    resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"), true, tr("NOT_VERIFIED: enter non-zero per-phase Thevenin source resistance R or inductance L to calculate the bus-impedance scan."));
+    resultsBusImpedancePlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"), tr("Impedance magnitude (Ω)"), true, tr("NOT_CALCULATED: run the filter calculation to generate the filter-bank impedance scan."));
     resultsBusImpedancePlot_->setMinimumHeight(250);
     resultsBusImpedancePlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBusImpedancePlot_);
@@ -6774,8 +6774,13 @@ void MainWindow::calculateFilter()
     }
 
     if (!impedanceResult) {
-        addTextResult(tr("Bus impedance scan"), tr(
-            "NOT_VERIFIED — enter non-zero per-phase Thevenin source resistance R or inductance L, then recalculate."));
+        addTextResult(tr("Filter-bank impedance scan"), tr(
+            "NOT_VERIFIED — the frequency-response solver did not return a valid scan. See the calculation log."));
+    }
+    if (!hasSourceImpedance) {
+        addTextResult(tr("Source-limited bus impedance / resonance"),
+            tr("NOT_VERIFIED — source R/L is zero. The graph shows filter-bank driving-point impedance; "
+               "bus impedance and source-limited parallel-resonance assessment require source R or L."));
     }
     if (!harmonicResult) {
         addTextResult(tr("Harmonic analysis"), tr(
@@ -6912,7 +6917,9 @@ void MainWindow::calculateFilter()
         calculationSummary += tr(" Selected material revisions were resolved from the immutable SQLite catalog and evaluated by the thermal bridge.");
     calculationSummary += tr(" Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated.");
     if (!impedanceResult)
-        calculationSummary += tr(" Resonance-frequency zones NOT_VERIFIED: source impedance R/L is required.");
+        calculationSummary += tr(" Filter-bank impedance scan NOT_VERIFIED: the frequency-response solver failed.");
+    else if (!hasSourceImpedance)
+        calculationSummary += tr(" Filter-bank impedance is plotted. Source-limited bus impedance and parallel-resonance zones remain NOT_VERIFIED because source R/L is zero.");
     else if (resonanceBands.empty())
         calculationSummary += tr(" No bounded -3 dB parallel-resonance zone was identified within the scanned frequency range.");
     else
@@ -7199,7 +7206,7 @@ void MainWindow::calculateFilter()
                 ? std::vector<PlotCurve>{busImpedanceCurve} : std::vector<PlotCurve>{},
                 tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"), true,
                 impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
-                                : tr("NOT_VERIFIED: bus impedance requires non-zero per-phase Thevenin source R or L. Set Source resistance or Source inductance, then recalculate."));
+                                : tr("NOT_VERIFIED: filter-bank impedance scan failed. See the calculation log for the solver error."));
             resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
         }
         QJsonObject resultSnapshot;
