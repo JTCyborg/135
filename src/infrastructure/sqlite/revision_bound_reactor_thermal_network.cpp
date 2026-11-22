@@ -45,8 +45,14 @@ analyzeRevisionBoundReactorThermalNetwork(
     thermalRequest.windingLossSourceReference =
         "revision-bound-copper-loss:" + conductorSnapshot.revisionId +
         "#" + conductorSnapshot.contentHash;
+    const bool coreLossQualityAcceptable =
+        coreSnapshot.coreLossStatus == "MANUFACTURER_TABULATED" ||
+        coreSnapshot.coreLossStatus == "MEASURED_TABULAR";
     thermalRequest.coreMaterialDesignReleaseStatus =
-        coreSnapshot.designReleaseStatus;
+        coreSnapshot.designReleaseStatus == "VERIFIED" && coreLossQualityAcceptable
+            ? "VERIFIED"
+            : "NOT_VERIFIED (designReleaseStatus=" + coreSnapshot.designReleaseStatus +
+              "; coreLossStatus=" + coreSnapshot.coreLossStatus + ")";
     thermalRequest.conductorMaterialDesignReleaseStatus =
         conductorSnapshot.designReleaseStatus;
 
