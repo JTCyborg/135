@@ -7331,6 +7331,16 @@ void MainWindow::calculateFilter()
             corePlotTooltip = tr("Single-frequency diagnostic sweep using the manually supplied magnetic model. "
                 "It is separate from the Construction-bound multi-harmonic operating point.");
         } else {
+            // Keep the four legacy section series present even when no verified
+            // magnetic inputs exist. Their point lists stay empty; the plot's
+            // NOT_VERIFIED message explains which inputs are missing. This
+            // preserves the public plot-data contract used by the TEST-01 E2E.
+            coreCurves = {
+                PlotCurve{tr("Limb A |B|"), {}},
+                PlotCurve{tr("Limb B |B|"), {}},
+                PlotCurve{tr("Limb C |B|"), {}},
+                PlotCurve{tr("Maximum yoke |B|"), {}}
+            };
             coreEmptyMessage = !constructionBoundMagneticWarning.isEmpty()
                 ? constructionBoundMagneticWarning
                 : !threeLimbOperatingPointWarning.isEmpty()
