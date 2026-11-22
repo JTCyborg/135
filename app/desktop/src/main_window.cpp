@@ -6777,9 +6777,11 @@ void MainWindow::calculateFilter()
         addResult(tr("Construction operating-point peak B — bottom yoke A-B"), peakB[5], tr("T"));
         addResult(tr("Construction operating-point peak B — bottom yoke B-C"), peakB[6], tr("T"));
         addTextResult(tr("Construction magnetic verification"),
-            constructionBoundWithinMeasuredBhCurve
-                ? tr("VERIFIED_CONVERGED — all seven core sections remain within the measured B-H dataset.")
-                : tr("EXTRAPOLATED_NOT_VERIFIED — at least one core section is outside the measured B-H dataset."));
+            constructionBoundUsedEstimatedBhModel
+                ? tr("ESTIMATED_MODEL_CONVERGED_NOT_VERIFIED — calculated B-H branch from sparse anchors; not measured data.")
+                : constructionBoundWithinMeasuredBhCurve
+                    ? tr("VERIFIED_CONVERGED — all seven core sections remain within the measured B-H dataset.")
+                    : tr("EXTRAPOLATED_NOT_VERIFIED — at least one core section is outside the measured B-H dataset."));
     } else if (!threeLimbOperatingPoint && !threeLimbSweepValid &&
                !magneticSweepValid) {
         const QString reason = !constructionBoundMagneticWarning.isEmpty()
@@ -7268,11 +7270,15 @@ void MainWindow::calculateFilter()
         if (constructionBoundPeakFluxDensityT) {
             const auto& peakB = *constructionBoundPeakFluxDensityT;
             constructionBoundOperatingSnapshot.insert(QStringLiteral("status"),
-                constructionBoundWithinMeasuredBhCurve
-                    ? QStringLiteral("VERIFIED_CONVERGED")
-                    : QStringLiteral("EXTRAPOLATED_NOT_VERIFIED"));
-            constructionBoundOperatingSnapshot.insert(QStringLiteral("withinMeasuredBhCurve"),
+                constructionBoundUsedEstimatedBhModel
+                    ? QStringLiteral("ESTIMATED_MODEL_CONVERGED_NOT_VERIFIED")
+                    : constructionBoundWithinMeasuredBhCurve
+                        ? QStringLiteral("VERIFIED_CONVERGED")
+                        : QStringLiteral("EXTRAPOLATED_NOT_VERIFIED"));
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("withinBhCurveRange"),
                 constructionBoundWithinMeasuredBhCurve);
+            constructionBoundOperatingSnapshot.insert(QStringLiteral("estimatedBhModel"),
+                constructionBoundUsedEstimatedBhModel);
             constructionBoundOperatingSnapshot.insert(QStringLiteral("limbA_peak_B_T"), peakB[0]);
             constructionBoundOperatingSnapshot.insert(QStringLiteral("limbB_peak_B_T"), peakB[1]);
             constructionBoundOperatingSnapshot.insert(QStringLiteral("limbC_peak_B_T"), peakB[2]);
@@ -7518,6 +7524,11 @@ void MainWindow::calculateFilter()
                 "and combined harmonic operating waveform. X-axis indices: 1 Limb A, 2 Limb B, 3 Limb C, "
                 "4 Top yoke A-B, 5 Top yoke B-C, 6 Bottom yoke A-B, 7 Bottom yoke B-C. "
                 "These are discrete core sections, not a frequency-response curve.");
+            if (constructionBoundUsedEstimatedBhModel) {
+                corePlotTitle += tr(" — ESTIMATED B-H / NOT_VERIFIED");
+                corePlotTooltip += tr(" The solver used an estimated B-H branch from sparse anchors; "
+                    "the plotted operating point is exploratory and NOT_VERIFIED.");
+            }
             if (!constructionBoundWithinMeasuredBhCurve)
                 corePlotTooltip += tr(" At least one section is outside the measured B-H curve; values are extrapolated and NOT_VERIFIED.");
         } else if (threeLimbOperatingPoint) {
