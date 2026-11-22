@@ -11,6 +11,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QAbstractButton>
 #include <QAction>
 #include <QMenu>
 #include <QMenuBar>
