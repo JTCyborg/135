@@ -68,10 +68,9 @@ Result<FrequencyResponseResult> analyzeFrequencyResponse(
         return Result<FrequencyResponseResult>::failure(
             invalid("Unsupported filter connection."));
     if (!finiteNonNegative(sourceResistance) ||
-        !finiteNonNegative(sourceInductance) ||
-        (sourceResistance == 0.0 && sourceInductance == 0.0))
+        !finiteNonNegative(sourceInductance))
         return Result<FrequencyResponseResult>::failure(
-            invalid("Source resistance and inductance must be finite, non-negative, and not both zero."));
+            invalid("Source resistance and inductance must be finite and non-negative."));
     if (!finitePositive(start) || !finitePositive(stop) || stop < start)
         return Result<FrequencyResponseResult>::failure(
             invalid("Scan frequencies must be finite, positive, and stop >= start."));
