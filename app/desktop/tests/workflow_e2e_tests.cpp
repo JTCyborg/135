@@ -226,14 +226,17 @@ private slots:
                 QStringLiteral("importBhCurveButton"));
             auto* payload = materialDialog->findChild<QPlainTextEdit*>(
                 QStringLiteral("materialPayloadJson"));
+            auto* materialId = materialDialog->findChild<QLineEdit*>(
+                QStringLiteral("materialId"));
             auto* coreEditor = materialDialog->findChild<QPushButton*>(
                 QStringLiteral("coreMaterialEditorButton"));
-            if (!import || !import->isEnabled() || !payload ||
+            if (!import || !import->isEnabled() || !payload || !materialId ||
                 !coreEditor || !coreEditor->isEnabled()) {
                 materialDialog->reject();
                 QFAIL("New core material dialog is missing the core editor, B-H import action or payload editor");
                 return;
             }
+            materialId->setText(QStringLiteral("MAT-TEST-CORE-001"));
             QTimer::singleShot(0, [this, materialDialog] {
                 auto* coreDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
                 if (!coreDialog) {
