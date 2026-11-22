@@ -340,8 +340,15 @@ protected:
         // value accidentally. Explicit editing and the spin buttons remain enabled.
         if (event->type() == QEvent::Wheel) return true;
 
-        if (event->type() == QEvent::FocusIn ||
-            event->type() == QEvent::MouseButtonPress) {
+        if ((event->type() == QEvent::Polish || event->type() == QEvent::Show) &&
+            field->styleSheet().isEmpty()) {
+            field->setStyleSheet(
+                "QAbstractSpinBox, QComboBox { background-color: #eef8f0; "
+                "border: 1px solid #78a987; border-radius: 3px; padding: 2px 4px; }"
+                "QAbstractSpinBox:disabled, QComboBox:disabled { "
+                "background-color: #eeeeee; color: #888888; border: 1px solid #cccccc; }");
+        } else if (event->type() == QEvent::FocusIn ||
+                   event->type() == QEvent::MouseButtonPress) {
             field->setProperty("p135ActiveInput", true);
             field->setStyleSheet(
                 "QAbstractSpinBox, QComboBox { background-color: #eef8f0; "
