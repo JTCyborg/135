@@ -594,6 +594,52 @@ private slots:
         QTest::mouseClick(confirmCalculation, Qt::LeftButton);
         QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), 4, 5000);
 
+        // Compare two persisted solver snapshots through the same History UI
+        // used by an operator. The test requires actual frequency-sweep samples
+        // from both records; rendering an empty diagnostic chart is not enough.
+        tabs->setCurrentIndex(6);
+        QTRY_COMPARE(tabs->currentIndex(), 6);
+        auto* historyTable = window_->findChild<QTableWidget*>();
+        QVERIFY(historyTable);
+        auto* refreshHistory = window_->findChild<QPushButton*>(
+            QStringLiteral("historyRefreshButton"));
+        if (refreshHistory)
+            QTest::mouseClick(refreshHistory, Qt::LeftButton);
+        QTRY_VERIFY_WITH_TIMEOUT(historyTable->rowCount() >= 2, 5000);
+        historyTable->clearSelection();
+        historyTable->selectRow(0);
+        historyTable->selectRow(1);
+        QCOMPARE(historyTable->selectionModel()->selectedRows().size(), 2);
+        auto* historyMetric = window_->findChild<QComboBox*>(
+            QStringLiteral("historyPlotMetric"));
+        QVERIFY(historyMetric);
+        historyMetric->setCurrentIndex(0);
+        auto* compareHistory = window_->findChild<QPushButton*>(
+            QStringLiteral("compareHistoryGraphsButton"));
+        QVERIFY(compareHistory);
+        QTest::mouseClick(compareHistory, Qt::LeftButton);
+        auto* historyComparison = window_->findChild<QWidget*>(
+            QStringLiteral("historyComparisonPlot"));
+        QVERIFY(historyComparison);
+        const auto comparedCurves = historyComparison->property("plotCurves").toList();
+        QCOMPARE(comparedCurves.size(), 2);
+        for (const auto& curveValue : comparedCurves) {
+            const auto points = curveValue.toMap()
+                .value(QStringLiteral("points")).toList();
+            QVERIFY2(points.size() >= 2,
+                "History comparison must plot at least two real solver samples per calculation.");
+            for (const auto& pointValue : points) {
+                const auto point = pointValue.toList();
+                QCOMPARE(point.size(), 2);
+                QVERIFY(std::isfinite(point[0].toDouble()) && point[0].toDouble() > 0.0);
+                QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
+            }
+        }
+        QVERIFY(window_->findChild<QPlainTextEdit*>()->toPlainText()
+            .contains(QStringLiteral("Graph comparison:")));
+        tabs->setCurrentIndex(4);
+        QTRY_COMPARE(tabs->currentIndex(), 4);
+
         auto* generateCad = window_->findChild<QPushButton*>(
             QStringLiteral("generatePreliminaryCad"));
         QVERIFY(generateCad);
