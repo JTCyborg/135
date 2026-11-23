@@ -432,6 +432,8 @@ public:
         emptyMessage_ = std::move(emptyMessage);
         barChart_ = barChart;
         allowNegativeY_ = allowNegativeY;
+        setProperty("plotXAxisLabel", xLabel_);
+        setProperty("plotYAxisLabel", yLabel_);
         setProperty("plotBarChart", barChart_);
         setProperty("plotAllowsNegativeY", allowNegativeY_);
         QVariantList serializedCurves;
@@ -704,7 +706,6 @@ protected:
             -std::numeric_limits<double>::infinity(),
             -std::numeric_limits<double>::infinity()
         };
-        std::size_t markerLabelIndex = 0;
         for (const auto& marker : frequencyMarkers_) {
             if (!std::isfinite(marker.frequencyHz) || marker.frequencyHz <= 0.0 ||
                 marker.frequencyHz < minX || marker.frequencyHz > maxX) continue;
@@ -735,7 +736,6 @@ protected:
                         static_cast<int>(labelRect.width())));
                 previousMarkerLabelRight[static_cast<std::size_t>(selectedLane)] = labelRight;
             }
-            ++markerLabelIndex;
         }
         painter.setPen(palette().color(QPalette::Mid));
         for (int tick = 0; tick <= 4; ++tick) {
@@ -8678,7 +8678,7 @@ void MainWindow::calculateFilter()
         resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
             logarithmicCoreAxis
                 ? tr("Frequency (Hz, logarithmic)")
-                : tr("Core section index (see legend)"),
+                : tr("Core section"),
             tr("Peak flux density |B| (T)"),
             logarithmicCoreAxis, coreEmptyMessage, !logarithmicCoreAxis);
         resultsCoreFluxPlot_->setToolTip(corePlotTooltip);
