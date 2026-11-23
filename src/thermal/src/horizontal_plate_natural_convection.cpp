@@ -80,8 +80,17 @@ Result<NaturalConvectionResult> analyzeHorizontalPlateNaturalConvection(
         return Result<NaturalConvectionResult>::failure(
             invalidHorizontal("Rayleigh number is not finite and positive.", "rayleighNumber"));
 
+    const bool heatedFaceUpward =
+        request.orientation == HorizontalPlateOrientation::HeatedFaceUpward;
+    const bool heatedFaceDownward =
+        request.orientation == HorizontalPlateOrientation::HeatedFaceDownward;
+    if (!heatedFaceUpward && !heatedFaceDownward)
+        return Result<NaturalConvectionResult>::failure(
+            invalidHorizontal("Horizontal-plate orientation is not a supported enum value.",
+                              "orientation"));
+
     double nusselt = 0.0;
-    if (request.orientation == HorizontalPlateOrientation::HeatedFaceUpward) {
+    if (heatedFaceUpward) {
         if (rayleigh >= 1.0e4 && rayleigh < 1.0e7)
             nusselt = 0.54 * std::pow(rayleigh, 0.25);
         else if (rayleigh >= 1.0e7 && rayleigh <= 1.0e11)
@@ -114,8 +123,7 @@ Result<NaturalConvectionResult> analyzeHorizontalPlateNaturalConvection(
     result.nusseltNumber = nusselt;
     result.heatTransferCoefficientWPerM2K = coefficient;
     result.thermalResistanceKPerW = resistance;
-    result.correlation = request.orientation ==
-        HorizontalPlateOrientation::HeatedFaceUpward
+    result.correlation = heatedFaceUpward
         ? "McAdams horizontal plate, heated face upward"
         : "McAdams horizontal plate, heated face downward";
     result.geometrySourceReference = request.geometrySourceReference;
