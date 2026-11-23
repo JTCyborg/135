@@ -496,6 +496,15 @@ private slots:
         auto clickAndWait = [this, tabs](const char* objectName, int expectedIndex) {
             auto* button = window_->findChild<QPushButton*>(QString::fromLatin1(objectName));
             QVERIFY2(button, objectName);
+            QTimer::singleShot(100, this, [this, objectName] {
+                if (auto* dialog = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+                    qInfo().noquote() << "[E2E-DIAG] modal while confirming"
+                        << objectName << "title=" << dialog->windowTitle()
+                        << "text=" << dialog->text()
+                        << "informative=" << dialog->informativeText();
+                    dialog->accept();
+                }
+            });
             QTest::mouseClick(button, Qt::LeftButton);
             QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), expectedIndex, 3000);
         };
@@ -764,6 +773,15 @@ private slots:
         auto* confirmConstruction = window_->findChild<QPushButton*>(
             QStringLiteral("confirmConstructionAndContinue"));
         QVERIFY(confirmConstruction);
+        QTimer::singleShot(100, this, [this] {
+            if (auto* dialog = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+                qInfo().noquote() << "[E2E-DIAG] modal while confirming synthetic TEST-01"
+                    << "title=" << dialog->windowTitle()
+                    << "text=" << dialog->text()
+                    << "informative=" << dialog->informativeText();
+                dialog->accept();
+            }
+        });
         QTest::mouseClick(confirmConstruction, Qt::LeftButton);
         QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), 3, 5000);
         auto* confirmationStatus = window_->findChild<QLabel*>(
