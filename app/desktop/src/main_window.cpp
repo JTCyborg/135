@@ -7151,20 +7151,20 @@ void MainWindow::calculateFilter()
         const double preFilterFundamentalVoltage = sourceFundamentalFrequency > 0.0
             ? noFilterBusVoltage(*fundamental) : 0.0;
         const double postFilterFundamentalVoltage = harmonicResult->busFundamentalVoltageV;
-        PlotCurve voltageBefore{tr("Without filter — source U_h"), {}};
+        PlotCurve voltageBefore{tr("Without filter — PCC U_h"), {}};
         PlotCurve voltageAfter{tr("With filter — PCC U_h"), {}};
         PlotCurve loadCurrent{tr("Load current I_load,h"), {}};
         PlotCurve filterCurrent{tr("Filter current I_filter,h"), {}};
         PlotCurve gridCurrent{tr("Grid current I_grid,h"), {}};
         bool hasLoadHarmonics = false;
-        double sourceVoltageHarmonicSquareSum = 0.0;
+        double preFilterPccVoltageHarmonicSquareSum = 0.0;
         for (const auto& point : harmonicResult->points) {
             if (point.order <= 1) continue;
             const double order = static_cast<double>(point.order);
             const double preFilterVoltage = noFilterBusVoltage(point);
             if (preFilterFundamentalVoltage > std::numeric_limits<double>::epsilon() &&
                 postFilterFundamentalVoltage > std::numeric_limits<double>::epsilon()) {
-                sourceVoltageHarmonicSquareSum += preFilterVoltage * preFilterVoltage;
+                preFilterPccVoltageHarmonicSquareSum += preFilterVoltage * preFilterVoltage;
                 voltageBefore.points.emplace_back(order,
                     100.0 * preFilterVoltage / preFilterFundamentalVoltage);
                 voltageAfter.points.emplace_back(order,
@@ -7192,7 +7192,16 @@ void MainWindow::calculateFilter()
         }
         if (preFilterFundamentalVoltage > std::numeric_limits<double>::epsilon())
             sourceVoltageThdBefore =
-                std::sqrt(sourceVoltageHarmonicSquareSum) / preFilterFundamentalVoltage;
+                std::sqrt(preFilterPccVoltageHarmonicSquareSum) / preFilterFundamentalVoltage;
+        const auto sortByHarmonicOrder = [](PlotCurve& curve) {
+            std::sort(curve.points.begin(), curve.points.end(),
+                [](const auto& left, const auto& right) { return left.first < right.first; });
+        };
+        sortByHarmonicOrder(voltageBefore);
+        sortByHarmonicOrder(voltageAfter);
+        sortByHarmonicOrder(loadCurrent);
+        sortByHarmonicOrder(filterCurrent);
+        sortByHarmonicOrder(gridCurrent);
         if (!voltageBefore.points.empty()) {
             voltageSpectrumCurves.push_back(std::move(voltageBefore));
             voltageSpectrumCurves.push_back(std::move(voltageAfter));
