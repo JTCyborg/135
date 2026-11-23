@@ -60,6 +60,18 @@ Result<ReactorThermalNetworkResult> analyzeReactorThermalNetwork(
                 "Every natural-convection surface requires a target node and boundary-model source reference.",
                 "naturalConvectionSurfaces[" + std::to_string(i) + "]");
 
+        const double ambient = request.ambientTemperature.si();
+        const bool ambientMatches = std::visit(
+            [ambient](const auto& surfaceRequest) {
+                const double surfaceAmbient = surfaceRequest.ambientTemperature.si();
+                return std::isfinite(surfaceAmbient) &&
+                    std::abs(surfaceAmbient - ambient) <= 1.0e-9 * (1.0 + std::abs(ambient));
+            }, boundary.surface);
+        if (!ambientMatches)
+            return fail(ErrorCode::InvalidInput,
+                "Natural-convection surface ambient temperature must match the reactor network ambient temperature.",
+                "naturalConvectionSurfaces[" + std::to_string(i) + "].ambientTemperature");
+
         const auto convection = std::visit(
             [](const auto& surfaceRequest) -> Result<NaturalConvectionResult> {
                 using SurfaceRequest = std::decay_t<decltype(surfaceRequest)>;
