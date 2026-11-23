@@ -253,6 +253,8 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
     for (std::size_t sampleCount = 72; sampleCount <= request.maximumSamples;
          sampleCount *= 2) {
         std::array<double, 7> peaks{};
+        result.waveform.clear();
+        result.waveform.reserve(sampleCount);
         for (std::size_t sample = 0; sample < sampleCount; ++sample) {
             const double angle = 2.0 * pi * static_cast<double>(sample) /
                                  static_cast<double>(sampleCount);
@@ -282,12 +284,20 @@ sampleThreeLimbMagneticCycle(const ThreeLimbMagneticCycleSamplingRequest& reques
             result.withinBhCurveRange = result.withinBhCurveRange &&
                 magneticPoint.value().withinBhCurveRange;
 
-            for (std::size_t phase = 0; phase < 3; ++phase)
-                peaks[phase] = std::max(peaks[phase],
-                    std::abs(magneticPoint.value().limbFluxDensity[phase].si()));
-            for (std::size_t yoke = 0; yoke < 4; ++yoke)
-                peaks[yoke + 3] = std::max(peaks[yoke + 3],
-                    std::abs(magneticPoint.value().yokeFluxDensity[yoke].si()));
+            ThreeLimbMagneticCycleSample waveformSample;
+            waveformSample.cycleFraction =
+                static_cast<double>(sample) / static_cast<double>(sampleCount);
+            for (std::size_t phase = 0; phase < 3; ++phase) {
+                const double fluxDensity = magneticPoint.value().limbFluxDensity[phase].si();
+                waveformSample.signedFluxDensity[phase] = units::FluxDensity{fluxDensity};
+                peaks[phase] = std::max(peaks[phase], std::abs(fluxDensity));
+            }
+            for (std::size_t yoke = 0; yoke < 4; ++yoke) {
+                const double fluxDensity = magneticPoint.value().yokeFluxDensity[yoke].si();
+                waveformSample.signedFluxDensity[yoke + 3] = units::FluxDensity{fluxDensity};
+                peaks[yoke + 3] = std::max(peaks[yoke + 3], std::abs(fluxDensity));
+            }
+            result.waveform.push_back(std::move(waveformSample));
         }
 
         result.samplesUsed = sampleCount;
