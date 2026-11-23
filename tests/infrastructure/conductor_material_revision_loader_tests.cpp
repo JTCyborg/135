@@ -45,6 +45,16 @@ int main(int argc, char** argv)
     assert(copper.value().resistivityStatus == "DERIVED_FROM_101_PERCENT_IACS");
     assert(copper.value().designReleaseStatus == "NOT_VERIFIED");
 
+    // Current starter-catalog schema names this quality field
+    // electricalPropertiesStatus; the loader exposes it through the stable
+    // resistivityStatus snapshot member without inventing a value.
+    const auto ofhc = loadConductorMaterialRevision(store, "SEED-CU-C10100-R1");
+    assert(ofhc);
+    assert(ofhc.value().material.id == "MAT-CU-C10100");
+    assert(ofhc.value().resistivityStatus ==
+           "MANUFACTURER_OR_STANDARD_PUBLISHED_AT_20C");
+    assert(ofhc.value().designReleaseStatus == "NOT_VERIFIED");
+
     const auto enamelled =
         loadConductorMaterialRevision(store, "SEED-ELEKTRISOLA-P180-R1");
     assert(enamelled);
