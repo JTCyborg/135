@@ -110,6 +110,7 @@ private:
     PlotWidget* resultsVoltageSpectrumPlot_{};
     PlotWidget* resultsCurrentSpectrumPlot_{};
     PlotWidget* resultsCoreFluxPlot_{};
+    PlotWidget* resultsCoreFluxWaveformPlot_{};
     PlotWidget* resultsMaterialBhPlot_{};
     PlotWidget* historyComparisonPlot_{};
     QComboBox* historyPlotMetric_{};
