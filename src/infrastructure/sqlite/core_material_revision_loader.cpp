@@ -194,6 +194,10 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
                 }
             }
             if (anchors.size() == 1) {
+                const auto& [h, b] = anchors.front();
+                if (!std::isfinite(h) || !std::isfinite(b) || h <= 0.0 || b <= 0.0)
+                    throw std::invalid_argument("A magnetic anchor must be finite and positive.");
+                bhCurveSourceAnchors.push_back(anchors.front());
                 bhCurveModelStatus = "INSUFFICIENT_MAGNETIC_ANCHORS";
             }
             if (anchors.size() >= 2) {
