@@ -29,6 +29,7 @@ int main()
     const auto& winding = windingPlan.value().orderedStages;
     assert(std::find(winding.begin(), winding.end(), "winding.resistance") != winding.end());
     assert(std::find(winding.begin(), winding.end(), "winding.losses") != winding.end());
+    assert(std::find(winding.begin(), winding.end(), "winding.geometry") != winding.end());
     assert(std::find(winding.begin(), winding.end(), "thermal.steady_state") != winding.end());
     assert(std::find(winding.begin(), winding.end(), "core.magnetic_properties") == winding.end());
 
@@ -42,8 +43,9 @@ int main()
     const auto limitPlan = planReactorRecalculation(
         {"input.thermal.maximum_winding_temperature"});
     assert(limitPlan);
-    assert(limitPlan.value().orderedStages.size() == 1);
-    assert(limitPlan.value().orderedStages[0] == "design.verification");
+    assert(limitPlan.value().orderedStages.size() == 2);
+    assert(limitPlan.value().orderedStages[0] == "thermal.steady_state");
+    assert(limitPlan.value().orderedStages[1] == "design.verification");
 
     assert(!planReactorRecalculation({"unknown.input"}));
     const auto noChanges = planReactorRecalculation({});
