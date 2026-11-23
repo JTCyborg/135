@@ -11,7 +11,9 @@
 namespace p135::cad {
 
 // Geometry detail is explicit so the UI cannot present envelopes or simplified
-// segments as detailed, manufacturing-ready laminations/conductors.
+// segments as detailed, manufacturing-ready laminations/conductors. Detailed
+// rectangular/foil turns are separate solids, but corner radii, leads, joints,
+// transpositions and multi-section spacers are not yet modelled.
 enum class AssemblyGeometryRepresentation {
     PhysicalSolid,
     SimplifiedCoreSegment,
@@ -69,8 +71,10 @@ struct AssemblyPresentationNode {
 };
 
 // Creates a semantic tree over the existing OCCT assembly builder output.
-// The current core segments and winding envelopes are deliberately marked as
-// simplified/envelope geometry, not as detailed lamination or conductor solids.
+// Simplified core segments and envelope-only windings are explicitly marked.
+// Supported single-section rectangular/foil windings expose each conductor
+// path as a separate selectable solid; unsupported constructions remain
+// envelopes rather than being silently approximated as detailed turns.
 [[nodiscard]] Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
     const domain::ReactorPhysicalGeometry& geometry);
 
