@@ -901,8 +901,10 @@ private slots:
             QStringLiteral("resultsMaterialBhPlot"));
         QVERIFY(materialBhPlot);
         const auto bhCurves = materialBhPlot->property("plotCurves").toList();
-        QCOMPARE(bhCurves.size(), 1);
-        const auto bhPoints = bhCurves.front().toMap()
+        QCOMPARE(bhCurves.size(), 2);
+        const auto estimatedBhCurve = bhCurves[0].toMap();
+        QVERIFY(!estimatedBhCurve.value(QStringLiteral("markersOnly")).toBool());
+        const auto bhPoints = estimatedBhCurve
             .value(QStringLiteral("points")).toList();
         QCOMPARE(bhPoints.size(), 49);
         const auto firstBhPoint = bhPoints.front().toList();
@@ -913,6 +915,19 @@ private slots:
         QCOMPARE(firstBhPoint[1].toDouble(), 0.0);
         QCOMPARE(lastBhPoint[0].toDouble(), 10000.0);
         QVERIFY(lastBhPoint[1].toDouble() > 1.70);
+        const auto sourceAnchorCurve = bhCurves[1].toMap();
+        QVERIFY(sourceAnchorCurve.value(QStringLiteral("markersOnly")).toBool());
+        QVERIFY(sourceAnchorCurve.value(QStringLiteral("name")).toString()
+            .contains(QStringLiteral("source anchors")));
+        const auto sourceAnchorPoints = sourceAnchorCurve
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(sourceAnchorPoints.size(), 3);
+        const auto firstSourceAnchor = sourceAnchorPoints.front().toList();
+        const auto lastSourceAnchor = sourceAnchorPoints.back().toList();
+        QCOMPARE(firstSourceAnchor[0].toDouble(), 2500.0);
+        QCOMPARE(lastSourceAnchor[0].toDouble(), 10000.0);
+        QVERIFY(firstSourceAnchor[1].toDouble() > 1.49);
+        QVERIFY(lastSourceAnchor[1].toDouble() > 1.70);
         auto* materialBhTitle = window_->findChild<QLabel*>(
             QStringLiteral("materialBhPlotTitle"));
         QVERIFY(materialBhTitle);
