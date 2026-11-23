@@ -181,6 +181,39 @@ int main(int argc, char** argv)
     assert(parameterModel.value().material.bhCurve.back().fluxDensity.si() > 1.62);
     assert(parameterModel.value().designReleaseStatus == "NOT_VERIFIED");
 
+    // A lone source anchor is retained as evidence, but is insufficient to
+    // construct a B-H branch. It must not silently fall through to the
+    // parameter model or acquire a fabricated origin-to-anchor segment.
+    auto singleAnchorRevision = *m235Revision.value();
+    singleAnchorRevision.revisionId = "TEST-M235-SINGLE-BH-ANCHOR-R1";
+    singleAnchorRevision.materialId = "TEST-M235-SINGLE-BH-ANCHOR";
+    singleAnchorRevision.revisionNumber = 1;
+    auto singleAnchorPayload = nlohmann::json::parse(singleAnchorRevision.payload);
+    singleAnchorPayload["material"]["minimumPolarization_T"] = {
+        {"at_2500_A_per_m", 1.49}
+    };
+    singleAnchorPayload["material"].erase("initialRelativePermeability");
+    singleAnchorPayload["material"].erase("saturationPolarization_T");
+    singleAnchorPayload["material"].erase("modelMaximumFieldStrength_A_per_m");
+    const auto singleAnchorCanonical = canonicalizeJson(singleAnchorPayload.dump());
+    assert(singleAnchorCanonical);
+    const auto singleAnchorHash = sha256Hex(singleAnchorCanonical.value());
+    assert(singleAnchorHash);
+    singleAnchorRevision.payload = singleAnchorCanonical.value();
+    singleAnchorRevision.contentHash = singleAnchorHash.value();
+    assert(store.appendRevision(singleAnchorRevision));
+    const auto singleAnchor = loadCoreMaterialRevision(
+        store, singleAnchorRevision.revisionId);
+    assert(singleAnchor);
+    assert(singleAnchor.value().material.bhCurve.empty());
+    assert(singleAnchor.value().bhCurveSourceAnchors.size() == 1);
+    assert(singleAnchor.value().bhCurveSourceAnchors.front().first == 2500.0);
+    assert(singleAnchor.value().bhCurveSourceAnchors.front().second > 1.49);
+    assert(singleAnchor.value().bhCurveModelStatus ==
+           "INSUFFICIENT_MAGNETIC_ANCHORS");
+    assert(singleAnchor.value().bhCurveStatus == "NOT_PUBLISHED_IN_IMPORTED_DATASET");
+    assert(singleAnchor.value().designReleaseStatus == "NOT_VERIFIED");
+
     // The Kobe Steel table contains measured DC initial-magnetization data,
     // not an AC B-H loop or core-loss model. Preserve exactly that distinction.
     const auto steel35A300 =
