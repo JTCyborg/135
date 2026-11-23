@@ -152,9 +152,16 @@ analyzeWindingEnvelopeFaceVisibility(
                 const gp_Pnt rayOrigin = point.Translated(normal * options.rayStartOffsetMm);
                 const gp_Lin ray(rayOrigin, gp_Dir(normal));
                 bool blocked = false;
-                for (auto& intersector : intersectors) {
+                for (std::size_t occluderIndex = 0;
+                     occluderIndex < intersectors.size(); ++occluderIndex) {
+                    auto& intersector = intersectors[occluderIndex];
                     intersector.Perform(ray, 0.0, rayLength);
-                    if (intersector.IsDone() && intersector.NbPnt() > 0) {
+                    if (!intersector.IsDone())
+                        return failure<std::vector<WindingFaceVisibilityResult>>(
+                            ErrorCode::SolverFailure,
+                            "OCCT ray/shape intersection did not complete.",
+                            "occluders[" + std::to_string(occluderIndex) + "]");
+                    if (intersector.NbPnt() > 0) {
                         blocked = true;
                         break;
                     }
