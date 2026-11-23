@@ -456,6 +456,8 @@ public:
     void setHorizontalReference(double value, QString label)
     {
         horizontalReference_ = std::make_pair(value, std::move(label));
+        setProperty("plotHorizontalReference", horizontalReference_->first);
+        setProperty("plotHorizontalReferenceLabel", horizontalReference_->second);
         update();
 #if defined(_DEBUG) || !defined(NDEBUG)
         scheduleDebugImageSave();
@@ -651,7 +653,8 @@ protected:
         const double dataYMax = maxY + yPadding;
         const double yMax = std::max({dataYMax,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
-            magneticKneeCurrentA_.value_or(0.0) * 1.08});
+            magneticKneeCurrentA_.value_or(0.0) * 1.08,
+            horizontalReference_ ? horizontalReference_->first : 0.0});
         const auto yPixel = [&area, dataYMin, yMax](double value) {
             return area.bottom() - ((value - dataYMin) / (yMax - dataYMin)) * area.height();
         };
