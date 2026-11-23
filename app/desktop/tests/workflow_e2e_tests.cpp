@@ -973,7 +973,9 @@ private slots:
         }
         QVERIFY(hasFundamentalCopperLoss);
         QVERIFY(hasFifthHarmonicCopperLoss);
-        QVERIFY(!windingCopperLossPlot->toolTip().contains(QStringLiteral("NOT_AVAILABLE")));
+        QVERIFY(windingCopperLossPlot->toolTip().contains(QStringLiteral("SEED-CU-C10100-R1")));
+        QVERIFY(windingCopperLossPlot->toolTip().contains(QStringLiteral("PRELIMINARY")));
+        QVERIFY(windingCopperLossPlot->toolTip().contains(QStringLiteral("Skin, proximity")));
 
         auto* currentTitle = window_->findChild<QLabel*>(
             QStringLiteral("inductorCurrentPlotTitle"));
