@@ -15,6 +15,11 @@ struct PhysicalFilterReactorMagneticRequest {
     std::string dimensionalSource;
     std::string dimensionalRevision;
     FilterReactorMagneticRequest filterMagnetic;
+    // Material quality is populated from the exact immutable catalogue revision
+    // before a stage artifact is accepted. Empty/default values fail closed.
+    std::string bhCurveSourceStatus;
+    std::string bhCurveModelStatus;
+    std::string designReleaseStatus;
     // Explicit opt-in for exploratory analysis using a calculated B-H branch.
     // False by default; calculated material models are never design-verified.
     bool allowEstimatedBhModel{false};
