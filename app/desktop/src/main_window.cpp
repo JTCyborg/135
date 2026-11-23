@@ -112,6 +112,7 @@
 #include <vector>
 #include <utility>
 #include <limits>
+#include <numeric>
 #include <algorithm>
 #include <array>
 
@@ -582,7 +583,7 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.fillRect(rect(), palette().base());
         // Reserve a wider left gutter for both the rotated Y-axis title and tick labels.
-        const QRectF area(86.0, 18.0, std::max(80, width() - 122), std::max(80, height() - 68));
+        const QRectF area(86.0, 46.0, std::max(80, width() - 122), std::max(80, height() - 96));
         painter.setPen(palette().color(QPalette::Mid));
         painter.drawRect(area);
 
@@ -622,17 +623,30 @@ protected:
             const double coordinate = logarithmicX_ ? std::log10(value) : value;
             return (coordinate - axisMin) / (axisMax - axisMin);
         };
-        const double yPadding = allowNegativeY_
-            ? std::max((maxY - minY) * 0.08, 1.0e-9) : 0.0;
-        const double dataYMin = allowNegativeY_ ? minY - yPadding : 0.0;
-        const double dataYMax = allowNegativeY_
-            ? maxY + yPadding : (maxY > 0.0 ? maxY * 1.08 : 1.0);
+        const double yRange = std::max(maxY - minY, std::abs(maxY) * 1.0e-6);
+        const double yPadding = std::max(yRange * 0.08, 1.0e-9);
+        // Bar charts retain a zero baseline. Line charts use a tight, padded
+        // engineering range so small changes are not flattened by an arbitrary
+        // zero origin. Signed waveforms retain both positive and negative peaks.
+        const double dataYMin = allowNegativeY_ ? minY - yPadding
+            : barChart_ ? 0.0 : std::max(0.0, minY - yPadding);
+        const double dataYMax = maxY + yPadding;
         const double yMax = std::max({dataYMax,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
             magneticKneeCurrentA_.value_or(0.0) * 1.08});
         const auto yPixel = [&area, dataYMin, yMax](double value) {
             return area.bottom() - ((value - dataYMin) / (yMax - dataYMin)) * area.height();
         };
+        painter.setPen(palette().color(QPalette::Mid));
+        const QString rangeSummary = tr("Samples: %1   X: %2 … %3   Y: %4 … %5")
+            .arg(static_cast<qulonglong>(std::accumulate(curves_.begin(), curves_.end(),
+                std::size_t{0}, [](std::size_t count, const PlotCurve& curve) {
+                    return count + curve.points.size();
+                })))
+            .arg(minX, 0, 'g', 4).arg(maxX, 0, 'g', 4)
+            .arg(minY, 0, 'g', 4).arg(maxY, 0, 'g', 4);
+        painter.drawText(QRectF(area.left() + 4, 27, area.width() - 8, 16),
+            Qt::AlignLeft | Qt::AlignVCenter, rangeSummary);
         const auto xPixel = [&area, &xFraction](double value) {
             return area.left() + xFraction(value) * area.width();
         };
@@ -667,6 +681,8 @@ protected:
         for (int tick = 0; tick <= 4; ++tick) {
             const double fraction = static_cast<double>(tick) / 4.0;
             const double y = area.bottom() - fraction * area.height();
+            painter.setPen(QPen(palette().color(QPalette::Mid), tick == 0 ? 1.0 : 0.6,
+                                tick == 0 ? Qt::SolidLine : Qt::DotLine));
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
             painter.drawText(QRectF(26, y - 9, 56, 18), Qt::AlignRight | Qt::AlignVCenter,
                 QString::number(dataYMin + (yMax - dataYMin) * fraction, 'g', 4));
@@ -674,6 +690,9 @@ protected:
                 ? std::pow(10.0, axisMin + (axisMax - axisMin) * fraction)
                 : minX + (maxX - minX) * fraction;
             const double x = area.left() + fraction * area.width();
+            painter.setPen(QPen(palette().color(QPalette::Mid), 0.6, Qt::DotLine));
+            painter.drawLine(QPointF(x, area.top()), QPointF(x, area.bottom()));
+            painter.setPen(palette().color(QPalette::Mid));
             painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
             painter.drawText(QRectF(x - 42, area.bottom() + 6, 84, 18),
                 Qt::AlignHCenter | Qt::AlignTop, QString::number(xValue, 'g', 3));
@@ -705,6 +724,7 @@ protected:
             QColor(35, 145, 90), QColor(150, 85, 175)};
         int curveIndex = 0;
         int legendX = static_cast<int>(area.left()) + 8;
+        int legendY = 15;
         for (const auto& curve : curves_) {
             QPainterPath path;
             bool started = false;
@@ -777,18 +797,23 @@ protected:
                 painter.setBrush(Qt::NoBrush);
             }
             painter.restore();
+            const QString label = curve.name;
+            const int itemWidth = painter.fontMetrics().horizontalAdvance(label) + 42;
+            if (legendX + itemWidth > width() - 12 && legendX > area.left() + 8) {
+                legendX = static_cast<int>(area.left()) + 8;
+                legendY += 17;
+            }
             if (curve.markersOnly) {
                 painter.setBrush(color);
-                painter.drawEllipse(QPointF(legendX + 9, 10), 3.5, 3.5);
+                painter.drawEllipse(QPointF(legendX + 9, legendY - 5), 3.5, 3.5);
                 painter.setBrush(Qt::NoBrush);
             } else {
                 painter.setPen(QPen(color, 2.0, curve.dashed ? Qt::DashLine : Qt::SolidLine));
-                painter.drawLine(legendX, 10, legendX + 18, 10);
+                painter.drawLine(legendX, legendY - 5, legendX + 18, legendY - 5);
             }
             painter.setPen(palette().color(QPalette::Text));
-            const QString label = curve.name;
-            painter.drawText(legendX + 23, 15, label);
-            legendX += painter.fontMetrics().horizontalAdvance(label) + 42;
+            painter.drawText(legendX + 23, legendY, label);
+            legendX += itemWidth;
             ++curveIndex;
         }
         painter.setPen(palette().color(QPalette::Text));
