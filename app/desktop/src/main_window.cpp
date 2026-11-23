@@ -650,11 +650,10 @@ protected:
             return area.bottom() - ((value - dataYMin) / (yMax - dataYMin)) * area.height();
         };
         painter.setPen(palette().color(QPalette::Mid));
+        std::size_t totalSamples = 0;
+        for (const auto& curve : curves_) totalSamples += curve.points.size();
         const QString rangeSummary = tr("Samples: %1   X: %2 … %3   Y: %4 … %5")
-            .arg(static_cast<qulonglong>(std::accumulate(curves_.begin(), curves_.end(),
-                std::size_t{0}, [](std::size_t count, const PlotCurve& curve) {
-                    return count + curve.points.size();
-                })))
+            .arg(static_cast<qulonglong>(totalSamples))
             .arg(minX, 0, 'g', 4).arg(maxX, 0, 'g', 4)
             .arg(minY, 0, 'g', 4).arg(maxY, 0, 'g', 4);
         setProperty("plotAxisSummary", rangeSummary);
