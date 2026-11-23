@@ -771,11 +771,11 @@ int main()
         p135::cad::collectAssemblyPresentationDisplayItems(detailedPresentationResult.value());
     assert(detailedDisplayItems.size() == 7 + 3 + 3 * 160);
     const auto firstTurn = std::find_if(detailedDisplayItems.begin(), detailedDisplayItems.end(),
-        [](const auto& item) { return item.id == "winding.L1.layer.1.turn.1"; });
+        [](const auto& item) { return item.id == "winding.L1.layer.1.turn.1.conductor.1"; });
     assert(firstTurn != detailedDisplayItems.end());
     auto individuallyHidden = detailedPresentationResult.value();
     assert(p135::cad::setAssemblyComponentVisibility(
-        individuallyHidden, "winding.L1.layer.1.turn.1", false));
+        individuallyHidden, "winding.L1.layer.1.turn.1.conductor.1", false));
     const auto hiddenTurnItems =
         p135::cad::collectAssemblyPresentationDisplayItems(individuallyHidden);
     assert(hiddenTurnItems.size() == detailedDisplayItems.size() - 1);
