@@ -6908,10 +6908,11 @@ void MainWindow::calculateFilter()
     } else {
         const auto& construction = *acceptedConstructionInputs_;
         if (!construction.conductorMaterial || !construction.turnsPerPhase ||
-            !construction.parallelConductors || !construction.bobbinInnerWidthsM ||
-            !construction.bobbinInnerHeightsM || !construction.windingRadialBuildsM ||
-            !construction.ambientTemperatureK) {
-            windingCopperLossWarning = tr("NOT_VERIFIED: exact conductor revision, turns, parallel count, ambient temperature and all three bobbin/winding dimensions are required.");
+            !construction.parallelConductors || !construction.bobbinUsed ||
+            !construction.bobbinInnerWidthsM || !construction.bobbinInnerHeightsM ||
+            !construction.windingRadialBuildsM || !construction.ambientTemperatureK ||
+            (*construction.bobbinUsed && !construction.bobbinWallThicknessesM)) {
+            windingCopperLossWarning = tr("NOT_VERIFIED: exact conductor revision, turns, parallel count, ambient temperature, bobbin usage and all required bobbin/winding dimensions are required.");
         } else {
             double meanTurnLengthM[3]{};
             bool geometryValid = true;
@@ -6919,15 +6920,20 @@ void MainWindow::calculateFilter()
                 const double innerWidth = (*construction.bobbinInnerWidthsM)[phase];
                 const double innerHeight = (*construction.bobbinInnerHeightsM)[phase];
                 const double radialBuild = (*construction.windingRadialBuildsM)[phase];
+                const double bobbinWall = *construction.bobbinUsed
+                    ? (*construction.bobbinWallThicknessesM)[phase] : 0.0;
                 if (!std::isfinite(innerWidth) || !std::isfinite(innerHeight) ||
-                    !std::isfinite(radialBuild) || innerWidth <= 0.0 ||
-                    innerHeight <= 0.0 || radialBuild < 0.0) {
+                    !std::isfinite(radialBuild) || !std::isfinite(bobbinWall) ||
+                    innerWidth <= 0.0 || innerHeight <= 0.0 ||
+                    radialBuild < 0.0 || bobbinWall < 0.0) {
                     geometryValid = false;
                     break;
                 }
-                // Rectangular mean path: average of inner and outer perimeters.
+                // Rectangular mean path: average of inner and outer winding
+                // perimeters, including the explicit bobbin wall thickness.
                 meanTurnLengthM[phase] =
-                    2.0 * (innerWidth + innerHeight + 2.0 * radialBuild);
+                    2.0 * (innerWidth + innerHeight + 4.0 * bobbinWall +
+                           2.0 * radialBuild);
             }
             const double referenceMlt = meanTurnLengthM[0];
             for (std::size_t phase = 1; phase < 3; ++phase) {
@@ -8554,6 +8560,15 @@ void MainWindow::calculateFilter()
         visibleWarnings.push_back(advancedWarning);
     if (!componentAssessmentWarning.isEmpty())
         visibleWarnings.push_back(componentAssessmentWarning);
+    if (windingCopperLossResult) {
+        if (windingCopperLossResult->conductorMaterialRevision.designReleaseStatus != "VERIFIED")
+            visibleWarnings.push_back(tr("Winding copper loss uses exact conductor revision %1, but its design-release status is %2. The result is NOT_VERIFIED.")
+                .arg(QString::fromStdString(windingCopperLossResult->conductorMaterialRevision.revisionId),
+                     QString::fromStdString(windingCopperLossResult->conductorMaterialRevision.designReleaseStatus)));
+        visibleWarnings.push_back(tr("Winding copper loss is a temperature-corrected DC I²R model only; skin, proximity, circulating-current, lead/joint and core losses are excluded."));
+    } else if (!windingCopperLossWarning.isEmpty()) {
+        visibleWarnings.push_back(windingCopperLossWarning);
+    }
     if (visibleWarnings.isEmpty()) {
         resultsNote_->setText(tr("Calculation completed. Review the model assumptions and scope limitations below."));
         resultsNote_->setStyleSheet("QLabel { background: #e8f4ea; color: #205b2d; border: 1px solid #77ad80; border-radius: 4px; padding: 8px; }");
