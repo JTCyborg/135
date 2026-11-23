@@ -1005,10 +1005,16 @@ private slots:
             .value(QStringLiteral("points")).toList();
         const auto voltageAfterPoints = voltageSpectrumCurves[1].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(voltageBeforePoints.size(), 1);
-        QCOMPARE(voltageAfterPoints.size(), 1);
-        const auto voltageBeforePoint = voltageBeforePoints.front().toList();
-        const auto voltageAfterPoint = voltageAfterPoints.front().toList();
+        QCOMPARE(voltageBeforePoints.size(), 2);
+        QCOMPARE(voltageAfterPoints.size(), 2);
+        const auto voltageFundamentalBefore = voltageBeforePoints[0].toList();
+        const auto voltageFundamentalAfter = voltageAfterPoints[0].toList();
+        QCOMPARE(voltageFundamentalBefore[0].toDouble(), 1.0);
+        QCOMPARE(voltageFundamentalAfter[0].toDouble(), 1.0);
+        QCOMPARE(voltageFundamentalBefore[1].toDouble(), 100.0);
+        QCOMPARE(voltageFundamentalAfter[1].toDouble(), 100.0);
+        const auto voltageBeforePoint = voltageBeforePoints[1].toList();
+        const auto voltageAfterPoint = voltageAfterPoints[1].toList();
         QCOMPARE(voltageBeforePoint[0].toDouble(), 5.0);
         QCOMPARE(voltageAfterPoint[0].toDouble(), 5.0);
         const std::complex<double> injectedHarmonicCurrent =
@@ -1035,8 +1041,11 @@ private slots:
         QCOMPARE(currentSpectrumCurves.size(), 3);
         const auto loadCurrentPoints = currentSpectrumCurves[0].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(loadCurrentPoints.size(), 1);
-        const auto loadCurrentPoint = loadCurrentPoints.front().toList();
+        QCOMPARE(loadCurrentPoints.size(), 2);
+        const auto loadFundamentalPoint = loadCurrentPoints[0].toList();
+        QCOMPARE(loadFundamentalPoint[0].toDouble(), 1.0);
+        QVERIFY(std::isfinite(loadFundamentalPoint[1].toDouble()));
+        const auto loadCurrentPoint = loadCurrentPoints[1].toList();
         QCOMPARE(loadCurrentPoint[0].toDouble(), 5.0);
         QVERIFY(qAbs(loadCurrentPoint[1].toDouble() - 3.25) < 1.0e-9);
 
