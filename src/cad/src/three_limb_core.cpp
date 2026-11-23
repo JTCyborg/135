@@ -633,7 +633,7 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
         const auto& winding = geometry.windingPacks[phase];
         const bool detailed =
             winding.turns && winding.parallelConductors &&
-            winding.turnsPerLayer &&
+            winding.turnsPerLayer && winding.sections == 1 &&
             (winding.conductorShape == "rectangular" || winding.conductorShape == "foil");
         windingSolidCounts[phase] = detailed
             ? static_cast<std::size_t>(*winding.turns) * *winding.parallelConductors
