@@ -7222,7 +7222,6 @@ void MainWindow::calculateFilter()
                     frequencyHz, QStringLiteral("h=%1").arg(order)
                 });
         }
-    }
 
         // Preserve fractional series tuning points that do not coincide with
         // integer harmonic markers. Coincident markers share one annotation.
@@ -7250,6 +7249,7 @@ void MainWindow::calculateFilter()
                 });
             }
         }
+    }
 
     // The transfer curve is derived only from explicitly entered load-current
     // injections. A zero/absent load harmonic has no meaningful I_grid/I_load ratio
