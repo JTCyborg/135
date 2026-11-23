@@ -916,6 +916,17 @@ private slots:
         QVERIFY(impedancePoints.back().toList()[0].toDouble() >= 2500.0);
         const auto canonicalMarkers = impedancePlot->property("plotFrequencyMarkers").toList();
         QCOMPARE(canonicalMarkers.size(), 9);
+        bool hasSeriesTuningMarker = false;
+        for (const auto& markerValue : canonicalMarkers) {
+            const auto marker = markerValue.toMap();
+            if (!marker.value(QStringLiteral("label")).toString()
+                    .contains(QStringLiteral("series tune")))
+                continue;
+            hasSeriesTuningMarker = true;
+            QVERIFY(qAbs(marker.value(QStringLiteral("frequencyHz")).toDouble() -
+                         250.0) < 1.0e-9);
+        }
+        QVERIFY(hasSeriesTuningMarker);
         QVERIFY(impedanceCurves[1].toMap().value(QStringLiteral("dashed")).toBool());
         for (std::size_t sample = 0; sample < impedancePoints.size(); ++sample) {
             const auto point = impedancePoints[static_cast<qsizetype>(sample)].toList();
