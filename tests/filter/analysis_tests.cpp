@@ -40,7 +40,8 @@ FrequencyResponseRequest validRequest()
 int main()
 {
     {
-        const auto result = analyzeFrequencyResponse(validRequest());
+        const auto request = validRequest();
+        const auto result = analyzeFrequencyResponse(request);
         assert(result);
         assert(result.value().points.size() == 2001);
         assert(result.value().points.front().frequency.si() == 50.0);
@@ -52,6 +53,16 @@ int main()
                         expectedSourceMagnitude) < 1.0e-12);
         assert(result.value().points.front().busImpedanceMagnitudeOhm > 0.0);
         assert(std::isfinite(result.value().points.front().busImpedancePhaseRadians));
+        const auto& branch = request.design.branches.front();
+        const double omega = 2.0 * std::numbers::pi * 50.0;
+        const std::complex<double> sourceZ{0.08, omega * 0.001};
+        const std::complex<double> filterZ{
+            branch.dampingResistance.si(),
+            omega * branch.inductance.si() - 1.0 / (omega * branch.capacitance.si())
+        };
+        const double expectedTransfer = 1.0 / std::abs(1.0 + sourceZ / filterZ);
+        assert(std::abs(result.value().points.front().gridCurrentTransferMagnitudeRatio -
+                        expectedTransfer) < 1.0e-12);
         assert(!result.value().resonancePeaks.empty());
 
         const auto strongest = std::max_element(
@@ -120,6 +131,8 @@ int main()
         assert(idealSource.value().points.front().filterImpedanceMagnitudeOhm > 0.0);
         assert(idealSource.value().points.front().sourceImpedanceMagnitudeOhm == 0.0);
         assert(idealSource.value().points.front().busImpedanceMagnitudeOhm == 0.0);
+        for (const auto& point : idealSource.value().points)
+            assert(point.gridCurrentTransferMagnitudeRatio == 1.0);
     }
     {
         auto request = validRequest();
