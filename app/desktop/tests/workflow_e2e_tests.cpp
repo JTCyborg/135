@@ -975,6 +975,13 @@ private slots:
         auto* windingCopperLossPlot = window_->findChild<QWidget*>(
             QStringLiteral("resultsWindingCopperLossPlot"));
         QVERIFY(windingCopperLossPlot);
+        qInfo().noquote() << "[E2E-DIAG] winding copper loss state"
+            << "plotCurves=" << windingCopperLossPlot->property("plotCurves").toList().size()
+            << "tooltip=" << windingCopperLossPlot->toolTip()
+            << "constructionState=" << window_->findChild<QLabel*>(
+                QStringLiteral("constructionInputState"))->text()
+            << "activityLog=" << window_->findChild<QPlainTextEdit*>(
+                QStringLiteral("calculationActivityLog"))->toPlainText();
         const auto windingLossCurves = windingCopperLossPlot->property("plotCurves").toList();
         QCOMPARE(windingLossCurves.size(), 1);
         const auto windingLossPoints = windingLossCurves.front().toMap()
