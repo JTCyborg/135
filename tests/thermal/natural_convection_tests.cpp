@@ -37,6 +37,16 @@ void testHorizontalPlateCorrelations()
     request.unobstructedQuiescentAmbient = false;
     const auto obstructed = analyzeHorizontalPlateNaturalConvection(request);
     assert(!obstructed);
+
+    request.unobstructedQuiescentAmbient = true;
+    request.orientation = static_cast<HorizontalPlateOrientation>(99);
+    const auto invalidOrientation = analyzeHorizontalPlateNaturalConvection(request);
+    assert(!invalidOrientation);
+
+    request.orientation = HorizontalPlateOrientation::HeatedFaceUpward;
+    request.exposedPerimeter = units::Length{1.0e8};
+    const auto outOfRange = analyzeHorizontalPlateNaturalConvection(request);
+    assert(!outOfRange);
 }
  
 int main()
