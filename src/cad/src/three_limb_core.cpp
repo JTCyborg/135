@@ -788,9 +788,12 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
             winding.turnsPerLayer && winding.sections == 1 &&
             (winding.conductorShape == "rectangular" || winding.conductorShape == "foil" ||
              winding.conductorShape == "round");
-        windingSolidCounts[phase] = detailed
-            ? static_cast<std::size_t>(*winding.turns) * *winding.parallelConductors
-            : 1U;
+        windingSolidCounts[phase] = !detailed ? 1U :
+            (winding.conductorShape == "round"
+                ? 2U * static_cast<std::size_t>(winding.layerCount) *
+                    static_cast<std::size_t>(*winding.parallelConductors)
+                : static_cast<std::size_t>(*winding.turns) *
+                    static_cast<std::size_t>(*winding.parallelConductors));
         expectedSolidCount += 1U + windingSolidCounts[phase]; // bobbin + conductors/envelope
     }
     std::vector<TopoDS_Shape> members;
