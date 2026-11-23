@@ -950,6 +950,31 @@ private slots:
             QVERIFY(qAbs(plottedGridOhm - expectedGridOhm) < 1.0e-9);
         }
 
+        auto* windingCopperLossPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsWindingCopperLossPlot"));
+        QVERIFY(windingCopperLossPlot);
+        const auto windingLossCurves = windingCopperLossPlot->property("plotCurves").toList();
+        QCOMPARE(windingLossCurves.size(), 1);
+        const auto windingLossPoints = windingLossCurves.front().toMap()
+            .value(QStringLiteral("points")).toList();
+        QVERIFY(windingLossPoints.size() >= 2);
+        bool hasFundamentalCopperLoss = false;
+        bool hasFifthHarmonicCopperLoss = false;
+        for (const auto& value : windingLossPoints) {
+            const auto point = value.toList();
+            QCOMPARE(point.size(), 2);
+            QVERIFY(std::isfinite(point[0].toDouble()));
+            QVERIFY(std::isfinite(point[1].toDouble()));
+            QVERIFY(point[1].toDouble() >= 0.0);
+            if (qAbs(point[0].toDouble() - 1.0) < 1.0e-9)
+                hasFundamentalCopperLoss = true;
+            if (qAbs(point[0].toDouble() - 5.0) < 1.0e-9)
+                hasFifthHarmonicCopperLoss = true;
+        }
+        QVERIFY(hasFundamentalCopperLoss);
+        QVERIFY(hasFifthHarmonicCopperLoss);
+        QVERIFY(!windingCopperLossPlot->toolTip().contains(QStringLiteral("NOT_AVAILABLE")));
+
         auto* currentTitle = window_->findChild<QLabel*>(
             QStringLiteral("inductorCurrentPlotTitle"));
         QVERIFY(currentTitle);
@@ -1160,16 +1185,19 @@ private slots:
             artifactProjectId + QStringLiteral("_core_flux_waveform.png")));
         const QFileInfo materialBhPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_material_bh.png")));
+        const QFileInfo windingCopperLossPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_winding_copper_loss.png")));
         auto* historyPlot = window_->findChild<QWidget*>(
             QStringLiteral("historyComparisonPlot"));
         QVERIFY(historyPlot);
         const QFileInfo historyPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_history_comparison.png")));
-        const std::array<QFileInfo, 9> plotFiles{
+        const std::array<QFileInfo, 10> plotFiles{
             currentPng, impedancePng, harmonicTransferPng, voltageSpectrumPng,
-            currentSpectrumPng, coreFluxPng, coreFluxWaveformPng, materialBhPng, historyPng
+            currentSpectrumPng, coreFluxPng, coreFluxWaveformPng, materialBhPng,
+            windingCopperLossPng, historyPng
         };
-        const std::array<QWidget*, 9> plotWidgets{
+        const std::array<QWidget*, 10> plotWidgets{
             window_->findChild<QWidget*>(QStringLiteral("resultsBankCurrentPlot")),
             window_->findChild<QWidget*>(QStringLiteral("resultsBusImpedancePlot")),
             harmonicTransferPlot,
@@ -1178,6 +1206,7 @@ private slots:
             coreFluxPlot,
             coreWaveformPlot,
             window_->findChild<QWidget*>(QStringLiteral("resultsMaterialBhPlot")),
+            window_->findChild<QWidget*>(QStringLiteral("resultsWindingCopperLossPlot")),
             historyPlot
         };
 
