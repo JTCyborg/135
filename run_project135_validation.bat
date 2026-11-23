@@ -154,14 +154,39 @@ if defined DIRTY (
     goto STOP_WITH_LOCAL_LOG
 )
 
-set "RUN_CMD=git fetch origin"
-call :RUN "Git fetch origin"
+rem Always validate the natural-convection feature branch (PR #6).
+rem Fetch first, then safely switch/update that branch before recording the tested SHA.
+set "TARGET_BRANCH=feature/natural-convection-vertical-plate"
+set "RUN_CMD=git fetch origin %TARGET_BRANCH%"
+call :RUN "Fetch target branch %TARGET_BRANCH%"
 if errorlevel 1 (
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
-rem Do not pull or switch branches during validation. Test the exact checked-out commit.
+
+if /I not "%CURRENT_BRANCH%"=="%TARGET_BRANCH%" (
+    echo [GIT] Switching from %CURRENT_BRANCH% to %TARGET_BRANCH%...
+    git switch "%TARGET_BRANCH%" >>"%LOG%" 2>&1
+    if errorlevel 1 (
+        echo ERROR: Could not switch to %TARGET_BRANCH%. Local changes were preserved.
+        echo [FATAL] Branch switch failed; no build was started.>>"%LOG%"
+        set "OVERALL=FAILED"
+        goto STOP_WITH_LOCAL_LOG
+    )
+    set "CURRENT_BRANCH=%TARGET_BRANCH%"
+)
+
+set "RUN_CMD=git pull --ff-only origin %TARGET_BRANCH%"
+call :RUN "Update target branch %TARGET_BRANCH%"
+if errorlevel 1 (
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+
+rem Record and test the exact feature-branch commit after fast-forward update.
 for /f %%H in ('git rev-parse HEAD') do set "SOURCE_COMMIT=%%H"
+echo Current branch after sync: %CURRENT_BRANCH%>>"%LOG%"
+echo Validation branch: %CURRENT_BRANCH%>>"%LOG%"
 echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
 
 rem Configure both CMake presets before building.
