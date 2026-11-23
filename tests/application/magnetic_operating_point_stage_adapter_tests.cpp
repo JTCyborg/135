@@ -61,6 +61,11 @@ int main()
     request.stackingFactor = 0.95;
     request.dimensionalSource = "TEST-01 verified drawing";
     request.dimensionalRevision = "REV-A";
+    // Synthetic fixture evidence exercises the positive path only; it is not
+    // a claim that any imported catalogue material has a verified release.
+    request.bhCurveSourceStatus = "MEASURED_TABULAR";
+    request.bhCurveModelStatus = "SOURCE_CURVE_PRESENT";
+    request.designReleaseStatus = "VERIFIED";
     request.filterMagnetic.filterBranchId = 7;
     request.filterMagnetic.harmonicAnalysis.branchPoints.push_back(filter::BranchHarmonicPoint{
         7, 1, units::Frequency{50.0}, 1.0,
@@ -112,6 +117,21 @@ int main()
     zeroFluxBranch.magneticAnalysis.magneticCycle.peakAbsoluteFluxDensity[3] =
         units::FluxDensity{0.0};
     assert(makeMagneticOperatingPointStageArtifact(request, zeroFluxBranch));
+
+    assert(artifact.value().find("bh_curve_source_status=MEASURED_TABULAR") != std::string::npos);
+    assert(artifact.value().find("bh_curve_model_status=SOURCE_CURVE_PRESENT") != std::string::npos);
+    assert(artifact.value().find("design_release_status=VERIFIED") != std::string::npos);
+
+    auto estimatedMaterialEvidence = request;
+    estimatedMaterialEvidence.bhCurveSourceStatus = "NOT_PUBLISHED_IN_IMPORTED_DATASET";
+    estimatedMaterialEvidence.bhCurveModelStatus = "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS";
+    estimatedMaterialEvidence.designReleaseStatus = "NOT_VERIFIED";
+    assert(!makeMagneticOperatingPointStageArtifact(estimatedMaterialEvidence, result));
+
+    auto digitizedMaterialEvidence = request;
+    digitizedMaterialEvidence.bhCurveSourceStatus = "APPROXIMATE_DIGITIZATION";
+    digitizedMaterialEvidence.designReleaseStatus = "NOT_VERIFIED";
+    assert(!makeMagneticOperatingPointStageArtifact(digitizedMaterialEvidence, result));
 
     auto missingTurns = request;
     missingTurns.filterMagnetic.magnetic.turns[1] = 0;
