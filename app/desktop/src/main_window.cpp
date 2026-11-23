@@ -7007,6 +7007,23 @@ void MainWindow::calculateFilter()
         resultsTable_->setItem(row, 2, new QTableWidgetItem(QStringLiteral("—")));
     };
 
+    if (windingCopperLossResult) {
+        const auto& copper = windingCopperLossResult->copperLoss;
+        addResult(tr("Winding mean turn length (derived)"),
+            copper.totalCopperLengthPerParallelPath.si() /
+                static_cast<double>(*acceptedConstructionInputs_->turnsPerPhase) * 1000.0,
+            tr("mm"));
+        addResult(tr("Winding DC resistance at 20 °C"),
+            copper.resistanceAt20C.si(), tr("Ω"));
+        addResult(tr("Winding DC resistance at ambient"),
+            copper.resistanceAtOperatingTemperature.si(), tr("Ω"));
+        addResult(tr("Three-phase winding copper loss (DC model)"),
+            copper.totalThreePhaseCopperLoss.si(), tr("W"));
+        addTextResult(tr("Conductor revision release status"),
+            QString::fromStdString(windingCopperLossResult->conductorMaterialRevision.designReleaseStatus));
+        addTextResult(tr("Winding loss model scope"),
+            tr("DC I²R only; AC skin/proximity, circulating, lead/joint and core losses excluded."));
+    }
     addResult(tr("Phase RMS voltage"), branch.phaseVoltage.si(), tr("V"));
     addResult(tr("Capacitance per phase"), branch.capacitance.si() * 1.0e6, tr("µF"));
     addResult(tr("Inductance per phase"), branch.inductance.si() * 1.0e3, tr("mH"));
