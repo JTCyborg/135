@@ -6989,6 +6989,19 @@ void MainWindow::calculateFilter()
         }
     }
 
+    if (!windingCopperLossResult) {
+        appendLog(tr("[WINDING-LOSS] NOT_VERIFIED: %1 "
+                     "(materialStore=%2, acceptedConstruction=%3, constructionDirty=%4, "
+                     "harmonicResult=%5, branchSamples=%6).")
+            .arg(windingCopperLossWarning)
+            .arg(materialStore_ ? QStringLiteral("available") : QStringLiteral("missing"))
+            .arg(acceptedConstructionInputs_ ? QStringLiteral("available") : QStringLiteral("missing"))
+            .arg(constructionInputsDirty_ ? QStringLiteral("true") : QStringLiteral("false"))
+            .arg(harmonicResult ? QStringLiteral("available") : QStringLiteral("missing"))
+            .arg(harmonicResult
+                ? static_cast<qulonglong>(harmonicResult->branchPoints.size()) : 0ULL));
+    }
+
     const auto& branch = result.value().branches.front();
     const auto addResult = [this](const QString& name, double value, const QString& unit) {
         const int row = resultsTable_->rowCount();
