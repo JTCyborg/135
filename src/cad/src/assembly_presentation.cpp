@@ -246,6 +246,7 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         const bool detailedTurns =
             windingGeometry.turns && windingGeometry.turnsPerLayer &&
             windingGeometry.parallelConductors &&
+            windingGeometry.sections == 1 &&
             (windingGeometry.conductorShape == "rectangular" ||
              windingGeometry.conductorShape == "foil");
         if (detailedTurns) {
