@@ -1,4 +1,5 @@
 #include "p135/thermal/thermal_network.hpp"
+#include "p135/thermal/natural_convection.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -109,6 +110,47 @@ int main()
         request.nodes = {node("A", std::numeric_limits<double>::quiet_NaN(), 330.0)};
         request.ambientLinks.push_back({"A", 1.0, "cooling-model:rev-1"});
         assert(!analyzeThermalNetwork(request));
+    }
+
+    {
+        NaturalConvectionResult convection;
+        convection.thermalResistanceKPerW = 2.0;
+        convection.correlation = "test-isolated-plate";
+        convection.geometrySourceReference = "geometry:rev-2";
+        convection.fluidPropertiesSourceReference = "air:ref-1";
+        convection.status = "PRELIMINARY";
+        const auto boundary =
+            makeNaturalConvectionAmbientLink("A", convection, "boundary-setup:rev-3");
+        assert(boundary);
+        assert(std::abs(boundary.value().conductanceWPerK - 0.5) < 1.0e-12);
+        assert(boundary.value().preliminaryModel);
+        assert(boundary.value().sourceReference.find("geometry:rev-2") != std::string::npos);
+
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 1.0, 330.0)};
+        request.ambientLinks.push_back(boundary.value());
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        assert(result.value().solved);
+        assert(!result.value().modelProvenanceComplete);
+        assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
+    }
+    {
+        NaturalConvectionResult convection;
+        convection.thermalResistanceKPerW = 2.0;
+        convection.correlation = "test-isolated-plate";
+        convection.geometrySourceReference = "geometry:rev-2";
+        convection.fluidPropertiesSourceReference = "air:ref-1";
+        convection.status = "VERIFIED";
+        const auto boundary =
+            makeNaturalConvectionAmbientLink("A", convection, "boundary-setup:rev-3");
+        assert(boundary);
+        assert(!boundary.value().preliminaryModel);
+    }
+    {
+        NaturalConvectionResult invalidConvection;
+        invalidConvection.thermalResistanceKPerW = 0.0;
+        assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
     }
     return 0;
 }
