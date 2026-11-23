@@ -4001,7 +4001,7 @@ QWidget* MainWindow::createResultsPage()
     resultsMaterialBhPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsMaterialBhPlot_);
 
-    auto* impedancePlotTitle = new QLabel(tr("Bus impedance — frequency scan"));
+    auto* impedancePlotTitle = new QLabel(tr("Bus impedance — 10 Hz to 50th harmonic"));
     impedancePlotTitle->setObjectName(QStringLiteral("busImpedancePlotTitle"));
     impedancePlotTitle->setStyleSheet("font-weight: 600;");
     impedancePlotTitle->setToolTip(tr(
@@ -6276,11 +6276,10 @@ void MainWindow::calculateFilter()
             p135::units::Resistance{sourceResistance},
             p135::units::Inductance{sourceInductance}
         };
-        impedanceRequest.startFrequency =
-            p135::units::Frequency{fundamentalFrequency_->value() * 0.5};
+        impedanceRequest.startFrequency = p135::units::Frequency{10.0};
         impedanceRequest.stopFrequency =
-            p135::units::Frequency{fundamentalFrequency_->value() * 15.0};
-        impedanceRequest.points = 501;
+            p135::units::Frequency{fundamentalFrequency_->value() * 50.0};
+        impedanceRequest.points = 1001;
         impedanceRequest.logarithmicSpacing = true;
         const auto impedance = p135::filter::analyzeFrequencyResponse(impedanceRequest);
         if (impedance) {
