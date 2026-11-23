@@ -1138,6 +1138,9 @@ private slots:
         QVERIFY(voltageSpectrumPlot);
         QVERIFY(voltageSpectrumPlot->property("plotBarChart").toBool());
         QVERIFY(voltageSpectrumPlot->property("plotLogarithmicY").toBool());
+        QCOMPARE(voltageSpectrumPlot->property("plotCategoryLabels").toStringList(),
+            QStringList({QStringLiteral("1"), QStringLiteral("5"),
+                         QStringLiteral("7"), QStringLiteral("11")}));
         QCOMPARE(voltageSpectrumPlot->property("plotHorizontalReference").toDouble(), 100.0);
         QVERIFY(!voltageSpectrumPlot->property("plotHorizontalReferenceLabel").toString().isEmpty());
         const auto voltageSpectrumCurves =
@@ -1190,6 +1193,9 @@ private slots:
         QVERIFY(currentSpectrumPlot);
         QVERIFY(currentSpectrumPlot->property("plotBarChart").toBool());
         QVERIFY(currentSpectrumPlot->property("plotLogarithmicY").toBool());
+        QCOMPARE(currentSpectrumPlot->property("plotCategoryLabels").toStringList(),
+            QStringList({QStringLiteral("1"), QStringLiteral("5"),
+                         QStringLiteral("7"), QStringLiteral("11")}));
         const auto currentSpectrumCurves =
             currentSpectrumPlot->property("plotCurves").toList();
         QCOMPARE(currentSpectrumCurves.size(), 3);
