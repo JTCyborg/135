@@ -1,0 +1,1279 @@
+================================================================ 
+Project135 validation run 
+Started: 23.11.2026 21:31:32,26 
+Project: C:\Temp\trdos\135\ 
+================================================================ 
+VCPKG_ROOT: C:\vcpkg
+[VCPKG] OCCT archive found and will be preserved: C:\vcpkg\downloads\Open-Cascade-SAS-OCCT-V8_0_1.tar.gz
+[VCPKG] Using existing checkout and pinned baseline b94b6bdc326c0faea9070b4862e0e0d4e4ac5396.
+[VCPKG] Binary cache: C:\vcpkg\binary-cache
+[VCPKG] Persistent installed tree: C:\Temp\trdos\135\vcpkg_installed
+[VCPKG] Cached OCCT source archive and buildtrees are left untouched.
+[VCPKG] Tool checkout commit: b94b6bdc326c0faea9070b4862e0e0d4e4ac5396
+[ENVIRONMENT]
+Computer: DESKTOP-H1DJP3C
+User: JTCyb
+
+
+[RUN] CMake version
+cmake version 4.4.4
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+[PASS] CMake version
+
+[RUN] Git version
+git version 2.56.0.windows.4
+[PASS] Git version
+Current branch: feature/natural-convection-vertical-plate
+Validation branch: feature/natural-convection-vertical-plate
+
+[RUN] Fetch target branch feature/natural-convection-vertical-plate
+From https://github.com/JTCyborg/135
+ * branch            feature/natural-convection-vertical-plate -> FETCH_HEAD
+[PASS] Fetch target branch feature/natural-convection-vertical-plate
+
+[RUN] Update target branch feature/natural-convection-vertical-plate
+From https://github.com/JTCyborg/135
+ * branch            feature/natural-convection-vertical-plate -> FETCH_HEAD
+Already up to date.
+[PASS] Update target branch feature/natural-convection-vertical-plate
+Current branch after sync: feature/natural-convection-vertical-plate
+Validation branch: feature/natural-convection-vertical-plate
+Synchronized source commit: cec215e78e6450e1fcbb8092cb40dd67c6522b9e
+
+[RUN] Configure Debug
+-- Running vcpkg install
+Detecting compiler hash for triplet x64-windows...
+Compiler found: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe
+The following packages are already installed:
+  * brotli:x64-windows@1.2.1
+  * bzip2[core,tool]:x64-windows@1.0.8#6
+  * egl-registry:x64-windows@2026-11-06
+  * freetype[core,zlib,png,bzip2,brotli]:x64-windows@2.15.0
+  * libpng:x64-windows@1.6.59#1
+    nlohmann-json:x64-windows@3.12.0#2
+    opencascade[core,freetype]:x64-windows@8.0.1#1
+  * opengl:x64-windows@2022-12-04#3
+  * opengl-registry:x64-windows@2026-08-03
+    openssl:x64-windows@3.6.5#2
+    sqlite3[core,json1]:x64-windows@3.54.1
+  * vcpkg-cmake:x64-windows@2026-11-09
+  * vcpkg-cmake-config:x64-windows@2026-07-21
+  * vcpkg-cmake-get-vars:x64-windows@2025-05-29
+  * zlib:x64-windows@1.4
+The package nlohmann-json provides CMake targets:
+
+    find_package(nlohmann_json CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE nlohmann_json::nlohmann_json)
+
+The package nlohmann-json can be configured to not provide implicit conversions via a custom triplet file:
+
+    set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
+
+For more information, see the docs here:
+    
+    https://json.nlohmann.me/api/macros/json_use_implicit_conversions/
+
+opencascade provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(OpenCASCADE CONFIG REQUIRED)
+  # note: 46 additional targets are not displayed.
+  target_link_libraries(main PRIVATE TKBO TKDE TKBin TKCAF)
+
+openssl is compatible with built-in CMake targets:
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(main PRIVATE OpenSSL::SSL)
+  target_link_libraries(main PRIVATE OpenSSL::Crypto)
+
+sqlite3 provides pkgconfig bindings.
+sqlite3 provides CMake targets:
+
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
+
+All requested installations completed successfully in: 1 ms
+-- Running vcpkg install - done
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Project135: auto-detected Qt 6 at C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Configuring done (6.3s)
+-- Generating done (2.9s)
+-- Build files have been written to: C:/Temp/trdos/135/out/build/vs2026-desktop-debug
+[PASS] Configure Debug
+
+[RUN] Configure Release
+-- Running vcpkg install
+Detecting compiler hash for triplet x64-windows...
+Compiler found: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe
+The following packages are already installed:
+  * brotli:x64-windows@1.2.1
+  * bzip2[core,tool]:x64-windows@1.0.8#6
+  * egl-registry:x64-windows@2026-11-06
+  * freetype[core,zlib,png,bzip2,brotli]:x64-windows@2.15.0
+  * libpng:x64-windows@1.6.59#1
+    nlohmann-json:x64-windows@3.12.0#2
+    opencascade[core,freetype]:x64-windows@8.0.1#1
+  * opengl:x64-windows@2022-12-04#3
+  * opengl-registry:x64-windows@2026-08-03
+    openssl:x64-windows@3.6.5#2
+    sqlite3[core,json1]:x64-windows@3.54.1
+  * vcpkg-cmake:x64-windows@2026-11-09
+  * vcpkg-cmake-config:x64-windows@2026-07-21
+  * vcpkg-cmake-get-vars:x64-windows@2025-05-29
+  * zlib:x64-windows@1.4
+The package nlohmann-json provides CMake targets:
+
+    find_package(nlohmann_json CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE nlohmann_json::nlohmann_json)
+
+The package nlohmann-json can be configured to not provide implicit conversions via a custom triplet file:
+
+    set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
+
+For more information, see the docs here:
+    
+    https://json.nlohmann.me/api/macros/json_use_implicit_conversions/
+
+opencascade provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(OpenCASCADE CONFIG REQUIRED)
+  # note: 46 additional targets are not displayed.
+  target_link_libraries(main PRIVATE TKBO TKDE TKBin TKCAF)
+
+openssl is compatible with built-in CMake targets:
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(main PRIVATE OpenSSL::SSL)
+  target_link_libraries(main PRIVATE OpenSSL::Crypto)
+
+sqlite3 provides pkgconfig bindings.
+sqlite3 provides CMake targets:
+
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
+
+All requested installations completed successfully in: 1.09 ms
+-- Running vcpkg install - done
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Project135: auto-detected Qt 6 at C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Configuring done (5.9s)
+-- Generating done (2.8s)
+-- Build files have been written to: C:/Temp/trdos/135/out/build/vs2026-desktop-release
+[PASS] Configure Release
+
+[RUN] Build Debug
+Версия MSBuild 18.11.1-1.26513.3+940033be3 для .NET Framework
+
+  Project135Domain.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\domain\Debug\Project135Domain.lib
+  Project135Circuit.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\circuit\Debug\Project135Circuit.lib
+  Project135CoreTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreTests.exe
+  Project135DesignDependencyTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DesignDependencyTests.exe
+  Project135DomainTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DomainTests.exe
+  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DesignParameterTests.exe
+  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ComponentCatalogTests.exe
+  three_limb_core.cpp
+  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MechanicalGeometryTests.exe
+  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CircuitTests.exe
+  Project135ThreeLimbCoreLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbCoreLossTests.exe
+  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\filter\Debug\Project135Filter.lib
+  Project135ThreeLimbCoreMassTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbCoreMassTests.exe
+  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbGeometryAdapterTests.exe
+  Project135FilterAnalysisTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterAnalysisTests.exe
+  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\thermal\Debug\Project135Thermal.lib
+  Project135FilterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterTests.exe
+  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\application\Debug\Project135Application.lib
+  Project135FilterNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterNetworkTests.exe
+  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbSolverTests.exe
+  Project135FilterExcitationStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterExcitationStageAdapterTests.exe
+  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbTest01Regression.exe
+  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135Test01FilterSizingScenario.exe
+  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignGraphTests.exe
+  Project135ReactorDesignInputsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignInputsTests.exe
+  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectricalTests.exe
+  Project135PhysicalFilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135PhysicalFilterReactorMagneticTests.exe
+  Project135FilterHarmonicsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterHarmonicsTests.exe
+  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignExecutionTests.exe
+  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MagneticOperatingPointStageAdapterTests.exe
+  Project135IdealReactorSizingTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135IdealReactorSizingTests.exe
+  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ApplicationTests.exe
+  Project135FilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterReactorMagneticTests.exe
+  Project135ThermalSteadyStateTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalSteadyStateTests.exe
+  Project135ThermalFilterBridgeTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalFilterBridgeTests.exe
+  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalNetworkTests.exe
+  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\infrastructure\Debug\Project135InfrastructureSqlite.lib
+  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectrothermalTests.exe
+  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorThermalNetworkTests.exe
+  Project135NaturalConvectionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135NaturalConvectionTests.exe
+  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingElectrothermalTests.exe
+  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingCopperLossTests.exe
+  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreMaterialRevisionLoaderTests.exe
+  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundReactorThermalNetworkTests.exe
+  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135SqliteInfrastructureTests.exe
+  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreComponentGeometryLoaderTests.exe
+  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundPhysicalFilterMagneticTests.exe
+  Project135ConductorMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ConductorMaterialRevisionLoaderTests.exe
+  Project135Cad.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Debug\Project135Cad.lib
+  1>Automatic MOC for target Project135DesktopUi
+  cad_tests.cpp
+  cad_viewport_widget.cpp
+     Создается библиотека C:/Temp/trdos/135/out/build/vs2026-desktop-debug/tests/Debug/Project135CadTests.lib и объект C:/Temp/trdos/135/out/build/vs2026-desktop-debug/tests/Debug/Project135CadTests.exp
+  Project135CadTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CadTests.exe
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\debug\bin\TKOffset.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\TKOffset.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\debug\bin\TKFillet.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\TKFillet.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\debug\bin\TKBool.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\TKBool.dll done
+C:\Temp\trdos\135\app\desktop\src\cad_viewport_widget.cpp(56,43): warning C4996: 'Standard_True': Standard_True is deprecated, use true directly [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Project135DesktopUi.vcxproj]
+  main_window.cpp
+C:\Temp\trdos\135\app\desktop\src\main_window.cpp(1319,15): warning C4996: 'QMenu::addAction': Use addAction(text, shortcut, object, slot) instead. [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Project135DesktopUi.vcxproj]
+C:\Temp\trdos\135\app\desktop\src\main_window.cpp(1320,15): warning C4996: 'QMenu::addAction': Use addAction(text, shortcut, object, slot) instead. [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Project135DesktopUi.vcxproj]
+C:\Temp\trdos\135\app\desktop\src\main_window.cpp(1744,32): warning C4458: объявление "data" скрывает член класса [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Project135DesktopUi.vcxproj]
+      C:\Qt\6.12.0\msvc2022_64\include\QtWidgets\qwidget.h(780,18):
+       см. объявление "QWidget::data"
+  
+  mocs_compilation_Debug.cpp
+  Создание кода...
+  Project135DesktopUi.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Debug\Project135DesktopUi.lib
+     Создается библиотека C:/Temp/trdos/135/out/build/vs2026-desktop-debug/app/desktop/Debug/Project135DesktopWorkflowE2ETests.lib и объект C:/Temp/trdos/135/out/build/vs2026-desktop-debug/app/desktop/Debug/Project135DesktopWorkflowE2ETests.exp
+     Создается библиотека C:/Temp/trdos/135/out/build/vs2026-desktop-debug/app/desktop/Debug/Project135.lib и объект C:/Temp/trdos/135/out/build/vs2026-desktop-debug/app/desktop/Debug/Project135.exp
+  Project135.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\Project135.exe
+  	Deploying Qt runtime for Project135	Deploying SQLite and OpenSSL runtime for Project135
+  Project135DesktopWorkflowE2ETests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\tests\Project135DesktopWorkflowE2ETests.exe
+  	Deploying Qt runtime for desktop workflow E2E tests	Deploying vcpkg runtime for desktop workflow E2E tests
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\debug\bin\TKOffset.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\TKOffset.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\debug\bin\TKFillet.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\TKFillet.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\debug\bin\TKBool.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\TKBool.dll done
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKOffset.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKOpenGl.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKDESTEP.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKXSBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKV3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKService.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKBO.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKPrim.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKTopAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKBRep.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKGeomBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKG3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKMath.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKernel.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/sqlite3.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/libcrypto-3-x64.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/MSVCP140D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/VCRUNTIME140D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/VCRUNTIME140_1D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/MSVCP140_1D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/MSVCP140_2D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKFillet.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKBool.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKShHealing.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKGeomAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKG2d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKDE.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKXCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKLCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKMesh.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKHLR.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/freetyped.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKVCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/TKCDF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/libzd.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/bz2d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/libpng16d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/brotlidec.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/tests/brotlicommon.dll
+  C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\tests\Project135DesktopWorkflowE2ETests.exe 64 bit, debug executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugind.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKOffset.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKOpenGl.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKDESTEP.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKV3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKService.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKBO.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKPrim.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKTopAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKBRep.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKGeomBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKG3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKMath.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKernel.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/sqlite3.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/libcrypto-3-x64.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/MSVCP140D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/VCRUNTIME140D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/VCRUNTIME140_1D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/MSVCP140_1D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/MSVCP140_2D.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKFillet.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKBool.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKShHealing.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKGeomAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKG2d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKDE.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKXCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKXSBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKLCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKMesh.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKHLR.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/freetyped.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKVCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/TKCDF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/libzd.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/bz2d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/libpng16d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/brotlidec.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-debug/bin/brotlicommon.dll
+  C:\Temp\trdos\135\out\build\vs2026-desktop-debug\bin\Project135.exe 64 bit, debug executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugind.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicond.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding Qt6Svg for qsvgicond.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Test Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Test Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Test Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Test Qt6Widgets
+EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR is not set. [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Project135.vcxproj]
+  Skipping system library C:/Windows/system32/icuuc.dll
+  Qt6Cored.dll is up to date.
+  Qt6Guid.dll is up to date.
+  Qt6Networkd.dll is up to date.
+  Qt6Svgd.dll is up to date.
+  Qt6Widgetsd.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  dxcompiler.dll is up to date.
+  dxil.dll is up to date.
+  qtuiotouchplugind.dll is up to date.
+  qsvgicond.dll is up to date.
+  qgifd.dll is up to date.
+  qicod.dll is up to date.
+  qjpegd.dll is up to date.
+  qsvgd.dll is up to date.
+  qnetworklistmanagerd.dll is up to date.
+  qwindowsd.dll is up to date.
+  qmodernwindowsstyled.dll is up to date.
+  qcertonlybackendd.dll is up to date.
+  qschannelbackendd.dll is up to date.
+EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR is not set. [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\app\desktop\Project135DesktopWorkflowE2ETests.vcxproj]
+  Skipping system library C:/Windows/system32/icuuc.dll
+  Qt6Cored.dll is up to date.
+  Qt6Guid.dll is up to date.
+  Qt6Networkd.dll is up to date.
+  Qt6Svgd.dll is up to date.
+  Qt6Testd.dll is up to date.
+  Qt6Widgetsd.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  dxcompiler.dll is up to date.
+  dxil.dll is up to date.
+  qtuiotouchplugind.dll is up to date.
+  qsvgicond.dll is up to date.
+  qgifd.dll is up to date.
+  qicod.dll is up to date.
+  qjpegd.dll is up to date.
+  qsvgd.dll is up to date.
+  qnetworklistmanagerd.dll is up to date.
+  qwindowsd.dll is up to date.
+  qmodernwindowsstyled.dll is up to date.
+  qcertonlybackendd.dll is up to date.
+  qschannelbackendd.dll is up to date.
+[PASS] Build Debug
+
+[RUN] Build Release
+Версия MSBuild 18.11.1-1.26513.3+940033be3 для .NET Framework
+
+  Project135Domain.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\domain\Release\Project135Domain.lib
+  Project135Circuit.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\circuit\Release\Project135Circuit.lib
+  Project135CoreTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreTests.exe
+  Project135DomainTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DomainTests.exe
+  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CircuitTests.exe
+  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\filter\Release\Project135Filter.lib
+  Project135DesignDependencyTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DesignDependencyTests.exe
+  three_limb_core.cpp
+  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DesignParameterTests.exe
+  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MechanicalGeometryTests.exe
+  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ComponentCatalogTests.exe
+  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\application\Release\Project135Application.lib
+  Project135FilterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterTests.exe
+  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\thermal\Release\Project135Thermal.lib
+  Project135PhysicalFilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135PhysicalFilterReactorMagneticTests.exe
+  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignExecutionTests.exe
+  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ApplicationTests.exe
+  Project135FilterNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterNetworkTests.exe
+  Project135NaturalConvectionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135NaturalConvectionTests.exe
+  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorThermalNetworkTests.exe
+  Project135ReactorDesignInputsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignInputsTests.exe
+  Project135FilterHarmonicsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterHarmonicsTests.exe
+  Project135ThermalFilterBridgeTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalFilterBridgeTests.exe
+  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135Test01FilterSizingScenario.exe
+  Project135FilterAnalysisTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterAnalysisTests.exe
+  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignGraphTests.exe
+  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalNetworkTests.exe
+  Project135ThermalSteadyStateTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalSteadyStateTests.exe
+  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MagneticOperatingPointStageAdapterTests.exe
+  Project135FilterExcitationStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterExcitationStageAdapterTests.exe
+  Project135ThreeLimbCoreLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbCoreLossTests.exe
+  Project135IdealReactorSizingTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135IdealReactorSizingTests.exe
+  Project135ThreeLimbCoreMassTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbCoreMassTests.exe
+  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\infrastructure\Release\Project135InfrastructureSqlite.lib
+  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundPhysicalFilterMagneticTests.exe
+  Project135ConductorMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ConductorMaterialRevisionLoaderTests.exe
+  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135SqliteInfrastructureTests.exe
+  Project135FilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterReactorMagneticTests.exe
+  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreComponentGeometryLoaderTests.exe
+  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingElectrothermalTests.exe
+  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingCopperLossTests.exe
+  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbGeometryAdapterTests.exe
+  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbSolverTests.exe
+  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbTest01Regression.exe
+  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectricalTests.exe
+  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectrothermalTests.exe
+  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundReactorThermalNetworkTests.exe
+  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreMaterialRevisionLoaderTests.exe
+  Project135Cad.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Release\Project135Cad.lib
+  1>Automatic MOC for target Project135DesktopUi
+cl : командная строка  warning D9025: переопределение "/DNDEBUG" на "/UNDEBUG" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Project135CadTests.vcxproj]
+  cad_tests.cpp
+  cad_viewport_widget.cpp
+C:\Temp\trdos\135\app\desktop\src\cad_viewport_widget.cpp(56,43): warning C4996: 'Standard_True': Standard_True is deprecated, use true directly [C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Project135DesktopUi.vcxproj]
+     Создается библиотека C:/Temp/trdos/135/out/build/vs2026-desktop-release/tests/Release/Project135CadTests.lib и объект C:/Temp/trdos/135/out/build/vs2026-desktop-release/tests/Release/Project135CadTests.exp
+  Project135CadTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CadTests.exe
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\bin\TKOffset.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\TKOffset.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\bin\TKFillet.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\TKFillet.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\bin\TKBool.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\TKBool.dll done
+  main_window.cpp
+C:\Temp\trdos\135\app\desktop\src\main_window.cpp(1319,15): warning C4996: 'QMenu::addAction': Use addAction(text, shortcut, object, slot) instead. [C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Project135DesktopUi.vcxproj]
+C:\Temp\trdos\135\app\desktop\src\main_window.cpp(1320,15): warning C4996: 'QMenu::addAction': Use addAction(text, shortcut, object, slot) instead. [C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Project135DesktopUi.vcxproj]
+C:\Temp\trdos\135\app\desktop\src\main_window.cpp(1744,32): warning C4458: объявление "data" скрывает член класса [C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Project135DesktopUi.vcxproj]
+      C:\Qt\6.12.0\msvc2022_64\include\QtWidgets\qwidget.h(780,18):
+       см. объявление "QWidget::data"
+  
+  mocs_compilation_Release.cpp
+  Создание кода...
+  Project135DesktopUi.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Release\Project135DesktopUi.lib
+     Создается библиотека C:/Temp/trdos/135/out/build/vs2026-desktop-release/app/desktop/Release/Project135DesktopWorkflowE2ETests.lib и объект C:/Temp/trdos/135/out/build/vs2026-desktop-release/app/desktop/Release/Project135DesktopWorkflowE2ETests.exp
+     Создается библиотека C:/Temp/trdos/135/out/build/vs2026-desktop-release/app/desktop/Release/Project135.lib и объект C:/Temp/trdos/135/out/build/vs2026-desktop-release/app/desktop/Release/Project135.exp
+  Project135.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\Project135.exe
+  	Deploying Qt runtime for Project135	Deploying SQLite and OpenSSL runtime for Project135
+  Project135DesktopWorkflowE2ETests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\tests\Project135DesktopWorkflowE2ETests.exe
+  	Deploying Qt runtime for desktop workflow E2E tests	Deploying vcpkg runtime for desktop workflow E2E tests
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\bin\TKOffset.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\TKOffset.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\bin\TKFillet.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\TKFillet.dll done
+  C:\Temp\trdos\135\vcpkg_installed\x64-windows\bin\TKBool.dll -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\TKBool.dll done
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKOffset.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKOpenGl.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKDESTEP.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKXSBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKV3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKService.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKBO.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKPrim.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKTopAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKBRep.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKGeomBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKG3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKMath.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKernel.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/sqlite3.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/libcrypto-3-x64.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKFillet.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKBool.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKShHealing.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKGeomAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKG2d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKDE.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKXCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKLCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKMesh.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKHLR.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/freetype.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKVCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/TKCDF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/libz.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/bz2.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/libpng16.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/brotlidec.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/tests/brotlicommon.dll
+  C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\tests\Project135DesktopWorkflowE2ETests.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKOffset.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKOpenGl.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKDESTEP.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKV3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKService.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKBO.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKPrim.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKTopAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKBRep.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKGeomBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKG3d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKMath.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKernel.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/sqlite3.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/libcrypto-3-x64.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKFillet.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKBool.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKShHealing.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKGeomAlgo.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKG2d.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKDE.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKXCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKXSBase.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKLCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKMesh.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKHLR.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/freetype.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKVCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKCAF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/TKCDF.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/libz.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/bz2.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/libpng16.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/brotlidec.dll
+  Adding local dependencyC:/Temp/trdos/135/out/build/vs2026-desktop-release/bin/brotlicommon.dll
+  C:\Temp\trdos\135\out\build\vs2026-desktop-release\bin\Project135.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Test Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Test Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Test Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Test Qt6Widgets
+EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR is not set. [C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Project135.vcxproj]
+  Skipping system library C:/Windows/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  dxcompiler.dll is up to date.
+  dxil.dll is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+EXEC : warning : Cannot find Visual Studio installation directory, VCINSTALLDIR is not set. [C:\Temp\trdos\135\out\build\vs2026-desktop-release\app\desktop\Project135DesktopWorkflowE2ETests.vcxproj]
+  Skipping system library C:/Windows/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Test.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  dxcompiler.dll is up to date.
+  dxil.dll is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+[PASS] Build Release
+
+[RUN] CTest Debug
+Test project C:/Temp/trdos/135/out/build/vs2026-desktop-debug
+      Start  1: Project135CoreTests
+ 1/43 Test  #1: Project135CoreTests ..................................   Passed    0.04 sec
+      Start  2: Project135CircuitTests
+ 2/43 Test  #2: Project135CircuitTests ...............................   Passed    0.04 sec
+      Start  3: Project135FilterTests
+ 3/43 Test  #3: Project135FilterTests ................................   Passed    0.04 sec
+      Start  4: Project135FilterNetworkTests
+ 4/43 Test  #4: Project135FilterNetworkTests .........................   Passed    0.04 sec
+      Start  5: Project135FilterAnalysisTests
+ 5/43 Test  #5: Project135FilterAnalysisTests ........................   Passed    0.13 sec
+      Start  6: Project135FilterHarmonicsTests
+ 6/43 Test  #6: Project135FilterHarmonicsTests .......................   Passed    0.04 sec
+      Start  7: Project135ThermalSteadyStateTests
+ 7/43 Test  #7: Project135ThermalSteadyStateTests ....................   Passed    0.05 sec
+      Start  8: Project135ThermalNetworkTests
+ 8/43 Test  #8: Project135ThermalNetworkTests ........................   Passed    0.05 sec
+      Start  9: Project135ThermalFilterBridgeTests
+ 9/43 Test  #9: Project135ThermalFilterBridgeTests ...................   Passed    0.05 sec
+      Start 10: Project135DesignParameterTests
+10/43 Test #10: Project135DesignParameterTests .......................   Passed    0.04 sec
+      Start 11: Project135DesignDependencyTests
+11/43 Test #11: Project135DesignDependencyTests ......................   Passed    0.04 sec
+      Start 12: Project135DomainTests
+12/43 Test #12: Project135DomainTests ................................   Passed    1.68 sec
+      Start 13: Project135ThreeLimbTest01Regression
+13/43 Test #13: Project135ThreeLimbTest01Regression ..................   Passed    0.46 sec
+      Start 14: Project135ThreeLimbSolverTests
+14/43 Test #14: Project135ThreeLimbSolverTests .......................   Passed    0.05 sec
+      Start 15: Project135ThreeLimbGeometryAdapterTests
+15/43 Test #15: Project135ThreeLimbGeometryAdapterTests ..............   Passed    0.05 sec
+      Start 16: Project135ComponentCatalogTests
+16/43 Test #16: Project135ComponentCatalogTests ......................   Passed    0.04 sec
+      Start 17: Project135ApplicationTests
+17/43 Test #17: Project135ApplicationTests ...........................   Passed    0.04 sec
+      Start 18: Project135FilterReactorMagneticTests
+18/43 Test #18: Project135FilterReactorMagneticTests .................   Passed    0.32 sec
+      Start 19: Project135SqliteInfrastructureTests
+19/43 Test #19: Project135SqliteInfrastructureTests ..................   Passed    4.53 sec
+      Start 20: Project135MechanicalGeometryTests
+20/43 Test #20: Project135MechanicalGeometryTests ....................   Passed    0.05 sec
+      Start 21: Project135CadTests
+21/43 Test #21: Project135CadTests ...................................***Failed   43.34 sec
+Assertion failed: roundTurns, file C:\Temp\trdos\135\tests\cad\cad_tests.cpp, line 772
+
+      Start 22: Project135ReactorDesignInputsTests
+22/43 Test #22: Project135ReactorDesignInputsTests ...................   Passed    0.06 sec
+      Start 23: Project135ReactorDesignGraphTests
+23/43 Test #23: Project135ReactorDesignGraphTests ....................   Passed    0.07 sec
+      Start 24: Project135ReactorDesignExecutionTests
+24/43 Test #24: Project135ReactorDesignExecutionTests ................   Passed    0.07 sec
+      Start 25: Project135PhysicalFilterReactorMagneticTests
+25/43 Test #25: Project135PhysicalFilterReactorMagneticTests .........   Passed    0.13 sec
+      Start 26: Project135CoreMaterialRevisionLoaderTests
+26/43 Test #26: Project135CoreMaterialRevisionLoaderTests ............   Passed    4.31 sec
+      Start 27: Project135RevisionBoundPhysicalFilterMagneticTests
+27/43 Test #27: Project135RevisionBoundPhysicalFilterMagneticTests ...   Passed    4.15 sec
+      Start 28: Project135ConductorMaterialRevisionLoaderTests
+28/43 Test #28: Project135ConductorMaterialRevisionLoaderTests .......   Passed    4.16 sec
+      Start 29: Project135WindingElectricalTests
+29/43 Test #29: Project135WindingElectricalTests .....................   Passed    0.05 sec
+      Start 30: Project135RevisionBoundWindingCopperLossTests
+30/43 Test #30: Project135RevisionBoundWindingCopperLossTests ........   Passed    4.16 sec
+      Start 31: Project135NaturalConvectionTests
+31/43 Test #31: Project135NaturalConvectionTests .....................   Passed    0.05 sec
+      Start 32: Project135WindingElectrothermalTests
+32/43 Test #32: Project135WindingElectrothermalTests .................   Passed    0.05 sec
+      Start 33: Project135RevisionBoundWindingElectrothermalTests
+33/43 Test #33: Project135RevisionBoundWindingElectrothermalTests ....   Passed    4.18 sec
+      Start 34: Project135ThreeLimbCoreLossTests
+34/43 Test #34: Project135ThreeLimbCoreLossTests .....................   Passed    0.05 sec
+      Start 35: Project135ThreeLimbCoreMassTests
+35/43 Test #35: Project135ThreeLimbCoreMassTests .....................   Passed    0.05 sec
+      Start 36: Project135ReactorThermalNetworkTests
+36/43 Test #36: Project135ReactorThermalNetworkTests .................   Passed    0.06 sec
+      Start 37: Project135RevisionBoundReactorThermalNetworkTests
+37/43 Test #37: Project135RevisionBoundReactorThermalNetworkTests ....   Passed    4.16 sec
+      Start 38: Project135IdealReactorSizingTests
+38/43 Test #38: Project135IdealReactorSizingTests ....................   Passed    0.05 sec
+      Start 39: Project135CoreComponentGeometryLoaderTests
+39/43 Test #39: Project135CoreComponentGeometryLoaderTests ...........   Passed    4.37 sec
+      Start 40: Project135Test01FilterSizingScenario
+40/43 Test #40: Project135Test01FilterSizingScenario .................   Passed    0.06 sec
+      Start 41: Project135FilterExcitationStageAdapterTests
+41/43 Test #41: Project135FilterExcitationStageAdapterTests ..........   Passed    0.06 sec
+      Start 42: Project135MagneticOperatingPointStageAdapterTests
+42/43 Test #42: Project135MagneticOperatingPointStageAdapterTests ....   Passed    0.07 sec
+      Start 43: Project135DesktopWorkflowE2ETests
+43/43 Test #43: Project135DesktopWorkflowE2ETests ....................***Failed  232.86 sec
+********* Start testing of DesktopWorkflowE2ETests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 10
+PASS   : DesktopWorkflowE2ETests::initTestCase()
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_winding_copper_loss.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_material_bh.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/71b45f96-1f5e-4ae2-84b4-f5390c40af7d_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist()
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_winding_copper_loss.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_material_bh.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/41541e06-9a30-4912-a2a5-f88a597c87a9_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected()
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_material_bh.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_winding_copper_loss.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/3f37c9cf-2a37-4ca6-9ade-9fcb21dc91b1_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers()
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_material_bh.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_winding_copper_loss.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/16cf5f09-d91e-43e4-a656-ef652e92b981_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable()
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_winding_copper_loss.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_material_bh.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/f3274e94-b0fb-46b8-a56a-6c0757c2938c_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: event wait completed
+QWARN  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() QWindowsWindow::setGeometry: Unable to set geometry 148x38+586+443 (frame: 166x85+577+405) on QWidgetWindow/"QDialogClassWindow" on "\\.\DISPLAY1". Resulting geometry: 396x200+586+443 (frame: 414x247+577+405) margins: 9, 38, 9, 9 minimum size: 317x160 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=414, y=247)))
+PASS   : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced()
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection()
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_winding_copper_loss.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_material_bh.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/7e64abca-b5c4-48ac-89af-1da950e2d55a_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: event wait completed
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] after filter synthesis resultsNote= ? INPUT / MODEL LIMITATIONS � results are preliminary and must not be treated as verified design data.
+
+Source impedance R/L is zero or unset: the network is modelled as an ideal voltage source. Filter-bank impedance and magnetic response to the supplied spectrum are calculated, but source-limited current response and Thevenin bus impedance are not modelled; the separate frequency-sweep current remains an ideal-source diagnostic, not operational stress.
+Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED.
+No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated.
+Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion.
+NOT_VERIFIED: confirm the current Construction revision and make the material database available.
+
+LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available. Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures. Harmonic response and component RMS stress were calculated from 0 entered non-fundamental voltage harmonics. Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion. Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated. Filter-bank impedance is plotted. Source-limited bus impedance and parallel-resonance zones remain NOT_VERIFIED because source R/L is zero. Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference. Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied. Immutable calculation snapshot saved: ae623aba-849e-4db0-bc38-1517aad10e7e. resultRows= 31 constructionState= INPUTS CAPTURED � filter snapshot ae623aba-849e-4db0-bc38-1517aad10e7e / branch 1. Physical sizing: NOT_CONNECTED_TO_SOLVER.
+PASS   : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance()
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_winding_copper_loss.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_material_bh.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/685e11ab-4832-4704-a7ab-e264dcbe3de9_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: event wait completed
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] after filter synthesis resultsNote= ? INPUT / MODEL LIMITATIONS � results are preliminary and must not be treated as verified design data.
+
+Source impedance R/L is zero or unset: the network is modelled as an ideal voltage source. Filter-bank impedance and magnetic response to the supplied spectrum are calculated, but source-limited current response and Thevenin bus impedance are not modelled; the separate frequency-sweep current remains an ideal-source diagnostic, not operational stress.
+Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED.
+No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated.
+Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion.
+NOT_VERIFIED: confirm the current Construction revision and make the material database available.
+
+LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available. Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures. Harmonic response and component RMS stress were calculated from 0 entered non-fundamental voltage harmonics. Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion. Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated. Filter-bank impedance is plotted. Source-limited bus impedance and parallel-resonance zones remain NOT_VERIFIED because source R/L is zero. Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference. Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied. Immutable calculation snapshot saved: 36b268cf-4ca3-4db6-b803-4fb933391b94. resultRows= 31 constructionState= INPUTS CAPTURED � filter snapshot 36b268cf-4ca3-4db6-b803-4fb933391b94 / branch 1. Physical sizing: NOT_CONNECTED_TO_SOLVER.
+PASS   : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable()
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_winding_copper_loss.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_material_bh.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: event wait completed
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] after filter synthesis resultsNote= ? INPUT / MODEL LIMITATIONS � results are preliminary and must not be treated as verified design data.
+
+Source impedance R/L is zero or unset: the network is modelled as an ideal voltage source. Filter-bank impedance and magnetic response to the supplied spectrum are calculated, but source-limited current response and Thevenin bus impedance are not modelled; the separate frequency-sweep current remains an ideal-source diagnostic, not operational stress.
+Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED.
+No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated.
+Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion.
+NOT_VERIFIED: confirm the current Construction revision and make the material database available.
+
+LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available. Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures. Harmonic response and component RMS stress were calculated from 0 entered non-fundamental voltage harmonics. Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion. Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated. Filter-bank impedance is plotted. Source-limited bus impedance and parallel-resonance zones remain NOT_VERIFIED because source R/L is zero. Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference. Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied. Immutable calculation snapshot saved: 0449b850-6156-4171-bdce-e16e6bf73d19. resultRows= 31 constructionState= INPUTS CAPTURED � filter snapshot 0449b850-6156-4171-bdce-e16e6bf73d19 / branch 1. Physical sizing: NOT_CONNECTED_TO_SOLVER.
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_bus_impedance.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_reactor_current.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_material_bh.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_core_flux_waveform.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_winding_copper_loss.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_current_harmonic_spectrum.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_voltage_harmonic_spectrum.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(1239, 250) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_harmonic_transfer.png size= QSize(1239, 250)
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] timer fired: historyComparisonPlot visible= true size= QSize(1256, 230) path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/6233a4c8-4cd4-4333-b3aa-aff215d66788_history_comparison.png size= QSize(1256, 230)
+FAIL!  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() 'cadStatus->text().contains(QStringLiteral("Preliminary CAD generated"))' returned FALSE. (CAD generation did not succeed. Actual status: CAD generation failed: Each round conductor turn must be one connected solid.)
+C:\Temp\trdos\135\app\desktop\tests\workflow_e2e_tests.cpp(1540) : failure location
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsMaterialBhPlot visible= false size= QSize(620, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_material_bh.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsMaterialBhPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_material_bh.png size= QSize(620, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: historyComparisonPlot visible= false size= QSize(640, 480) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_history_comparison.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: historyComparisonPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_history_comparison.png size= QSize(640, 480)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsWindingCopperLossPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_winding_copper_loss.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsWindingCopperLossPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_winding_copper_loss.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsCurrentSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_current_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsCurrentSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_current_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsVoltageSpectrumPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_voltage_harmonic_spectrum.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsVoltageSpectrumPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_voltage_harmonic_spectrum.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsHarmonicTransferPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_harmonic_transfer.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsHarmonicTransferPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_harmonic_transfer.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsBusImpedancePlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_bus_impedance.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsBusImpedancePlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_bus_impedance.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsCoreFluxWaveformPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_core_flux_waveform.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsCoreFluxWaveformPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_core_flux_waveform.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsCoreFluxPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_core_flux.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsCoreFluxPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_core_flux.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] timer fired: resultsBankCurrentPlot visible= false size= QSize(605, 250) path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_reactor_current.png
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [PLOT-DIAG] PNG saved: resultsBankCurrentPlot path= C:/Temp/trdos/135/Debug/Plots/73f2132e-0f69-45fa-8a4e-508beffa6d92_reactor_current.png size= QSize(605, 250)
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip()
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent()
+PASS   : DesktopWorkflowE2ETests::cleanupTestCase()
+Totals: 12 passed, 1 failed, 0 skipped, 0 blacklisted, 231935ms
+********* Finished testing of DesktopWorkflowE2ETests *********
+
+
+95% tests passed, 2 tests failed out of 43
+
+Total Test time (real) = 314.49 sec
+
+The following tests FAILED:
+	 21 - Project135CadTests (Failed)
+	 43 - Project135DesktopWorkflowE2ETests (Failed)
+Errors while running CTest
+[FAIL] CTest Debug (exit 8)
+
+[RUN] CTest Release
+Test project C:/Temp/trdos/135/out/build/vs2026-desktop-release
+      Start  1: Project135CoreTests
+ 1/43 Test  #1: Project135CoreTests ..................................   Passed    0.04 sec
+      Start  2: Project135CircuitTests
+ 2/43 Test  #2: Project135CircuitTests ...............................   Passed    0.05 sec
+      Start  3: Project135FilterTests
+ 3/43 Test  #3: Project135FilterTests ................................   Passed    0.05 sec
+      Start  4: Project135FilterNetworkTests
+ 4/43 Test  #4: Project135FilterNetworkTests .........................   Passed    0.05 sec
+      Start  5: Project135FilterAnalysisTests
+ 5/43 Test  #5: Project135FilterAnalysisTests ........................   Passed    0.05 sec
+      Start  6: Project135FilterHarmonicsTests
+ 6/43 Test  #6: Project135FilterHarmonicsTests .......................   Passed    0.06 sec
+      Start  7: Project135ThermalSteadyStateTests
+ 7/43 Test  #7: Project135ThermalSteadyStateTests ....................   Passed    0.05 sec
+      Start  8: Project135ThermalNetworkTests
+ 8/43 Test  #8: Project135ThermalNetworkTests ........................   Passed    0.05 sec
+      Start  9: Project135ThermalFilterBridgeTests
+ 9/43 Test  #9: Project135ThermalFilterBridgeTests ...................   Passed    0.09 sec
+      Start 10: Project135DesignParameterTests
+10/43 Test #10: Project135DesignParameterTests .......................   Passed    0.05 sec
+      Start 11: Project135DesignDependencyTests
+11/43 Test #11: Project135DesignDependencyTests ......................   Passed    0.05 sec
+      Start 12: Project135DomainTests
+12/43 Test #12: Project135DomainTests ................................   Passed    0.21 sec
+      Start 13: Project135ThreeLimbTest01Regression
+13/43 Test #13: Project135ThreeLimbTest01Regression ..................   Passed    0.22 sec
+      Start 14: Project135ThreeLimbSolverTests
+14/43 Test #14: Project135ThreeLimbSolverTests .......................   Passed    0.08 sec
+      Start 15: Project135ThreeLimbGeometryAdapterTests
+15/43 Test #15: Project135ThreeLimbGeometryAdapterTests ..............   Passed    0.06 sec
+      Start 16: Project135ComponentCatalogTests
+16/43 Test #16: Project135ComponentCatalogTests ......................   Passed    0.06 sec
+      Start 17: Project135ApplicationTests
+17/43 Test #17: Project135ApplicationTests ...........................   Passed    0.07 sec
+      Start 18: Project135FilterReactorMagneticTests
+18/43 Test #18: Project135FilterReactorMagneticTests .................   Passed    0.09 sec
+      Start 19: Project135SqliteInfrastructureTests
+19/43 Test #19: Project135SqliteInfrastructureTests ..................   Passed    3.58 sec
+      Start 20: Project135MechanicalGeometryTests
+20/43 Test #20: Project135MechanicalGeometryTests ....................   Passed    0.05 sec
+      Start 21: Project135CadTests
+21/43 Test #21: Project135CadTests ...................................Exit code 0xc0000409***Exception:   7.58 sec
+Assertion failed: roundTurns, file C:\Temp\trdos\135\tests\cad\cad_tests.cpp, line 772
+
+      Start 22: Project135ReactorDesignInputsTests
+22/43 Test #22: Project135ReactorDesignInputsTests ...................   Passed    0.06 sec
+      Start 23: Project135ReactorDesignGraphTests
+23/43 Test #23: Project135ReactorDesignGraphTests ....................   Passed    0.05 sec
+      Start 24: Project135ReactorDesignExecutionTests
+24/43 Test #24: Project135ReactorDesignExecutionTests ................   Passed    0.06 sec
+      Start 25: Project135PhysicalFilterReactorMagneticTests
+25/43 Test #25: Project135PhysicalFilterReactorMagneticTests .........   Passed    0.06 sec
+      Start 26: Project135CoreMaterialRevisionLoaderTests
+26/43 Test #26: Project135CoreMaterialRevisionLoaderTests ............   Passed    3.54 sec
+      Start 27: Project135RevisionBoundPhysicalFilterMagneticTests
+27/43 Test #27: Project135RevisionBoundPhysicalFilterMagneticTests ...   Passed    3.43 sec
+      Start 28: Project135ConductorMaterialRevisionLoaderTests
+28/43 Test #28: Project135ConductorMaterialRevisionLoaderTests .......   Passed    3.43 sec
+      Start 29: Project135WindingElectricalTests
+29/43 Test #29: Project135WindingElectricalTests .....................   Passed    0.05 sec
+      Start 30: Project135RevisionBoundWindingCopperLossTests
+30/43 Test #30: Project135RevisionBoundWindingCopperLossTests ........   Passed    3.41 sec
+      Start 31: Project135NaturalConvectionTests
+31/43 Test #31: Project135NaturalConvectionTests .....................   Passed    0.05 sec
+      Start 32: Project135WindingElectrothermalTests
+32/43 Test #32: Project135WindingElectrothermalTests .................   Passed    0.05 sec
+      Start 33: Project135RevisionBoundWindingElectrothermalTests
+33/43 Test #33: Project135RevisionBoundWindingElectrothermalTests ....   Passed    3.43 sec
+      Start 34: Project135ThreeLimbCoreLossTests
+34/43 Test #34: Project135ThreeLimbCoreLossTests .....................   Passed    0.05 sec
+      Start 35: Project135ThreeLimbCoreMassTests
+35/43 Test #35: Project135ThreeLimbCoreMassTests .....................   Passed    0.05 sec
+      Start 36: Project135ReactorThermalNetworkTests
+36/43 Test #36: Project135ReactorThermalNetworkTests .................   Passed    0.06 sec
+      Start 37: Project135RevisionBoundReactorThermalNetworkTests
+37/43 Test #37: Project135RevisionBoundReactorThermalNetworkTests ....   Passed    3.47 sec
+      Start 38: Project135IdealReactorSizingTests
+38/43 Test #38: Project135IdealReactorSizingTests ....................   Passed    0.05 sec
+      Start 39: Project135CoreComponentGeometryLoaderTests
+39/43 Test #39: Project135CoreComponentGeometryLoaderTests ...........   Passed    3.43 sec
+      Start 40: Project135Test01FilterSizingScenario
+40/43 Test #40: Project135Test01FilterSizingScenario .................   Passed    0.04 sec
+      Start 41: Project135FilterExcitationStageAdapterTests
+41/43 Test #41: Project135FilterExcitationStageAdapterTests ..........   Passed    0.05 sec
+      Start 42: Project135MagneticOperatingPointStageAdapterTests
+42/43 Test #42: Project135MagneticOperatingPointStageAdapterTests ....   Passed    0.05 sec
+      Start 43: Project135DesktopWorkflowE2ETests
+43/43 Test #43: Project135DesktopWorkflowE2ETests ....................***Failed   50.12 sec
+********* Start testing of DesktopWorkflowE2ETests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 10
+PASS   : DesktopWorkflowE2ETests::initTestCase()
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::workflowPagesAndEntryPointsExist()
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::everyWorkflowTabCanBeSelected()
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::inputControlsHaveStableIdentifiers()
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::automaticReactorSizingAssumptionsAreExplicitAndEditable()
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::coreMaterialBhCurveImportIsStructuredAndProvenanced()
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::filterInputModesAndWheelProtection()
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] init: event wait completed
+QINFO  : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance() [E2E-DIAG] after filter synthesis resultsNote= ? INPUT / MODEL LIMITATIONS � results are preliminary and must not be treated as verified design data.
+
+Source impedance R/L is zero or unset: the network is modelled as an ideal voltage source. Filter-bank impedance and magnetic response to the supplied spectrum are calculated, but source-limited current response and Thevenin bus impedance are not modelled; the separate frequency-sweep current remains an ideal-source diagnostic, not operational stress.
+Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED.
+No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated.
+Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion.
+NOT_VERIFIED: confirm the current Construction revision and make the material database available.
+
+LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available. Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures. Harmonic response and component RMS stress were calculated from 0 entered non-fundamental voltage harmonics. Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion. Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated. Filter-bank impedance is plotted. Source-limited bus impedance and parallel-resonance zones remain NOT_VERIFIED because source R/L is zero. Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference. Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied. Immutable calculation snapshot saved: 04d344a1-7d04-40d5-9d5c-581a003137c5. resultRows= 31 constructionState= INPUTS CAPTURED � filter snapshot 04d344a1-7d04-40d5-9d5c-581a003137c5 / branch 1. Physical sizing: NOT_CONNECTED_TO_SOLVER.
+PASS   : DesktopWorkflowE2ETests::projectFilterAndConstructionConfirmationsAdvance()
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] init: event wait completed
+QINFO  : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable() [E2E-DIAG] after filter synthesis resultsNote= ? INPUT / MODEL LIMITATIONS � results are preliminary and must not be treated as verified design data.
+
+Source impedance R/L is zero or unset: the network is modelled as an ideal voltage source. Filter-bank impedance and magnetic response to the supplied spectrum are calculated, but source-limited current response and Thevenin bus impedance are not modelled; the separate frequency-sweep current remains an ideal-source diagnostic, not operational stress.
+Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED.
+No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated.
+Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion.
+NOT_VERIFIED: confirm the current Construction revision and make the material database available.
+
+LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available. Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures. Harmonic response and component RMS stress were calculated from 0 entered non-fundamental voltage harmonics. Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion. Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated. Filter-bank impedance is plotted. Source-limited bus impedance and parallel-resonance zones remain NOT_VERIFIED because source R/L is zero. Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference. Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied. Immutable calculation snapshot saved: 2e2fcbe3-e4f9-4227-8b23-c6bfacd8f6f1. resultRows= 31 constructionState= INPUTS CAPTURED � filter snapshot 2e2fcbe3-e4f9-4227-8b23-c6bfacd8f6f1 / branch 1. Physical sizing: NOT_CONNECTED_TO_SOLVER.
+PASS   : DesktopWorkflowE2ETests::calculationAndCadStagesAreReachable()
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] init: event wait completed
+QINFO  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() [E2E-DIAG] after filter synthesis resultsNote= ? INPUT / MODEL LIMITATIONS � results are preliminary and must not be treated as verified design data.
+
+Source impedance R/L is zero or unset: the network is modelled as an ideal voltage source. Filter-bank impedance and magnetic response to the supplied spectrum are calculated, but source-limited current response and Thevenin bus impedance are not modelled; the separate frequency-sweep current remains an ideal-source diagnostic, not operational stress.
+Core geometry, turns and a material B-H curve are not provided. Magnetic flux density and saturation checks are NOT_VERIFIED.
+No non-fundamental voltage or load-current harmonics were supplied. THD is not established by the fundamental-only spectrum; the fundamental magnetic operating point can still be calculated.
+Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion.
+NOT_VERIFIED: confirm the current Construction revision and make the material database available.
+
+LC synthesis, three-phase fundamental MNA verification and ideal-source current sweep completed. Construction material candidates are selected from exact SQLite revisions; core geometry, turns, conductor sizing and thermal design remain NOT_VERIFIED until their required source data and physical sizing solver are available. Source/filter impedance scan completed; resonance maxima are candidates, not automatic failures. Harmonic response and component RMS stress were calculated from 0 entered non-fundamental voltage harmonics. Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion. Models assume balanced positive/negative sequence; frequency-dependent ESR is used for the separate capacitor loss estimate but is not yet fed back into the harmonic network solution. Ripple-current correction factors, coupled thermal paths, component tolerances and standards compliance are not evaluated. Filter-bank impedance is plotted. Source-limited bus impedance and parallel-resonance zones remain NOT_VERIFIED because source R/L is zero. Manufacturer Isat comparison NOT_VERIFIED: enter a compatible peak-current rating per phase and its evidence reference. Magnetic B-H model NOT_VERIFIED: no core geometry and measured B-H curve were supplied. Immutable calculation snapshot saved: b699f384-f706-407f-ac75-6df4ad15b165. resultRows= 31 constructionState= INPUTS CAPTURED � filter snapshot b699f384-f706-407f-ac75-6df4ad15b165 / branch 1. Physical sizing: NOT_CONNECTED_TO_SOLVER.
+FAIL!  : DesktopWorkflowE2ETests::syntheticTest01ConstructionBuildsOcctAssembly() 'cadStatus->text().contains(QStringLiteral("Preliminary CAD generated"))' returned FALSE. (CAD generation did not succeed. Actual status: CAD generation failed: Each round conductor turn must be one connected solid.)
+C:\Temp\trdos\135\app\desktop\tests\workflow_e2e_tests.cpp(1540) : failure location
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::projectArchiveSaveLoadRoundTrip()
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: before MainWindow construction
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: MainWindow constructed
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: before show()
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: show() returned
+QINFO  : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent() [E2E-DIAG] init: event wait completed
+PASS   : DesktopWorkflowE2ETests::twoDimensionalDrawingStageIsPresent()
+PASS   : DesktopWorkflowE2ETests::cleanupTestCase()
+Totals: 12 passed, 1 failed, 0 skipped, 0 blacklisted, 49502ms
+********* Finished testing of DesktopWorkflowE2ETests *********
+
+
+95% tests passed, 2 tests failed out of 43
+
+Total Test time (real) =  87.68 sec
+
+The following tests FAILED:
+	 21 - Project135CadTests (Exit code 0xc0000409)
+	 43 - Project135DesktopWorkflowE2ETests (Failed)
+Errors while running CTest
+[FAIL] CTest Release (exit 8)
+
+===================== FINAL SUMMARY =====================
+Overall: FAILED
+Debug build: PASS
+Debug tests: FAIL
+Release build: PASS
+Release tests: FAIL
+Source commit: cec215e78e6450e1fcbb8092cb40dd67c6522b9e
+Finished: 23.11.2026 21:40:54,25
+==========================================================
+[ARTIFACTS] Debug plot PNG files: 90
