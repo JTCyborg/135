@@ -36,7 +36,7 @@ void testHorizontalPlateCorrelations()
 
     request.unobstructedQuiescentAmbient = false;
     const auto obstructed = analyzeHorizontalPlateNaturalConvection(request);
-    assert(!obstructed.has_value());
+    assert(!obstructed);
 }
  
 int main()
