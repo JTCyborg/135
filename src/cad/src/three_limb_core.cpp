@@ -467,41 +467,53 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     return face.IsDone() ? face.Face() : TopoDS_Face();
                 };
                 const TopoDS_Face copperProfile = makeProfile(copperRadius);
-                const TopoDS_Face insulationProfile = makeProfile(insulatedRadius);
-                if (copperProfile.IsNull() || insulationProfile.IsNull())
+                if (copperProfile.IsNull())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to create copper and insulation circular profiles.",
+                        "OCCT failed to create the copper circular profile.",
+                        "windingPack.helicalProfile");
+
+                // Sweep the enamel as an annular profile directly. Subtracting
+                // two coincident pipe sweeps is numerically fragile in OCCT and
+                // can split the thin insulation into multiple solids. A face
+                // with an inner wire preserves the coating as one hollow solid.
+                const gp_Circ outerCircle(profileAxis, insulatedRadius);
+                const gp_Circ innerCircle(profileAxis, copperRadius);
+                BRepBuilderAPI_MakeWire outerWire;
+                outerWire.Add(BRepBuilderAPI_MakeEdge(outerCircle).Edge());
+                BRepBuilderAPI_MakeWire innerWire;
+                innerWire.Add(BRepBuilderAPI_MakeEdge(innerCircle).Edge());
+                if (!outerWire.IsDone() || !innerWire.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to create the annular insulation profile wires.",
+                        "windingPack.helicalProfile");
+                BRepBuilderAPI_MakeFace annularFace(outerWire.Wire());
+                annularFace.Add(TopoDS::Wire(innerWire.Wire().Reversed()));
+                if (!annularFace.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to create a valid annular insulation profile.",
                         "windingPack.helicalProfile");
 
                 BRepOffsetAPI_MakePipe copperPipe(path.Wire(), copperProfile);
                 copperPipe.Build();
-                BRepOffsetAPI_MakePipe insulatedPipe(path.Wire(), insulationProfile);
-                insulatedPipe.Build();
-                if (!copperPipe.IsDone() || !insulatedPipe.IsDone() ||
-                    copperPipe.Shape().IsNull() || insulatedPipe.Shape().IsNull() ||
+                BRepOffsetAPI_MakePipe insulationPipe(path.Wire(), annularFace.Face());
+                insulationPipe.Build();
+                if (!copperPipe.IsDone() || !insulationPipe.IsDone() ||
+                    copperPipe.Shape().IsNull() || insulationPipe.Shape().IsNull() ||
                     !BRepCheck_Analyzer(copperPipe.Shape()).IsValid() ||
-                    !BRepCheck_Analyzer(insulatedPipe.Shape()).IsValid())
+                    !BRepCheck_Analyzer(insulationPipe.Shape()).IsValid())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to sweep the copper helix and its surrounding insulation.",
+                        "OCCT failed to sweep the copper helix and its annular enamel insulation.",
                         "windingPack.helicalSweep");
-
-                BRepAlgoAPI_Cut insulation(insulatedPipe.Shape(), copperPipe.Shape());
-                insulation.Build();
-                if (!insulation.IsDone() || insulation.Shape().IsNull() ||
-                    !BRepCheck_Analyzer(insulation.Shape()).IsValid())
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to separate the conductor insulation from the copper core.",
-                        "windingPack.conductorInsulation");
 
                 std::size_t copperSolids = 0, insulationSolids = 0;
                 for (TopExp_Explorer it(copperPipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
-                for (TopExp_Explorer it(insulation.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
+                for (TopExp_Explorer it(insulationPipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
                 if (copperSolids != 1 || insulationSolids != 1)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Each helical path must produce one copper solid and one separate insulation solid.",
                         "windingPack.helicalSolids");
                 builder.Add(windingSolids, copperPipe.Shape());
-                builder.Add(windingSolids, insulation.Shape());
+                builder.Add(windingSolids, insulationPipe.Shape());
             }
         }
 
