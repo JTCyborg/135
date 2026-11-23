@@ -39,6 +39,7 @@
 #include <QWheelEvent>
 #include <QToolButton>
 
+#include <algorithm>
 #include <array>
 #include <optional>
 #include <complex>
