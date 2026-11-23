@@ -649,7 +649,9 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
     // Reject unintended volumetric overlap. Turns within one winding are
     // generated from a deterministic non-overlapping pitch; checking every
     // pair of hundreds of turns with Boolean Common is prohibitively costly.
-    // Still check every conductor against the core, bobbins and other phases.
+    // The validated bobbin opening contains the core limb, and the conductor
+    // loops are outside the bobbin body by construction. Check conductors
+    // against bobbins and other phases; check all remaining component pairs.
     std::vector<int> windingGroup(members.size(), -1);
     std::size_t memberCursor = expectedCoreSolids;
     for (std::size_t phase = 0; phase < windingSolidCounts.size(); ++phase) {
