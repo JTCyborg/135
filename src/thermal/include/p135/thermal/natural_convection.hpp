@@ -38,6 +38,8 @@ struct NaturalConvectionResult {
     double heatTransferCoefficientWPerM2K{};
     double thermalResistanceKPerW{};
     std::string correlation;
+    std::string geometrySourceReference;
+    std::string fluidPropertiesSourceReference;
     std::string status;
     std::string explanation;
 };
