@@ -3826,6 +3826,7 @@ QWidget* MainWindow::createResultsPage()
     layout->addWidget(heading);
 
     resultsNote_ = new QLabel(tr("No synthesis has been performed."));
+    resultsNote_->setObjectName(QStringLiteral("calculationResultsNote"));
     resultsNote_->setWordWrap(true);
     resultsNote_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     resultsNote_->setMinimumHeight(48);
