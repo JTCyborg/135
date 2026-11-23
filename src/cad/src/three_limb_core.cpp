@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <utility>
@@ -341,6 +342,122 @@ Result<TopoDS_Shape> buildWindingPackEnvelopeShape(
             "Winding-pack envelope must be one finite, positive-volume solid.",
             "windingPack.envelope");
     return Result<TopoDS_Shape>::success(cut.Shape());
+}
+
+Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
+    const domain::BobbinPhysicalGeometry& bobbin,
+    const domain::WindingPackPhysicalGeometry& winding)
+{
+    const auto bobbinValidation = domain::validate(bobbin);
+    if (!bobbinValidation) return Result<TopoDS_Shape>::failure(bobbinValidation.error());
+    const auto windingValidation = domain::validate(winding);
+    if (!windingValidation) return Result<TopoDS_Shape>::failure(windingValidation.error());
+
+    if (!winding.turns || !winding.turnsPerLayer || !winding.parallelConductors ||
+        (winding.conductorShape != "rectangular" && winding.conductorShape != "foil"))
+        return failure<TopoDS_Shape>(ErrorCode::UnsupportedConfiguration,
+            "Individual turn solids currently require explicit rectangular or foil conductor dimensions.",
+            "windingPack.conductorGeometry");
+
+    constexpr double mm = 1000.0;
+    constexpr double cutOverrunMm = 1.0e-3;
+    const double bodyWidth = bobbin.innerWidth.si() + 2.0 * bobbin.wallThickness.si();
+    const double bodyDepth = bobbin.innerHeight.si() + 2.0 * bobbin.wallThickness.si();
+    const double radialPitch = winding.radialBuild.si() /
+        static_cast<double>(winding.layerCount);
+    const double radialConductor = winding.bareConductorWidth->si() +
+        2.0 * winding.conductorInsulationBuild.si();
+    const double axialConductor = winding.bareConductorThickness->si() +
+        2.0 * winding.conductorInsulationBuild.si();
+    const std::uint64_t conductorsPerLayer =
+        static_cast<std::uint64_t>(*winding.turnsPerLayer) *
+        static_cast<std::uint64_t>(*winding.parallelConductors);
+    if (conductorsPerLayer == 0 ||
+        conductorsPerLayer > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+            "Winding conductor count exceeds the supported CAD iteration range.",
+            "windingPack.parallelConductors");
+    const double axialPitch = winding.axialHeight.si() /
+        static_cast<double>(conductorsPerLayer);
+    const double tolerance = std::max(1.0e-9, radialPitch * 1.0e-6);
+    if (radialConductor + winding.layerInsulationBuild.si() > radialPitch + tolerance)
+        return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+            "Insulated radial conductor width plus layer insulation exceeds the radial pitch.",
+            "windingPack.radialBuild");
+    if (axialConductor > axialPitch + std::max(1.0e-9, axialPitch * 1.0e-6))
+        return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+            "Insulated axial conductor thickness does not fit the turn/parallel-conductor pitch.",
+            "windingPack.axialHeight");
+
+    BRep_Builder builder;
+    TopoDS_Compound turns;
+    builder.MakeCompound(turns);
+    const double innerClearance = bobbin.windingClearance.si() +
+        winding.mainInsulationBuild.si();
+    const double axialStart = winding.endClearance.si();
+    for (std::uint32_t layer = 0; layer < winding.layerCount; ++layer) {
+        const double layerOffset = static_cast<double>(layer) * radialPitch;
+        const double outerWidth = bodyWidth + 2.0 *
+            (innerClearance + layerOffset + radialPitch);
+        const double outerDepth = bodyDepth + 2.0 *
+            (innerClearance + layerOffset + radialPitch);
+        const double innerWidth = outerWidth - 2.0 * radialConductor;
+        const double innerDepth = outerDepth - 2.0 * radialConductor;
+        if (innerWidth <= 0.0 || innerDepth <= 0.0)
+            return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                "Conductor radial build collapses the rectangular turn opening.",
+                "windingPack.conductorCrossSection");
+
+        for (std::uint32_t turn = 0; turn < *winding.turnsPerLayer; ++turn) {
+            for (std::uint32_t parallel = 0; parallel < *winding.parallelConductors; ++parallel) {
+                const std::uint64_t axialIndex =
+                    static_cast<std::uint64_t>(turn) * *winding.parallelConductors + parallel;
+                const double y = (axialStart +
+                    (static_cast<double>(axialIndex) + 0.5) * axialPitch -
+                    0.5 * axialConductor) * mm;
+                const double xOuter = -0.5 * outerWidth * mm;
+                const double zOuter = -0.5 * outerDepth * mm;
+                const double xInner = -0.5 * innerWidth * mm;
+                const double zInner = -0.5 * innerDepth * mm;
+                BRepPrimAPI_MakeBox outerMaker(
+                    gp_Pnt(xOuter, y, zOuter),
+                    outerWidth * mm, axialConductor * mm, outerDepth * mm);
+                BRepPrimAPI_MakeBox innerMaker(
+                    gp_Pnt(xInner, y - cutOverrunMm, zInner),
+                    innerWidth * mm, (axialConductor * mm) + 2.0 * cutOverrunMm,
+                    innerDepth * mm);
+                outerMaker.Build();
+                innerMaker.Build();
+                if (!outerMaker.IsDone() || !innerMaker.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to create a conductor-turn ring primitive.",
+                        "windingPack.turns");
+                BRepAlgoAPI_Cut cut(outerMaker.Shape(), innerMaker.Shape());
+                cut.Build();
+                if (!cut.IsDone() || cut.Shape().IsNull() ||
+                    !BRepCheck_Analyzer(cut.Shape()).IsValid())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to create a valid independent conductor-turn solid.",
+                        "windingPack.turns");
+                std::size_t solids = 0;
+                for (TopExp_Explorer it(cut.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++solids;
+                if (solids != 1)
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "Each detailed conductor turn must be one connected solid.",
+                        "windingPack.turns");
+                builder.Add(turns, cut.Shape());
+            }
+        }
+    }
+    const std::uint64_t expected = static_cast<std::uint64_t>(*winding.turns) *
+        static_cast<std::uint64_t>(*winding.parallelConductors);
+    std::uint64_t actual = 0;
+    for (TopExp_Explorer it(turns, TopAbs_SOLID); it.More(); it.Next()) ++actual;
+    if (actual != expected || !BRepCheck_Analyzer(turns).IsValid())
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "Detailed winding CAD must contain exactly turns multiplied by parallel conductors independent solids.",
+            "windingPack.turns");
+    return Result<TopoDS_Shape>::success(turns);
 }
 
 Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
