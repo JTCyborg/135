@@ -60,6 +60,65 @@ int main()
     for (const auto& node : result.value().network.nodes)
         assert(node.status == AssessmentStatus::Pass);
 
+    // Explicit natural-convection surfaces are evaluated and connected to
+    // the selected reactor node as separate parallel ambient paths.
+    auto withNaturalConvection = request;
+    NaturalConvectionFluidProperties air;
+    air.thermalConductivityWPerMK = 0.026;
+    air.kinematicViscosityM2PerS = 15.7e-6;
+    air.thermalDiffusivityM2PerS = 22.1e-6;
+    air.prandtlNumber = 0.71;
+    air.sourceReference = "air-properties-film-303K-R1";
+
+    VerticalPlateNaturalConvectionRequest vertical;
+    vertical.exposedArea = units::Area{0.10};
+    vertical.verticalCharacteristicLength = units::Length{0.50};
+    vertical.ambientTemperature = units::TemperatureKelvin{293.15};
+    vertical.surfaceTemperature = units::TemperatureKelvin{313.15};
+    vertical.fluid = air;
+    vertical.geometrySourceReference = "winding-phase-a-side-face-CAD-R1";
+    vertical.unobstructedQuiescentAmbient = true;
+    ReactorNaturalConvectionSurfaceBoundary verticalBoundary;
+    verticalBoundary.nodeId = "winding.phase_a";
+    verticalBoundary.surface = vertical;
+    verticalBoundary.boundaryModelSourceReference = "installation-boundary-side-R1";
+    withNaturalConvection.naturalConvectionSurfaces.push_back(verticalBoundary);
+
+    HorizontalPlateNaturalConvectionRequest horizontal;
+    horizontal.exposedArea = units::Area{0.10};
+    horizontal.exposedPerimeter = units::Length{1.20};
+    horizontal.ambientTemperature = units::TemperatureKelvin{293.15};
+    horizontal.surfaceTemperature = units::TemperatureKelvin{313.15};
+    horizontal.fluid = air;
+    horizontal.geometrySourceReference = "winding-phase-a-top-face-CAD-R1";
+    horizontal.orientation = HorizontalPlateOrientation::HeatedFaceUpward;
+    horizontal.unobstructedQuiescentAmbient = true;
+    ReactorNaturalConvectionSurfaceBoundary horizontalBoundary;
+    horizontalBoundary.nodeId = "winding.phase_a";
+    horizontalBoundary.surface = horizontal;
+    horizontalBoundary.boundaryModelSourceReference = "installation-boundary-top-R1";
+    withNaturalConvection.naturalConvectionSurfaces.push_back(horizontalBoundary);
+
+    const auto naturalConvectionResult = analyzeReactorThermalNetwork(withNaturalConvection);
+    assert(naturalConvectionResult);
+    assert(naturalConvectionResult.value().network.solved);
+    assert(naturalConvectionResult.value().naturalConvectionSurfaces.size() == 2);
+    assert(naturalConvectionResult.value().naturalConvectionSurfaces[0].nodeId == "winding.phase_a");
+    assert(naturalConvectionResult.value().naturalConvectionSurfaces[0].convection.correlation.find("Churchill-Chu") != std::string::npos);
+    assert(naturalConvectionResult.value().naturalConvectionSurfaces[1].convection.correlation.find("McAdams") != std::string::npos);
+    assert(!naturalConvectionResult.value().network.modelProvenanceComplete);
+    for (const auto& node : naturalConvectionResult.value().network.nodes)
+        assert(node.status == AssessmentStatus::NotVerified);
+
+    auto obstructedSurface = withNaturalConvection;
+    obstructedSurface.naturalConvectionSurfaces[0].surface =
+        VerticalPlateNaturalConvectionRequest{
+            units::Area{0.10}, units::Length{0.50},
+            units::TemperatureKelvin{293.15}, units::TemperatureKelvin{313.15},
+            air, "winding-phase-a-side-face-CAD-R1", false
+        };
+    assert(!analyzeReactorThermalNetwork(obstructedSurface));
+
     auto unreleased = request;
     unreleased.conductorMaterialDesignReleaseStatus = "NOT_VERIFIED";
     const auto gated = analyzeReactorThermalNetwork(unreleased);
