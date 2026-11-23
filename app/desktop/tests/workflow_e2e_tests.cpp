@@ -1015,6 +1015,9 @@ private slots:
         QVERIFY(coreWaveformPlot);
         const auto waveformCurves = coreWaveformPlot->property("plotCurves").toList();
         QCOMPARE(waveformCurves.size(), 7);
+        QVERIFY(coreWaveformPlot->property("plotAllowsNegativeY").toBool());
+        bool hasPositiveFlux = false;
+        bool hasNegativeFlux = false;
         for (const auto& curveValue : waveformCurves) {
             const auto curve = curveValue.toMap();
             const auto points = curve.value(QStringLiteral("points")).toList();
@@ -1024,8 +1027,12 @@ private slots:
                 const auto point = pointValue.toList();
                 QCOMPARE(point.size(), 2);
                 QVERIFY(std::isfinite(point[1].toDouble()));
+                hasPositiveFlux = hasPositiveFlux || point[1].toDouble() > 0.0;
+                hasNegativeFlux = hasNegativeFlux || point[1].toDouble() < 0.0;
             }
         }
+        QVERIFY(hasPositiveFlux);
+        QVERIFY(hasNegativeFlux);
         auto* coreWaveformTitle = window_->findChild<QLabel*>(
             QStringLiteral("coreFluxWaveformPlotTitle"));
         QVERIFY(coreWaveformTitle);
