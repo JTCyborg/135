@@ -463,6 +463,16 @@ public:
 #endif
     }
 
+    void setLogarithmicY(bool enabled)
+    {
+        logarithmicY_ = enabled;
+        setProperty("plotLogarithmicY", enabled);
+        update();
+#if defined(_DEBUG) || !defined(NDEBUG)
+        scheduleDebugImageSave();
+#endif
+    }
+
     void setHorizontalReference(double value, QString label)
     {
         horizontalReference_ = std::make_pair(value, std::move(label));
@@ -604,13 +614,14 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.fillRect(rect(), palette().base());
         // Reserve a wider left gutter for both the rotated Y-axis title and tick labels.
-        const QRectF area(86.0, 66.0, std::max(80, width() - (barChart_ ? 176 : 122)), std::max(80, height() - 116));
+        const QRectF area(86.0, 66.0, std::max(80, width() - (barChart_ ? 176 : 122)), std::max(80, height() - (barChart_ ? 142 : 116)));
         painter.setPen(palette().color(QPalette::Mid));
         painter.drawRect(area);
 
         double minX = std::numeric_limits<double>::max();
         double maxX = std::numeric_limits<double>::lowest();
         double minY = allowNegativeY_ ? std::numeric_limits<double>::max() : 0.0;
+        double minPositiveY = std::numeric_limits<double>::max();
         double maxY = std::numeric_limits<double>::lowest();
         bool hasPoints = false;
         for (const auto& curve : curves_) {
@@ -621,6 +632,7 @@ protected:
                 minX = std::min(minX, x);
                 maxX = std::max(maxX, x);
                 minY = std::min(minY, y);
+                if (y > 0.0) minPositiveY = std::min(minPositiveY, y);
                 maxY = std::max(maxY, y);
                 hasPoints = true;
             }
@@ -646,19 +658,33 @@ protected:
         };
         const double yRange = std::max(maxY - minY, std::abs(maxY) * 1.0e-6);
         const double yPadding = std::max(yRange * 0.08, 1.0e-9);
-        // Bar charts retain a zero baseline. Line charts use a tight, padded
-        // engineering range so small changes are not flattened by an arbitrary
-        // zero origin. Signed waveforms retain both positive and negative peaks.
-        const double dataYMin = allowNegativeY_ ? minY - yPadding
+        // Logarithmic magnitude scaling is intended for non-negative spectra:
+        // it preserves the real amplitudes while making low-order harmonics
+        // visible beside the fundamental. Zero values sit on a documented
+        // finite display floor; the underlying plotCurves remain unchanged.
+        const double linearDataYMin = allowNegativeY_ ? minY - yPadding
             : barChart_ ? 0.0 : std::max(0.0, minY - yPadding);
-        const double dataYMax = maxY + yPadding;
-        const double yMax = std::max({dataYMax,
+        const double linearDataYMax = std::max({maxY + yPadding,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
             magneticKneeCurrentA_.value_or(0.0) * 1.08,
             horizontalReference_ ? horizontalReference_->first : 0.0});
-        const auto yPixel = [&area, dataYMin, yMax](double value) {
-            return area.bottom() - ((value - dataYMin) / (yMax - dataYMin)) * area.height();
+        const double logFloor = logarithmicY_
+            ? std::max(std::numeric_limits<double>::min(),
+                (minPositiveY < std::numeric_limits<double>::max()
+                    ? minPositiveY * 0.5 : std::max(maxY, 1.0) * 1.0e-4))
+            : 0.0;
+        const double dataYMin = logarithmicY_ ? logFloor : linearDataYMin;
+        const double dataYMax = linearDataYMax;
+        const double axisYMin = logarithmicY_ ? std::log10(logFloor) : dataYMin;
+        const double axisYMax = logarithmicY_ ? std::log10(std::max(dataYMax, logFloor * 10.0)) : dataYMax;
+        const auto yPixel = [&area, logarithmicY = logarithmicY_, axisYMin, axisYMax,
+                             dataYMin, dataYMax](double value) {
+            const double coordinate = logarithmicY
+                ? std::log10(std::max(value, dataYMin)) : value;
+            const double fraction = (coordinate - axisYMin) / (axisYMax - axisYMin);
+            return area.bottom() - fraction * area.height();
         };
+        const double yBaseline = logarithmicY_ ? yPixel(logFloor) : area.bottom();
         painter.setPen(palette().color(QPalette::Mid));
         std::size_t totalSamples = 0;
         for (const auto& curve : curves_) totalSamples += curve.points.size();
@@ -746,8 +772,11 @@ protected:
             painter.setPen(QPen(palette().color(QPalette::Mid), tick == 0 ? 1.0 : 0.6,
                                 tick == 0 ? Qt::SolidLine : Qt::DotLine));
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
+            const double tickValue = logarithmicY_
+                ? std::pow(10.0, axisYMin + (axisYMax - axisYMin) * fraction)
+                : dataYMin + (dataYMax - dataYMin) * fraction;
             painter.drawText(QRectF(26, y - 9, 56, 18), Qt::AlignRight | Qt::AlignVCenter,
-                QString::number(dataYMin + (yMax - dataYMin) * fraction, 'g', 4));
+                QString::number(tickValue, 'g', 3));
             if (!barChart_) {
                 const double xValue = logarithmicX_
                     ? std::pow(10.0, axisMin + (axisMax - axisMin) * fraction)
@@ -778,11 +807,10 @@ protected:
                     : 0.5 * (x + xPixel(categories[index + 1].first));
                 painter.setPen(palette().color(QPalette::Mid));
                 painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
-                const QRectF labelRect(left + 2.0, area.bottom() + 6.0,
-                    std::max(1.0, right - left - 4.0), 30.0);
+                const QRectF labelRect(left + 1.0, area.bottom() + 5.0,
+                    std::max(1.0, right - left - 2.0), 40.0);
                 painter.drawText(labelRect, Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap,
-                    painter.fontMetrics().elidedText(categories[index].second,
-                        Qt::ElideRight, static_cast<int>(labelRect.width())));
+                    categories[index].second);
             }
         }
 
@@ -885,7 +913,7 @@ protected:
                     const double center = xPixel(xValue) + offset;
                     const double top = yPixel(yValue);
                     painter.drawRect(QRectF(center - barWidth * 0.5, top,
-                                             barWidth, area.bottom() - top));
+                                             barWidth, std::max(0.0, yBaseline - top)));
                     painter.setPen(palette().color(QPalette::Text));
                     if (curves_.size() == 1 || curve.points.size() == 1) {
                         const double labelCenter = std::clamp(center,
@@ -954,6 +982,7 @@ private:
     bool logarithmicX_{true};
     bool barChart_{};
     bool allowNegativeY_{};
+    bool logarithmicY_{};
     std::vector<PlotBand> resonanceBands_;
     std::vector<PlotMarker> frequencyMarkers_;
     std::optional<std::pair<double, QString>> horizontalReference_;
@@ -4201,8 +4230,9 @@ QWidget* MainWindow::createResultsPage()
     resultsVoltageSpectrumPlot_->setObjectName(QStringLiteral("resultsVoltageSpectrumPlot"));
     resultsVoltageSpectrumPlot_->setProperty("debugImagePath", projectArtifactPath(
         QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_voltage_harmonic_spectrum.png")));
-    resultsVoltageSpectrumPlot_->setCurves({}, tr("Harmonic order h"), tr("Voltage (% of source fundamental)"),
+    resultsVoltageSpectrumPlot_->setCurves({}, tr("Harmonic order h"), tr("Voltage (% of source fundamental, log scale)"),
         false, tr("WAITING_FOR_INPUT: enter a non-fundamental voltage spectrum and run harmonic analysis."), true);
+    resultsVoltageSpectrumPlot_->setLogarithmicY(true);
     resultsVoltageSpectrumPlot_->setMinimumHeight(250);
     resultsVoltageSpectrumPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsVoltageSpectrumPlot_);
@@ -4215,8 +4245,9 @@ QWidget* MainWindow::createResultsPage()
     resultsCurrentSpectrumPlot_->setObjectName(QStringLiteral("resultsCurrentSpectrumPlot"));
     resultsCurrentSpectrumPlot_->setProperty("debugImagePath", projectArtifactPath(
         QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_current_harmonic_spectrum.png")));
-    resultsCurrentSpectrumPlot_->setCurves({}, tr("Harmonic order h"), tr("RMS current (A)"),
+    resultsCurrentSpectrumPlot_->setCurves({}, tr("Harmonic order h"), tr("RMS current (A, log scale)"),
         false, tr("WAITING_FOR_INPUT: enter non-fundamental load-current injections and run harmonic analysis."), true);
+    resultsCurrentSpectrumPlot_->setLogarithmicY(true);
     resultsCurrentSpectrumPlot_->setMinimumHeight(250);
     resultsCurrentSpectrumPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsCurrentSpectrumPlot_);
