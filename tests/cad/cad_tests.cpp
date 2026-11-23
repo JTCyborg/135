@@ -763,8 +763,8 @@ int main()
     roundWinding.turnsPerLayer = 4;
     roundWinding.parallelConductors = 1;
     roundWinding.conductorShape = "round";
-    roundWinding.conductorBareDiameter = units::Length{0.0010};
-    roundWinding.conductorInsulatedDiameter = units::Length{0.0012};
+    roundWinding.bareConductorDiameter = units::Length{0.0010};
+    roundWinding.insulatedConductorDiameter = units::Length{0.0012};
     roundWinding.radialBuild = units::Length{0.0060};
     roundWinding.conductorInsulationBuild = units::Length{0.0001};
     const auto roundTurns = p135::cad::buildDetailedWindingTurnsShape(
@@ -789,8 +789,8 @@ int main()
         winding.turnsPerLayer = 4;
         winding.parallelConductors = 1;
         winding.conductorShape = "round";
-        winding.conductorBareDiameter = units::Length{0.0010};
-        winding.conductorInsulatedDiameter = units::Length{0.0012};
+        winding.bareConductorDiameter = units::Length{0.0010};
+        winding.insulatedConductorDiameter = units::Length{0.0012};
         winding.radialBuild = units::Length{0.0060};
         winding.conductorInsulationBuild = units::Length{0.0001};
     }
