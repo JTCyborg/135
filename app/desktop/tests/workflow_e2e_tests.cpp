@@ -1203,9 +1203,18 @@ private slots:
             QTest::mouseClick(refreshHistory, Qt::LeftButton);
         QTRY_VERIFY_WITH_TIMEOUT(historyTable->rowCount() >= 2, 5000);
         historyTable->clearSelection();
-        historyTable->selectRow(0);
-        historyTable->selectRow(1);
-        QCOMPARE(historyTable->selectionModel()->selectedRows().size(), 2);
+        // QTableWidget::selectRow() may replace the current selection depending
+        // on the active selection command. Explicit Select|Rows keeps both
+        // calculation snapshots selected for the comparison action.
+        auto* historySelection = historyTable->selectionModel();
+        QVERIFY(historySelection);
+        historySelection->select(
+            historyTable->model()->index(0, 0),
+            QItemSelectionModel::Select | QItemSelectionModel::Rows);
+        historySelection->select(
+            historyTable->model()->index(1, 0),
+            QItemSelectionModel::Select | QItemSelectionModel::Rows);
+        QCOMPARE(historySelection->selectedRows().size(), 2);
         auto* historyMetric = window_->findChild<QComboBox*>(
             QStringLiteral("historyPlotMetric"));
         QVERIFY(historyMetric);
