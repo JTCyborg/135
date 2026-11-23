@@ -7151,7 +7151,6 @@ void MainWindow::calculateFilter()
                 });
             }
         }
-    }
         if (hasSourceImpedance && points.size() >= 2) {
             const auto interpolateCrossing = [](const auto& left, const auto& right,
                                                   double leftDifference,
@@ -7198,6 +7197,7 @@ void MainWindow::calculateFilter()
                     tr("Impedance amplification: |Zbus| > |Zgrid|"), true
                 });
         }
+    }
     // Canonical harmonic order markers are shared with the bus-impedance graph.
     std::vector<PlotMarker> canonicalHarmonicMarkers;
     constexpr std::array<std::uint32_t, 9> canonicalHarmonicOrders{
