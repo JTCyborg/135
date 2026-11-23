@@ -1,5 +1,6 @@
 #include "p135/cad/three_limb_core.hpp"
 #include "p135/cad/assembly_presentation.hpp"
+#include "p135/cad/winding_surface_geometry.hpp"
 
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepAlgoAPI_Common.hxx>
@@ -605,6 +606,36 @@ int main()
     constexpr double expectedWindingEnvelopeVolume = (68.0 * 138.0 - 44.0 * 114.0) * 100.0;
     assert(std::abs(volumeOf(windingEnvelope.value()) -
                     expectedWindingEnvelopeVolume) < 1.0e-5);
+
+    // Face extraction is geometric only: cavity faces remain in the list and
+    // no face is asserted to be air-exposed or thermally active.
+    const auto windingFaces =
+        p135::cad::extractWindingEnvelopeFaceGeometry(windingEnvelope.value());
+    assert(windingFaces);
+    assert(windingFaces.value().size() >= 10);
+    double extractedFaceArea = 0.0;
+    std::size_t planarFaceCount = 0;
+    for (const auto& face : windingFaces.value()) {
+        assert(face.areaMm2 > 0.0);
+        assert(std::isfinite(face.centroidMm[0]));
+        assert(std::isfinite(face.centroidMm[1]));
+        assert(std::isfinite(face.centroidMm[2]));
+        assert(face.boundsMm[0] <= face.boundsMm[3]);
+        assert(face.boundsMm[1] <= face.boundsMm[4]);
+        assert(face.boundsMm[2] <= face.boundsMm[5]);
+        extractedFaceArea += face.areaMm2;
+        if (face.planar) {
+            const double normalLength = std::sqrt(
+                face.unitNormal[0] * face.unitNormal[0] +
+                face.unitNormal[1] * face.unitNormal[1] +
+                face.unitNormal[2] * face.unitNormal[2]);
+            assert(std::abs(normalLength - 1.0) < 1.0e-9);
+            ++planarFaceCount;
+        }
+    }
+    assert(planarFaceCount >= 10);
+    assert(extractedFaceArea > 0.0);
+    assert(!p135::cad::extractWindingEnvelopeFaceGeometry(TopoDS_Shape{}));
 
     auto invalidWindingEnvelope = geometry.windingPacks[0];
     invalidWindingEnvelope.radialBuild = units::Length{0.0};
