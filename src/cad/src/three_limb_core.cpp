@@ -10,6 +10,13 @@
 #include <Bnd_Box.hxx>
 #include <BRepGProp.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepOffsetAPI_MakePipe.hxx>
+#include <gp_Ax2.hxx>
+#include <gp_Circ.hxx>
+#include <gp_Dir.hxx>
+#include <TopoDS_Wire.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
@@ -357,12 +364,101 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
 
     if (!winding.turns || !winding.turnsPerLayer || !winding.parallelConductors ||
         winding.sections != 1 ||
-        (winding.conductorShape != "rectangular" && winding.conductorShape != "foil"))
+        (winding.conductorShape != "rectangular" && winding.conductorShape != "foil" &&
+         winding.conductorShape != "round"))
         return failure<TopoDS_Shape>(ErrorCode::UnsupportedConfiguration,
-            "Individual turn solids currently require explicit rectangular/foil dimensions and a single section; multi-section spacers need explicit geometry.",
+            "Individual turn solids require explicit conductor dimensions and a single winding section.",
             "windingPack.conductorGeometry");
 
     constexpr double mm = 1000.0;
+    if (winding.conductorShape == "round") {
+        if (!winding.conductorBareDiameter || winding.conductorBareDiameter->si() <= 0.0)
+            return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                "Round detailed winding requires a positive bare conductor diameter.",
+                "windingPack.conductorBareDiameter");
+        const double diameter = winding.conductorInsulatedDiameter
+            ? winding.conductorInsulatedDiameter->si()
+            : winding.conductorBareDiameter->si() +
+                2.0 * winding.conductorInsulationBuild.si();
+        const double radius = 0.5 * diameter * mm;
+        const double bodyWidth = bobbin.innerWidth.si() + 2.0 * bobbin.wallThickness.si();
+        const double bodyDepth = bobbin.innerHeight.si() + 2.0 * bobbin.wallThickness.si();
+        const double radialPitch = winding.radialBuild.si() /
+            static_cast<double>(winding.layerCount);
+        const std::uint64_t conductorsPerLayer =
+            static_cast<std::uint64_t>(*winding.turnsPerLayer) *
+            static_cast<std::uint64_t>(*winding.parallelConductors);
+        if (conductorsPerLayer == 0)
+            return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                "Round winding has zero conductors per layer.", "windingPack.turnsPerLayer");
+        const double axialPitch = winding.axialHeight.si() /
+            static_cast<double>(conductorsPerLayer);
+        const double tolerance = std::max(1.0e-9, radialPitch * 1.0e-6);
+        if (diameter + winding.layerInsulationBuild.si() > radialPitch + tolerance ||
+            diameter > axialPitch + std::max(1.0e-9, axialPitch * 1.0e-6))
+            return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                "Insulated round conductor does not fit the specified radial or axial pitch.",
+                "windingPack.conductorGeometry");
+
+        BRep_Builder builder;
+        TopoDS_Compound turns;
+        builder.MakeCompound(turns);
+        const double innerClearance =
+            bobbin.windingClearance.si() + winding.mainInsulationBuild.si();
+        const double axialStart = winding.endClearance.si();
+        for (std::uint32_t layer = 0; layer < winding.layerCount; ++layer) {
+            const double offset = static_cast<double>(layer) * radialPitch;
+            const double halfX = 0.5 * bodyWidth + innerClearance + offset + 0.5 * diameter;
+            const double halfZ = 0.5 * bodyDepth + innerClearance + offset + 0.5 * diameter;
+            for (std::uint32_t turn = 0; turn < *winding.turnsPerLayer; ++turn) {
+                for (std::uint32_t parallel = 0; parallel < *winding.parallelConductors; ++parallel) {
+                    const std::uint64_t index =
+                        static_cast<std::uint64_t>(turn) * *winding.parallelConductors + parallel;
+                    const double y = (axialStart +
+                        (static_cast<double>(index) + 0.5) * axialPitch) * mm;
+                    const gp_Pnt p0(-halfX * mm, y, -halfZ * mm);
+                    const gp_Pnt p1( halfX * mm, y, -halfZ * mm);
+                    const gp_Pnt p2( halfX * mm, y,  halfZ * mm);
+                    const gp_Pnt p3(-halfX * mm, y,  halfZ * mm);
+                    BRepBuilderAPI_MakeWire path;
+                    path.Add(BRepBuilderAPI_MakeEdge(p0, p1));
+                    path.Add(BRepBuilderAPI_MakeEdge(p1, p2));
+                    path.Add(BRepBuilderAPI_MakeEdge(p2, p3));
+                    path.Add(BRepBuilderAPI_MakeEdge(p3, p0));
+                    if (!path.IsDone())
+                        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                            "OCCT failed to create the closed centreline for a round conductor turn.",
+                            "windingPack.turns");
+                    const gp_Ax2 profileAxis(p0, gp_Dir(1.0, 0.0, 0.0), gp_Dir(0.0, 1.0, 0.0));
+                    const gp_Circ profile(profileAxis, radius);
+                    const auto profileEdge = BRepBuilderAPI_MakeEdge(profile).Edge();
+                    BRepOffsetAPI_MakePipe pipe(path.Wire(), profileEdge);
+                    pipe.Build();
+                    if (!pipe.IsDone() || pipe.Shape().IsNull() ||
+                        !BRepCheck_Analyzer(pipe.Shape()).IsValid())
+                        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                            "OCCT failed to sweep a circular insulated conductor around its winding path.",
+                            "windingPack.turns");
+                    std::size_t solids = 0;
+                    for (TopExp_Explorer it(pipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++solids;
+                    if (solids != 1)
+                        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                            "Each round conductor turn must be one connected solid.",
+                            "windingPack.turns");
+                    builder.Add(turns, pipe.Shape());
+                }
+            }
+        }
+        const std::uint64_t expected = static_cast<std::uint64_t>(*winding.turns) *
+            static_cast<std::uint64_t>(*winding.parallelConductors);
+        std::uint64_t actual = 0;
+        for (TopExp_Explorer it(turns, TopAbs_SOLID); it.More(); it.Next()) ++actual;
+        if (actual != expected || !BRepCheck_Analyzer(turns).IsValid())
+            return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                "Round detailed winding must contain exactly turns multiplied by parallel conductors solids.",
+                "windingPack.turns");
+        return Result<TopoDS_Shape>::success(turns);
+    }
     constexpr double cutOverrunMm = 1.0e-3;
     const double bodyWidth = bobbin.innerWidth.si() + 2.0 * bobbin.wallThickness.si();
     const double bodyDepth = bobbin.innerHeight.si() + 2.0 * bobbin.wallThickness.si();
