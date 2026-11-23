@@ -754,6 +754,54 @@ int main()
     }
     assert(detailedSolidCount == 160);
 
+    // Round-wire fixture: a circular insulated profile swept around each
+    // rectangular turn path. Vary turns/layers from the rectangular fixture.
+    auto roundWinding = geometry.windingPacks[0];
+    roundWinding.sections = 1;
+    roundWinding.layerCount = 2;
+    roundWinding.turns = 8;
+    roundWinding.turnsPerLayer = 4;
+    roundWinding.parallelConductors = 1;
+    roundWinding.conductorShape = "round";
+    roundWinding.conductorBareDiameter = units::Length{0.0010};
+    roundWinding.conductorInsulatedDiameter = units::Length{0.0012};
+    roundWinding.radialBuild = units::Length{0.0060};
+    roundWinding.conductorInsulationBuild = units::Length{0.0001};
+    const auto roundTurns = p135::cad::buildDetailedWindingTurnsShape(
+        geometry.bobbins[0], roundWinding);
+    assert(roundTurns);
+    assert(BRepCheck_Analyzer(roundTurns.value()).IsValid());
+    std::size_t roundSolidCount = 0;
+    for (TopExp_Explorer it(roundTurns.value(), TopAbs_SOLID); it.More(); it.Next()) {
+        ++roundSolidCount;
+        assert(BRepCheck_Analyzer(it.Current()).IsValid());
+        GProp_GProps properties;
+        BRepGProp::VolumeProperties(it.Current(), properties);
+        assert(std::isfinite(properties.Mass()) && properties.Mass() > 0.0);
+    }
+    assert(roundSolidCount == 8);
+
+    auto roundGeometry = geometry;
+    for (auto& winding : roundGeometry.windingPacks) {
+        winding.sections = 1;
+        winding.layerCount = 2;
+        winding.turns = 8;
+        winding.turnsPerLayer = 4;
+        winding.parallelConductors = 1;
+        winding.conductorShape = "round";
+        winding.conductorBareDiameter = units::Length{0.0010};
+        winding.conductorInsulatedDiameter = units::Length{0.0012};
+        winding.radialBuild = units::Length{0.0060};
+        winding.conductorInsulationBuild = units::Length{0.0001};
+    }
+    const auto roundPresentation = p135::cad::buildThreeLimbReactorPresentation(roundGeometry);
+    assert(roundPresentation);
+    const auto roundDisplayItems =
+        p135::cad::collectAssemblyPresentationDisplayItems(roundPresentation.value());
+    assert(roundDisplayItems.size() == 7 + 3 + 3 * 8);
+    assert(std::any_of(roundDisplayItems.begin(), roundDisplayItems.end(),
+        [](const auto& item) { return item.id == "winding.L1.layer.1.turn.1.conductor.1"; }));
+
     auto detailedGeometry = geometry;
     for (auto& winding : detailedGeometry.windingPacks) {
         winding.sections = 1;
