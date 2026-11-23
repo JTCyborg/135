@@ -850,6 +850,28 @@ private slots:
         QVERIFY(results);
         QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
 
+        // Recalculation publishes a new immutable filter snapshot after the
+        // source-impedance and harmonic inputs above were edited. Re-confirm
+        // Construction against that exact snapshot before asserting any
+        // revision-bound winding result; stale Construction must stay blocked.
+        tabs->setCurrentIndex(2);
+        QTRY_COMPARE(tabs->currentIndex(), 2);
+        confirmConstruction = window_->findChild<QPushButton*>(
+            QStringLiteral("confirmConstructionAndContinue"));
+        QVERIFY(confirmConstruction);
+        QTimer::singleShot(100, this, [this] {
+            if (auto* dialog = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+                dialog->accept();
+        });
+        QTest::mouseClick(confirmConstruction, Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), 3, 5000);
+        confirmationStatus = window_->findChild<QLabel*>(
+            QStringLiteral("constructionConfirmationStatus"));
+        QVERIFY(confirmationStatus);
+        QVERIFY(confirmationStatus->text().contains(QStringLiteral("confirmed"), Qt::CaseInsensitive));
+        QTest::mouseClick(recalculate, Qt::LeftButton);
+        QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
+
         // The accepted Construction snapshot, pinned M235-35A material revision,
         // explicit turns and harmonic branch result reach the revision-bound
         // magnetic bridge. M235-35A is exploratory (sparse-anchor estimate), and
