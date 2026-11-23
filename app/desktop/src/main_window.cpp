@@ -468,15 +468,6 @@ public:
     {
         frequencyMarkers_ = std::move(markers);
         QVariantList serializedMarkers;
-        if (horizontalReference_ && std::isfinite(horizontalReference_->first) &&
-            horizontalReference_->first >= dataYMin && horizontalReference_->first <= yMax) {
-            const double y = yPixel(horizontalReference_->first);
-            painter.setPen(QPen(QColor(175, 105, 25), 1.5, Qt::DashLine));
-            painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
-            painter.setPen(QColor(155, 90, 20));
-            painter.drawText(QRectF(area.left() + 5, y - 18, area.width() - 10, 16),
-                Qt::AlignRight | Qt::AlignVCenter, horizontalReference_->second);
-        }
         for (const auto& marker : frequencyMarkers_) {
             QVariantMap item;
             item.insert(QStringLiteral("frequencyHz"), marker.frequencyHz);
@@ -720,6 +711,15 @@ protected:
                 Qt::AlignHCenter | Qt::AlignTop, QString::number(xValue, 'g', 3));
         }
 
+        if (horizontalReference_ && std::isfinite(horizontalReference_->first) &&
+            horizontalReference_->first >= dataYMin && horizontalReference_->first <= yMax) {
+            const double y = yPixel(horizontalReference_->first);
+            painter.setPen(QPen(QColor(175, 105, 25), 1.5, Qt::DashLine));
+            painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
+            painter.setPen(QColor(155, 90, 20));
+            painter.drawText(QRectF(area.left() + 5, y - 18, area.width() - 10, 16),
+                Qt::AlignRight | Qt::AlignVCenter, horizontalReference_->second);
+        }
         if (saturationPeakCurrentA_ && std::isfinite(*saturationPeakCurrentA_) &&
             *saturationPeakCurrentA_ > 0.0) {
             const double y = yPixel(*saturationPeakCurrentA_);
