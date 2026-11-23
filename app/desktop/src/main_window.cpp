@@ -7882,8 +7882,18 @@ void MainWindow::calculateFilter()
             std::vector<p135::infrastructure::sqlite::CalculationMaterialReference> materialReferences;
             const auto addMaterialReference = [&materialReferences](QComboBox* selector) {
                 if (!selector) return;
-                const QString revisionId = selector->currentData().toString();
+                const QString revisionId = selector->currentData().toString().trimmed();
                 if (revisionId.isEmpty()) return;
+                // A revision can be selected in more than one component role.
+                // The calculation/material_usage relation records revision usage,
+                // not role multiplicity, and recordCalculation deliberately rejects
+                // duplicate revision links. Keep one immutable link per exact revision.
+                const auto duplicate = std::find_if(
+                    materialReferences.begin(), materialReferences.end(),
+                    [&revisionId](const auto& existing) {
+                        return existing.revisionId == revisionId.toStdString();
+                    });
+                if (duplicate != materialReferences.end()) return;
                 materialReferences.push_back({
                     QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString(),
                     revisionId.toStdString()
@@ -7925,16 +7935,34 @@ void MainWindow::calculateFilter()
                         .arg(QString::fromStdString(inputStatus.error().message)));
                 }
             } else {
+                latestFilterSnapshotId_.clear();
+                latestFilterBranchId_ = 0;
+                constructionInputsDirty_ = true;
                 calculationSummary += tr(" Calculation snapshot NOT_SAVED: %1.")
                     .arg(QString::fromStdString(saved.error().message));
-                appendLog(tr("Calculation snapshot save failed: %1")
+                appendLog(tr("[CALCULATION-SNAPSHOT] NOT_SAVED: %1")
                     .arg(QString::fromStdString(saved.error().message)));
             }
         } else {
-            calculationSummary += tr(" Calculation snapshot NOT_SAVED: canonical JSON/hash generation failed.");
+            latestFilterSnapshotId_.clear();
+            latestFilterBranchId_ = 0;
+            constructionInputsDirty_ = true;
+            const QString hashError = snapshotHash
+                ? tr("unknown persistence error")
+                : QString::fromStdString(snapshotHash.error().message);
+            calculationSummary += tr(" Calculation snapshot NOT_SAVED: canonical JSON/hash generation failed (%1).")
+                .arg(hashError);
+            appendLog(tr("[CALCULATION-SNAPSHOT] NOT_SAVED: canonical JSON/hash generation failed: %1")
+                .arg(hashError));
         }
     } else {
-        calculationSummary += tr(" Calculation snapshot NOT_SAVED: material database is unavailable.");
+        latestFilterSnapshotId_.clear();
+        latestFilterBranchId_ = 0;
+        constructionInputsDirty_ = true;
+        calculationSummary += tr(" Calculation snapshot NOT_SAVED: material database is unavailable (%1).")
+            .arg(databaseError_.isEmpty() ? tr("unknown database error") : databaseError_);
+        appendLog(tr("[CALCULATION-SNAPSHOT] NOT_SAVED: material database unavailable: %1")
+            .arg(databaseError_));
     }
 
     // Plotting is independent of persistence: the live result remains visible even
