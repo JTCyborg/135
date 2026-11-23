@@ -374,6 +374,7 @@ struct PlotCurve {
     QString name;
     std::vector<std::pair<double, double>> points;
     bool markersOnly{};
+    bool dashed{};
 };
 
 struct PlotBand {
@@ -429,6 +430,7 @@ public:
                 serializedPoints.push_back(QVariantList{x, y});
             serializedCurve.insert(QStringLiteral("points"), serializedPoints);
             serializedCurve.insert(QStringLiteral("markersOnly"), curve.markersOnly);
+            serializedCurve.insert(QStringLiteral("dashed"), curve.dashed);
             serializedCurves.push_back(serializedCurve);
         }
         setProperty("plotCurves", serializedCurves);
@@ -665,7 +667,7 @@ protected:
             const QColor color = colors[static_cast<std::size_t>(curveIndex) % colors.size()];
             painter.save();
             painter.setClipRect(area);
-            painter.setPen(QPen(color, 2.0));
+            painter.setPen(QPen(color, 2.0, curve.dashed ? Qt::DashLine : Qt::SolidLine));
             if (!curve.markersOnly) painter.drawPath(path);
             if (curve.markersOnly) {
                 painter.setBrush(color);
@@ -688,6 +690,7 @@ protected:
                 painter.drawEllipse(QPointF(legendX + 9, 10), 3.5, 3.5);
                 painter.setBrush(Qt::NoBrush);
             } else {
+                painter.setPen(QPen(color, 2.0, curve.dashed ? Qt::DashLine : Qt::SolidLine));
                 painter.drawLine(legendX, 10, legendX + 18, 10);
             }
             painter.setPen(palette().color(QPalette::Text));
@@ -7341,6 +7344,7 @@ void MainWindow::calculateFilter()
         QJsonArray impedanceScanSnapshot;
         PlotCurve busImpedanceCurve{
             hasSourceImpedance ? tr("Source || filter bus impedance") : tr("Filter-bank impedance (ideal source)"), {}};
+        PlotCurve gridImpedanceCurve{tr("Grid Thevenin impedance (without filter)"), {}, false, true};
         if (impedanceResult) {
             for (const auto& point : impedanceResult->points) {
                 const double frequencyHz = point.frequency.si();
@@ -7353,6 +7357,9 @@ void MainWindow::calculateFilter()
                 busImpedanceCurve.points.emplace_back(frequencyHz,
                     hasSourceImpedance ? point.busImpedanceMagnitudeOhm
                                        : point.filterImpedanceMagnitudeOhm);
+                if (hasSourceImpedance)
+                    gridImpedanceCurve.points.emplace_back(
+                        frequencyHz, point.sourceImpedanceMagnitudeOhm);
             }
         }
 
@@ -7374,8 +7381,13 @@ void MainWindow::calculateFilter()
                 : tr("Thevenin source R/L is zero or unset. The curve is an ideal-voltage-source response and must not be interpreted as a network-limited or operating current."));
         }
         if (resultsBusImpedancePlot_) {
-            resultsBusImpedancePlot_->setCurves(impedanceResult
-                ? std::vector<PlotCurve>{busImpedanceCurve} : std::vector<PlotCurve>{},
+            std::vector<PlotCurve> impedanceCurves;
+            if (impedanceResult) {
+                impedanceCurves.push_back(busImpedanceCurve);
+                if (hasSourceImpedance)
+                    impedanceCurves.push_back(gridImpedanceCurve);
+            }
+            resultsBusImpedancePlot_->setCurves(std::move(impedanceCurves),
                 tr("Frequency (Hz, logarithmic)"), tr("Bus impedance (Ω)"), true,
                 impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
                                 : tr("NOT_VERIFIED: filter-bank impedance scan failed. See the calculation log for the solver error."));
@@ -7619,16 +7631,26 @@ void MainWindow::calculateFilter()
     }
     PlotCurve liveBusImpedanceCurve{
         hasSourceImpedance ? tr("Source || filter bus impedance") : tr("Filter-bank impedance (ideal source)"), {}};
+    PlotCurve liveGridImpedanceCurve{tr("Grid Thevenin impedance (without filter)"), {}, false, true};
     if (impedanceResult) {
-        for (const auto& point : impedanceResult->points)
+        for (const auto& point : impedanceResult->points) {
             liveBusImpedanceCurve.points.emplace_back(
                 point.frequency.si(), hasSourceImpedance
                     ? point.busImpedanceMagnitudeOhm
                     : point.filterImpedanceMagnitudeOhm);
+            if (hasSourceImpedance)
+                liveGridImpedanceCurve.points.emplace_back(
+                    point.frequency.si(), point.sourceImpedanceMagnitudeOhm);
+        }
     }
     if (resultsBusImpedancePlot_) {
-        resultsBusImpedancePlot_->setCurves(impedanceResult
-            ? std::vector<PlotCurve>{liveBusImpedanceCurve} : std::vector<PlotCurve>{},
+        std::vector<PlotCurve> liveImpedanceCurves;
+        if (impedanceResult) {
+            liveImpedanceCurves.push_back(liveBusImpedanceCurve);
+            if (hasSourceImpedance)
+                liveImpedanceCurves.push_back(liveGridImpedanceCurve);
+        }
+        resultsBusImpedancePlot_->setCurves(std::move(liveImpedanceCurves),
             tr("Frequency (Hz, logarithmic)"),
             hasSourceImpedance ? tr("Bus impedance magnitude (Ω)") : tr("Filter-bank impedance magnitude (Ω)"), true,
             impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
