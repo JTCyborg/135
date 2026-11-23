@@ -1075,7 +1075,23 @@ private slots:
             };
             return 1.0 / std::abs(1.0 + sourceZ / filterZ);
         };
-        const double expectedGridToLoadRatio = expectedTransferAt(250.0);
+        // Operating markers contain the total grid current from the full
+        // phasor solution. Unlike the unit-injection sweep, this includes the
+        // contribution driven by the entered source-voltage harmonic as well
+        // as the load-current injection; compare against that complete model.
+        const double fifthOmega = 2.0 * std::acos(-1.0) * 250.0;
+        const std::complex<double> fifthSourceZ{sourceR, fifthOmega * sourceL};
+        const std::complex<double> fifthFilterZ{
+            branchR, fifthOmega * branchL - 1.0 / (fifthOmega * branchC)
+        };
+        const std::complex<double> fifthFilterY = 1.0 / fifthFilterZ;
+        const std::complex<double> fifthDivider{1.0, 0.0};
+        const std::complex<double> fifthLoadCurrent =
+            std::polar(3.25, -15.0 * std::acos(-1.0) / 180.0);
+        const std::complex<double> fifthSourceVoltage{12.5, 0.0};
+        const double expectedGridToLoadRatio = std::abs(
+            (fifthSourceVoltage * fifthFilterY + fifthLoadCurrent) /
+            (fifthDivider + fifthSourceZ * fifthFilterY)) / 3.25;
         // The solver's 1001-point logarithmic sweep is not required to land
         // exactly on 250 Hz. Validate the nearest real sweep sample at its
         // own frequency, while the entered operating-harmonic marker below
