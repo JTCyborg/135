@@ -149,6 +149,7 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         double bhTemperature = 0.0;
         std::string bhCurveModelStatus = bhIt != root.end()
             ? "SOURCE_CURVE_PRESENT" : "NO_SOURCE_BH_CURVE";
+        std::vector<std::pair<double, double>> bhCurveSourceAnchors;
         if (bhIt == root.end()) {
             std::vector<std::pair<double, double>> anchors;
             constexpr double mu0 = 4.0e-7 * 3.14159265358979323846;
@@ -206,6 +207,7 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
                     if (!std::isfinite(h1) || !std::isfinite(b1) ||
                         h1 <= h0 || b1 <= b0)
                         throw std::invalid_argument("Magnetic anchors must increase strictly in H and B.");
+                    bhCurveSourceAnchors.emplace_back(h1, b1);
                     // Subdivide each source interval for stable solver input and
                     // a useful plotted curve; subdivisions add no new evidence.
                     for (int n = 1; n <= 16; ++n) {
@@ -302,6 +304,7 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.datasetRevision = revision.datasetRevision;
         snapshot.bhCurveStatus = requiredString(quality, "bhCurveStatus");
         snapshot.bhCurveModelStatus = bhCurveModelStatus;
+        snapshot.bhCurveSourceAnchors = std::move(bhCurveSourceAnchors);
         const json bhProvenance = root.value("bhCurveProvenance", json::object());
         // Older immutable revisions predate the provenance object. Keep them
         // readable while explicitly exposing missing provenance to callers.
