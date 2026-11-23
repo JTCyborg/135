@@ -679,15 +679,24 @@ protected:
             painter.drawText(QRectF(left + 3, area.top() + 3,
                 std::max(0.0, right - left - 6), 18), Qt::AlignLeft | Qt::AlignTop, band.label);
         }
+        double previousMarkerLabelRight = -std::numeric_limits<double>::infinity();
         for (const auto& marker : frequencyMarkers_) {
             if (!std::isfinite(marker.frequencyHz) || marker.frequencyHz <= 0.0 ||
                 marker.frequencyHz < minX || marker.frequencyHz > maxX) continue;
             const double x = xPixel(marker.frequencyHz);
             painter.setPen(QPen(QColor(105, 105, 105, 170), 1.0, Qt::DotLine));
             painter.drawLine(QPointF(x, area.top()), QPointF(x, area.bottom()));
-            painter.setPen(palette().color(QPalette::Text));
-            painter.drawText(QRectF(x - 22, area.top() + 2, 44, 16),
-                Qt::AlignHCenter | Qt::AlignTop, marker.label);
+            // Keep every harmonic guide line, but suppress colliding labels on
+            // dense logarithmic sweeps. The nearest visible labels remain
+            // readable instead of being painted on top of one another.
+            const double labelLeft = x - 22.0;
+            const double labelRight = x + 22.0;
+            if (labelLeft >= previousMarkerLabelRight + 4.0) {
+                painter.setPen(palette().color(QPalette::Text));
+                painter.drawText(QRectF(labelLeft, area.top() + 2, 44, 16),
+                    Qt::AlignHCenter | Qt::AlignTop, marker.label);
+                previousMarkerLabelRight = labelRight;
+            }
         }
         painter.setPen(palette().color(QPalette::Mid));
         for (int tick = 0; tick <= 4; ++tick) {
