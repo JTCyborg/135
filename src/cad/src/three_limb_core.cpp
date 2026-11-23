@@ -432,7 +432,13 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     const gp_Ax2 profileAxis(p0, gp_Dir(1.0, 0.0, 0.0), gp_Dir(0.0, 1.0, 0.0));
                     const gp_Circ profile(profileAxis, radius);
                     const auto profileEdge = BRepBuilderAPI_MakeEdge(profile).Edge();
-                    BRepOffsetAPI_MakePipe pipe(path.Wire(), profileEdge);
+                    BRepBuilderAPI_MakeWire profileWireBuilder;
+                    profileWireBuilder.Add(profileEdge);
+                    if (!profileWireBuilder.IsDone())
+                        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                            "OCCT failed to create the circular conductor profile wire.",
+                            "windingPack.turns");
+                    BRepOffsetAPI_MakePipe pipe(path.Wire(), profileWireBuilder.Wire());
                     pipe.Build();
                     if (!pipe.IsDone() || pipe.Shape().IsNull() ||
                         !BRepCheck_Analyzer(pipe.Shape()).IsValid())
