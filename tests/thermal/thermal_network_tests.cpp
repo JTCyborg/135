@@ -141,11 +141,11 @@ int main()
         convection.correlation = "test-isolated-plate";
         convection.geometrySourceReference = "geometry:rev-2";
         convection.fluidPropertiesSourceReference = "air:ref-1";
-        convection.status = "VERIFIED";
+        convection.status = "VERIFIED"; // Must not override the model release gate.
         const auto boundary =
             makeNaturalConvectionAmbientLink("A", convection, "boundary-setup:rev-3");
         assert(boundary);
-        assert(!boundary.value().preliminaryModel);
+        assert(boundary.value().preliminaryModel);
     }
     {
         NaturalConvectionResult invalidConvection;
