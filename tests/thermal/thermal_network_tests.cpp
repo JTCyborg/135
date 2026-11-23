@@ -146,6 +146,18 @@ int main()
             makeNaturalConvectionAmbientLink("A", convection, "boundary-setup:rev-3");
         assert(boundary);
         assert(boundary.value().preliminaryModel);
+
+        // The network also recognizes the adapter's source marker, so
+        // clearing the public convenience flag cannot promote the model.
+        auto attemptedPromotion = boundary.value();
+        attemptedPromotion.preliminaryModel = false;
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 1.0, 330.0)};
+        request.ambientLinks.push_back(attemptedPromotion);
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        assert(!result.value().modelProvenanceComplete);
+        assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
     }
     {
         NaturalConvectionResult vertical;
