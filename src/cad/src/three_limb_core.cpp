@@ -399,10 +399,11 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
         if (conductorsPerLayer == 0)
             return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
                 "Round winding has zero conductors per layer.", "windingPack.turnsPerLayer");
-        const double axialPitch = winding.axialHeight.si() /
-            static_cast<double>(conductorsPerLayer);
+        const double axialPitch = (winding.axialHeight.si() - insulatedDiameter) /
+            static_cast<double>(conductorsPerLayer + *winding.parallelConductors - 1ULL);
         const double tolerance = std::max(1.0e-9, radialPitch * 1.0e-6);
-        if (insulatedDiameter + winding.layerInsulationBuild.si() > radialPitch + tolerance ||
+        if (axialPitch <= 0.0 ||
+            insulatedDiameter + winding.layerInsulationBuild.si() > radialPitch + tolerance ||
             insulatedDiameter > axialPitch + std::max(1.0e-9, axialPitch * 1.0e-6))
             return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
                 "Insulated round conductor does not fit the specified radial or axial pitch.",
@@ -428,8 +429,8 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                 layerOffset + 0.5 * insulatedDiameter;
 
             for (std::uint32_t parallel = 0; parallel < *winding.parallelConductors; ++parallel) {
-                const double firstY = axialStart +
-                    (static_cast<double>(parallel) + 0.5) * axialPitch;
+                const double firstY = axialStart + 0.5 * insulatedDiameter +
+                    static_cast<double>(parallel) * axialPitch;
                 BRepBuilderAPI_MakeWire path;
                 gp_Pnt previous(-halfX * mm, firstY * mm, -halfZ * mm);
                 for (std::uint32_t turn = 0; turn < *winding.turnsPerLayer; ++turn) {
