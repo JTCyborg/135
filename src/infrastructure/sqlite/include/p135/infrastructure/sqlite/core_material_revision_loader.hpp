@@ -67,6 +67,8 @@ struct CoreMaterialRevisionSnapshot {
     std::string bhCurveStatus;
     /// Source curve or estimated branch status; estimation never upgrades source quality.
     std::string bhCurveModelStatus;
+    /// Original source anchors converted to B, kept separate from any estimated interpolation.
+    std::vector<std::pair<double, double>> bhCurveSourceAnchors;
     std::string bhCurveSourceDocument;
     std::string bhCurveSourcePage;
     std::string bhCurveMeasurementMethod;
