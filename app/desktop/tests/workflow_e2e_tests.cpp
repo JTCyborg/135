@@ -1614,9 +1614,9 @@ private slots:
         std::size_t importedSolidCount = 0;
         for (TopExp_Explorer it(importedAssembly, TopAbs_SOLID); it.More(); it.Next())
             ++importedSolidCount;
-        // Detailed round-wire CAD exports every conductor turn as its own solid:
-        // 9 core solids + 3 bobbins + 60 individual turns (20 per phase).
-        QCOMPARE(importedSolidCount, std::size_t(72));
+        // Each phase exports two helical layers, each with separate copper and
+        // insulation: 9 core solids + 3 bobbins + 12 winding solids.
+        QCOMPARE(importedSolidCount, std::size_t(24));
 
         QVERIFY2(cadStatus->text().contains(QStringLiteral("exported to")),
             qPrintable(QStringLiteral("Unexpected STEP export status: ") + cadStatus->text()));
