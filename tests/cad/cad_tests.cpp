@@ -729,6 +729,55 @@ int main()
     assert(!p135::cad::buildWindingPackEnvelopeShape(
         geometry.bobbins[0], overlongWindingEnvelope));
 
+    // Detailed rectangular-conductor fixture: 8 layers, 10 turns/layer,
+    // two parallel conductors per turn. Every conductor path must remain an
+    // independently selectable, valid solid (not one fused winding envelope).
+    auto detailedWinding = geometry.windingPacks[0];
+    detailedWinding.turns = 80;
+    detailedWinding.turnsPerLayer = 10;
+    detailedWinding.parallelConductors = 2;
+    detailedWinding.conductorShape = "rectangular";
+    detailedWinding.bareConductorWidth = units::Length{0.0010};
+    detailedWinding.bareConductorThickness = units::Length{0.0005};
+    const auto detailedTurns = p135::cad::buildDetailedWindingTurnsShape(
+        geometry.bobbins[0], detailedWinding);
+    assert(detailedTurns);
+    assert(BRepCheck_Analyzer(detailedTurns.value()).IsValid());
+    std::size_t detailedSolidCount = 0;
+    for (TopExp_Explorer it(detailedTurns.value(), TopAbs_SOLID); it.More(); it.Next()) {
+        ++detailedSolidCount;
+        assert(BRepCheck_Analyzer(it.Current()).IsValid());
+        GProp_GProps properties;
+        BRepGProp::VolumeProperties(it.Current(), properties);
+        assert(std::isfinite(properties.Mass()) && properties.Mass() > 0.0);
+    }
+    assert(detailedSolidCount == 160);
+
+    auto detailedGeometry = geometry;
+    for (auto& winding : detailedGeometry.windingPacks) {
+        winding.turns = 80;
+        winding.turnsPerLayer = 10;
+        winding.parallelConductors = 2;
+        winding.conductorShape = "rectangular";
+        winding.bareConductorWidth = units::Length{0.0010};
+        winding.bareConductorThickness = units::Length{0.0005};
+    }
+    const auto detailedPresentationResult =
+        p135::cad::buildThreeLimbReactorPresentation(detailedGeometry);
+    assert(detailedPresentationResult);
+    const auto detailedDisplayItems =
+        p135::cad::collectAssemblyPresentationDisplayItems(detailedPresentationResult.value());
+    assert(detailedDisplayItems.size() == 7 + 3 + 3 * 160);
+    const auto firstTurn = std::find_if(detailedDisplayItems.begin(), detailedDisplayItems.end(),
+        [](const auto& item) { return item.id == "winding.L1.layer.1.turn.1"; });
+    assert(firstTurn != detailedDisplayItems.end());
+    auto individuallyHidden = detailedPresentationResult.value();
+    assert(p135::cad::setAssemblyComponentVisibility(
+        individuallyHidden, "winding.L1.layer.1.turn.1", false));
+    const auto hiddenTurnItems =
+        p135::cad::collectAssemblyPresentationDisplayItems(individuallyHidden);
+    assert(hiddenTurnItems.size() == detailedDisplayItems.size() - 1);
+
     // Full assembly adds three winding envelopes without changing the
     // existing core-and-bobbin assembly contract.
     const auto woundAssembly =
