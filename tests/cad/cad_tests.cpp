@@ -1,6 +1,7 @@
 #include "p135/cad/three_limb_core.hpp"
 #include "p135/cad/assembly_presentation.hpp"
 #include "p135/cad/winding_surface_geometry.hpp"
+#include "p135/cad/winding_surface_visibility.hpp"
 
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepAlgoAPI_Common.hxx>
@@ -8,6 +9,7 @@
 #include <BRepGProp.hxx>
 #include <GProp_GProps.hxx>
 #include <BRepBndLib.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
 #include <Bnd_Box.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <GeomAbs_SurfaceType.hxx>
@@ -655,6 +657,52 @@ int main()
     assert(axialEndCount == 2);
     assert(extractedFaceArea > 0.0);
     assert(!p135::cad::extractWindingEnvelopeFaceGeometry(TopoDS_Shape{}));
+
+    // Geometric visibility is sampled along the outward normal and remains
+    // separate from airflow suitability or a released convection boundary.
+    const auto visibilitySource = BRepPrimAPI_MakeBox(
+        gp_Pnt(0.0, 0.0, 0.0), 10.0, 10.0, 10.0).Shape();
+    const auto unobstructed = p135::cad::analyzeWindingEnvelopeFaceVisibility(
+        visibilitySource, {});
+    assert(unobstructed);
+    const auto positiveXFace = std::find_if(
+        unobstructed.value().begin(), unobstructed.value().end(),
+        [](const auto& face) {
+            return face.visibility == p135::cad::WindingFaceVisibility::FullyVisible &&
+                   face.sampleCount > 0;
+        });
+    assert(positiveXFace != unobstructed.value().end());
+
+    const auto fullBlocker = BRepPrimAPI_MakeBox(
+        gp_Pnt(11.0, 0.0, 0.0), 2.0, 10.0, 10.0).Shape();
+    const auto fullyBlocked = p135::cad::analyzeWindingEnvelopeFaceVisibility(
+        visibilitySource, {fullBlocker});
+    assert(fullyBlocked);
+    const auto blockedXFace = std::find_if(
+        fullyBlocked.value().begin(), fullyBlocked.value().end(),
+        [](const auto& face) { return face.faceIndex == 3; });
+    assert(blockedXFace != fullyBlocked.value().end());
+    assert(blockedXFace->visibility == p135::cad::WindingFaceVisibility::FullyOccluded);
+    assert(blockedXFace->visibleFraction == 0.0);
+
+    const auto partialBlocker = BRepPrimAPI_MakeBox(
+        gp_Pnt(11.0, 0.0, 0.0), 2.0, 5.0, 10.0).Shape();
+    const auto partiallyBlocked = p135::cad::analyzeWindingEnvelopeFaceVisibility(
+        visibilitySource, {partialBlocker});
+    assert(partiallyBlocked);
+    const auto partialXFace = std::find_if(
+        partiallyBlocked.value().begin(), partiallyBlocked.value().end(),
+        [](const auto& face) { return face.faceIndex == 3; });
+    assert(partialXFace != partiallyBlocked.value().end());
+    assert(partialXFace->visibility == p135::cad::WindingFaceVisibility::PartiallyOccluded);
+    assert(partialXFace->visibleFraction > 0.0 && partialXFace->visibleFraction < 1.0);
+    assert(partialXFace->estimatedVisibleAreaMm2 > 0.0);
+
+    auto invalidVisibilityOptions = p135::cad::WindingFaceVisibilityOptions{};
+    invalidVisibilityOptions.samplesPerDirection = 1;
+    assert(!p135::cad::analyzeWindingEnvelopeFaceVisibility(
+        visibilitySource, {}, invalidVisibilityOptions));
+    assert(!p135::cad::analyzeWindingEnvelopeFaceVisibility(TopoDS_Shape{}, {}));
 
     auto invalidWindingEnvelope = geometry.windingPacks[0];
     invalidWindingEnvelope.radialBuild = units::Length{0.0};
