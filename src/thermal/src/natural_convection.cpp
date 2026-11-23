@@ -51,6 +51,13 @@ Result<NaturalConvectionResult> analyzeVerticalPlateNaturalConvection(
         !finitePositive(fluid.prandtlNumber))
         return Result<NaturalConvectionResult>::failure(
             invalid("All fluid properties must be finite and positive.", "fluid"));
+    const double derivedPrandtl =
+        fluid.kinematicViscosityM2PerS / fluid.thermalDiffusivityM2PerS;
+    if (std::abs(derivedPrandtl - fluid.prandtlNumber) >
+        0.05 * fluid.prandtlNumber)
+        return Result<NaturalConvectionResult>::failure(
+            invalid("Prandtl number is inconsistent with kinematic viscosity / thermal diffusivity by more than 5%.",
+                    "fluid.prandtlNumber"));
     if (fluid.sourceReference.empty() || request.geometrySourceReference.empty())
         return Result<NaturalConvectionResult>::failure(
             invalid("Fluid-property and exposed-geometry source references are required.", "sourceReferences"));
