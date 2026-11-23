@@ -15,7 +15,8 @@ namespace p135::cad {
 enum class AssemblyGeometryRepresentation {
     PhysicalSolid,
     SimplifiedCoreSegment,
-    WindingPackEnvelope
+    WindingPackEnvelope,
+    DetailedConductorTurn
 };
 
 enum class AssemblySurfaceFinish {
@@ -32,7 +33,8 @@ enum class AssemblyComponentKind {
     WindingGroup,
     PhaseGroup,
     Bobbin,
-    WindingEnvelope
+    WindingEnvelope,
+    ConductorTurn
 };
 
 struct AssemblyPresentationNode;
