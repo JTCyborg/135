@@ -1326,6 +1326,24 @@ private slots:
         QVERIFY(historyDetails->toPlainText().contains(QStringLiteral("Graph comparison:")));
         QVERIFY(comparedCurves[0].toMap().value(QStringLiteral("name")).toString() !=
             comparedCurves[1].toMap().value(QStringLiteral("name")).toString());
+
+        // Repeat the same two-snapshot comparison for the second supported
+        // metric so both persisted result arrays are covered by the E2E path.
+        historyMetric->setCurrentIndex(1);
+        QTest::mouseClick(compareHistory, Qt::LeftButton);
+        const auto impedanceCurves = historyComparison->property("plotCurves").toList();
+        QCOMPARE(impedanceCurves.size(), 2);
+        for (const auto& curveValue : impedanceCurves) {
+            const auto points = curveValue.toMap()
+                .value(QStringLiteral("points")).toList();
+            QVERIFY(points.size() >= 2);
+            for (const auto& pointValue : points) {
+                const auto point = pointValue.toList();
+                QCOMPARE(point.size(), 2);
+                QVERIFY(std::isfinite(point[0].toDouble()) && point[0].toDouble() > 0.0);
+                QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
+            }
+        }
         tabs->setCurrentIndex(4);
         QTRY_COMPARE(tabs->currentIndex(), 4);
 
