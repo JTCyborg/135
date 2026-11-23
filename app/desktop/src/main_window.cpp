@@ -3912,6 +3912,25 @@ QWidget* MainWindow::createResultsPage()
     resultsBusImpedancePlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsBusImpedancePlot_);
 
+    auto* harmonicTransferTitle = new QLabel(tr("Harmonic current transfer to the grid — K_I(f)"));
+    harmonicTransferTitle->setObjectName(QStringLiteral("harmonicTransferPlotTitle"));
+    harmonicTransferTitle->setStyleSheet("font-weight: 600;");
+    harmonicTransferTitle->setToolTip(tr(
+        "Plots |I_grid,h / I_load,h| for the entered harmonic current injections. "
+        "Values below 1 pu indicate current reduction at the source; values above 1 pu indicate amplification. "
+        "Only explicitly supplied harmonic injections are plotted; missing orders are not assumed to be zero."));
+    layout->addWidget(harmonicTransferTitle);
+    resultsHarmonicTransferPlot_ = new PlotWidget;
+    resultsHarmonicTransferPlot_->setObjectName(QStringLiteral("resultsHarmonicTransferPlot"));
+    resultsHarmonicTransferPlot_->setProperty("debugImagePath", projectArtifactPath(
+        QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_harmonic_transfer.png")));
+    resultsHarmonicTransferPlot_->setCurves({}, tr("Frequency (Hz, logarithmic)"),
+        tr("|I_grid,h / I_load,h| (p.u.)"), true,
+        tr("NOT_CALCULATED: enter harmonic load-current injections and run harmonic analysis."));
+    resultsHarmonicTransferPlot_->setMinimumHeight(250);
+    resultsHarmonicTransferPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    layout->addWidget(resultsHarmonicTransferPlot_);
+
     auto* logHeading = new QLabel(tr("Calculation log"));
     logHeading->setStyleSheet("font-weight: 600;");
     layout->addWidget(logHeading);
@@ -6991,6 +7010,57 @@ void MainWindow::calculateFilter()
             }
         }
     }
+    // The transfer curve is derived only from explicitly entered load-current
+    // injections. A zero/absent load harmonic has no meaningful I_grid/I_load ratio
+    // and is intentionally omitted rather than displayed as zero attenuation.
+    std::vector<PlotCurve> harmonicTransferCurves;
+    QJsonArray harmonicTransferSnapshot;
+    if (harmonicResult) {
+        PlotCurve transferCurve{tr("|I_grid,h / I_load,h|"), {}};
+        PlotCurve unityReference{tr("No attenuation / unity (1.0 pu)"), {}};
+        PlotCurve canonicalMarkers{tr("Canonical harmonic orders"), {}, true};
+        constexpr std::array<std::uint32_t, 9> canonicalOrders{
+            3, 5, 7, 11, 13, 17, 19, 23, 25
+        };
+        for (const auto& point : harmonicResult->points) {
+            if (point.order == 1 ||
+                !std::isfinite(point.loadCurrentMagnitudeA) ||
+                point.loadCurrentMagnitudeA <= std::numeric_limits<double>::epsilon())
+                continue;
+            const double ratio = point.sourceCurrentMagnitudeA /
+                                 point.loadCurrentMagnitudeA;
+            if (!std::isfinite(ratio) || ratio < 0.0)
+                continue;
+            const double frequencyHz = point.frequency.si();
+            transferCurve.points.emplace_back(frequencyHz, ratio);
+            QJsonObject sample;
+            sample.insert(QStringLiteral("order"), static_cast<int>(point.order));
+            sample.insert(QStringLiteral("frequency_Hz"), frequencyHz);
+            sample.insert(QStringLiteral("loadCurrentRms_A"), point.loadCurrentMagnitudeA);
+            sample.insert(QStringLiteral("gridCurrentRms_A"), point.sourceCurrentMagnitudeA);
+            sample.insert(QStringLiteral("filterCurrentRms_A"), point.filterCurrentMagnitudeA);
+            sample.insert(QStringLiteral("gridToLoadCurrentRatio_pu"), ratio);
+            harmonicTransferSnapshot.append(sample);
+            if (std::find(canonicalOrders.begin(), canonicalOrders.end(), point.order) !=
+                canonicalOrders.end())
+                canonicalMarkers.points.emplace_back(frequencyHz, 1.0);
+        }
+        if (!transferCurve.points.empty()) {
+            const double firstFrequency = transferCurve.points.front().first;
+            const double lastFrequency = transferCurve.points.back().first;
+            unityReference.points.emplace_back(firstFrequency, 1.0);
+            if (lastFrequency > firstFrequency)
+                unityReference.points.emplace_back(lastFrequency, 1.0);
+            harmonicTransferCurves.push_back(std::move(transferCurve));
+            harmonicTransferCurves.push_back(std::move(unityReference));
+            if (!canonicalMarkers.points.empty())
+                harmonicTransferCurves.push_back(std::move(canonicalMarkers));
+        }
+    }
+    const QString harmonicTransferEmptyMessage = !harmonicResult
+        ? tr("NOT_VERIFIED: harmonic analysis is unavailable; provide source impedance and a valid harmonic spectrum.")
+        : tr("WAITING_FOR_INPUT: no non-fundamental load-current injections with non-zero magnitude were supplied.");
+
     const std::optional<double> saturationPeakReference =
         inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0
             ? std::optional<double>{inductorSaturationCurrent_->value()} : std::nullopt;
@@ -7311,12 +7381,18 @@ void MainWindow::calculateFilter()
                                 : tr("NOT_VERIFIED: filter-bank impedance scan failed. See the calculation log for the solver error."));
             resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
         }
+        if (resultsHarmonicTransferPlot_) {
+            resultsHarmonicTransferPlot_->setCurves(harmonicTransferCurves,
+                tr("Frequency (Hz, logarithmic)"), tr("|I_grid,h / I_load,h| (p.u.)"), true,
+                harmonicTransferCurves.empty() ? harmonicTransferEmptyMessage : QString{});
+        }
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
         resultSnapshot.insert(QStringLiteral("plotDataVersion"), 2);
     resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
         resultSnapshot.insert(QStringLiteral("impedanceScan"), impedanceScanSnapshot);
+        resultSnapshot.insert(QStringLiteral("harmonicCurrentTransfer"), harmonicTransferSnapshot);
         QJsonArray magneticSweepSnapshot;
         if (magneticCircuitBase && magneticSweepValid) {
             for (const auto& [frequencyHz, fluxDensityT] : magneticFluxDensityPoints) {
@@ -7568,6 +7644,17 @@ void MainWindow::calculateFilter()
             : tr("Filter-bank impedance — NOT_VERIFIED"));
     }
 
+    if (resultsHarmonicTransferPlot_) {
+        resultsHarmonicTransferPlot_->setCurves(harmonicTransferCurves,
+            tr("Frequency (Hz, logarithmic)"), tr("|I_grid,h / I_load,h| (p.u.)"), true,
+            harmonicTransferCurves.empty() ? harmonicTransferEmptyMessage : QString{});
+    }
+    if (auto* title = findChild<QLabel*>(QStringLiteral("harmonicTransferPlotTitle"))) {
+        title->setText(harmonicTransferCurves.empty()
+            ? tr("Harmonic current transfer to the grid — WAITING_FOR_INPUT / NOT_VERIFIED")
+            : tr("Harmonic current transfer to the grid — K_I(f)"));
+    }
+
     // The magnetic plot is a live calculation result, not a persistence artifact.
     // Keep it independent of SQLite availability and snapshot-write success.
     if (resultsCoreFluxPlot_) {
@@ -7814,6 +7901,9 @@ void MainWindow::updateProjectTitle()
     if (resultsBusImpedancePlot_)
         resultsBusImpedancePlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_bus_impedance.png")));
+    if (resultsHarmonicTransferPlot_)
+        resultsHarmonicTransferPlot_->setDebugImagePath(
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_harmonic_transfer.png")));
     if (resultsCoreFluxPlot_)
         resultsCoreFluxPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux.png")));
