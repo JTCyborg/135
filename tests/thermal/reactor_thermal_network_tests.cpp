@@ -119,6 +119,12 @@ int main()
         };
     assert(!analyzeReactorThermalNetwork(obstructedSurface));
 
+    auto mismatchedAmbient = withNaturalConvection;
+    auto mismatchedVertical = vertical;
+    mismatchedVertical.ambientTemperature = units::TemperatureKelvin{298.15};
+    mismatchedAmbient.naturalConvectionSurfaces[0].surface = mismatchedVertical;
+    assert(!analyzeReactorThermalNetwork(mismatchedAmbient));
+
     auto unreleased = request;
     unreleased.conductorMaterialDesignReleaseStatus = "NOT_VERIFIED";
     const auto gated = analyzeReactorThermalNetwork(unreleased);
