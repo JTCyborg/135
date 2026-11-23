@@ -681,13 +681,14 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
 
         const auto bobbin = buildBobbinShape(bobbinGeometry);
         if (!bobbin) return Result<TopoDS_Shape>::failure(bobbin.error());
-        const bool hasDetailedRectangularConductor =
+        const bool hasDetailedConductor =
             windingGeometry.turns && windingGeometry.turnsPerLayer &&
             windingGeometry.parallelConductors &&
             windingGeometry.sections == 1 &&
             (windingGeometry.conductorShape == "rectangular" ||
-             windingGeometry.conductorShape == "foil");
-        const auto winding = hasDetailedRectangularConductor
+             windingGeometry.conductorShape == "foil" ||
+             windingGeometry.conductorShape == "round");
+        const auto winding = hasDetailedConductor
             ? buildDetailedWindingTurnsShape(bobbinGeometry, windingGeometry)
             : buildWindingPackEnvelopeShape(bobbinGeometry, windingGeometry);
         if (!winding) return Result<TopoDS_Shape>::failure(winding.error());
@@ -730,7 +731,8 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
         const bool detailed =
             winding.turns && winding.parallelConductors &&
             winding.turnsPerLayer && winding.sections == 1 &&
-            (winding.conductorShape == "rectangular" || winding.conductorShape == "foil");
+            (winding.conductorShape == "rectangular" || winding.conductorShape == "foil" ||
+             winding.conductorShape == "round");
         windingSolidCounts[phase] = detailed
             ? static_cast<std::size_t>(*winding.turns) * *winding.parallelConductors
             : 1U;
