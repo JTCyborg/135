@@ -345,8 +345,8 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
 
         if (bhIt != root.end()) {
             const std::string bhCurveType = requiredString(*bhIt, "curveType");
-            if (requiredNumber(*bhIt, "temperature_K") <= 0.0)
-                throw std::invalid_argument("A source B-H curve temperature must be positive kelvin.");
+            if (requiredNumber(*bhIt, "temperature_K") < 0.0)
+                throw std::invalid_argument("A source B-H curve temperature cannot be negative kelvin; zero denotes unknown.");
             if (bhCurveType == "DC initial magnetization curve") {
                 if (bhFrequency != 0.0)
                     throw std::invalid_argument("A DC B-H curve must declare frequency_Hz as zero.");
