@@ -1359,6 +1359,22 @@ private slots:
             // An empty-data plot must still be a rendered diagnostic image,
             // not a fully transparent placeholder.
             QVERIFY(image.pixelColor(image.width() / 2, image.height() / 2).alpha() > 0);
+            if (i == 9) {
+                // The History comparison is required to contain actual plotted
+                // series, not just axes and the "No valid plot data" message.
+                int chromaticPlotPixels = 0;
+                const QRect plotArea(86, 46,
+                    std::max(1, image.width() - 122),
+                    std::max(1, image.height() - 96));
+                for (int y = plotArea.top(); y < plotArea.bottom(); ++y) {
+                    for (int x = plotArea.left(); x < plotArea.right(); ++x) {
+                        if (image.pixelColor(x, y).saturation() > 100)
+                            ++chromaticPlotPixels;
+                    }
+                }
+                QVERIFY2(chromaticPlotPixels > 25,
+                    "History comparison PNG contains no visible coloured data series.");
+            }
         }
 #endif
         for (const auto& curve : fluxCurves)
