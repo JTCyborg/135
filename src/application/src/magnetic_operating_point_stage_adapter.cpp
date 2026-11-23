@@ -144,9 +144,9 @@ Result<std::string> makeMagneticOperatingPointStageArtifact(
     output << "core_material_id=" << request.filterMagnetic.magnetic.material.id << '\n';
     output << "bh_source_reference=" << request.filterMagnetic.magnetic.material.sourceReference << '\n';
     output << "bh_dataset_revision=" << request.filterMagnetic.magnetic.material.datasetRevision << '\n';
-    output << "bh_curve_source_status=" << request.bhCurveSourceStatus << '\\n';
-    output << "bh_curve_model_status=" << request.bhCurveModelStatus << '\\n';
-    output << "design_release_status=" << request.designReleaseStatus << '\\n';
+    output << "bh_curve_source_status=" << request.bhCurveSourceStatus << '\n';
+    output << "bh_curve_model_status=" << request.bhCurveModelStatus << '\n';
+    output << "design_release_status=" << request.designReleaseStatus << '\n';
     output << "samples_used=" << cycle.samplesUsed << '\n';
     output << "relative_peak_change=" << cycle.relativePeakChange << '\n';
     output << "converged=true\nwithin_bh_curve_range=true\n";
