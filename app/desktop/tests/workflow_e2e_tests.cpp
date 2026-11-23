@@ -981,7 +981,7 @@ private slots:
             std::polar(3.25, -15.0 * std::acos(-1.0) / 180.0);
         const double expectedPreFilterPccVoltage =
             100.0 * std::abs(harmonicSourceZ * injectedHarmonicCurrent) /
-            (nominalLineVoltage / std::sqrt(3.0));
+            (*phaseVoltage);
         QVERIFY(qAbs(voltageBeforePoint[1].toDouble() -
                      expectedPreFilterPccVoltage) < 1.0e-8);
         QVERIFY(std::isfinite(voltageAfterPoint[1].toDouble()));
