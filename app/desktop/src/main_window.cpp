@@ -381,6 +381,7 @@ struct PlotBand {
     double startHz{};
     double stopHz{};
     QString label;
+    bool amplification{};
 };
 
 struct PlotMarker {
@@ -472,6 +473,16 @@ public:
                               std::optional<double> magneticKneeCurrentA = std::nullopt)
     {
         resonanceBands_ = std::move(resonanceBands);
+        QVariantList serializedBands;
+        for (const auto& band : resonanceBands_) {
+            QVariantMap item;
+            item.insert(QStringLiteral("startHz"), band.startHz);
+            item.insert(QStringLiteral("stopHz"), band.stopHz);
+            item.insert(QStringLiteral("label"), band.label);
+            item.insert(QStringLiteral("amplification"), band.amplification);
+            serializedBands.push_back(item);
+        }
+        setProperty("plotBands", serializedBands);
         saturationPeakCurrentA_ = saturationPeakCurrentA;
         magneticKneeCurrentA_ = magneticKneeCurrentA;
         update();
@@ -633,7 +644,7 @@ protected:
             const double right = std::clamp(xPixel(std::min(band.stopHz, maxX)),
                 area.left(), area.right());
             painter.fillRect(QRectF(left, area.top(), right - left, area.height()),
-                QColor(235, 165, 35, 42));
+                band.amplification ? QColor(195, 55, 45, 34) : QColor(235, 165, 35, 42));
             painter.setPen(QPen(QColor(190, 125, 20), 1.0, Qt::DashLine));
             painter.drawLine(QPointF(left, area.top()), QPointF(left, area.bottom()));
             painter.drawLine(QPointF(right, area.top()), QPointF(right, area.bottom()));
@@ -7141,6 +7152,52 @@ void MainWindow::calculateFilter()
             }
         }
     }
+        if (hasSourceImpedance && points.size() >= 2) {
+            const auto interpolateCrossing = [](const auto& left, const auto& right,
+                                                  double leftDifference,
+                                                  double rightDifference) {
+                const double denominator = rightDifference - leftDifference;
+                if (std::abs(denominator) <= std::numeric_limits<double>::epsilon())
+                    return left.frequency.si();
+                const double fraction = std::clamp(-leftDifference / denominator, 0.0, 1.0);
+                return std::exp(std::log(left.frequency.si()) + fraction *
+                    (std::log(right.frequency.si()) - std::log(left.frequency.si())));
+            };
+            bool inAmplificationZone =
+                points.front().busImpedanceMagnitudeOhm >
+                points.front().sourceImpedanceMagnitudeOhm;
+            double zoneStartHz = inAmplificationZone ? points.front().frequency.si() : 0.0;
+            for (std::size_t index = 1; index < points.size(); ++index) {
+                const double previousDifference =
+                    points[index - 1].busImpedanceMagnitudeOhm -
+                    points[index - 1].sourceImpedanceMagnitudeOhm;
+                const double currentDifference =
+                    points[index].busImpedanceMagnitudeOhm -
+                    points[index].sourceImpedanceMagnitudeOhm;
+                const bool currentAmplifies = currentDifference > 0.0;
+                if (!inAmplificationZone && currentAmplifies) {
+                    zoneStartHz = interpolateCrossing(
+                        points[index - 1], points[index],
+                        previousDifference, currentDifference);
+                    inAmplificationZone = true;
+                } else if (inAmplificationZone && !currentAmplifies) {
+                    const double zoneStopHz = interpolateCrossing(
+                        points[index - 1], points[index],
+                        previousDifference, currentDifference);
+                    if (zoneStopHz > zoneStartHz)
+                        resonanceBands.push_back(PlotBand{
+                            zoneStartHz, zoneStopHz,
+                            tr("Impedance amplification: |Zbus| > |Zgrid|"), true
+                        });
+                    inAmplificationZone = false;
+                }
+            }
+            if (inAmplificationZone && points.back().frequency.si() > zoneStartHz)
+                resonanceBands.push_back(PlotBand{
+                    zoneStartHz, points.back().frequency.si(),
+                    tr("Impedance amplification: |Zbus| > |Zgrid|"), true
+                });
+        }
     // Canonical harmonic order markers are shared with the bus-impedance graph.
     std::vector<PlotMarker> canonicalHarmonicMarkers;
     constexpr std::array<std::uint32_t, 9> canonicalHarmonicOrders{
