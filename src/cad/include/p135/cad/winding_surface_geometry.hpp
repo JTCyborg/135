@@ -10,6 +10,15 @@
 
 namespace p135::cad {
 
+// Topological role within the known hollow rectangular winding envelope.
+// These roles do not establish air exposure or convection suitability.
+enum class WindingEnvelopeFaceRole {
+    OuterLateral,
+    InnerCavity,
+    AxialEnd,
+    Other
+};
+
 // Geometric descriptor only. It does not assert that a face is air-exposed,
 // externally visible, or suitable for a convection boundary condition.
 struct WindingEnvelopeFaceGeometry {
@@ -19,6 +28,7 @@ struct WindingEnvelopeFaceGeometry {
     std::array<double, 3> unitNormal{};
     std::array<double, 6> boundsMm{};
     bool planar{false};
+    WindingEnvelopeFaceRole role{WindingEnvelopeFaceRole::Other};
 };
 
 [[nodiscard]] Result<std::vector<WindingEnvelopeFaceGeometry>>
