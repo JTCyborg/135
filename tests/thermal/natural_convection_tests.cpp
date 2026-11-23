@@ -51,5 +51,10 @@ int main()
         invalid.verticalCharacteristicLength = units::Length{1.0e-9};
         assert(!analyzeVerticalPlateNaturalConvection(invalid));
     }
+    {
+        auto invalid = request();
+        invalid.fluid.prandtlNumber = 1.2;
+        assert(!analyzeVerticalPlateNaturalConvection(invalid));
+    }
     return 0;
 }
