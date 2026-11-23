@@ -214,6 +214,29 @@ int main(int argc, char** argv)
     assert(singleAnchor.value().bhCurveStatus == "NOT_PUBLISHED_IN_IMPORTED_DATASET");
     assert(singleAnchor.value().designReleaseStatus == "NOT_VERIFIED");
 
+    // Explicit frequency/temperature metadata is evidence, not a free-form
+    // annotation: zero or negative values must be rejected rather than
+    // silently converted to "unknown" or propagated into a model snapshot.
+    auto invalidBhMetadataRevision = singleAnchorRevision;
+    invalidBhMetadataRevision.revisionId = "TEST-M235-INVALID-BH-METADATA-R1";
+    invalidBhMetadataRevision.materialId = "TEST-M235-INVALID-BH-METADATA";
+    invalidBhMetadataRevision.revisionNumber = 1;
+    auto invalidBhMetadataPayload = nlohmann::json::parse(
+        invalidBhMetadataRevision.payload);
+    invalidBhMetadataPayload["material"]["minimumPolarizationFrequency_Hz"] = 0.0;
+    const auto invalidBhMetadataCanonical =
+        canonicalizeJson(invalidBhMetadataPayload.dump());
+    assert(invalidBhMetadataCanonical);
+    const auto invalidBhMetadataHash = sha256Hex(invalidBhMetadataCanonical.value());
+    assert(invalidBhMetadataHash);
+    invalidBhMetadataRevision.payload = invalidBhMetadataCanonical.value();
+    invalidBhMetadataRevision.contentHash = invalidBhMetadataHash.value();
+    assert(store.appendRevision(invalidBhMetadataRevision));
+    const auto invalidBhMetadata = loadCoreMaterialRevision(
+        store, invalidBhMetadataRevision.revisionId);
+    assert(!invalidBhMetadata);
+    assert(invalidBhMetadata.error().code == ErrorCode::InvalidInput);
+
     // The Kobe Steel table contains measured DC initial-magnetization data,
     // not an AC B-H loop or core-loss model. Preserve exactly that distinction.
     const auto steel35A300 =
