@@ -7084,6 +7084,7 @@ void MainWindow::calculateFilter()
     QJsonArray harmonicTransferSnapshot;
     QJsonArray voltageSpectrumSnapshot;
     QJsonArray currentSpectrumSnapshot;
+    std::optional<double> sourceVoltageThdBefore;
     if (harmonicResult) {
         PlotCurve transferCurve{tr("|I_grid,h / I_load,h|"), {}};
         PlotCurve unityReference{tr("No attenuation / unity (1.0 pu)"), {}};
@@ -7137,10 +7138,13 @@ void MainWindow::calculateFilter()
         PlotCurve filterCurrent{tr("Filter current I_filter,h"), {}};
         PlotCurve gridCurrent{tr("Grid current I_grid,h"), {}};
         bool hasLoadHarmonics = false;
+        double sourceVoltageHarmonicSquareSum = 0.0;
         for (const auto& point : harmonicResult->points) {
             if (point.order <= 1) continue;
             const double order = static_cast<double>(point.order);
             if (voltageBase > std::numeric_limits<double>::epsilon()) {
+                sourceVoltageHarmonicSquareSum +=
+                    point.sourceVoltageMagnitudeV * point.sourceVoltageMagnitudeV;
                 voltageBefore.points.emplace_back(order,
                     100.0 * point.sourceVoltageMagnitudeV / voltageBase);
                 voltageAfter.points.emplace_back(order,
@@ -7164,6 +7168,8 @@ void MainWindow::calculateFilter()
             voltageSpectrumSnapshot.append(sample);
             currentSpectrumSnapshot.append(sample);
         }
+        if (voltageBase > std::numeric_limits<double>::epsilon())
+            sourceVoltageThdBefore = std::sqrt(sourceVoltageHarmonicSquareSum) / voltageBase;
         if (!voltageBefore.points.empty()) {
             voltageSpectrumCurves.push_back(std::move(voltageBefore));
             voltageSpectrumCurves.push_back(std::move(voltageAfter));
@@ -7536,6 +7542,10 @@ void MainWindow::calculateFilter()
         resultSnapshot.insert(QStringLiteral("harmonicCurrentTransfer"), harmonicTransferSnapshot);
         resultSnapshot.insert(QStringLiteral("voltageHarmonicSpectrum"), voltageSpectrumSnapshot);
         resultSnapshot.insert(QStringLiteral("currentHarmonicSpectrum"), currentSpectrumSnapshot);
+        if (sourceVoltageThdBefore)
+            resultSnapshot.insert(QStringLiteral("sourceVoltageThdBefore"), *sourceVoltageThdBefore);
+        if (harmonicResult)
+            resultSnapshot.insert(QStringLiteral("pccVoltageThdAfter"), harmonicResult->busVoltageThd);
         QJsonArray magneticSweepSnapshot;
         if (magneticCircuitBase && magneticSweepValid) {
             for (const auto& [frequencyHz, fluxDensityT] : magneticFluxDensityPoints) {
@@ -7818,7 +7828,8 @@ void MainWindow::calculateFilter()
     }
     if (auto* title = findChild<QLabel*>(QStringLiteral("voltageSpectrumPlotTitle"))) {
         title->setText(harmonicResult
-            ? tr("PCC voltage harmonic spectrum — THD_U %1%")
+            ? tr("PCC voltage harmonic spectrum — THD_U before %1% → after %2%")
+                .arg(sourceVoltageThdBefore.value_or(0.0) * 100.0, 0, 'f', 2)
                 .arg(100.0 * harmonicResult->busVoltageThd, 0, 'f', 2)
             : tr("PCC voltage harmonic spectrum — NOT_VERIFIED"));
     }
