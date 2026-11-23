@@ -373,6 +373,7 @@ protected:
 struct PlotCurve {
     QString name;
     std::vector<std::pair<double, double>> points;
+    bool markersOnly{};
 };
 
 struct PlotBand {
@@ -427,6 +428,7 @@ public:
             for (const auto& [x, y] : curve.points)
                 serializedPoints.push_back(QVariantList{x, y});
             serializedCurve.insert(QStringLiteral("points"), serializedPoints);
+            serializedCurve.insert(QStringLiteral("markersOnly"), curve.markersOnly);
             serializedCurves.push_back(serializedCurve);
         }
         setProperty("plotCurves", serializedCurves);
@@ -664,14 +666,30 @@ protected:
             painter.save();
             painter.setClipRect(area);
             painter.setPen(QPen(color, 2.0));
-            painter.drawPath(path);
-            if (validPointCount == 1) {
+            if (!curve.markersOnly) painter.drawPath(path);
+            if (curve.markersOnly) {
+                painter.setBrush(color);
+                for (const auto& [xValue, yValue] : curve.points) {
+                    if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
+                        xValue <= 0.0 || yValue < 0.0) continue;
+                    const QPointF marker(xPixel(xValue),
+                        area.bottom() - (yValue / yMax) * area.height());
+                    painter.drawEllipse(marker, 4.0, 4.0);
+                }
+                painter.setBrush(Qt::NoBrush);
+            } else if (validPointCount == 1) {
                 painter.setBrush(color);
                 painter.drawEllipse(onlyPoint, 3.5, 3.5);
                 painter.setBrush(Qt::NoBrush);
             }
             painter.restore();
-            painter.drawLine(legendX, 10, legendX + 18, 10);
+            if (curve.markersOnly) {
+                painter.setBrush(color);
+                painter.drawEllipse(QPointF(legendX + 9, 10), 3.5, 3.5);
+                painter.setBrush(Qt::NoBrush);
+            } else {
+                painter.drawLine(legendX, 10, legendX + 18, 10);
+            }
             painter.setPen(palette().color(QPalette::Text));
             const QString label = curve.name;
             painter.drawText(legendX + 23, 15, label);
@@ -6289,6 +6307,7 @@ void MainWindow::calculateFilter()
     bool constructionBoundUsedEstimatedBhModel = false;
     bool constructionBoundMaterialBhEstimated = false;
     std::vector<std::pair<double, double>> constructionBoundBhCurve;
+    std::vector<std::pair<double, double>> constructionBoundBhSourceAnchors;
     QString constructionBoundBhModelStatus;
     QString constructionBoundBhSourceStatus;
     QString constructionBoundMagneticWarning;
@@ -6309,6 +6328,7 @@ void MainWindow::calculateFilter()
             constructionBoundBhSourceStatus =
                 QString::fromStdString(materialRevision.value().bhCurveStatus);
             constructionBoundBhCurve.reserve(materialRevision.value().material.bhCurve.size());
+            constructionBoundBhSourceAnchors = materialRevision.value().bhCurveSourceAnchors;
             for (const auto& point : materialRevision.value().material.bhCurve)
                 constructionBoundBhCurve.emplace_back(
                     point.fieldStrength.si(), point.fluxDensity.si());
@@ -7685,6 +7705,12 @@ void MainWindow::calculateFilter()
                 constructionBoundBhCurve
             };
             materialBhCurves.push_back(std::move(materialCurve));
+        }
+        if (!constructionBoundBhSourceAnchors.empty()) {
+            materialBhCurves.push_back(PlotCurve{
+                tr("Original source anchors (B converted from J where applicable)"),
+                constructionBoundBhSourceAnchors, true
+            });
         }
         const QString bhEmptyMessage = constructionBoundBhCurve.empty()
             ? tr("NOT_CALCULATED: a revision-bound magnetic analysis must load the selected core material B-H data.")
