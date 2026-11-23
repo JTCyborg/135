@@ -697,8 +697,10 @@ int main()
     assert(blockedXFace->visibility == p135::cad::WindingFaceVisibility::FullyOccluded);
     assert(blockedXFace->visibleFraction == 0.0);
 
+    // A compact central patch avoids relying on boundary samples and
+    // proves the sampler distinguishes a partially covered face.
     const auto partialBlocker = BRepPrimAPI_MakeBox(
-        gp_Pnt(11.0, 0.0, 0.0), 2.0, 5.0, 10.0).Shape();
+        gp_Pnt(11.0, 4.0, 4.0), 2.0, 2.0, 2.0).Shape();
     const auto partiallyBlocked = p135::cad::analyzeWindingEnvelopeFaceVisibility(
         visibilitySource, {partialBlocker});
     assert(partiallyBlocked);
