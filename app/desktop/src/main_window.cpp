@@ -4315,6 +4315,7 @@ QWidget* MainWindow::createHistoryPage()
     historySearch_ = new QLineEdit;
     historySearch_->setPlaceholderText(tr("Search by calculation ID, project, product family or author"));
     auto* refresh = new QPushButton(tr("Refresh"));
+    refresh->setObjectName(QStringLiteral("historyRefreshButton"));
     auto* exportSelected = new QPushButton(tr("Export Selected"));
     auto* exportAll = new QPushButton(tr("Export All"));
     auto* importFile = new QPushButton(tr("Import File"));
@@ -4326,6 +4327,7 @@ QWidget* MainWindow::createHistoryPage()
     layout->addLayout(searchRow);
 
     historyTable_ = new QTableWidget(0, 5);
+    historyTable_->setObjectName(QStringLiteral("historyTable"));
     historyTable_->setHorizontalHeaderLabels({
         tr("Created (UTC)"), tr("Project"), tr("Product"), tr("Calculation ID"), tr("Author")
     });
@@ -4356,6 +4358,7 @@ QWidget* MainWindow::createHistoryPage()
     layout->addWidget(loadInputs);
 
     historyDetails_ = new QPlainTextEdit;
+    historyDetails_->setObjectName(QStringLiteral("historyDetails"));
     historyDetails_->setReadOnly(true);
     historyDetails_->setPlaceholderText(tr("Select a calculation to inspect its immutable inputs, results, engine versions and exact material revisions."));
     historyDetails_->setMinimumHeight(240);
