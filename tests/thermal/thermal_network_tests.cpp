@@ -177,6 +177,33 @@ int main()
         assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
     }
     {
+        // Preliminary conductive links must be gated exactly like preliminary
+        // ambient links; source text alone is not evidence of model release.
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 1.0, 330.0), node("B", 0.0, 330.0)};
+        request.links.push_back({"A", "B", 1.0, "conductive-path:rev-1", true});
+        request.ambientLinks.push_back({"A", 1.0, "cooling-model:rev-1"});
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        assert(!result.value().modelProvenanceComplete);
+        assert(result.value().nodes[0].status == AssessmentStatus::NotVerified);
+        assert(result.value().nodes[1].status == AssessmentStatus::NotVerified);
+    }
+    {
+        NaturalConvectionResult invalidConvection;
+        invalidConvection.thermalResistanceKPerW =
+            std::numeric_limits<double>::infinity();
+        invalidConvection.correlation = "test-isolated-plate";
+        invalidConvection.geometrySourceReference = "geometry:rev-2";
+        invalidConvection.fluidPropertiesSourceReference = "air:ref-1";
+        invalidConvection.status = "PRELIMINARY";
+        assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
+        invalidConvection.thermalResistanceKPerW = 2.0;
+        invalidConvection.geometrySourceReference.clear();
+        assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
+        assert(!makeNaturalConvectionAmbientLink("", invalidConvection, "boundary:rev-1"));
+    }
+    {
         NaturalConvectionResult invalidConvection;
         invalidConvection.thermalResistanceKPerW = 0.0;
         assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
