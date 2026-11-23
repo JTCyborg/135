@@ -785,8 +785,14 @@ protected:
                     : 36.0;
                 const double barWidth = std::max(2.0, std::min(24.0,
                     categoryWidth * 0.78 / std::max<std::size_t>(1, curves_.size())));
-                const double offset = (static_cast<double>(curveIndex) -
-                    (static_cast<double>(curves_.size()) - 1.0) * 0.5) * barWidth;
+                // A one-point curve in the categorical operating-point
+                // chart represents one physical section/category, not one
+                // member of a grouped multi-series category. Keep its bar
+                // centered on its own category instead of shifting it by the
+                // number of legend entries.
+                const double offset = curve.points.size() == 1 ? 0.0
+                    : (static_cast<double>(curveIndex) -
+                       (static_cast<double>(curves_.size()) - 1.0) * 0.5) * barWidth;
                 painter.setBrush(color);
                 painter.setPen(QPen(color.darker(115), 0.8));
                 for (const auto& [xValue, yValue] : curve.points) {
@@ -812,7 +818,7 @@ protected:
                     painter.drawEllipse(marker, 4.0, 4.0);
                 }
                 painter.setBrush(Qt::NoBrush);
-            } else if (validPointCount == 1) {
+            } else if (!barChart_ && validPointCount == 1) {
                 painter.setBrush(color);
                 painter.drawEllipse(onlyPoint, 3.5, 3.5);
                 painter.setBrush(Qt::NoBrush);
