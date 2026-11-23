@@ -107,6 +107,8 @@ private:
     PlotWidget* resultsBankCurrentPlot_{};
     PlotWidget* resultsBusImpedancePlot_{};
     PlotWidget* resultsHarmonicTransferPlot_{};
+    PlotWidget* resultsVoltageSpectrumPlot_{};
+    PlotWidget* resultsCurrentSpectrumPlot_{};
     PlotWidget* resultsCoreFluxPlot_{};
     PlotWidget* resultsMaterialBhPlot_{};
     PlotWidget* historyComparisonPlot_{};
