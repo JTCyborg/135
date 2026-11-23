@@ -183,7 +183,12 @@ Result<ThermalNetworkResult> analyzeThermalNetwork(
         matrix[index][index] += link.conductanceWPerK;
         rhs[index] += link.conductanceWPerK * ambient;
         hasAmbientPath[index] = true;
-        if (link.sourceReference.empty() || link.preliminaryModel)
+        // Natural-convection adapter links remain preliminary even if a
+        // caller clears the public convenience flag after creating the link.
+        const bool naturalConvectionBoundary =
+            link.sourceReference.starts_with("natural-convection;");
+        if (link.sourceReference.empty() || link.preliminaryModel ||
+            naturalConvectionBoundary)
             provenanceComplete = false;
     }
 
