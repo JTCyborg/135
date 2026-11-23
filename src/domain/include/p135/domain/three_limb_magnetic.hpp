@@ -77,10 +77,19 @@ struct ThreeLimbMagneticCycleSamplingRequest {
     std::size_t maximumSamples{576}; // supported caps: 144, 288 or 576; first pass is 72
 };
 
+struct ThreeLimbMagneticCycleSample {
+    double cycleFraction{};
+    // Signed instantaneous B: limbs A/B/C, then top AB, top BC,
+    // bottom AB and bottom BC yoke segments.
+    std::array<units::FluxDensity, 7> signedFluxDensity{};
+};
+
 struct ThreeLimbMagneticCycleSamplingResult {
     // Absolute peak B in A/B/C limbs followed by top AB, top BC,
     // bottom AB and bottom BC yoke segments.
     std::array<units::FluxDensity, 7> peakAbsoluteFluxDensity{};
+    // Final adaptive sampling grid, retained for time-domain plots and audit.
+    std::vector<ThreeLimbMagneticCycleSample> waveform;
     std::size_t samplesUsed{};
     double relativePeakChange{};
     bool converged{false};
