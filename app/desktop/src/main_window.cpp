@@ -449,7 +449,7 @@ public:
             serializedCurves.push_back(serializedCurve);
         }
         setProperty("plotCurves", serializedCurves);
-        QVariantList categoryLabels;
+        QStringList categoryLabels;
         if (barChart_) {
             for (const auto& curve : curves_) {
                 if (curve.points.size() == 1)
@@ -497,6 +497,7 @@ public:
     {
         resonanceBands_ = std::move(resonanceBands);
         QVariantList serializedBands;
+        std::size_t bandLabelIndex = 0;
         for (const auto& band : resonanceBands_) {
             QVariantMap item;
             item.insert(QStringLiteral("startHz"), band.startHz);
@@ -604,7 +605,7 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.fillRect(rect(), palette().base());
         // Reserve a wider left gutter for both the rotated Y-axis title and tick labels.
-        const QRectF area(86.0, 46.0, std::max(80, width() - 122), std::max(80, height() - 96));
+        const QRectF area(86.0, 66.0, std::max(80, width() - 122), std::max(80, height() - 116));
         painter.setPen(palette().color(QPalette::Mid));
         painter.drawRect(area);
 
@@ -693,13 +694,14 @@ protected:
                 const double labelLeft = std::clamp(
                     0.5 * (left + right) - labelWidth * 0.5,
                     area.left(), std::max(area.left(), area.right() - labelWidth));
-                const QRectF labelRect(labelLeft, area.top() + 50.0,
-                    labelWidth, 16.0);
+                const QRectF labelRect(labelLeft, 44.0 +
+                    static_cast<double>(bandLabelIndex) * 14.0, labelWidth, 14.0);
                 painter.setPen(QColor(170, 105, 15));
                 painter.drawText(labelRect, Qt::AlignHCenter | Qt::AlignVCenter,
                     painter.fontMetrics().elidedText(band.label, Qt::ElideRight,
                         static_cast<int>(labelRect.width())));
             }
+            ++bandLabelIndex;
         }
         std::array<double, 3> previousMarkerLabelRight{
             -std::numeric_limits<double>::infinity(),
