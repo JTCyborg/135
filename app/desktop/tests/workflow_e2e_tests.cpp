@@ -1322,6 +1322,20 @@ private slots:
         tabs->setCurrentIndex(6);
         QTRY_VERIFY_WITH_TIMEOUT(historyPlot->isVisible(), 3000);
         QTest::qWait(150);
+
+        // The earlier assertions prove that the comparison action produced two
+        // real series. Re-check after the lazy History page is shown: this is
+        // the exact state that the PNG capture must represent.
+        const auto visibleHistoryCurves =
+            historyPlot->property("plotCurves").toList();
+        QCOMPARE(visibleHistoryCurves.size(), 2);
+        for (const auto& curveValue : visibleHistoryCurves) {
+            const auto points = curveValue.toMap()
+                .value(QStringLiteral("points")).toList();
+            QVERIFY2(points.size() >= 2,
+                "History plot lost its solver samples before Debug capture.");
+        }
+
         tabs->setCurrentIndex(workflowTabBeforeArtifactCapture);
         QTest::qWait(150);
 
