@@ -6448,8 +6448,12 @@ void MainWindow::calculateFilter()
         acceptedConstructionInputs_->dimensionalRevision.has_value() &&
         acceptedConstructionInputs_->sourceFilterSnapshotId == latestFilterSnapshotId_.toStdString() &&
         acceptedConstructionInputs_->filterBranchId == latestFilterBranchId_;
-    if ((suppliedHarmonics > 0 || hasLoadCurrentInjection || threeLimbMagneticBase.has_value() || acceptedPhysicalMagneticCandidate) &&
-        spectrumValid) {
+    // The fundamental is always a real operating point, even when no
+    // non-fundamental spectrum has been supplied. Calculate it unconditionally
+    // so the voltage/current plots can show the measured design fundamental
+    // instead of appearing blank. THD remains explicitly NOT_VERIFIED when
+    // no non-fundamental source/load spectrum was provided.
+    if (spectrumValid) {
         const auto harmonics = p135::filter::analyzeHarmonics(harmonicRequest);
         if (harmonics) {
             harmonicResult = harmonics.value();
@@ -6457,10 +6461,11 @@ void MainWindow::calculateFilter()
             advancedWarning = tr("Harmonic analysis NOT_VERIFIED: %1")
                 .arg(QString::fromStdString(harmonics.error().message));
         }
-    } else if (!spectrumValid && advancedWarning.isEmpty()) {
+    } else if (advancedWarning.isEmpty()) {
         advancedWarning = tr("Harmonic analysis NOT_VERIFIED: invalid input spectrum.");
-    } else if (suppliedHarmonics == 0 && !hasLoadCurrentInjection && advancedWarning.isEmpty()) {
-        advancedWarning = tr("Harmonic THD NOT_VERIFIED: no non-fundamental voltage harmonics were entered.");
+    }
+    if (suppliedHarmonics == 0 && !hasLoadCurrentInjection && advancedWarning.isEmpty()) {
+        advancedWarning = tr("Harmonic THD NOT_VERIFIED: only the fundamental operating point is available; enter non-fundamental voltage or load-current harmonics to calculate distortion.");
     }
 
     // Retain the exact Construction-bound result for the live plot and immutable
@@ -7298,15 +7303,18 @@ void MainWindow::calculateFilter()
         PlotCurve loadCurrent{tr("Load current I_load,h"), {}};
         PlotCurve filterCurrent{tr("Filter current I_filter,h"), {}};
         PlotCurve gridCurrent{tr("Grid current I_grid,h"), {}};
-        bool hasLoadHarmonics = false;
+        bool hasCurrentSpectrumData = false;
         double preFilterPccVoltageHarmonicSquareSum = 0.0;
         for (const auto& point : harmonicResult->points) {
-            if (point.order <= 1) continue;
+            if (point.order == 0) continue;
             const double order = static_cast<double>(point.order);
             const double preFilterVoltage = noFilterBusVoltage(point);
+            if (point.order > 1)
+                preFilterPccVoltageHarmonicSquareSum += preFilterVoltage * preFilterVoltage;
             if (preFilterFundamentalVoltage > std::numeric_limits<double>::epsilon() &&
                 postFilterFundamentalVoltage > std::numeric_limits<double>::epsilon()) {
-                preFilterPccVoltageHarmonicSquareSum += preFilterVoltage * preFilterVoltage;
+                // Include h=1 as the 100% reference point. Distortion sums above
+                // deliberately exclude it.
                 voltageBefore.points.emplace_back(order,
                     100.0 * preFilterVoltage / preFilterFundamentalVoltage);
                 voltageAfter.points.emplace_back(order,
@@ -7315,8 +7323,7 @@ void MainWindow::calculateFilter()
             loadCurrent.points.emplace_back(order, point.loadCurrentMagnitudeA);
             filterCurrent.points.emplace_back(order, point.filterCurrentMagnitudeA);
             gridCurrent.points.emplace_back(order, point.sourceCurrentMagnitudeA);
-            hasLoadHarmonics = hasLoadHarmonics ||
-                point.loadCurrentMagnitudeA > std::numeric_limits<double>::epsilon();
+            hasCurrentSpectrumData = true;
             QJsonObject sample;
             sample.insert(QStringLiteral("order"), static_cast<int>(point.order));
             sample.insert(QStringLiteral("frequency_Hz"), point.frequency.si());
@@ -7348,7 +7355,7 @@ void MainWindow::calculateFilter()
             voltageSpectrumCurves.push_back(std::move(voltageBefore));
             voltageSpectrumCurves.push_back(std::move(voltageAfter));
         }
-        if (hasLoadHarmonics) {
+        if (hasCurrentSpectrumData) {
             currentSpectrumCurves.push_back(std::move(loadCurrent));
             currentSpectrumCurves.push_back(std::move(filterCurrent));
             currentSpectrumCurves.push_back(std::move(gridCurrent));
@@ -8066,17 +8073,23 @@ void MainWindow::calculateFilter()
                 : QString{}, true);
     }
     if (auto* title = findChild<QLabel*>(QStringLiteral("voltageSpectrumPlotTitle"))) {
-        title->setText(harmonicResult
-            ? tr("PCC voltage harmonic spectrum — THD_U before %1% → after %2%")
-                .arg(sourceVoltageThdBefore.value_or(0.0) * 100.0, 0, 'f', 2)
-                .arg(100.0 * harmonicResult->busVoltageThd, 0, 'f', 2)
-            : tr("PCC voltage harmonic spectrum — NOT_VERIFIED"));
+        const bool hasDistortionInputs = suppliedHarmonics > 0 || hasLoadCurrentInjection;
+        title->setText(!harmonicResult
+            ? tr("PCC voltage spectrum — NOT_VERIFIED")
+            : hasDistortionInputs
+                ? tr("PCC voltage spectrum — THD_U before %1% → after %2%")
+                    .arg(sourceVoltageThdBefore.value_or(0.0) * 100.0, 0, 'f', 2)
+                    .arg(100.0 * harmonicResult->busVoltageThd, 0, 'f', 2)
+                : tr("PCC voltage spectrum — fundamental reference only; harmonic THD NOT_PROVIDED"));
     }
     if (auto* title = findChild<QLabel*>(QStringLiteral("currentSpectrumPlotTitle"))) {
-        title->setText(harmonicResult
-            ? tr("Harmonic current spectrum — source THD_I %1%")
-                .arg(100.0 * harmonicResult->sourceCurrentThd, 0, 'f', 2)
-            : tr("Harmonic current spectrum — WAITING_FOR_INPUT / NOT_VERIFIED"));
+        const bool hasDistortionInputs = suppliedHarmonics > 0 || hasLoadCurrentInjection;
+        title->setText(!harmonicResult
+            ? tr("Harmonic current spectrum — NOT_VERIFIED")
+            : hasDistortionInputs
+                ? tr("Harmonic current spectrum — source THD_I %1%")
+                    .arg(100.0 * harmonicResult->sourceCurrentThd, 0, 'f', 2)
+                : tr("Current spectrum — fundamental operating point only; harmonic THD NOT_PROVIDED"));
     }
     if (auto* title = findChild<QLabel*>(QStringLiteral("harmonicTransferPlotTitle"))) {
         title->setText(harmonicTransferCurves.empty()
