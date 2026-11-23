@@ -7605,9 +7605,9 @@ void MainWindow::calculateFilter()
         }
     }
 
-    const QString harmonicTransferEmptyMessage = !harmonicResult
-        ? tr("NOT_VERIFIED: harmonic analysis is unavailable; provide source impedance and a valid harmonic spectrum.")
-        : tr("WAITING_FOR_INPUT: no non-fundamental load-current injections with non-zero magnitude were supplied.");
+    const QString harmonicTransferEmptyMessage = !impedanceResult
+        ? tr("NOT_VERIFIED: the small-signal transfer sweep is unavailable because the filter/source impedance scan failed.")
+        : tr("WAITING_FOR_INPUT: no non-fundamental load-current injections with non-zero magnitude were supplied; the continuous small-signal sweep remains available.");
 
     const std::optional<double> saturationPeakReference =
         inductorSaturationCurrent_ && inductorSaturationCurrent_->value() > 0.0
