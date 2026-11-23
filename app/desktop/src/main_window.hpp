@@ -109,6 +109,7 @@ private:
     PlotWidget* resultsHarmonicTransferPlot_{};
     PlotWidget* resultsVoltageSpectrumPlot_{};
     PlotWidget* resultsCurrentSpectrumPlot_{};
+    PlotWidget* resultsWindingCopperLossPlot_{};
     PlotWidget* resultsCoreFluxPlot_{};
     PlotWidget* resultsCoreFluxWaveformPlot_{};
     PlotWidget* resultsMaterialBhPlot_{};
