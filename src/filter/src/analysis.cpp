@@ -146,12 +146,34 @@ Result<FrequencyResponseResult> analyzeFrequencyResponse(
             return Result<FrequencyResponseResult>::failure(busResult.error());
 
         const Complex busImpedance = busResult.value();
+
+        // Small-signal transfer for a unit load-current injection at the PCC.
+        // With the independent Thevenin voltage source set to zero for this
+        // incremental calculation, KCL gives I_grid / I_load =
+        // 1 / (1 + Z_source * Y_filter). This is a continuous network
+        // characteristic; it is intentionally separate from measured
+        // operating harmonic points supplied by the user.
+        const Complex transferDenominator = Complex{1.0, 0.0} +
+            sourceImpedance * bankAdmittance;
+        if (!finite(transferDenominator) ||
+            std::abs(transferDenominator) <= std::numeric_limits<double>::min()) {
+            return Result<FrequencyResponseResult>::failure(
+                invalid("Load-current transfer is undefined at a scan frequency."));
+        }
+        const double gridCurrentTransferRatio =
+            std::abs(Complex{1.0, 0.0} / transferDenominator);
+        if (!std::isfinite(gridCurrentTransferRatio)) {
+            return Result<FrequencyResponseResult>::failure(
+                invalid("Load-current transfer is outside the supported numeric domain."));
+        }
+
         response.points.push_back(FrequencyResponsePoint{
             units::Frequency{frequency},
             std::abs(filterImpedance),
             std::abs(sourceImpedance),
             std::abs(busImpedance),
-            std::arg(busImpedance)
+            std::arg(busImpedance),
+            gridCurrentTransferRatio
         });
     }
 
