@@ -329,8 +329,24 @@ Result<CoreMaterialRevisionSnapshot> loadCoreMaterialRevision(
         snapshot.coreLossNotes = provenanceString(lossProvenance, "notes");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
+        const auto requirePositiveWhenProvided = [](const json& object,
+                                                         const char* key) {
+            if (object.is_object() && object.contains(key) &&
+                requiredNumber(object, key) <= 0.0) {
+                throw std::invalid_argument(
+                    std::string("Optional B-H metadata must be positive when provided: ") + key);
+            }
+        };
+        requirePositiveWhenProvided(root, "magneticAnchorFrequency_Hz");
+        requirePositiveWhenProvided(root, "magneticAnchorTemperature_K");
+        requirePositiveWhenProvided(sourceMaterial, "minimumPolarizationFrequency_Hz");
+        requirePositiveWhenProvided(sourceMaterial, "parameterModelFrequency_Hz");
+        requirePositiveWhenProvided(sourceMaterial, "parameterModelTemperature_K");
+
         if (bhIt != root.end()) {
             const std::string bhCurveType = requiredString(*bhIt, "curveType");
+            if (requiredNumber(*bhIt, "temperature_K") <= 0.0)
+                throw std::invalid_argument("A source B-H curve temperature must be positive kelvin.");
             if (bhCurveType == "DC initial magnetization curve") {
                 if (bhFrequency != 0.0)
                     throw std::invalid_argument("A DC B-H curve must declare frequency_Hz as zero.");
