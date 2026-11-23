@@ -1,6 +1,7 @@
 add_library(Project135Cad
     src/three_limb_core.cpp
     src/winding_surface_geometry.cpp
+    src/winding_surface_visibility.cpp
     src/assembly_presentation.cpp
     src/drawing_export.cpp
 )
