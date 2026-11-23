@@ -819,13 +819,31 @@ private slots:
         auto* loadCurrentHarmonics = window_->findChild<QTableWidget*>(
             QStringLiteral("filterLoadCurrentHarmonics"));
         QVERIFY(loadCurrentHarmonics);
-        loadCurrentHarmonics->setRowCount(1);
+        // Synthetic multi-order spectrum: vary sequence, magnitude and phase.
+        loadCurrentHarmonics->setRowCount(3);
         loadCurrentHarmonics->setColumnCount(5);
-        loadCurrentHarmonics->setItem(0, 0, new QTableWidgetItem(QStringLiteral("E2E-LOAD-1")));
-        loadCurrentHarmonics->setItem(0, 1, new QTableWidgetItem(QStringLiteral("5")));
-        loadCurrentHarmonics->setItem(0, 2, new QTableWidgetItem(QStringLiteral("Negative")));
-        loadCurrentHarmonics->setItem(0, 3, new QTableWidgetItem(QStringLiteral("3.25")));
-        loadCurrentHarmonics->setItem(0, 4, new QTableWidgetItem(QStringLiteral("-15.0")));
+        const std::array<std::array<QString, 5>, 3> currentHarmonicInputs{{
+            {{QStringLiteral("E2E-LOAD-1"), QStringLiteral("5"), QStringLiteral("Negative"), QStringLiteral("3.25"), QStringLiteral("-15.0")}},
+            {{QStringLiteral("E2E-LOAD-1"), QStringLiteral("7"), QStringLiteral("Positive"), QStringLiteral("1.40"), QStringLiteral("35.0")}},
+            {{QStringLiteral("E2E-LOAD-1"), QStringLiteral("11"), QStringLiteral("Negative"), QStringLiteral("0.65"), QStringLiteral("-70.0")}}
+        }};
+        for (int row = 0; row < 3; ++row)
+            for (int column = 0; column < 5; ++column)
+                loadCurrentHarmonics->setItem(row, column,
+                    new QTableWidgetItem(currentHarmonicInputs[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)]));
+        auto* voltageHarmonics = window_->findChild<QTableWidget*>(QStringLiteral("filterVoltageHarmonics"));
+        QVERIFY(voltageHarmonics);
+        voltageHarmonics->setRowCount(3);
+        voltageHarmonics->setColumnCount(4);
+        const std::array<std::array<QString, 4>, 3> voltageHarmonicInputs{{
+            {{QStringLiteral("5"), QStringLiteral("Negative"), QStringLiteral("12.5"), QStringLiteral("0.0")}},
+            {{QStringLiteral("7"), QStringLiteral("Positive"), QStringLiteral("4.0"), QStringLiteral("-20.0")}},
+            {{QStringLiteral("11"), QStringLiteral("Negative"), QStringLiteral("2.0"), QStringLiteral("40.0")}}
+        }};
+        for (int row = 0; row < 3; ++row)
+            for (int column = 0; column < 4; ++column)
+                voltageHarmonics->setItem(row, column,
+                    new QTableWidgetItem(voltageHarmonicInputs[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)]));
 
         // Explicit synthetic magnetic inputs exercise the real coupled
         // three-limb operating-point solver and its Results chart. These are
@@ -1084,9 +1102,14 @@ private slots:
             .value(QStringLiteral("markersOnly")).toBool());
         const auto operatingPoints = transferCurves[2].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(operatingPoints.size(), 1);
-        const auto operatingPoint = operatingPoints.front().toList();
-        QCOMPARE(operatingPoint[0].toDouble(), 250.0);
+        QCOMPARE(operatingPoints.size(), 3);
+        const auto fifthOperatingPoint = std::find_if(operatingPoints.begin(), operatingPoints.end(),
+            [](const QVariant& value) {
+                const auto point = value.toList();
+                return point.size() == 2 && qAbs(point[0].toDouble() - 250.0) < 1.0e-9;
+            });
+        QVERIFY(fifthOperatingPoint != operatingPoints.end());
+        const auto operatingPoint = fifthOperatingPoint->toList();
         QVERIFY(qAbs(operatingPoint[1].toDouble() - expectedGridToLoadRatio) < 1.0e-9);
         const auto* harmonicTransferTitle = window_->findChild<QLabel*>(
             QStringLiteral("harmonicTransferPlotTitle"));
@@ -1106,8 +1129,13 @@ private slots:
             .value(QStringLiteral("points")).toList();
         const auto voltageAfterPoints = voltageSpectrumCurves[1].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(voltageBeforePoints.size(), 2);
-        QCOMPARE(voltageAfterPoints.size(), 2);
+        QCOMPARE(voltageBeforePoints.size(), 4);
+        QCOMPARE(voltageAfterPoints.size(), 4);
+        const std::array<double, 4> expectedVoltageOrders{1.0, 5.0, 7.0, 11.0};
+        for (std::size_t index = 0; index < expectedVoltageOrders.size(); ++index) {
+            QCOMPARE(voltageBeforePoints[static_cast<qsizetype>(index)].toList()[0].toDouble(), expectedVoltageOrders[index]);
+            QCOMPARE(voltageAfterPoints[static_cast<qsizetype>(index)].toList()[0].toDouble(), expectedVoltageOrders[index]);
+        }
         const auto voltageFundamentalBefore = voltageBeforePoints[0].toList();
         const auto voltageFundamentalAfter = voltageAfterPoints[0].toList();
         QCOMPARE(voltageFundamentalBefore[0].toDouble(), 1.0);
@@ -1146,13 +1174,17 @@ private slots:
         QCOMPARE(currentSpectrumCurves.size(), 3);
         const auto loadCurrentPoints = currentSpectrumCurves[0].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(loadCurrentPoints.size(), 2);
+        QCOMPARE(loadCurrentPoints.size(), 4);
         const auto loadFundamentalPoint = loadCurrentPoints[0].toList();
         QCOMPARE(loadFundamentalPoint[0].toDouble(), 1.0);
         QVERIFY(std::isfinite(loadFundamentalPoint[1].toDouble()));
-        const auto loadCurrentPoint = loadCurrentPoints[1].toList();
-        QCOMPARE(loadCurrentPoint[0].toDouble(), 5.0);
-        QVERIFY(qAbs(loadCurrentPoint[1].toDouble() - 3.25) < 1.0e-9);
+        const std::array<double, 3> expectedLoadOrders{5.0, 7.0, 11.0};
+        const std::array<double, 3> expectedLoadMagnitudes{3.25, 1.40, 0.65};
+        for (std::size_t index = 0; index < expectedLoadOrders.size(); ++index) {
+            const auto point = loadCurrentPoints[static_cast<qsizetype>(index + 1)].toList();
+            QCOMPARE(point[0].toDouble(), expectedLoadOrders[index]);
+            QVERIFY(qAbs(point[1].toDouble() - expectedLoadMagnitudes[index]) < 1.0e-9);
+        }
 
         auto* busTitle = window_->findChild<QLabel*>(
             QStringLiteral("busImpedancePlotTitle"));
