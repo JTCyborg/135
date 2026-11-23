@@ -1033,21 +1033,34 @@ private slots:
         QCOMPARE(transferPoints.size(), 1001);
         QCOMPARE(transferPoints.front().toList()[0].toDouble(), 10.0);
         QCOMPARE(transferPoints.back().toList()[0].toDouble(), 2500.0);
-        const double harmonicOmega = 2.0 * std::acos(-1.0) * 250.0;
-        const std::complex<double> harmonicSourceZ{sourceR, harmonicOmega * sourceL};
-        const std::complex<double> harmonicFilterZ{
-            branchR, harmonicOmega * branchL - 1.0 / (harmonicOmega * branchC)
+        const auto expectedTransferAt = [sourceR, sourceL, branchR, branchL, branchC](
+            double frequencyHz) {
+            const double omega = 2.0 * std::acos(-1.0) * frequencyHz;
+            const std::complex<double> sourceZ{sourceR, omega * sourceL};
+            const std::complex<double> filterZ{
+                branchR, omega * branchL - 1.0 / (omega * branchC)
+            };
+            return 1.0 / std::abs(1.0 + sourceZ / filterZ);
         };
-        const double expectedGridToLoadRatio =
-            1.0 / std::abs(1.0 + harmonicSourceZ / harmonicFilterZ);
-        const auto sweptPoint = std::find_if(transferPoints.begin(), transferPoints.end(),
-            [](const QVariant& value) {
-                const auto point = value.toList();
-                return point.size() == 2 && qAbs(point[0].toDouble() - 250.0) < 1.0e-9;
+        const double expectedGridToLoadRatio = expectedTransferAt(250.0);
+        // The solver's 1001-point logarithmic sweep is not required to land
+        // exactly on 250 Hz. Validate the nearest real sweep sample at its
+        // own frequency, while the entered operating-harmonic marker below
+        // is still checked independently at exactly 250 Hz.
+        const auto sweptPoint = std::min_element(transferPoints.begin(), transferPoints.end(),
+            [](const QVariant& left, const QVariant& right) {
+                const auto leftPoint = left.toList();
+                const auto rightPoint = right.toList();
+                return std::abs(leftPoint[0].toDouble() - 250.0) <
+                       std::abs(rightPoint[0].toDouble() - 250.0);
             });
         QVERIFY(sweptPoint != transferPoints.end());
         const auto sweptPointValues = sweptPoint->toList();
-        QVERIFY(qAbs(sweptPointValues[1].toDouble() - expectedGridToLoadRatio) < 1.0e-9);
+        QCOMPARE(sweptPointValues.size(), 2);
+        const double sweptFrequencyHz = sweptPointValues[0].toDouble();
+        QVERIFY(std::isfinite(sweptFrequencyHz));
+        QVERIFY(qAbs(sweptPointValues[1].toDouble() -
+                     expectedTransferAt(sweptFrequencyHz)) < 1.0e-9);
         const auto unityPoints = transferCurves[1].toMap()
             .value(QStringLiteral("points")).toList();
         QCOMPARE(unityPoints.size(), 2);
