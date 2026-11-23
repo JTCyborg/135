@@ -36,7 +36,8 @@ enum class AssemblyComponentKind {
     PhaseGroup,
     Bobbin,
     WindingEnvelope,
-    ConductorTurn
+    ConductorTurn,
+    WindingInsulation
 };
 
 struct AssemblyPresentationNode;
