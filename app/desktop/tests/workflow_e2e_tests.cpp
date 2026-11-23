@@ -736,8 +736,8 @@ private slots:
         // Explicit winding/conductor inputs. These values make the UI fixture
         // deterministic; they are not used to claim a verified electrical or
         // thermal design.
-        QVERIFY(setInteger(QStringLiteral("construction_turns"), 20));
-        QVERIFY(setInteger(QStringLiteral("construction_turnsPerLayer"), 10));
+        QVERIFY(setInteger(QStringLiteral("construction_turns"), 4));
+        QVERIFY(setInteger(QStringLiteral("construction_turnsPerLayer"), 2));
         QVERIFY(setInteger(QStringLiteral("construction_layers"), 2));
         QVERIFY(setInteger(QStringLiteral("construction_sections"), 1));
         QVERIFY(setInteger(QStringLiteral("construction_parallelConductors"), 1));
