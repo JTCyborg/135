@@ -664,6 +664,27 @@ protected:
 
         double axisMin = logarithmicX_ ? std::log10(minX) : minX;
         double axisMax = logarithmicX_ ? std::log10(maxX) : maxX;
+        if (barChart_ && !logarithmicX_) {
+            // Categorical bars need half a category of breathing room at
+            // both ends. Without this, the first/last grouped bars are clipped
+            // by the plot frame (most visible for harmonic orders 1 and 11).
+            std::vector<double> categoryCoordinates;
+            for (const auto& curve : curves_)
+                for (const auto& [x, y] : curve.points)
+                    if (std::isfinite(x)) categoryCoordinates.push_back(x);
+            std::sort(categoryCoordinates.begin(), categoryCoordinates.end());
+            categoryCoordinates.erase(std::unique(categoryCoordinates.begin(),
+                categoryCoordinates.end()), categoryCoordinates.end());
+            double leftSpacing = 1.0;
+            double rightSpacing = 1.0;
+            if (categoryCoordinates.size() > 1) {
+                leftSpacing = categoryCoordinates[1] - categoryCoordinates[0];
+                rightSpacing = categoryCoordinates.back() -
+                    categoryCoordinates[categoryCoordinates.size() - 2];
+            }
+            axisMin -= 0.5 * leftSpacing;
+            axisMax += 0.5 * rightSpacing;
+        }
         if (!(axisMax > axisMin)) {
             axisMin -= 0.5;
             axisMax += 0.5;
@@ -998,7 +1019,9 @@ protected:
         painter.setPen(palette().color(QPalette::Text));
         painter.drawText(QRectF(0, height() - 22, width(), 20), Qt::AlignCenter, xLabel_);
         painter.save();
-        painter.translate(12, area.center().y());
+        // Keep the rotated title safely inside the left image boundary;
+        // the previous 12 px offset clipped the first glyph in PNG exports.
+        painter.translate(22, area.center().y());
         painter.rotate(-90);
         painter.drawText(QRectF(-area.height() / 2, -10, area.height(), 20),
             Qt::AlignCenter, yLabel_);
