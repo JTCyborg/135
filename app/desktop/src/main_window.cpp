@@ -414,13 +414,15 @@ public:
     }
 
     void setCurves(std::vector<PlotCurve> curves, QString xLabel, QString yLabel,
-                   bool logarithmicX = true, QString emptyMessage = {})
+                   bool logarithmicX = true, QString emptyMessage = {}, bool barChart = false)
     {
         curves_ = std::move(curves);
         xLabel_ = std::move(xLabel);
         yLabel_ = std::move(yLabel);
         logarithmicX_ = logarithmicX;
         emptyMessage_ = std::move(emptyMessage);
+        barChart_ = barChart;
+        setProperty("plotBarChart", barChart_);
         QVariantList serializedCurves;
         for (const auto& curve : curves_) {
             QVariantMap serializedCurve;
@@ -668,7 +670,38 @@ protected:
             painter.save();
             painter.setClipRect(area);
             painter.setPen(QPen(color, 2.0, curve.dashed ? Qt::DashLine : Qt::SolidLine));
-            if (!curve.markersOnly) painter.drawPath(path);
+            if (barChart_ && !curve.markersOnly) {
+                double minimumSpacing = maxX - minX;
+                if (!curves_.empty() && curves_.front().points.size() > 1) {
+                    const auto& referencePoints = curves_.front().points;
+                    for (std::size_t pointIndex = 1; pointIndex < referencePoints.size(); ++pointIndex) {
+                        const double spacing = referencePoints[pointIndex].first -
+                                               referencePoints[pointIndex - 1].first;
+                        if (std::isfinite(spacing) && spacing > 0.0)
+                            minimumSpacing = std::min(minimumSpacing, spacing);
+                    }
+                }
+                const double categoryWidth = maxX > minX
+                    ? (minimumSpacing / (maxX - minX)) * area.width()
+                    : 36.0;
+                const double barWidth = std::max(2.0, std::min(24.0,
+                    categoryWidth * 0.78 / std::max<std::size_t>(1, curves_.size())));
+                const double offset = (static_cast<double>(curveIndex) -
+                    (static_cast<double>(curves_.size()) - 1.0) * 0.5) * barWidth;
+                painter.setBrush(color);
+                painter.setPen(QPen(color.darker(115), 0.8));
+                for (const auto& [xValue, yValue] : curve.points) {
+                    if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
+                        xValue <= 0.0 || yValue < 0.0) continue;
+                    const double center = xPixel(xValue) + offset;
+                    const double top = area.bottom() - (yValue / yMax) * area.height();
+                    painter.drawRect(QRectF(center - barWidth * 0.5, top,
+                                             barWidth, area.bottom() - top));
+                }
+                painter.setBrush(Qt::NoBrush);
+            } else if (!curve.markersOnly) {
+                painter.drawPath(path);
+            }
             if (curve.markersOnly) {
                 painter.setBrush(color);
                 for (const auto& [xValue, yValue] : curve.points) {
@@ -715,6 +748,7 @@ private:
     QString yLabel_;
     QString emptyMessage_;
     bool logarithmicX_{true};
+    bool barChart_{};
     std::vector<PlotBand> resonanceBands_;
     std::optional<double> saturationPeakCurrentA_;
     std::optional<double> magneticKneeCurrentA_;
@@ -3934,6 +3968,34 @@ QWidget* MainWindow::createResultsPage()
     resultsHarmonicTransferPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsHarmonicTransferPlot_);
 
+    auto* voltageSpectrumTitle = new QLabel(tr("PCC voltage harmonic spectrum — before / after filter"));
+    voltageSpectrumTitle->setObjectName(QStringLiteral("voltageSpectrumPlotTitle"));
+    voltageSpectrumTitle->setStyleSheet("font-weight: 600;");
+    layout->addWidget(voltageSpectrumTitle);
+    resultsVoltageSpectrumPlot_ = new PlotWidget;
+    resultsVoltageSpectrumPlot_->setObjectName(QStringLiteral("resultsVoltageSpectrumPlot"));
+    resultsVoltageSpectrumPlot_->setProperty("debugImagePath", projectArtifactPath(
+        QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_voltage_harmonic_spectrum.png")));
+    resultsVoltageSpectrumPlot_->setCurves({}, tr("Harmonic order h"), tr("Voltage (% of source fundamental)"),
+        false, tr("WAITING_FOR_INPUT: enter a non-fundamental voltage spectrum and run harmonic analysis."), true);
+    resultsVoltageSpectrumPlot_->setMinimumHeight(250);
+    resultsVoltageSpectrumPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    layout->addWidget(resultsVoltageSpectrumPlot_);
+
+    auto* currentSpectrumTitle = new QLabel(tr("Harmonic current spectrum — load / filter / grid"));
+    currentSpectrumTitle->setObjectName(QStringLiteral("currentSpectrumPlotTitle"));
+    currentSpectrumTitle->setStyleSheet("font-weight: 600;");
+    layout->addWidget(currentSpectrumTitle);
+    resultsCurrentSpectrumPlot_ = new PlotWidget;
+    resultsCurrentSpectrumPlot_->setObjectName(QStringLiteral("resultsCurrentSpectrumPlot"));
+    resultsCurrentSpectrumPlot_->setProperty("debugImagePath", projectArtifactPath(
+        QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_current_harmonic_spectrum.png")));
+    resultsCurrentSpectrumPlot_->setCurves({}, tr("Harmonic order h"), tr("RMS current (A)"),
+        false, tr("WAITING_FOR_INPUT: enter non-fundamental load-current injections and run harmonic analysis."), true);
+    resultsCurrentSpectrumPlot_->setMinimumHeight(250);
+    resultsCurrentSpectrumPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    layout->addWidget(resultsCurrentSpectrumPlot_);
+
     auto* logHeading = new QLabel(tr("Calculation log"));
     logHeading->setStyleSheet("font-weight: 600;");
     layout->addWidget(logHeading);
@@ -7017,7 +7079,11 @@ void MainWindow::calculateFilter()
     // injections. A zero/absent load harmonic has no meaningful I_grid/I_load ratio
     // and is intentionally omitted rather than displayed as zero attenuation.
     std::vector<PlotCurve> harmonicTransferCurves;
+    std::vector<PlotCurve> voltageSpectrumCurves;
+    std::vector<PlotCurve> currentSpectrumCurves;
     QJsonArray harmonicTransferSnapshot;
+    QJsonArray voltageSpectrumSnapshot;
+    QJsonArray currentSpectrumSnapshot;
     if (harmonicResult) {
         PlotCurve transferCurve{tr("|I_grid,h / I_load,h|"), {}};
         PlotCurve unityReference{tr("No attenuation / unity (1.0 pu)"), {}};
@@ -7060,6 +7126,55 @@ void MainWindow::calculateFilter()
                 harmonicTransferCurves.push_back(std::move(canonicalMarkers));
         }
     }
+    if (harmonicResult) {
+        const auto fundamental = std::find_if(harmonicResult->points.begin(),
+            harmonicResult->points.end(), [](const auto& point) { return point.order == 1; });
+        const double voltageBase = fundamental == harmonicResult->points.end()
+            ? 0.0 : fundamental->sourceVoltageMagnitudeV;
+        PlotCurve voltageBefore{tr("Without filter — source U_h"), {}};
+        PlotCurve voltageAfter{tr("With filter — PCC U_h"), {}};
+        PlotCurve loadCurrent{tr("Load current I_load,h"), {}};
+        PlotCurve filterCurrent{tr("Filter current I_filter,h"), {}};
+        PlotCurve gridCurrent{tr("Grid current I_grid,h"), {}};
+        bool hasLoadHarmonics = false;
+        for (const auto& point : harmonicResult->points) {
+            if (point.order <= 1) continue;
+            const double order = static_cast<double>(point.order);
+            if (voltageBase > std::numeric_limits<double>::epsilon()) {
+                voltageBefore.points.emplace_back(order,
+                    100.0 * point.sourceVoltageMagnitudeV / voltageBase);
+                voltageAfter.points.emplace_back(order,
+                    100.0 * point.busVoltageMagnitudeV / voltageBase);
+            }
+            loadCurrent.points.emplace_back(order, point.loadCurrentMagnitudeA);
+            filterCurrent.points.emplace_back(order, point.filterCurrentMagnitudeA);
+            gridCurrent.points.emplace_back(order, point.sourceCurrentMagnitudeA);
+            hasLoadHarmonics = hasLoadHarmonics ||
+                point.loadCurrentMagnitudeA > std::numeric_limits<double>::epsilon();
+            QJsonObject sample;
+            sample.insert(QStringLiteral("order"), static_cast<int>(point.order));
+            sample.insert(QStringLiteral("frequency_Hz"), point.frequency.si());
+            sample.insert(QStringLiteral("sourceVoltagePercentOfFundamental"), voltageBase > 0.0
+                ? 100.0 * point.sourceVoltageMagnitudeV / voltageBase : 0.0);
+            sample.insert(QStringLiteral("pccVoltagePercentOfFundamental"), voltageBase > 0.0
+                ? 100.0 * point.busVoltageMagnitudeV / voltageBase : 0.0);
+            sample.insert(QStringLiteral("loadCurrentRms_A"), point.loadCurrentMagnitudeA);
+            sample.insert(QStringLiteral("filterCurrentRms_A"), point.filterCurrentMagnitudeA);
+            sample.insert(QStringLiteral("gridCurrentRms_A"), point.sourceCurrentMagnitudeA);
+            voltageSpectrumSnapshot.append(sample);
+            currentSpectrumSnapshot.append(sample);
+        }
+        if (!voltageBefore.points.empty()) {
+            voltageSpectrumCurves.push_back(std::move(voltageBefore));
+            voltageSpectrumCurves.push_back(std::move(voltageAfter));
+        }
+        if (hasLoadHarmonics) {
+            currentSpectrumCurves.push_back(std::move(loadCurrent));
+            currentSpectrumCurves.push_back(std::move(filterCurrent));
+            currentSpectrumCurves.push_back(std::move(gridCurrent));
+        }
+    }
+
     const QString harmonicTransferEmptyMessage = !harmonicResult
         ? tr("NOT_VERIFIED: harmonic analysis is unavailable; provide source impedance and a valid harmonic spectrum.")
         : tr("WAITING_FOR_INPUT: no non-fundamental load-current injections with non-zero magnitude were supplied.");
@@ -7398,6 +7513,20 @@ void MainWindow::calculateFilter()
                 tr("Frequency (Hz, logarithmic)"), tr("|I_grid,h / I_load,h| (p.u.)"), true,
                 harmonicTransferCurves.empty() ? harmonicTransferEmptyMessage : QString{});
         }
+        if (resultsVoltageSpectrumPlot_) {
+            resultsVoltageSpectrumPlot_->setCurves(voltageSpectrumCurves,
+                tr("Harmonic order h"), tr("Voltage (% of source fundamental)"), false,
+                voltageSpectrumCurves.empty()
+                    ? tr("NOT_VERIFIED: non-fundamental source voltage harmonics are unavailable.")
+                    : QString{}, true);
+        }
+        if (resultsCurrentSpectrumPlot_) {
+            resultsCurrentSpectrumPlot_->setCurves(currentSpectrumCurves,
+                tr("Harmonic order h"), tr("RMS current (A)"), false,
+                currentSpectrumCurves.empty()
+                    ? tr("WAITING_FOR_INPUT: non-zero load-current harmonic injections are required.")
+                    : QString{}, true);
+        }
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
@@ -7405,6 +7534,8 @@ void MainWindow::calculateFilter()
     resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
         resultSnapshot.insert(QStringLiteral("impedanceScan"), impedanceScanSnapshot);
         resultSnapshot.insert(QStringLiteral("harmonicCurrentTransfer"), harmonicTransferSnapshot);
+        resultSnapshot.insert(QStringLiteral("voltageHarmonicSpectrum"), voltageSpectrumSnapshot);
+        resultSnapshot.insert(QStringLiteral("currentHarmonicSpectrum"), currentSpectrumSnapshot);
         QJsonArray magneticSweepSnapshot;
         if (magneticCircuitBase && magneticSweepValid) {
             for (const auto& [frequencyHz, fluxDensityT] : magneticFluxDensityPoints) {
@@ -7671,6 +7802,32 @@ void MainWindow::calculateFilter()
             tr("Frequency (Hz, logarithmic)"), tr("|I_grid,h / I_load,h| (p.u.)"), true,
             harmonicTransferCurves.empty() ? harmonicTransferEmptyMessage : QString{});
     }
+    if (resultsVoltageSpectrumPlot_) {
+        resultsVoltageSpectrumPlot_->setCurves(voltageSpectrumCurves,
+            tr("Harmonic order h"), tr("Voltage (% of source fundamental)"), false,
+            voltageSpectrumCurves.empty()
+                ? tr("NOT_VERIFIED: non-fundamental source voltage harmonics are unavailable.")
+                : QString{}, true);
+    }
+    if (resultsCurrentSpectrumPlot_) {
+        resultsCurrentSpectrumPlot_->setCurves(currentSpectrumCurves,
+            tr("Harmonic order h"), tr("RMS current (A)"), false,
+            currentSpectrumCurves.empty()
+                ? tr("WAITING_FOR_INPUT: non-zero load-current injections are required.")
+                : QString{}, true);
+    }
+    if (auto* title = findChild<QLabel*>(QStringLiteral("voltageSpectrumPlotTitle"))) {
+        title->setText(harmonicResult
+            ? tr("PCC voltage harmonic spectrum — THD_U %1%")
+                .arg(100.0 * harmonicResult->busVoltageThd, 0, 'f', 2)
+            : tr("PCC voltage harmonic spectrum — NOT_VERIFIED"));
+    }
+    if (auto* title = findChild<QLabel*>(QStringLiteral("currentSpectrumPlotTitle"))) {
+        title->setText(harmonicResult
+            ? tr("Harmonic current spectrum — source THD_I %1%")
+                .arg(100.0 * harmonicResult->sourceCurrentThd, 0, 'f', 2)
+            : tr("Harmonic current spectrum — WAITING_FOR_INPUT / NOT_VERIFIED"));
+    }
     if (auto* title = findChild<QLabel*>(QStringLiteral("harmonicTransferPlotTitle"))) {
         title->setText(harmonicTransferCurves.empty()
             ? tr("Harmonic current transfer to the grid — WAITING_FOR_INPUT / NOT_VERIFIED")
@@ -7926,6 +8083,12 @@ void MainWindow::updateProjectTitle()
     if (resultsHarmonicTransferPlot_)
         resultsHarmonicTransferPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_harmonic_transfer.png")));
+    if (resultsVoltageSpectrumPlot_)
+        resultsVoltageSpectrumPlot_->setDebugImagePath(
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_voltage_harmonic_spectrum.png")));
+    if (resultsCurrentSpectrumPlot_)
+        resultsCurrentSpectrumPlot_->setDebugImagePath(
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_current_harmonic_spectrum.png")));
     if (resultsCoreFluxPlot_)
         resultsCoreFluxPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux.png")));
