@@ -118,6 +118,8 @@ Result<NaturalConvectionResult> analyzeHorizontalPlateNaturalConvection(
         HorizontalPlateOrientation::HeatedFaceUpward
         ? "McAdams horizontal plate, heated face upward"
         : "McAdams horizontal plate, heated face downward";
+    result.geometrySourceReference = request.geometrySourceReference;
+    result.fluidPropertiesSourceReference = fluid.sourceReference;
     result.status = "PRELIMINARY";
     result.explanation =
         "PRELIMINARY: horizontal-plate free-convection estimate using explicit area, perimeter and film-temperature "
