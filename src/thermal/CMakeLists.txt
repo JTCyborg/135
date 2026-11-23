@@ -4,6 +4,8 @@ add_library(Project135Thermal
     src/winding_electrothermal.cpp
     src/thermal_network.cpp
     src/reactor_thermal_network.cpp
+    src/natural_convection.cpp
+    src/horizontal_plate_natural_convection.cpp
 )
 add_library(Project135::Thermal ALIAS Project135Thermal)
 

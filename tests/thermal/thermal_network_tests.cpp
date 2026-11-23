@@ -1,4 +1,5 @@
 #include "p135/thermal/thermal_network.hpp"
+#include "p135/thermal/natural_convection.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -109,6 +110,115 @@ int main()
         request.nodes = {node("A", std::numeric_limits<double>::quiet_NaN(), 330.0)};
         request.ambientLinks.push_back({"A", 1.0, "cooling-model:rev-1"});
         assert(!analyzeThermalNetwork(request));
+    }
+
+    {
+        NaturalConvectionResult convection;
+        convection.thermalResistanceKPerW = 2.0;
+        convection.correlation = "test-isolated-plate";
+        convection.geometrySourceReference = "geometry:rev-2";
+        convection.fluidPropertiesSourceReference = "air:ref-1";
+        convection.status = "PRELIMINARY";
+        const auto boundary =
+            makeNaturalConvectionAmbientLink("A", convection, "boundary-setup:rev-3");
+        assert(boundary);
+        assert(std::abs(boundary.value().conductanceWPerK - 0.5) < 1.0e-12);
+        assert(boundary.value().preliminaryModel);
+        assert(boundary.value().sourceReference.find("geometry:rev-2") != std::string::npos);
+
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 1.0, 330.0)};
+        request.ambientLinks.push_back(boundary.value());
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        assert(result.value().solved);
+        assert(!result.value().modelProvenanceComplete);
+        assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
+    }
+    {
+        NaturalConvectionResult convection;
+        convection.thermalResistanceKPerW = 2.0;
+        convection.correlation = "test-isolated-plate";
+        convection.geometrySourceReference = "geometry:rev-2";
+        convection.fluidPropertiesSourceReference = "air:ref-1";
+        convection.status = "VERIFIED"; // Must not override the model release gate.
+        const auto boundary =
+            makeNaturalConvectionAmbientLink("A", convection, "boundary-setup:rev-3");
+        assert(boundary);
+        assert(boundary.value().preliminaryModel);
+
+        // The network also recognizes the adapter's source marker, so
+        // clearing the public convenience flag cannot promote the model.
+        auto attemptedPromotion = boundary.value();
+        attemptedPromotion.preliminaryModel = false;
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 1.0, 330.0)};
+        request.ambientLinks.push_back(attemptedPromotion);
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        assert(!result.value().modelProvenanceComplete);
+        assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
+    }
+    {
+        NaturalConvectionResult vertical;
+        vertical.thermalResistanceKPerW = 2.0;
+        vertical.correlation = "vertical-test";
+        vertical.geometrySourceReference = "vertical-face:geometry-r1";
+        vertical.fluidPropertiesSourceReference = "air:film-r1";
+        vertical.status = "PRELIMINARY";
+        NaturalConvectionResult topFace;
+        topFace.thermalResistanceKPerW = 4.0;
+        topFace.correlation = "horizontal-test";
+        topFace.geometrySourceReference = "top-face:geometry-r1";
+        topFace.fluidPropertiesSourceReference = "air:film-r1";
+        topFace.status = "PRELIMINARY";
+        const auto sideLink =
+            makeNaturalConvectionAmbientLink("A", vertical, "surface-boundary:r1");
+        const auto topLink =
+            makeNaturalConvectionAmbientLink("A", topFace, "surface-boundary:r1");
+        assert(sideLink && topLink);
+
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 3.0, 330.0)};
+        request.ambientLinks = {sideLink.value(), topLink.value()};
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        // Parallel surface paths: G_total = 1/2 + 1/4 = 0.75 W/K.
+        assert(std::abs(result.value().nodes.front().estimatedTemperature.si() -
+                        (293.15 + 3.0 / 0.75)) < 1.0e-9);
+        assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
+    }
+    {
+        // Preliminary conductive links must be gated exactly like preliminary
+        // ambient links; source text alone is not evidence of model release.
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 1.0, 330.0), node("B", 0.0, 330.0)};
+        request.links.push_back({"A", "B", 1.0, "conductive-path:rev-1", true});
+        request.ambientLinks.push_back({"A", 1.0, "cooling-model:rev-1"});
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        assert(!result.value().modelProvenanceComplete);
+        assert(result.value().nodes[0].status == AssessmentStatus::NotVerified);
+        assert(result.value().nodes[1].status == AssessmentStatus::NotVerified);
+    }
+    {
+        NaturalConvectionResult invalidConvection;
+        invalidConvection.thermalResistanceKPerW =
+            std::numeric_limits<double>::infinity();
+        invalidConvection.correlation = "test-isolated-plate";
+        invalidConvection.geometrySourceReference = "geometry:rev-2";
+        invalidConvection.fluidPropertiesSourceReference = "air:ref-1";
+        invalidConvection.status = "PRELIMINARY";
+        assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
+        invalidConvection.thermalResistanceKPerW = 2.0;
+        invalidConvection.geometrySourceReference.clear();
+        assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
+        assert(!makeNaturalConvectionAmbientLink("", invalidConvection, "boundary:rev-1"));
+    }
+    {
+        NaturalConvectionResult invalidConvection;
+        invalidConvection.thermalResistanceKPerW = 0.0;
+        assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
     }
     return 0;
 }

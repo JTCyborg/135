@@ -10,6 +10,8 @@
 
 namespace p135::thermal {
 
+struct NaturalConvectionResult;
+
 struct ThermalNetworkNodeInput {
     std::string id;
     std::string label;
@@ -25,6 +27,7 @@ struct ThermalConductanceLink {
     std::string secondNodeId;
     double conductanceWPerK{};
     std::string sourceReference;
+    bool preliminaryModel{false};
 };
 
 /// Conductive/linearized thermal path from a modeled node to ambient, W/K.
@@ -32,6 +35,7 @@ struct ThermalAmbientLink {
     std::string nodeId;
     double conductanceWPerK{};
     std::string sourceReference;
+    bool preliminaryModel{false};
 };
 
 struct ThermalNetworkRequest {
@@ -65,5 +69,13 @@ struct ThermalNetworkResult {
 /// transient storage, or spatial temperature gradients within a node.
 [[nodiscard]] Result<ThermalNetworkResult> analyzeThermalNetwork(
     const ThermalNetworkRequest& request);
+
+/// Converts a natural-convection resistance into a node-to-ambient conductance.
+/// The correlation's PRELIMINARY status is carried into the network and prevents
+/// a PASS assessment until the boundary model is independently verified.
+[[nodiscard]] Result<ThermalAmbientLink> makeNaturalConvectionAmbientLink(
+    const std::string& nodeId,
+    const NaturalConvectionResult& convection,
+    const std::string& boundaryModelSourceReference);
 
 } // namespace p135::thermal
