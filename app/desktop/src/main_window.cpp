@@ -4338,9 +4338,11 @@ QWidget* MainWindow::createHistoryPage()
 
     auto* compareRow = new QHBoxLayout;
     historyPlotMetric_ = new QComboBox;
+    historyPlotMetric_->setObjectName(QStringLiteral("historyPlotMetric"));
     historyPlotMetric_->addItem(tr("Reactor branch peak current (A)"), QStringLiteral("reactorBranchPeakCurrent_A"));
     historyPlotMetric_->addItem(tr("Bus impedance (Ω)"), QStringLiteral("busImpedance_Ohm"));
     auto* compareGraphs = new QPushButton(tr("Compare graphs of selected calculations"));
+    compareGraphs->setObjectName(QStringLiteral("compareHistoryGraphsButton"));
     compareRow->addWidget(historyPlotMetric_);
     compareRow->addWidget(compareGraphs);
     layout->addLayout(compareRow);
