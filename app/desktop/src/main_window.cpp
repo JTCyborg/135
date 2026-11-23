@@ -1162,8 +1162,10 @@ MainWindow::MainWindow(QWidget* parent)
     viewMenu->addAction(tr("CAD"), this, [this] { tabs_->setCurrentIndex(4); });
     viewMenu->addAction(tr("Material database"), this, [this] { tabs_->setCurrentIndex(5); });
     viewMenu->addAction(tr("Calculation history"), this, [this] {
+        // The History page is populated on construction and has an explicit
+        // Refresh button. Do not rebuild it during navigation: rebuilding
+        // clears the user's row selection and the comparison plot.
         tabs_->setCurrentIndex(6);
-        refreshCalculationHistory();
     });
 
     auto* toolbar = addToolBar(tr("Main"));
@@ -1219,9 +1221,6 @@ MainWindow::MainWindow(QWidget* parent)
         }
     }
     setCentralWidget(tabs_);
-    connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
-        if (index == 6) refreshCalculationHistory();
-    });
 
     for (QWidget* widget : findChildren<QWidget*>()) {
         const QString name = widget->objectName();
