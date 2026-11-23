@@ -34,6 +34,9 @@ struct FrequencyResponsePoint {
     double busImpedanceMagnitudeOhm{};
     /// Phase angle of source || filter impedance, in radians.
     double busImpedancePhaseRadians{};
+    /// Magnitude of grid current divided by a unit load-current injection at this frequency.
+    /// This is a small-signal transfer characteristic, not a measured operating harmonic.
+    double gridCurrentTransferMagnitudeRatio{};
 };
 
 struct ResonancePeak {
