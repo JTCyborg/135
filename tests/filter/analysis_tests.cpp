@@ -136,6 +136,73 @@ int main()
             assert(point.gridCurrentTransferMagnitudeRatio == 1.0);
     }
     {
+        // Parameter sweep: each case deliberately changes the network, branch,
+        // frequency window and sampling density. Validate the solver against
+        // an independently evaluated complex-network expression at three
+        // positions in every sweep, not just against one golden fixture.
+        struct Scenario {
+            double sourceR;
+            double sourceL;
+            double branchR;
+            double branchL;
+            double branchC;
+            double startHz;
+            double stopHz;
+            std::size_t points;
+        };
+        const std::array<Scenario, 4> scenarios{{
+            {0.03, 0.00035, 0.004, 0.00016, 0.0022, 25.0, 800.0, 257},
+            {0.12, 0.0018, 0.009, 0.00031, 0.0014, 40.0, 1600.0, 513},
+            {0.0, 0.0007, 0.015, 0.00009, 0.0031, 60.0, 2400.0, 129},
+            {0.2, 0.0, 0.003, 0.00048, 0.00082, 10.0, 3000.0, 1025}
+        }};
+        for (const auto& scenario : scenarios) {
+            auto request = validRequest();
+            request.source = {units::Resistance{scenario.sourceR},
+                              units::Inductance{scenario.sourceL}};
+            request.design.branches.front().dampingResistance =
+                units::Resistance{scenario.branchR};
+            request.design.branches.front().inductance =
+                units::Inductance{scenario.branchL};
+            request.design.branches.front().capacitance =
+                units::Capacitance{scenario.branchC};
+            request.startFrequency = units::Frequency{scenario.startHz};
+            request.stopFrequency = units::Frequency{scenario.stopHz};
+            request.points = scenario.points;
+
+            const auto response = analyzeFrequencyResponse(request);
+            assert(response);
+            assert(response.value().points.size() == scenario.points);
+            assert(std::abs(response.value().points.front().frequency.si() -
+                            scenario.startHz) < 1.0e-9);
+            assert(std::abs(response.value().points.back().frequency.si() -
+                            scenario.stopHz) < 1.0e-8);
+            const auto& branch = request.design.branches.front();
+            for (const std::size_t index : {std::size_t{0}, scenario.points / 2,
+                                             scenario.points - 1}) {
+                const auto& point = response.value().points[index];
+                const double frequency = point.frequency.si();
+                const double omega = 2.0 * std::numbers::pi * frequency;
+                const std::complex<double> sourceZ{
+                    scenario.sourceR, omega * scenario.sourceL};
+                const std::complex<double> filterZ{
+                    branch.dampingResistance.si(),
+                    omega * branch.inductance.si() -
+                        1.0 / (omega * branch.capacitance.si())};
+                const double expectedBus = std::abs(
+                    sourceZ * filterZ / (sourceZ + filterZ));
+                const double expectedTransfer =
+                    1.0 / std::abs(1.0 + sourceZ / filterZ);
+                assert(std::abs(point.busImpedanceMagnitudeOhm - expectedBus) <
+                       1.0e-9 * std::max(1.0, expectedBus));
+                assert(std::abs(point.gridCurrentTransferMagnitudeRatio -
+                                expectedTransfer) <
+                       1.0e-10 * std::max(1.0, expectedTransfer));
+            }
+        }
+    }
+
+    {
         auto request = validRequest();
         request.points = 2;
         assert(!analyzeFrequencyResponse(request));
