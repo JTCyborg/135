@@ -1190,6 +1190,74 @@ private slots:
         QVERIFY(materialBhTitle->text().contains(QStringLiteral("ESTIMATED")));
         QVERIFY(materialBhTitle->text().contains(QStringLiteral("NOT_VERIFIED")));
 
+        // Compare two persisted solver snapshots through the same History UI
+        // used by an operator. The test requires actual frequency-sweep samples
+        // from both records; rendering an empty diagnostic chart is not enough.
+        tabs->setCurrentIndex(6);
+        QTRY_COMPARE(tabs->currentIndex(), 6);
+        auto* historyTable = window_->findChild<QTableWidget*>(QStringLiteral("historyTable"));
+        QVERIFY(historyTable);
+        auto* refreshHistory = window_->findChild<QPushButton*>(
+            QStringLiteral("historyRefreshButton"));
+        if (refreshHistory)
+            QTest::mouseClick(refreshHistory, Qt::LeftButton);
+        QTRY_VERIFY_WITH_TIMEOUT(historyTable->rowCount() >= 2, 5000);
+        historyTable->clearSelection();
+        historyTable->selectRow(0);
+        historyTable->selectRow(1);
+        QCOMPARE(historyTable->selectionModel()->selectedRows().size(), 2);
+        auto* historyMetric = window_->findChild<QComboBox*>(
+            QStringLiteral("historyPlotMetric"));
+        QVERIFY(historyMetric);
+        historyMetric->setCurrentIndex(0);
+        auto* compareHistory = window_->findChild<QPushButton*>(
+            QStringLiteral("compareHistoryGraphsButton"));
+        QVERIFY(compareHistory);
+        QTest::mouseClick(compareHistory, Qt::LeftButton);
+        auto* historyComparison = window_->findChild<QWidget*>(
+            QStringLiteral("historyComparisonPlot"));
+        QVERIFY(historyComparison);
+        const auto comparedCurves = historyComparison->property("plotCurves").toList();
+        QCOMPARE(comparedCurves.size(), 2);
+        for (const auto& curveValue : comparedCurves) {
+            const auto points = curveValue.toMap()
+                .value(QStringLiteral("points")).toList();
+            QVERIFY2(points.size() >= 2,
+                "History comparison must plot at least two real solver samples per calculation.");
+            for (const auto& pointValue : points) {
+                const auto point = pointValue.toList();
+                QCOMPARE(point.size(), 2);
+                QVERIFY(std::isfinite(point[0].toDouble()) && point[0].toDouble() > 0.0);
+                QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
+            }
+        }
+        auto* historyDetails = window_->findChild<QPlainTextEdit*>(
+            QStringLiteral("historyDetails"));
+        QVERIFY(historyDetails);
+        QVERIFY(historyDetails->toPlainText().contains(QStringLiteral("Graph comparison:")));
+        QVERIFY(comparedCurves[0].toMap().value(QStringLiteral("name")).toString() !=
+            comparedCurves[1].toMap().value(QStringLiteral("name")).toString());
+
+        // Repeat the same two-snapshot comparison for the second supported
+        // metric so both persisted result arrays are covered by the E2E path.
+        historyMetric->setCurrentIndex(1);
+        QTest::mouseClick(compareHistory, Qt::LeftButton);
+        const auto impedanceCurves = historyComparison->property("plotCurves").toList();
+        QCOMPARE(impedanceCurves.size(), 2);
+        for (const auto& curveValue : impedanceCurves) {
+            const auto points = curveValue.toMap()
+                .value(QStringLiteral("points")).toList();
+            QVERIFY(points.size() >= 2);
+            for (const auto& pointValue : points) {
+                const auto point = pointValue.toList();
+                QCOMPARE(point.size(), 2);
+                QVERIFY(std::isfinite(point[0].toDouble()) && point[0].toDouble() > 0.0);
+                QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
+            }
+        }
+        tabs->setCurrentIndex(4);
+        QTRY_COMPARE(tabs->currentIndex(), 4);
+
 #if defined(_DEBUG) || !defined(NDEBUG)
         QSettings artifactSettings;
         const QString artifactProjectId =
@@ -1279,73 +1347,7 @@ private slots:
         QTest::mouseClick(confirmCalculation, Qt::LeftButton);
         QTRY_COMPARE_WITH_TIMEOUT(tabs->currentIndex(), 4, 5000);
 
-        // Compare two persisted solver snapshots through the same History UI
-        // used by an operator. The test requires actual frequency-sweep samples
-        // from both records; rendering an empty diagnostic chart is not enough.
-        tabs->setCurrentIndex(6);
-        QTRY_COMPARE(tabs->currentIndex(), 6);
-        auto* historyTable = window_->findChild<QTableWidget*>(QStringLiteral("historyTable"));
-        QVERIFY(historyTable);
-        auto* refreshHistory = window_->findChild<QPushButton*>(
-            QStringLiteral("historyRefreshButton"));
-        if (refreshHistory)
-            QTest::mouseClick(refreshHistory, Qt::LeftButton);
-        QTRY_VERIFY_WITH_TIMEOUT(historyTable->rowCount() >= 2, 5000);
-        historyTable->clearSelection();
-        historyTable->selectRow(0);
-        historyTable->selectRow(1);
-        QCOMPARE(historyTable->selectionModel()->selectedRows().size(), 2);
-        auto* historyMetric = window_->findChild<QComboBox*>(
-            QStringLiteral("historyPlotMetric"));
-        QVERIFY(historyMetric);
-        historyMetric->setCurrentIndex(0);
-        auto* compareHistory = window_->findChild<QPushButton*>(
-            QStringLiteral("compareHistoryGraphsButton"));
-        QVERIFY(compareHistory);
-        QTest::mouseClick(compareHistory, Qt::LeftButton);
-        auto* historyComparison = window_->findChild<QWidget*>(
-            QStringLiteral("historyComparisonPlot"));
-        QVERIFY(historyComparison);
-        const auto comparedCurves = historyComparison->property("plotCurves").toList();
-        QCOMPARE(comparedCurves.size(), 2);
-        for (const auto& curveValue : comparedCurves) {
-            const auto points = curveValue.toMap()
-                .value(QStringLiteral("points")).toList();
-            QVERIFY2(points.size() >= 2,
-                "History comparison must plot at least two real solver samples per calculation.");
-            for (const auto& pointValue : points) {
-                const auto point = pointValue.toList();
-                QCOMPARE(point.size(), 2);
-                QVERIFY(std::isfinite(point[0].toDouble()) && point[0].toDouble() > 0.0);
-                QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
-            }
-        }
-        auto* historyDetails = window_->findChild<QPlainTextEdit*>(
-            QStringLiteral("historyDetails"));
-        QVERIFY(historyDetails);
-        QVERIFY(historyDetails->toPlainText().contains(QStringLiteral("Graph comparison:")));
-        QVERIFY(comparedCurves[0].toMap().value(QStringLiteral("name")).toString() !=
-            comparedCurves[1].toMap().value(QStringLiteral("name")).toString());
 
-        // Repeat the same two-snapshot comparison for the second supported
-        // metric so both persisted result arrays are covered by the E2E path.
-        historyMetric->setCurrentIndex(1);
-        QTest::mouseClick(compareHistory, Qt::LeftButton);
-        const auto impedanceCurves = historyComparison->property("plotCurves").toList();
-        QCOMPARE(impedanceCurves.size(), 2);
-        for (const auto& curveValue : impedanceCurves) {
-            const auto points = curveValue.toMap()
-                .value(QStringLiteral("points")).toList();
-            QVERIFY(points.size() >= 2);
-            for (const auto& pointValue : points) {
-                const auto point = pointValue.toList();
-                QCOMPARE(point.size(), 2);
-                QVERIFY(std::isfinite(point[0].toDouble()) && point[0].toDouble() > 0.0);
-                QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
-            }
-        }
-        tabs->setCurrentIndex(4);
-        QTRY_COMPARE(tabs->currentIndex(), 4);
 
 
         auto* generateCad = window_->findChild<QPushButton*>(
