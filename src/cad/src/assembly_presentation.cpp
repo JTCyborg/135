@@ -254,15 +254,22 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
             std::size_t turnIndex = 0;
             for (TopExp_Explorer it(topLevel[windingIndex], TopAbs_SOLID); it.More(); it.Next()) {
                 AssemblyPresentationNode turn;
+                const std::size_t conductorsPerLayer =
+                    static_cast<std::size_t>(*windingGeometry.turnsPerLayer) *
+                    static_cast<std::size_t>(*windingGeometry.parallelConductors);
+                const std::size_t positionInLayer = turnIndex % conductorsPerLayer;
+                const std::size_t turnNumber =
+                    positionInLayer / static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
+                const std::size_t parallelNumber =
+                    positionInLayer % static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
                 turn.id = "winding." + phaseId + ".layer." +
-                    std::to_string(turnIndex /
-                        (static_cast<std::size_t>(*windingGeometry.turnsPerLayer) *
-                         static_cast<std::size_t>(*windingGeometry.parallelConductors)) + 1) +
-                    ".turn." + std::to_string(turnIndex %
-                        (static_cast<std::size_t>(*windingGeometry.turnsPerLayer) *
-                         static_cast<std::size_t>(*windingGeometry.parallelConductors)) + 1);
-                turn.displayName = "Winding " + phaseId + " conductor " +
-                    std::to_string(turnIndex + 1);
+                    std::to_string(turnIndex / conductorsPerLayer + 1) +
+                    ".turn." + std::to_string(turnNumber) +
+                    ".conductor." + std::to_string(parallelNumber);
+                turn.displayName = "Winding " + phaseId + " layer " +
+                    std::to_string(turnIndex / conductorsPerLayer + 1) +
+                    ", turn " + std::to_string(turnNumber) +
+                    ", conductor " + std::to_string(parallelNumber);
                 turn.kind = AssemblyComponentKind::ConductorTurn;
                 turn.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
                 turn.shape = it.Current();
