@@ -604,7 +604,7 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.fillRect(rect(), palette().base());
         // Reserve a wider left gutter for both the rotated Y-axis title and tick labels.
-        const QRectF area(86.0, 66.0, std::max(80, width() - 122), std::max(80, height() - 116));
+        const QRectF area(86.0, 66.0, std::max(80, width() - (barChart_ ? 176 : 122)), std::max(80, height() - 116));
         painter.setPen(palette().color(QPalette::Mid));
         painter.drawRect(area);
 
@@ -866,7 +866,7 @@ protected:
                 const double categoryWidth = maxX > minX
                     ? (minimumSpacing / (maxX - minX)) * area.width()
                     : 36.0;
-                const double barWidth = std::max(2.0, std::min(24.0,
+                const double barWidth = std::max(2.0, std::min(44.0,
                     categoryWidth * 0.78 / std::max<std::size_t>(1, curves_.size())));
                 // A one-point curve in the categorical operating-point
                 // chart represents one physical section/category, not one
@@ -887,9 +887,14 @@ protected:
                     painter.drawRect(QRectF(center - barWidth * 0.5, top,
                                              barWidth, area.bottom() - top));
                     painter.setPen(palette().color(QPalette::Text));
-                    painter.drawText(QRectF(center - 34.0, top - 19.0, 68.0, 16.0),
-                        Qt::AlignHCenter | Qt::AlignVCenter,
-                        QString::number(yValue, 'g', 4));
+                    if (curves_.size() == 1 || curve.points.size() == 1) {
+                        const double labelCenter = std::clamp(center,
+                            area.left() + 34.0, area.right() - 34.0);
+                        const double labelTop = std::max(area.top() + 2.0, top - 19.0);
+                        painter.drawText(QRectF(labelCenter - 34.0, labelTop, 68.0, 16.0),
+                            Qt::AlignHCenter | Qt::AlignVCenter,
+                            QString::number(yValue, 'g', 4));
+                    }
                     painter.setPen(QPen(color.darker(115), 0.8));
                 }
                 painter.setBrush(Qt::NoBrush);
