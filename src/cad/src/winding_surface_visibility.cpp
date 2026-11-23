@@ -94,6 +94,10 @@ analyzeWindingEnvelopeFaceVisibility(
         intersectors.back().Load(occluder, options.geometricToleranceMm);
     }
 
+    const auto descriptors = extractWindingEnvelopeFaceGeometry(windingEnvelope);
+    if (!descriptors)
+        return Result<std::vector<WindingFaceVisibilityResult>>::failure(descriptors.error());
+
     std::vector<WindingFaceVisibilityResult> results;
     std::size_t faceIndex = 0;
     for (TopExp_Explorer it(windingEnvelope, TopAbs_FACE); it.More(); it.Next(), ++faceIndex) {
@@ -108,9 +112,6 @@ analyzeWindingEnvelopeFaceVisibility(
             continue;
         }
 
-        const auto descriptors = extractWindingEnvelopeFaceGeometry(windingEnvelope);
-        if (!descriptors)
-            return Result<std::vector<WindingFaceVisibilityResult>>::failure(descriptors.error());
         if (faceIndex >= descriptors.value().size())
             return failure<std::vector<WindingFaceVisibilityResult>>(
                 ErrorCode::SolverFailure, "Face traversal changed during visibility analysis.", "windingEnvelope.faces");
