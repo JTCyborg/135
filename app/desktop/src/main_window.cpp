@@ -497,7 +497,6 @@ public:
     {
         resonanceBands_ = std::move(resonanceBands);
         QVariantList serializedBands;
-        std::size_t bandLabelIndex = 0;
         for (const auto& band : resonanceBands_) {
             QVariantMap item;
             item.insert(QStringLiteral("startHz"), band.startHz);
@@ -676,6 +675,7 @@ protected:
         // Engineering-band captions occupy their own second row. Keeping them
         // separate from frequency-marker captions prevents unrelated labels
         // from being painted over one another at resonance boundaries.
+        std::size_t bandLabelIndex = 0;
         for (const auto& band : resonanceBands_) {
             if (!std::isfinite(band.startHz) || !std::isfinite(band.stopHz) ||
                 band.startHz <= 0.0 || band.stopHz <= band.startHz ||
