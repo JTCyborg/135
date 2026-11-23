@@ -1,5 +1,6 @@
 #include "p135/thermal/natural_convection.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
