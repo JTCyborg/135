@@ -655,9 +655,24 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
         for (std::size_t turn = 0; turn < windingSolidCounts[phase]; ++turn)
             windingGroup[memberCursor++] = static_cast<int>(phase);
     }
+    std::vector<Bnd_Box> memberBounds(members.size());
+    for (std::size_t i = 0; i < members.size(); ++i)
+        BRepBndLib::Add(members[i], memberBounds[i]);
+    const auto boundsOverlap = [](const Bnd_Box& left, const Bnd_Box& right) {
+        double lx0 = 0.0, ly0 = 0.0, lz0 = 0.0, lx1 = 0.0, ly1 = 0.0, lz1 = 0.0;
+        double rx0 = 0.0, ry0 = 0.0, rz0 = 0.0, rx1 = 0.0, ry1 = 0.0, rz1 = 0.0;
+        left.Get(lx0, ly0, lz0, lx1, ly1, lz1);
+        right.Get(rx0, ry0, rz0, rx1, ry1, rz1);
+        constexpr double toleranceMm = 1.0e-6;
+        return lx0 <= rx1 + toleranceMm && rx0 <= lx1 + toleranceMm &&
+            ly0 <= ry1 + toleranceMm && ry0 <= ly1 + toleranceMm &&
+            lz0 <= rz1 + toleranceMm && rz0 <= lz1 + toleranceMm;
+    };
     for (std::size_t i = 0; i < members.size(); ++i) {
         for (std::size_t j = i + 1; j < members.size(); ++j) {
             if (windingGroup[i] >= 0 && windingGroup[i] == windingGroup[j])
+                continue;
+            if (!boundsOverlap(memberBounds[i], memberBounds[j]))
                 continue;
             BRepAlgoAPI_Common common(members[i], members[j]);
             common.Build();
