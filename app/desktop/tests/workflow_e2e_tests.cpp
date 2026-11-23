@@ -809,8 +809,9 @@ private slots:
             QStringLiteral("filterSourceTheveninInductanceMh"));
         QVERIFY(sourceResistance);
         QVERIFY(sourceInductance);
-        sourceResistance->setValue(0.25);
-        sourceInductance->setValue(1.2);
+        // First history snapshot deliberately uses a different Thevenin source.
+        sourceResistance->setValue(0.18);
+        sourceInductance->setValue(0.9);
 
         // Supply an explicit fifth-harmonic load-current injection so the
         // Construction-bound magnetic bridge receives a real branch harmonic
@@ -869,6 +870,9 @@ private slots:
             QStringLiteral("constructionConfirmationStatus"));
         QVERIFY(confirmationStatus);
         QVERIFY(confirmationStatus->text().contains(QStringLiteral("confirmed"), Qt::CaseInsensitive));
+        // Restore the independently checked TEST-01 source values for snapshot two.
+        sourceResistance->setValue(0.25);
+        sourceInductance->setValue(1.2);
         QTest::mouseClick(recalculate, Qt::LeftButton);
         QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
 
