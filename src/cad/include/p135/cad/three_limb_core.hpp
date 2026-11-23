@@ -18,9 +18,9 @@ namespace p135::cad {
     const domain::BobbinPhysicalGeometry& bobbin,
     const domain::WindingPackPhysicalGeometry& winding);
 
-// Builds one independent OCCT solid for each explicitly dimensioned rectangular,
-// foil or round conductor path. Round conductors use a swept circular profile.
-// Returns a compound retaining separate turn/conductor solids.
+// Builds detailed conductor geometry from explicit dimensions. Rectangular/foil
+// conductors remain separate turn solids; round conductors are continuous
+// four-sided helical paths with separate copper and enamel-insulation solids.
 [[nodiscard]] Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
     const domain::BobbinPhysicalGeometry& bobbin,
     const domain::WindingPackPhysicalGeometry& winding);
