@@ -3916,6 +3916,7 @@ QWidget* MainWindow::createResultsPage()
     logHeading->setStyleSheet("font-weight: 600;");
     layout->addWidget(logHeading);
     log_ = new QPlainTextEdit;
+    log_->setObjectName(QStringLiteral("calculationActivityLog"));
     log_->setReadOnly(true);
     log_->setMaximumBlockCount(500);
     log_->setPlaceholderText(tr("Application and engineering activity log"));
