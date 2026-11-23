@@ -673,6 +673,18 @@ int main()
         });
     assert(positiveXFace != unobstructed.value().end());
 
+    const auto visibilityDescriptors =
+        p135::cad::extractWindingEnvelopeFaceGeometry(visibilitySource);
+    assert(visibilityDescriptors);
+    const auto positiveXDescriptor = std::find_if(
+        visibilityDescriptors.value().begin(), visibilityDescriptors.value().end(),
+        [](const auto& face) {
+            return std::abs(face.centroidMm[0] - 10.0) < 1.0e-6 &&
+                   face.unitNormal[0] > 0.99;
+        });
+    assert(positiveXDescriptor != visibilityDescriptors.value().end());
+    const std::size_t positiveXFaceIndex = positiveXDescriptor->faceIndex;
+
     const auto fullBlocker = BRepPrimAPI_MakeBox(
         gp_Pnt(11.0, 0.0, 0.0), 2.0, 10.0, 10.0).Shape();
     const auto fullyBlocked = p135::cad::analyzeWindingEnvelopeFaceVisibility(
@@ -680,7 +692,7 @@ int main()
     assert(fullyBlocked);
     const auto blockedXFace = std::find_if(
         fullyBlocked.value().begin(), fullyBlocked.value().end(),
-        [](const auto& face) { return face.faceIndex == 3; });
+        [positiveXFaceIndex](const auto& face) { return face.faceIndex == positiveXFaceIndex; });
     assert(blockedXFace != fullyBlocked.value().end());
     assert(blockedXFace->visibility == p135::cad::WindingFaceVisibility::FullyOccluded);
     assert(blockedXFace->visibleFraction == 0.0);
