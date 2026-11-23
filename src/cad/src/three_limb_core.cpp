@@ -582,7 +582,14 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
 
         const auto bobbin = buildBobbinShape(bobbinGeometry);
         if (!bobbin) return Result<TopoDS_Shape>::failure(bobbin.error());
-        const auto winding = buildWindingPackEnvelopeShape(bobbinGeometry, windingGeometry);
+        const bool hasDetailedRectangularConductor =
+            windingGeometry.turns && windingGeometry.turnsPerLayer &&
+            windingGeometry.parallelConductors &&
+            (windingGeometry.conductorShape == "rectangular" ||
+             windingGeometry.conductorShape == "foil");
+        const auto winding = hasDetailedRectangularConductor
+            ? buildDetailedWindingTurnsShape(bobbinGeometry, windingGeometry)
+            : buildWindingPackEnvelopeShape(bobbinGeometry, windingGeometry);
         if (!winding) return Result<TopoDS_Shape>::failure(winding.error());
 
         const double bobbinLength = bobbinGeometry.axialLength.si();
