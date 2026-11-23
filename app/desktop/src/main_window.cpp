@@ -10,6 +10,7 @@
 #include "p135/infrastructure/sqlite/canonical_json.hpp"
 #include "p135/infrastructure/sqlite/starter_material_catalog.hpp"
 #include "p135/infrastructure/sqlite/revision_bound_physical_filter_magnetic.hpp"
+#include "p135/infrastructure/sqlite/revision_bound_winding_copper_loss.hpp"
 
 #include "p135/application/reactor_design_inputs.hpp"
 #include "p135/application/reactor_design_graph.hpp"
@@ -4075,6 +4076,25 @@ QWidget* MainWindow::createResultsPage()
     resultsCurrentSpectrumPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsCurrentSpectrumPlot_);
 
+    auto* windingLossTitle = new QLabel(tr("Winding copper loss by harmonic — revision-bound DC model"));
+    windingLossTitle->setObjectName(QStringLiteral("windingCopperLossPlotTitle"));
+    windingLossTitle->setStyleSheet("font-weight: 600;");
+    windingLossTitle->setToolTip(tr(
+        "Uses the exact selected conductor material revision, accepted winding geometry and "
+        "branch RMS harmonic currents. Resistance is temperature-corrected at ambient temperature. "
+        "Skin, proximity, circulating-current, lead and joint losses are excluded."));
+    layout->addWidget(windingLossTitle);
+    resultsWindingCopperLossPlot_ = new PlotWidget;
+    resultsWindingCopperLossPlot_->setObjectName(QStringLiteral("resultsWindingCopperLossPlot"));
+    resultsWindingCopperLossPlot_->setProperty("debugImagePath", projectArtifactPath(
+        QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_winding_copper_loss.png")));
+    resultsWindingCopperLossPlot_->setCurves({}, tr("Harmonic order h"),
+        tr("Three-phase copper loss (W)"), false,
+        tr("NOT_VERIFIED: confirm construction with exact conductor revision, turns, conductor section and bobbin/winding geometry."), true);
+    resultsWindingCopperLossPlot_->setMinimumHeight(250);
+    resultsWindingCopperLossPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    layout->addWidget(resultsWindingCopperLossPlot_);
+
     auto* logHeading = new QLabel(tr("Calculation log"));
     logHeading->setStyleSheet("font-weight: 600;");
     layout->addWidget(logHeading);
@@ -6798,6 +6818,8 @@ void MainWindow::calculateFilter()
 
     std::optional<p135::thermal::CapacitorThermalResult> capacitorThermalResult;
     std::optional<p135::thermal::SteadyStateResult> resistorThermalResult;
+    std::optional<p135::infrastructure::sqlite::RevisionBoundWindingCopperLossResult> windingCopperLossResult;
+    QString windingCopperLossWarning;
     QString componentAssessmentWarning;
     if (harmonicResult && materialStore_) {
         const QString capacitorRevisionId = capacitorComponent_
@@ -6873,6 +6895,92 @@ void MainWindow::calculateFilter()
         }
     } else if (!harmonicResult) {
         componentAssessmentWarning = tr(" Component losses and thermal assessment NOT_VERIFIED until a valid harmonic study is available.");
+    }
+
+    // Revision-bound winding copper-loss calculation. The mean turn length is
+    // derived from the accepted rectangular bobbin aperture and radial winding
+    // build. The current solver accepts one shared MLT, so unequal phase geometry
+    // is deliberately rejected rather than averaged into a misleading result.
+    if (!harmonicResult) {
+        windingCopperLossWarning = tr("NOT_VERIFIED: harmonic branch-current data is unavailable.");
+    } else if (!materialStore_ || !acceptedConstructionInputs_ || constructionInputsDirty_) {
+        windingCopperLossWarning = tr("NOT_VERIFIED: confirm the current Construction revision and make the material database available.");
+    } else {
+        const auto& construction = *acceptedConstructionInputs_;
+        if (!construction.conductorMaterial || !construction.turnsPerPhase ||
+            !construction.parallelConductors || !construction.bobbinInnerWidthsM ||
+            !construction.bobbinInnerHeightsM || !construction.windingRadialBuildsM ||
+            !construction.ambientTemperatureK) {
+            windingCopperLossWarning = tr("NOT_VERIFIED: exact conductor revision, turns, parallel count, ambient temperature and all three bobbin/winding dimensions are required.");
+        } else {
+            double meanTurnLengthM[3]{};
+            bool geometryValid = true;
+            for (std::size_t phase = 0; phase < 3; ++phase) {
+                const double innerWidth = (*construction.bobbinInnerWidthsM)[phase];
+                const double innerHeight = (*construction.bobbinInnerHeightsM)[phase];
+                const double radialBuild = (*construction.windingRadialBuildsM)[phase];
+                if (!std::isfinite(innerWidth) || !std::isfinite(innerHeight) ||
+                    !std::isfinite(radialBuild) || innerWidth <= 0.0 ||
+                    innerHeight <= 0.0 || radialBuild < 0.0) {
+                    geometryValid = false;
+                    break;
+                }
+                // Rectangular mean path: average of inner and outer perimeters.
+                meanTurnLengthM[phase] =
+                    2.0 * (innerWidth + innerHeight + 2.0 * radialBuild);
+            }
+            const double referenceMlt = meanTurnLengthM[0];
+            for (std::size_t phase = 1; phase < 3; ++phase) {
+                if (std::abs(meanTurnLengthM[phase] - referenceMlt) >
+                    std::max(1.0e-9, referenceMlt * 1.0e-6))
+                    geometryValid = false;
+            }
+
+            double conductorAreaM2 = construction.conductorCrossSectionM2.value_or(0.0);
+            if (conductorAreaM2 <= 0.0 && construction.conductorShape &&
+                *construction.conductorShape == "round" && construction.conductorBareDiameterM) {
+                const double radius = *construction.conductorBareDiameterM * 0.5;
+                conductorAreaM2 = std::acos(-1.0) * radius * radius;
+            } else if (conductorAreaM2 <= 0.0 && construction.conductorWidthM &&
+                       construction.conductorThicknessM) {
+                conductorAreaM2 = *construction.conductorWidthM *
+                                  *construction.conductorThicknessM;
+            }
+
+            if (!geometryValid) {
+                windingCopperLossWarning = tr("NOT_VERIFIED: phase mean-turn lengths differ or the rectangular bobbin/winding geometry is invalid; the current loss model requires one common mean-turn length.");
+            } else if (!std::isfinite(conductorAreaM2) || conductorAreaM2 <= 0.0) {
+                windingCopperLossWarning = tr("NOT_VERIFIED: bare conductor cross-section is missing or invalid.");
+            } else if (harmonicResult->branchPoints.empty()) {
+                windingCopperLossWarning = tr("NOT_VERIFIED: the harmonic solver returned no branch-current samples.");
+            } else {
+                p135::infrastructure::sqlite::RevisionBoundWindingCopperLossRequest request;
+                request.conductorMaterialRevisionId = construction.conductorMaterial->revisionId;
+                request.filterBranchId = harmonicResult->branchPoints.front().branchId;
+                request.harmonicAnalysis = *harmonicResult;
+                request.turns = *construction.turnsPerPhase;
+                request.parallelConductors = *construction.parallelConductors;
+                request.meanTurnLength = p135::units::Length{referenceMlt};
+                request.bareConductorCrossSection = p135::units::Area{conductorAreaM2};
+                request.windingTemperature = p135::units::TemperatureKelvin{
+                    *construction.ambientTemperatureK};
+                const auto loss = p135::infrastructure::sqlite::calculateRevisionBoundWindingCopperLoss(
+                    *materialStore_, request);
+                if (loss) {
+                    windingCopperLossResult = loss.value();
+                    appendLog(tr("[WINDING-LOSS] Exact conductor revision %1; MLT=%2 mm; "
+                                 "R20=%3 ohm; Rambient=%4 ohm; Pcu=%5 W; AC effects excluded.")
+                        .arg(QString::fromStdString(loss.value().conductorMaterialRevision.revisionId))
+                        .arg(referenceMlt * 1000.0, 0, 'g', 6)
+                        .arg(loss.value().copperLoss.resistanceAt20C.si(), 0, 'g', 7)
+                        .arg(loss.value().copperLoss.resistanceAtOperatingTemperature.si(), 0, 'g', 7)
+                        .arg(loss.value().copperLoss.totalThreePhaseCopperLoss.si(), 0, 'g', 7));
+                } else {
+                    windingCopperLossWarning = tr("NOT_VERIFIED: revision-bound copper-loss calculation failed: %1")
+                        .arg(QString::fromStdString(loss.error().message));
+                }
+            }
+        }
     }
 
     const auto& branch = result.value().branches.front();
@@ -7771,6 +7879,47 @@ void MainWindow::calculateFilter()
         resultSnapshot.insert(QStringLiteral("harmonicCurrentTransfer"), harmonicTransferSnapshot);
         resultSnapshot.insert(QStringLiteral("voltageHarmonicSpectrum"), voltageSpectrumSnapshot);
         resultSnapshot.insert(QStringLiteral("currentHarmonicSpectrum"), currentSpectrumSnapshot);
+        QJsonObject windingCopperLossSnapshot;
+        if (windingCopperLossResult) {
+            const auto& windingLoss = *windingCopperLossResult;
+            windingCopperLossSnapshot.insert(QStringLiteral("status"),
+                windingLoss.conductorMaterialRevision.designReleaseStatus == "VERIFIED"
+                    ? QStringLiteral("CALCULATED_MATERIAL_RELEASED_AC_EFFECTS_EXCLUDED")
+                    : QStringLiteral("CALCULATED_MATERIAL_NOT_VERIFIED_AC_EFFECTS_EXCLUDED"));
+            windingCopperLossSnapshot.insert(QStringLiteral("conductorMaterialRevisionId"),
+                QString::fromStdString(windingLoss.conductorMaterialRevision.revisionId));
+            windingCopperLossSnapshot.insert(QStringLiteral("conductorMaterialContentHash"),
+                QString::fromStdString(windingLoss.conductorMaterialRevision.contentHash));
+            windingCopperLossSnapshot.insert(QStringLiteral("resistanceAt20C_Ohm"),
+                windingLoss.copperLoss.resistanceAt20C.si());
+            windingCopperLossSnapshot.insert(QStringLiteral("resistanceAtAmbient_Ohm"),
+                windingLoss.copperLoss.resistanceAtOperatingTemperature.si());
+            windingCopperLossSnapshot.insert(QStringLiteral("totalThreePhaseCopperLoss_W"),
+                windingLoss.copperLoss.totalThreePhaseCopperLoss.si());
+            windingCopperLossSnapshot.insert(QStringLiteral("meanTurnLength_m"),
+                windingLoss.copperLoss.totalCopperLengthPerParallelPath.si() /
+                    static_cast<double>(*acceptedConstructionInputs_->turnsPerPhase));
+            windingCopperLossSnapshot.insert(QStringLiteral("includesAcEffects"),
+                windingLoss.copperLoss.includesAcEffects);
+            QJsonArray harmonicLosses;
+            for (const auto& harmonic : windingLoss.copperLoss.harmonicLosses) {
+                QJsonObject item;
+                item.insert(QStringLiteral("order"), static_cast<qint64>(harmonic.order));
+                item.insert(QStringLiteral("frequency_Hz"), harmonic.frequency.si());
+                item.insert(QStringLiteral("totalThreePhaseLoss_W"),
+                    harmonic.totalThreePhaseLoss.si());
+                QJsonArray phases;
+                for (const auto& phaseLoss : harmonic.phaseLoss)
+                    phases.append(phaseLoss.si());
+                item.insert(QStringLiteral("phaseLoss_W"), phases);
+                harmonicLosses.append(item);
+            }
+            windingCopperLossSnapshot.insert(QStringLiteral("harmonics"), harmonicLosses);
+        } else {
+            windingCopperLossSnapshot.insert(QStringLiteral("status"), QStringLiteral("NOT_VERIFIED"));
+            windingCopperLossSnapshot.insert(QStringLiteral("warning"), windingCopperLossWarning);
+        }
+        resultSnapshot.insert(QStringLiteral("windingCopperLoss"), windingCopperLossSnapshot);
         if (sourceVoltageThdBefore)
             resultSnapshot.insert(QStringLiteral("sourceVoltageThdBefore"), *sourceVoltageThdBefore);
         if (harmonicResult)
@@ -7898,6 +8047,7 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("circuitSolver"), QStringLiteral("circuit-ac-mna-v1"));
         engineVersions.insert(QStringLiteral("harmonics"), QStringLiteral("harmonics-v1"));
         engineVersions.insert(QStringLiteral("thermal"), QStringLiteral("thermal-steady-v1"));
+        engineVersions.insert(QStringLiteral("windingCopperLoss"), QStringLiteral("revision-bound-dc-harmonic-winding-loss-v1"));
         engineVersions.insert(QStringLiteral("magneticSinglePath"), QStringLiteral("nonlinear-magnetic-circuit-v1"));
         engineVersions.insert(QStringLiteral("magneticThreeLimb"), QStringLiteral("three-limb-reluctance-network-v1"));
         engineVersions.insert(QStringLiteral("magneticGeometryInput"), QStringLiteral("independent-limb-yoke-overrides-v1"));
@@ -8118,6 +8268,41 @@ void MainWindow::calculateFilter()
             currentSpectrumCurves.empty()
                 ? tr("WAITING_FOR_INPUT: non-zero load-current injections are required.")
                 : QString{}, true);
+    }
+
+    if (resultsWindingCopperLossPlot_) {
+        std::vector<PlotCurve> windingLossCurves;
+        QString emptyMessage = windingCopperLossWarning.isEmpty()
+            ? tr("NOT_VERIFIED: accepted winding geometry and revision-bound harmonic currents are required.")
+            : windingCopperLossWarning;
+        if (windingCopperLossResult) {
+            PlotCurve copperLossCurve{tr("Three-phase winding copper loss (DC model)"), {}};
+            for (const auto& harmonic : windingCopperLossResult->copperLoss.harmonicLosses)
+                copperLossCurve.points.emplace_back(
+                    static_cast<double>(harmonic.order),
+                    harmonic.totalThreePhaseLoss.si());
+            if (!copperLossCurve.points.empty())
+                windingLossCurves.push_back(std::move(copperLossCurve));
+            emptyMessage.clear();
+        }
+        resultsWindingCopperLossPlot_->setCurves(std::move(windingLossCurves),
+            tr("Harmonic order h"), tr("Three-phase copper loss (W)"), false,
+            emptyMessage, true);
+        resultsWindingCopperLossPlot_->setToolTip(tr(
+            "Exact conductor revision: %1. Temperature-corrected DC resistance at the accepted ambient temperature. "
+            "Skin, proximity, circulating-current, lead and joint losses are excluded. "
+            "Material release status: %2.")
+            .arg(windingCopperLossResult
+                ? QString::fromStdString(windingCopperLossResult->conductorMaterialRevision.revisionId)
+                : QStringLiteral("NOT_AVAILABLE"))
+            .arg(windingCopperLossResult
+                ? QString::fromStdString(windingCopperLossResult->conductorMaterialRevision.designReleaseStatus)
+                : QStringLiteral("NOT_VERIFIED")));
+    }
+    if (auto* title = findChild<QLabel*>(QStringLiteral("windingCopperLossPlotTitle"))) {
+        title->setText(windingCopperLossResult
+            ? tr("Winding copper loss by harmonic — DC model / AC effects excluded")
+            : tr("Winding copper loss by harmonic — NOT_VERIFIED"));
     }
     if (auto* title = findChild<QLabel*>(QStringLiteral("voltageSpectrumPlotTitle"))) {
         const bool hasDistortionInputs = suppliedHarmonics > 0 || hasLoadCurrentInjection;
