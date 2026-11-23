@@ -1030,12 +1030,9 @@ private slots:
         QCOMPARE(transferCurves.size(), 3);
         const auto transferPoints = transferCurves[0].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(transferPoints.size(), 1);
-        const auto transferPoint = transferPoints.front().toList();
-        QCOMPARE(transferPoint.size(), 2);
-        QCOMPARE(transferPoint[0].toDouble(), 250.0);
-        QVERIFY(std::isfinite(transferPoint[1].toDouble()));
-        QVERIFY(transferPoint[1].toDouble() >= 0.0);
+        QCOMPARE(transferPoints.size(), 1001);
+        QCOMPARE(transferPoints.front().toList()[0].toDouble(), 10.0);
+        QCOMPARE(transferPoints.back().toList()[0].toDouble(), 2500.0);
         const double harmonicOmega = 2.0 * std::acos(-1.0) * 250.0;
         const std::complex<double> harmonicSourceZ{sourceR, harmonicOmega * sourceL};
         const std::complex<double> harmonicFilterZ{
@@ -1043,13 +1040,27 @@ private slots:
         };
         const double expectedGridToLoadRatio =
             1.0 / std::abs(1.0 + harmonicSourceZ / harmonicFilterZ);
-        QVERIFY(qAbs(transferPoint[1].toDouble() - expectedGridToLoadRatio) < 1.0e-9);
+        const auto sweptPoint = std::find_if(transferPoints.begin(), transferPoints.end(),
+            [](const QVariant& value) {
+                const auto point = value.toList();
+                return point.size() == 2 && qAbs(point[0].toDouble() - 250.0) < 1.0e-9;
+            });
+        QVERIFY(sweptPoint != transferPoints.end());
+        const auto sweptPointValues = sweptPoint->toList();
+        QVERIFY(qAbs(sweptPointValues[1].toDouble() - expectedGridToLoadRatio) < 1.0e-9);
         const auto unityPoints = transferCurves[1].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(unityPoints.size(), 1);
+        QCOMPARE(unityPoints.size(), 2);
         QCOMPARE(unityPoints.front().toList()[1].toDouble(), 1.0);
+        QCOMPARE(unityPoints.back().toList()[1].toDouble(), 1.0);
         QVERIFY(transferCurves[2].toMap()
             .value(QStringLiteral("markersOnly")).toBool());
+        const auto operatingPoints = transferCurves[2].toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(operatingPoints.size(), 1);
+        const auto operatingPoint = operatingPoints.front().toList();
+        QCOMPARE(operatingPoint[0].toDouble(), 250.0);
+        QVERIFY(qAbs(operatingPoint[1].toDouble() - expectedGridToLoadRatio) < 1.0e-9);
         const auto* harmonicTransferTitle = window_->findChild<QLabel*>(
             QStringLiteral("harmonicTransferPlotTitle"));
         QVERIFY(harmonicTransferTitle);
