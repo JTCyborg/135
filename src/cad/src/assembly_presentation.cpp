@@ -249,7 +249,8 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
             windingGeometry.parallelConductors &&
             windingGeometry.sections == 1 &&
             (windingGeometry.conductorShape == "rectangular" ||
-             windingGeometry.conductorShape == "foil");
+             windingGeometry.conductorShape == "foil" ||
+             windingGeometry.conductorShape == "round");
         if (detailedTurns) {
             winding.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
             std::size_t turnIndex = 0;
