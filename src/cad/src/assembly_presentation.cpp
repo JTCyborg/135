@@ -2,6 +2,7 @@
 
 #include <BRepCheck_Analyzer.hxx>
 #include <TopoDS_Iterator.hxx>
+#include <TopExp_Explorer.hxx>
 #include <STEPControl_Writer.hxx>
 #include <STEPControl_StepModelType.hxx>
 #include <IFSelect_ReturnStatus.hxx>
