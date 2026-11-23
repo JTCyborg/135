@@ -780,6 +780,22 @@ int main()
         assert(std::isfinite(properties.Mass()) && properties.Mass() > 0.0);
     }
     assert(roundSolidCount == 4); // Two layers x (copper + insulation).
+    Bnd_Box roundBounds;
+    BRepBndLib::Add(roundTurns.value(), roundBounds);
+    double roundXMin = 0.0, roundYMin = 0.0, roundZMin = 0.0;
+    double roundXMax = 0.0, roundYMax = 0.0, roundZMax = 0.0;
+    roundBounds.Get(roundXMin, roundYMin, roundZMin, roundXMax, roundYMax, roundZMax);
+    const double bobbinBodyWidthMm =
+        (geometry.bobbins[0].innerWidth.si() +
+         2.0 * geometry.bobbins[0].wallThickness.si()) * 1000.0;
+    const double bobbinBodyDepthMm =
+        (geometry.bobbins[0].innerHeight.si() +
+         2.0 * geometry.bobbins[0].wallThickness.si()) * 1000.0;
+    // The helix must wrap the bobbin on both X and Z axes, not just occupy
+    // two opposing faces as a planar winding approximation would.
+    assert(roundXMax - roundXMin > bobbinBodyWidthMm);
+    assert(roundZMax - roundZMin > bobbinBodyDepthMm);
+    assert(roundYMax > roundYMin);
 
     auto roundGeometry = geometry;
     for (auto& winding : roundGeometry.windingPacks) {
