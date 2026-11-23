@@ -1242,9 +1242,9 @@ private slots:
         // metric so both persisted result arrays are covered by the E2E path.
         historyMetric->setCurrentIndex(1);
         QTest::mouseClick(compareHistory, Qt::LeftButton);
-        const auto impedanceCurves = historyComparison->property("plotCurves").toList();
-        QCOMPARE(impedanceCurves.size(), 2);
-        for (const auto& curveValue : impedanceCurves) {
+        const auto historyImpedanceCurves = historyComparison->property("plotCurves").toList();
+        QCOMPARE(historyImpedanceCurves.size(), 2);
+        for (const auto& curveValue : historyImpedanceCurves) {
             const auto points = curveValue.toMap()
                 .value(QStringLiteral("points")).toList();
             QVERIFY(points.size() >= 2);
