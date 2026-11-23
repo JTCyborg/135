@@ -960,6 +960,52 @@ private slots:
         QVERIFY(harmonicTransferTitle);
         QVERIFY(harmonicTransferTitle->text().contains(QStringLiteral("K_I(f)")));
 
+        auto* voltageSpectrumPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsVoltageSpectrumPlot"));
+        QVERIFY(voltageSpectrumPlot);
+        QVERIFY(voltageSpectrumPlot->property("plotBarChart").toBool());
+        const auto voltageSpectrumCurves =
+            voltageSpectrumPlot->property("plotCurves").toList();
+        QCOMPARE(voltageSpectrumCurves.size(), 2);
+        const auto voltageBeforePoints = voltageSpectrumCurves[0].toMap()
+            .value(QStringLiteral("points")).toList();
+        const auto voltageAfterPoints = voltageSpectrumCurves[1].toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(voltageBeforePoints.size(), 1);
+        QCOMPARE(voltageAfterPoints.size(), 1);
+        const auto voltageBeforePoint = voltageBeforePoints.front().toList();
+        const auto voltageAfterPoint = voltageAfterPoints.front().toList();
+        QCOMPARE(voltageBeforePoint[0].toDouble(), 5.0);
+        QCOMPARE(voltageAfterPoint[0].toDouble(), 5.0);
+        const std::complex<double> injectedHarmonicCurrent =
+            std::polar(3.25, -15.0 * std::acos(-1.0) / 180.0);
+        const double expectedPreFilterPccVoltage =
+            100.0 * std::abs(harmonicSourceZ * injectedHarmonicCurrent) /
+            (nominalLineVoltage / std::sqrt(3.0));
+        QVERIFY(qAbs(voltageBeforePoint[1].toDouble() -
+                     expectedPreFilterPccVoltage) < 1.0e-8);
+        QVERIFY(std::isfinite(voltageAfterPoint[1].toDouble()));
+        QVERIFY(voltageAfterPoint[1].toDouble() >= 0.0);
+        const auto* voltageSpectrumTitle = window_->findChild<QLabel*>(
+            QStringLiteral("voltageSpectrumPlotTitle"));
+        QVERIFY(voltageSpectrumTitle);
+        QVERIFY(voltageSpectrumTitle->text().contains(QStringLiteral("THD_U before")));
+        QVERIFY(voltageSpectrumTitle->text().contains(QStringLiteral("after")));
+
+        auto* currentSpectrumPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsCurrentSpectrumPlot"));
+        QVERIFY(currentSpectrumPlot);
+        QVERIFY(currentSpectrumPlot->property("plotBarChart").toBool());
+        const auto currentSpectrumCurves =
+            currentSpectrumPlot->property("plotCurves").toList();
+        QCOMPARE(currentSpectrumCurves.size(), 3);
+        const auto loadCurrentPoints = currentSpectrumCurves[0].toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(loadCurrentPoints.size(), 1);
+        const auto loadCurrentPoint = loadCurrentPoints.front().toList();
+        QCOMPARE(loadCurrentPoint[0].toDouble(), 5.0);
+        QVERIFY(qAbs(loadCurrentPoint[1].toDouble() - 3.25) < 1.0e-9);
+
         auto* busTitle = window_->findChild<QLabel*>(
             QStringLiteral("busImpedancePlotTitle"));
         QVERIFY(busTitle);
@@ -1022,6 +1068,10 @@ private slots:
             artifactProjectId + QStringLiteral("_bus_impedance.png")));
         const QFileInfo harmonicTransferPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_harmonic_transfer.png")));
+        const QFileInfo voltageSpectrumPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_voltage_harmonic_spectrum.png")));
+        const QFileInfo currentSpectrumPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_current_harmonic_spectrum.png")));
         const QFileInfo coreFluxPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_core_flux.png")));
         const QFileInfo materialBhPng(artifactRoot.filePath(
@@ -1031,13 +1081,16 @@ private slots:
         QVERIFY(historyPlot);
         const QFileInfo historyPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_history_comparison.png")));
-        const std::array<QFileInfo, 6> plotFiles{
-            currentPng, impedancePng, harmonicTransferPng, coreFluxPng, materialBhPng, historyPng
+        const std::array<QFileInfo, 8> plotFiles{
+            currentPng, impedancePng, harmonicTransferPng, voltageSpectrumPng,
+            currentSpectrumPng, coreFluxPng, materialBhPng, historyPng
         };
-        const std::array<QWidget*, 6> plotWidgets{
+        const std::array<QWidget*, 8> plotWidgets{
             window_->findChild<QWidget*>(QStringLiteral("resultsBankCurrentPlot")),
             window_->findChild<QWidget*>(QStringLiteral("resultsBusImpedancePlot")),
             harmonicTransferPlot,
+            voltageSpectrumPlot,
+            currentSpectrumPlot,
             coreFluxPlot,
             window_->findChild<QWidget*>(QStringLiteral("resultsMaterialBhPlot")),
             historyPlot
