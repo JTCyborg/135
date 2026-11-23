@@ -8133,7 +8133,7 @@ void MainWindow::calculateFilter()
             tr("Time within fundamental cycle (ms)"),
             tr("Signed flux density B (T)"), false, waveformEmptyMessage, false, true);
         if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxWaveformPlotTitle"))) {
-            title->setText(!acceptedWaveform.empty()
+            title->setText(acceptedWaveform && !acceptedWaveform->empty()
                 ? tr("Core flux-density waveform B(t) — %1 samples")
                     .arg(static_cast<qulonglong>(acceptedWaveform->size()))
                 : tr("Core flux-density waveform B(t) — NOT_VERIFIED"));
