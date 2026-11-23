@@ -762,8 +762,15 @@ protected:
                 tr("B-H knee criterion: %1 A peak").arg(*magneticKneeCurrentA_, 0, 'g', 5));
         }
 
-        const std::vector<QColor> colors{QColor(35, 105, 190), QColor(205, 70, 55),
-            QColor(35, 145, 90), QColor(150, 85, 175)};
+        // Keep all seven magnetic core sections visually distinguishable.
+        // Reusing four colors made the limb/yoke legend ambiguous on the
+        // seven-series peak-flux chart.
+        const std::vector<QColor> colors{
+            QColor(35, 105, 190), QColor(205, 70, 55),
+            QColor(35, 145, 90), QColor(150, 85, 175),
+            QColor(220, 135, 25), QColor(20, 145, 160),
+            QColor(165, 75, 125), QColor(90, 95, 105)
+        };
         int curveIndex = 0;
         int legendX = static_cast<int>(area.left()) + 8;
         int legendY = 15;
@@ -7461,10 +7468,13 @@ void MainWindow::calculateFilter()
                     return std::abs(marker.frequencyHz - tuningFrequencyHz) <=
                         std::max(1.0e-6, tuningFrequencyHz * 1.0e-9);
                 });
-            const QString tuningLabel = tr("series tune h=%1")
+            const QString tuningLabel = tr("tune h=%1")
                 .arg(tuningOrder, 0, 'g', 6);
             if (coincidentMarker != canonicalHarmonicMarkers.end()) {
-                coincidentMarker->label += QStringLiteral(" · ") + tuningLabel;
+                // A compact combined caption remains readable in the narrow
+                // logarithmic spacing between adjacent low-order harmonics.
+                coincidentMarker->label = tr("h=%1 (tune)")
+                    .arg(tuningOrder, 0, 'g', 6);
             } else {
                 canonicalHarmonicMarkers.push_back(PlotMarker{
                     tuningFrequencyHz, tuningLabel
