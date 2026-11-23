@@ -1,4 +1,5 @@
 #include "p135/thermal/thermal_network.hpp"
+#include "p135/thermal/natural_convection.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -158,7 +159,7 @@ Result<ThermalNetworkResult> analyzeThermalNetwork(
         matrix[b][a] -= conductance;
         adjacency[a].push_back(b);
         adjacency[b].push_back(a);
-        if (link.sourceReference.empty())
+        if (link.sourceReference.empty() || link.preliminaryModel)
             provenanceComplete = false;
     }
 
@@ -177,7 +178,7 @@ Result<ThermalNetworkResult> analyzeThermalNetwork(
         matrix[index][index] += link.conductanceWPerK;
         rhs[index] += link.conductanceWPerK * ambient;
         hasAmbientPath[index] = true;
-        if (link.sourceReference.empty())
+        if (link.sourceReference.empty() || link.preliminaryModel)
             provenanceComplete = false;
     }
 
@@ -271,6 +272,43 @@ Result<ThermalNetworkResult> analyzeThermalNetwork(
     }
 
     return Result<ThermalNetworkResult>::success(std::move(result));
+}
+
+
+Result<ThermalAmbientLink> makeNaturalConvectionAmbientLink(
+    const std::string& nodeId,
+    const NaturalConvectionResult& convection,
+    const std::string& boundaryModelSourceReference)
+{
+    if (nodeId.empty() || boundaryModelSourceReference.empty() ||
+        !std::isfinite(convection.thermalResistanceKPerW) ||
+        convection.thermalResistanceKPerW <= 0.0 ||
+        convection.geometrySourceReference.empty() ||
+        convection.fluidPropertiesSourceReference.empty() ||
+        convection.correlation.empty() || convection.status.empty()) {
+        return Result<ThermalAmbientLink>::failure(
+            invalid("Natural-convection boundary requires a node, positive resistance, correlation status, "
+                    "and traceable geometry, fluid-property and boundary-model references.",
+                    "naturalConvectionBoundary"));
+    }
+
+    const double conductance = 1.0 / convection.thermalResistanceKPerW;
+    if (!finitePositive(conductance))
+        return Result<ThermalAmbientLink>::failure(
+            invalid("Natural-convection resistance cannot be converted to a finite positive conductance.",
+                    "naturalConvectionBoundary.thermalResistanceKPerW"));
+
+    ThermalAmbientLink link;
+    link.nodeId = nodeId;
+    link.conductanceWPerK = conductance;
+    link.sourceReference =
+        "natural-convection;correlation=" + convection.correlation +
+        ";status=" + convection.status +
+        ";geometry=" + convection.geometrySourceReference +
+        ";fluid=" + convection.fluidPropertiesSourceReference +
+        ";boundary=" + boundaryModelSourceReference;
+    link.preliminaryModel = convection.status != "VERIFIED";
+    return Result<ThermalAmbientLink>::success(std::move(link));
 }
 
 } // namespace p135::thermal
