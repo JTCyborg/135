@@ -599,7 +599,7 @@ private slots:
         // from both records; rendering an empty diagnostic chart is not enough.
         tabs->setCurrentIndex(6);
         QTRY_COMPARE(tabs->currentIndex(), 6);
-        auto* historyTable = window_->findChild<QTableWidget*>();
+        auto* historyTable = window_->findChild<QTableWidget*>(QStringLiteral("historyTable"));
         QVERIFY(historyTable);
         auto* refreshHistory = window_->findChild<QPushButton*>(
             QStringLiteral("historyRefreshButton"));
@@ -635,7 +635,7 @@ private slots:
                 QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
             }
         }
-        QVERIFY(window_->findChild<QPlainTextEdit*>()->toPlainText()
+        QVERIFY(window_->findChild<QPlainTextEdit*>(QStringLiteral("historyDetails"))->toPlainText()
             .contains(QStringLiteral("Graph comparison:")));
         tabs->setCurrentIndex(4);
         QTRY_COMPARE(tabs->currentIndex(), 4);
