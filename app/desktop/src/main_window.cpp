@@ -447,6 +447,14 @@ public:
             serializedCurves.push_back(serializedCurve);
         }
         setProperty("plotCurves", serializedCurves);
+        QVariantList categoryLabels;
+        if (barChart_) {
+            for (const auto& curve : curves_) {
+                if (curve.points.size() == 1)
+                    categoryLabels.push_back(curve.name);
+            }
+        }
+        setProperty("plotCategoryLabels", categoryLabels);
         update();
 #if defined(_DEBUG) || !defined(NDEBUG)
         scheduleDebugImageSave();
@@ -678,16 +686,25 @@ protected:
             painter.setPen(QPen(QColor(190, 125, 20), 1.0, Qt::DashLine));
             painter.drawLine(QPointF(left, area.top()), QPointF(left, area.bottom()));
             painter.drawLine(QPointF(right, area.top()), QPointF(right, area.bottom()));
-            const QRectF labelRect(left + 3.0, area.top() + 20.0,
-                std::max(0.0, right - left - 6.0), 16.0);
-            if (labelRect.width() >= 24.0 && !band.label.isEmpty()) {
+            if (!band.label.isEmpty()) {
+                const double labelWidth = std::min(220.0, area.width());
+                const double labelLeft = std::clamp(
+                    0.5 * (left + right) - labelWidth * 0.5,
+                    area.left(), std::max(area.left(), area.right() - labelWidth));
+                const QRectF labelRect(labelLeft, area.top() + 50.0,
+                    labelWidth, 16.0);
                 painter.setPen(QColor(170, 105, 15));
-                painter.drawText(labelRect, Qt::AlignLeft | Qt::AlignVCenter,
+                painter.drawText(labelRect, Qt::AlignHCenter | Qt::AlignVCenter,
                     painter.fontMetrics().elidedText(band.label, Qt::ElideRight,
                         static_cast<int>(labelRect.width())));
             }
         }
-        double previousMarkerLabelRight = -std::numeric_limits<double>::infinity();
+        std::array<double, 3> previousMarkerLabelRight{
+            -std::numeric_limits<double>::infinity(),
+            -std::numeric_limits<double>::infinity(),
+            -std::numeric_limits<double>::infinity()
+        };
+        std::size_t markerLabelIndex = 0;
         for (const auto& marker : frequencyMarkers_) {
             if (!std::isfinite(marker.frequencyHz) || marker.frequencyHz <= 0.0 ||
                 marker.frequencyHz < minX || marker.frequencyHz > maxX) continue;
@@ -697,18 +714,28 @@ protected:
             // Keep every harmonic guide line, but suppress colliding labels on
             // dense logarithmic sweeps. Clamp captions to the plot bounds so
             // edge markers are not clipped by the widget.
-            const double labelLeft = std::max(area.left(), x - 22.0);
-            const double labelRight = std::min(area.right(), x + 22.0);
-            if (labelRight - labelLeft >= 20.0 &&
-                labelLeft >= previousMarkerLabelRight + 4.0) {
+            constexpr double markerLabelWidth = 82.0;
+            const double labelLeft = std::clamp(x - markerLabelWidth * 0.5,
+                area.left(), std::max(area.left(), area.right() - markerLabelWidth));
+            const double labelRight = std::min(area.right(), labelLeft + markerLabelWidth);
+            int selectedLane = -1;
+            for (int lane = 0; lane < static_cast<int>(previousMarkerLabelRight.size()); ++lane) {
+                if (labelLeft >= previousMarkerLabelRight[static_cast<std::size_t>(lane)] + 3.0) {
+                    selectedLane = lane;
+                    break;
+                }
+            }
+            if (selectedLane >= 0 && labelRight > labelLeft) {
                 painter.setPen(palette().color(QPalette::Text));
-                const QRectF labelRect(labelLeft, area.top() + 2.0,
-                    labelRight - labelLeft, 16.0);
+                const QRectF labelRect(labelLeft,
+                    area.top() + 2.0 + selectedLane * 15.0,
+                    labelRight - labelLeft, 14.0);
                 painter.drawText(labelRect, Qt::AlignHCenter | Qt::AlignTop,
                     painter.fontMetrics().elidedText(marker.label, Qt::ElideRight,
                         static_cast<int>(labelRect.width())));
-                previousMarkerLabelRight = labelRight;
+                previousMarkerLabelRight[static_cast<std::size_t>(selectedLane)] = labelRight;
             }
+            ++markerLabelIndex;
         }
         painter.setPen(palette().color(QPalette::Mid));
         for (int tick = 0; tick <= 4; ++tick) {
@@ -719,16 +746,42 @@ protected:
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
             painter.drawText(QRectF(26, y - 9, 56, 18), Qt::AlignRight | Qt::AlignVCenter,
                 QString::number(dataYMin + (yMax - dataYMin) * fraction, 'g', 4));
-            const double xValue = logarithmicX_
-                ? std::pow(10.0, axisMin + (axisMax - axisMin) * fraction)
-                : minX + (maxX - minX) * fraction;
-            const double x = area.left() + fraction * area.width();
-            painter.setPen(QPen(palette().color(QPalette::Mid), 0.6, Qt::DotLine));
-            painter.drawLine(QPointF(x, area.top()), QPointF(x, area.bottom()));
-            painter.setPen(palette().color(QPalette::Mid));
-            painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
-            painter.drawText(QRectF(x - 42, area.bottom() + 6, 84, 18),
-                Qt::AlignHCenter | Qt::AlignTop, QString::number(xValue, 'g', 3));
+            if (!barChart_) {
+                const double xValue = logarithmicX_
+                    ? std::pow(10.0, axisMin + (axisMax - axisMin) * fraction)
+                    : minX + (maxX - minX) * fraction;
+                const double x = area.left() + fraction * area.width();
+                painter.setPen(QPen(palette().color(QPalette::Mid), 0.6, Qt::DotLine));
+                painter.drawLine(QPointF(x, area.top()), QPointF(x, area.bottom()));
+                painter.setPen(palette().color(QPalette::Mid));
+                painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
+                painter.drawText(QRectF(x - 42, area.bottom() + 6, 84, 18),
+                    Qt::AlignHCenter | Qt::AlignTop, QString::number(xValue, 'g', 3));
+            }
+        }
+        if (barChart_) {
+            std::vector<std::pair<double, QString>> categories;
+            for (const auto& curve : curves_) {
+                if (curve.points.size() == 1 &&
+                    std::isfinite(curve.points.front().first))
+                    categories.emplace_back(curve.points.front().first, curve.name);
+            }
+            std::sort(categories.begin(), categories.end(),
+                [](const auto& left, const auto& right) { return left.first < right.first; });
+            for (std::size_t index = 0; index < categories.size(); ++index) {
+                const double x = xPixel(categories[index].first);
+                const double left = index == 0 ? area.left()
+                    : 0.5 * (xPixel(categories[index - 1].first) + x);
+                const double right = index + 1 == categories.size() ? area.right()
+                    : 0.5 * (x + xPixel(categories[index + 1].first));
+                painter.setPen(palette().color(QPalette::Mid));
+                painter.drawLine(QPointF(x, area.bottom()), QPointF(x, area.bottom() + 4));
+                const QRectF labelRect(left + 2.0, area.bottom() + 6.0,
+                    std::max(1.0, right - left - 4.0), 30.0);
+                painter.drawText(labelRect, Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap,
+                    painter.fontMetrics().elidedText(categories[index].second,
+                        Qt::ElideRight, static_cast<int>(labelRect.width())));
+            }
         }
 
         if (horizontalReference_ && std::isfinite(horizontalReference_->first) &&
