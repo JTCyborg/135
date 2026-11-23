@@ -383,6 +383,11 @@ struct PlotBand {
     QString label;
 };
 
+struct PlotMarker {
+    double frequencyHz{};
+    QString label;
+};
+
 class PlotWidget final : public QWidget
 {
 public:
@@ -439,6 +444,23 @@ public:
             serializedCurves.push_back(serializedCurve);
         }
         setProperty("plotCurves", serializedCurves);
+        update();
+#if defined(_DEBUG) || !defined(NDEBUG)
+        scheduleDebugImageSave();
+#endif
+    }
+
+    void setFrequencyMarkers(std::vector<PlotMarker> markers)
+    {
+        frequencyMarkers_ = std::move(markers);
+        QVariantList serializedMarkers;
+        for (const auto& marker : frequencyMarkers_) {
+            QVariantMap item;
+            item.insert(QStringLiteral("frequencyHz"), marker.frequencyHz);
+            item.insert(QStringLiteral("label"), marker.label);
+            serializedMarkers.push_back(item);
+        }
+        setProperty("plotFrequencyMarkers", serializedMarkers);
         update();
 #if defined(_DEBUG) || !defined(NDEBUG)
         scheduleDebugImageSave();
@@ -619,6 +641,16 @@ protected:
             painter.drawText(QRectF(left + 3, area.top() + 3,
                 std::max(0.0, right - left - 6), 18), Qt::AlignLeft | Qt::AlignTop, band.label);
         }
+        for (const auto& marker : frequencyMarkers_) {
+            if (!std::isfinite(marker.frequencyHz) || marker.frequencyHz <= 0.0 ||
+                marker.frequencyHz < minX || marker.frequencyHz > maxX) continue;
+            const double x = xPixel(marker.frequencyHz);
+            painter.setPen(QPen(QColor(105, 105, 105, 170), 1.0, Qt::DotLine));
+            painter.drawLine(QPointF(x, area.top()), QPointF(x, area.bottom()));
+            painter.setPen(palette().color(QPalette::Text));
+            painter.drawText(QRectF(x - 22, area.top() + 2, 44, 16),
+                Qt::AlignHCenter | Qt::AlignTop, marker.label);
+        }
         painter.setPen(palette().color(QPalette::Mid));
         for (int tick = 0; tick <= 4; ++tick) {
             const double fraction = static_cast<double>(tick) / 4.0;
@@ -721,7 +753,8 @@ protected:
                 painter.setBrush(color);
                 for (const auto& [xValue, yValue] : curve.points) {
                     if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
-                        xValue <= 0.0 || yValue < 0.0) continue;
+                        (logarithmicX_ ? xValue <= 0.0 : xValue < 0.0) ||
+                        (!allowNegativeY_ && yValue < 0.0)) continue;
                     const QPointF marker(xPixel(xValue), yPixel(yValue));
                     painter.drawEllipse(marker, 4.0, 4.0);
                 }
@@ -765,6 +798,7 @@ private:
     bool barChart_{};
     bool allowNegativeY_{};
     std::vector<PlotBand> resonanceBands_;
+    std::vector<PlotMarker> frequencyMarkers_;
     std::optional<double> saturationPeakCurrentA_;
     std::optional<double> magneticKneeCurrentA_;
 };
@@ -7108,6 +7142,24 @@ void MainWindow::calculateFilter()
             }
         }
     }
+    // Canonical harmonic order markers are shared with the bus-impedance graph.
+    std::vector<PlotMarker> canonicalHarmonicMarkers;
+    constexpr std::array<std::uint32_t, 9> canonicalHarmonicOrders{
+        3, 5, 7, 11, 13, 17, 19, 23, 25
+    };
+    if (impedanceResult && !impedanceResult->points.empty() && fundamentalFrequency_) {
+        const double startHz = impedanceResult->points.front().frequency.si();
+        const double stopHz = impedanceResult->points.back().frequency.si();
+        for (const auto order : canonicalHarmonicOrders) {
+            const double frequencyHz = fundamentalFrequency_->value() *
+                                       static_cast<double>(order);
+            if (frequencyHz >= startHz && frequencyHz <= stopHz)
+                canonicalHarmonicMarkers.push_back(PlotMarker{
+                    frequencyHz, QStringLiteral("h=%1").arg(order)
+                });
+        }
+    }
+
     // The transfer curve is derived only from explicitly entered load-current
     // injections. A zero/absent load harmonic has no meaningful I_grid/I_load ratio
     // and is intentionally omitted rather than displayed as zero attenuation.
@@ -7578,6 +7630,7 @@ void MainWindow::calculateFilter()
                 impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
                                 : tr("NOT_VERIFIED: filter-bank impedance scan failed. See the calculation log for the solver error."));
             resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
+            resultsBusImpedancePlot_->setFrequencyMarkers(canonicalHarmonicMarkers);
         }
         if (resultsHarmonicTransferPlot_) {
             resultsHarmonicTransferPlot_->setCurves(harmonicTransferCurves,
@@ -7875,6 +7928,7 @@ void MainWindow::calculateFilter()
             impedanceResult ? tr("NOT_VERIFIED: impedance scan returned no valid samples.")
                             : tr("NOT_VERIFIED: filter impedance scan failed."));
         resultsBusImpedancePlot_->setEngineeringGuides(resonanceBands);
+            resultsBusImpedancePlot_->setFrequencyMarkers(canonicalHarmonicMarkers);
     }
 
     if (auto* title = findChild<QLabel*>(QStringLiteral("busImpedancePlotTitle"))) {
