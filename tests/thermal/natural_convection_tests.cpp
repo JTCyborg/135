@@ -118,8 +118,11 @@ void testHorizontalPlateParameterMatrix()
             (scenario.viscosity * (scenario.viscosity / scenario.prandtl));
         assert(rayleigh >= 1.0e4 && rayleigh <= 1.0e11);
 
-        for (const auto orientation : {HorizontalPlateOrientation::HeatedFaceUpward,
-                                       HorizontalPlateOrientation::HeatedFaceDownward}) {
+        constexpr std::array<HorizontalPlateOrientation, 2> orientations{{
+            HorizontalPlateOrientation::HeatedFaceUpward,
+            HorizontalPlateOrientation::HeatedFaceDownward
+        }};
+        for (const auto orientation : orientations) {
             request.orientation = orientation;
             const auto actual = analyzeHorizontalPlateNaturalConvection(request);
             assert(actual);
