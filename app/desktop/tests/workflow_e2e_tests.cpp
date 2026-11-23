@@ -875,23 +875,34 @@ private slots:
             QStringLiteral("resultsBusImpedancePlot"));
         QVERIFY(impedancePlot);
         const auto impedanceCurves = impedancePlot->property("plotCurves").toList();
-        QCOMPARE(impedanceCurves.size(), 1);
-        const auto impedancePoints = impedanceCurves.front().toMap()
+        QCOMPARE(impedanceCurves.size(), 2);
+        const auto impedancePoints = impedanceCurves[0].toMap()
+            .value(QStringLiteral("points")).toList();
+        const auto gridImpedancePoints = impedanceCurves[1].toMap()
             .value(QStringLiteral("points")).toList();
         QCOMPARE(impedancePoints.size(), 501);
-        for (const auto& pointValue : impedancePoints) {
-            const auto point = pointValue.toList();
+        QCOMPARE(gridImpedancePoints.size(), 501);
+        QVERIFY(impedanceCurves[1].toMap().value(QStringLiteral("dashed")).toBool());
+        for (std::size_t sample = 0; sample < impedancePoints.size(); ++sample) {
+            const auto point = impedancePoints[static_cast<qsizetype>(sample)].toList();
+            const auto gridPoint = gridImpedancePoints[static_cast<qsizetype>(sample)].toList();
             QCOMPARE(point.size(), 2);
+            QCOMPARE(gridPoint.size(), 2);
             const double frequencyHz = point[0].toDouble();
+            QCOMPARE(gridPoint[0].toDouble(), frequencyHz);
             const double plottedOhm = point[1].toDouble();
+            const double plottedGridOhm = gridPoint[1].toDouble();
             const double omega = 2.0 * std::acos(-1.0) * frequencyHz;
             const std::complex<double> sourceZ{sourceR, omega * sourceL};
             const std::complex<double> filterZ{
                 branchR, omega * branchL - 1.0 / (omega * branchC)
             };
             const double expectedBusOhm = std::abs(sourceZ * filterZ / (sourceZ + filterZ));
+            const double expectedGridOhm = std::abs(sourceZ);
             QVERIFY(std::isfinite(plottedOhm) && plottedOhm >= 0.0);
+            QVERIFY(std::isfinite(plottedGridOhm) && plottedGridOhm >= 0.0);
             QVERIFY(qAbs(plottedOhm - expectedBusOhm) < 1.0e-9);
+            QVERIFY(qAbs(plottedGridOhm - expectedGridOhm) < 1.0e-9);
         }
 
         auto* currentTitle = window_->findChild<QLabel*>(
