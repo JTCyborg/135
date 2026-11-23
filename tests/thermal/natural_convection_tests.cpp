@@ -1,11 +1,79 @@
 #include "p135/thermal/natural_convection.hpp"
 
+#include <array>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
+#include <string>
 
 using namespace p135;
 using namespace p135::thermal;
 
+
+void testVerticalPlateParameterMatrix()
+{
+    struct Scenario {
+        double areaM2;
+        double heightM;
+        double ambientK;
+        double surfaceK;
+        double conductivity;
+        double viscosity;
+        double prandtl;
+    };
+    // Deliberately vary geometry, temperature lift and air-property inputs
+    // between cases; alpha is derived from nu/Pr to keep the fluid tuple
+    // internally consistent.
+    constexpr std::array<Scenario, 4> scenarios{{
+        {0.045, 0.12, 293.15, 313.15, 0.0242, 1.42e-5, 0.704},
+        {0.120, 0.30, 303.15, 353.15, 0.0275, 1.70e-5, 0.710},
+        {0.280, 0.48, 313.15, 373.15, 0.0291, 2.02e-5, 0.716},
+        {0.650, 0.65, 323.15, 408.15, 0.0310, 2.48e-5, 0.722}
+    }};
+
+    for (std::size_t index = 0; index < scenarios.size(); ++index) {
+        const auto& scenario = scenarios[index];
+        VerticalPlateNaturalConvectionRequest request;
+        request.exposedArea = units::Area{scenario.areaM2};
+        request.verticalCharacteristicLength = units::Length{scenario.heightM};
+        request.ambientTemperature = units::TemperatureKelvin{scenario.ambientK};
+        request.surfaceTemperature = units::TemperatureKelvin{scenario.surfaceK};
+        request.fluid = NaturalConvectionFluidProperties{
+            scenario.conductivity, scenario.viscosity,
+            scenario.viscosity / scenario.prandtl, scenario.prandtl,
+            "test-matrix:air-" + std::to_string(index)
+        };
+        request.geometrySourceReference = "test-matrix:plate-" + std::to_string(index);
+        request.unobstructedQuiescentAmbient = true;
+
+        const auto actual = analyzeVerticalPlateNaturalConvection(request);
+        assert(actual);
+
+        const double film = 0.5 * (scenario.ambientK + scenario.surfaceK);
+        const double deltaT = scenario.surfaceK - scenario.ambientK;
+        const double rayleigh = 9.80665 * (1.0 / film) * deltaT *
+            std::pow(scenario.heightM, 3.0) /
+            (scenario.viscosity * (scenario.viscosity / scenario.prandtl));
+        const double denominator = std::pow(
+            1.0 + std::pow(0.492 / scenario.prandtl, 9.0 / 16.0), 8.0 / 27.0);
+        const double nusselt = std::pow(
+            0.825 + 0.387 * std::pow(rayleigh, 1.0 / 6.0) / denominator, 2.0);
+        const double coefficient = nusselt * scenario.conductivity / scenario.heightM;
+        const double resistance = 1.0 / (coefficient * scenario.areaM2);
+
+        const auto close = [](double lhs, double rhs) {
+            return std::abs(lhs - rhs) <= 1.0e-10 * std::max(1.0, std::abs(rhs));
+        };
+        assert(close(actual.value().filmTemperatureK, film));
+        assert(close(actual.value().rayleighNumber, rayleigh));
+        assert(close(actual.value().nusseltNumber, nusselt));
+        assert(close(actual.value().heatTransferCoefficientWPerM2K, coefficient));
+        assert(close(actual.value().thermalResistanceKPerW, resistance));
+        assert(actual.value().geometrySourceReference == request.geometrySourceReference);
+        assert(actual.value().fluidPropertiesSourceReference == request.fluid.sourceReference);
+        assert(actual.value().status == "PRELIMINARY");
+    }
+}
 
 void testHorizontalPlateCorrelations()
 {
@@ -52,6 +120,7 @@ void testHorizontalPlateCorrelations()
 int main()
 {
     testHorizontalPlateCorrelations();
+    testVerticalPlateParameterMatrix();
     VerticalPlateNaturalConvectionRequest request;
     request.exposedArea = units::Area{0.12};
     request.verticalCharacteristicLength = units::Length{0.30};
