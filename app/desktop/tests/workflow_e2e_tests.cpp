@@ -1106,6 +1106,10 @@ private slots:
         QCOMPARE(voltageAfterPoint[0].toDouble(), 5.0);
         const std::complex<double> injectedHarmonicCurrent =
             std::polar(3.25, -15.0 * std::acos(-1.0) / 180.0);
+        const double fifthHarmonicOmega = 2.0 * std::acos(-1.0) * 250.0;
+        const std::complex<double> harmonicSourceZ{
+            sourceR, fifthHarmonicOmega * sourceL
+        };
         const double expectedPreFilterPccVoltage =
             100.0 * std::abs(harmonicSourceZ * injectedHarmonicCurrent) /
             phaseVoltage;
