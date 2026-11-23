@@ -421,10 +421,10 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     const gp_Pnt p2( halfX * mm, y,  halfZ * mm);
                     const gp_Pnt p3(-halfX * mm, y,  halfZ * mm);
                     BRepBuilderAPI_MakeWire path;
-                    path.Add(BRepBuilderAPI_MakeEdge(p0, p1));
-                    path.Add(BRepBuilderAPI_MakeEdge(p1, p2));
-                    path.Add(BRepBuilderAPI_MakeEdge(p2, p3));
-                    path.Add(BRepBuilderAPI_MakeEdge(p3, p0));
+                    path.Add(BRepBuilderAPI_MakeEdge(p0, p1).Edge());
+                    path.Add(BRepBuilderAPI_MakeEdge(p1, p2).Edge());
+                    path.Add(BRepBuilderAPI_MakeEdge(p2, p3).Edge());
+                    path.Add(BRepBuilderAPI_MakeEdge(p3, p0).Edge());
                     if (!path.IsDone())
                         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                             "OCCT failed to create the closed centreline for a round conductor turn.",
