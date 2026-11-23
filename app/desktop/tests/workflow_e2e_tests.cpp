@@ -1014,6 +1014,16 @@ private slots:
         QVERIFY(coreFluxPlot->property("plotBarChart").toBool());
         const auto fluxCurves = coreFluxPlot->property("plotCurves").toList();
         QCOMPARE(fluxCurves.size(), 7);
+        const auto fluxCategoryLabels = coreFluxPlot->property("plotCategoryLabels").toStringList();
+        QCOMPARE(fluxCategoryLabels.size(), 7);
+        const QStringList expectedFluxCategories{
+            QStringLiteral("Limb A"), QStringLiteral("Limb B"), QStringLiteral("Limb C"),
+            QStringLiteral("Top yoke A-B"), QStringLiteral("Top yoke B-C"),
+            QStringLiteral("Bottom yoke A-B"), QStringLiteral("Bottom yoke B-C")
+        };
+        QCOMPARE(fluxCategoryLabels, expectedFluxCategories);
+        QCOMPARE(coreFluxPlot->property("plotXAxisLabel").toString(),
+            QStringLiteral("Core section"));
         // The graph must contain the seven actual section peaks returned by
         // the converged multi-harmonic magnetic operating-point solver. A
         // successful PNG capture with empty point arrays is not a passing test.
