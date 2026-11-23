@@ -48,6 +48,20 @@ extractWindingEnvelopeFaceGeometry(const TopoDS_Shape& windingEnvelope)
         return failure<std::vector<WindingEnvelopeFaceGeometry>>(
             ErrorCode::InvalidInput, "Winding envelope shape is not a valid B-Rep.", "windingEnvelope");
 
+    Bnd_Box envelopeBounds;
+    BRepBndLib::Add(windingEnvelope, envelopeBounds);
+    if (envelopeBounds.IsVoid() || envelopeBounds.IsOpenXmin() ||
+        envelopeBounds.IsOpenXmax() || envelopeBounds.IsOpenYmin() ||
+        envelopeBounds.IsOpenYmax() || envelopeBounds.IsOpenZmin() ||
+        envelopeBounds.IsOpenZmax())
+        return failure<std::vector<WindingEnvelopeFaceGeometry>>(
+            ErrorCode::SolverFailure, "OCCT returned unbounded winding-envelope bounds.",
+            "windingEnvelope.bounds");
+    double envelopeXMin = 0.0, envelopeYMin = 0.0, envelopeZMin = 0.0;
+    double envelopeXMax = 0.0, envelopeYMax = 0.0, envelopeZMax = 0.0;
+    envelopeBounds.Get(envelopeXMin, envelopeYMin, envelopeZMin,
+                       envelopeXMax, envelopeYMax, envelopeZMax);
+
     std::vector<WindingEnvelopeFaceGeometry> faces;
     std::size_t faceIndex = 0;
     for (TopExp_Explorer it(windingEnvelope, TopAbs_FACE); it.More(); it.Next(), ++faceIndex) {
@@ -99,6 +113,32 @@ extractWindingEnvelopeFaceGeometry(const TopoDS_Shape& windingEnvelope)
             normal /= magnitude;
             if (face.Orientation() == TopAbs_REVERSED) normal.Reverse();
             descriptor.unitNormal = {normal.X(), normal.Y(), normal.Z()};
+
+            // This builder creates an axis-aligned hollow rectangular prism:
+            // Y-normal faces are annular axial ends; X/Z-normal faces are
+            // either the four outer walls or four inner cavity walls.
+            constexpr double axisTolerance = 1.0e-6;
+            constexpr double boundaryToleranceMm = 1.0e-3;
+            const double nx = std::abs(normal.X());
+            const double ny = std::abs(normal.Y());
+            const double nz = std::abs(normal.Z());
+            if (ny >= 1.0 - axisTolerance) {
+                descriptor.role = WindingEnvelopeFaceRole::AxialEnd;
+            } else if (nx >= 1.0 - axisTolerance) {
+                const double x = centroid.X();
+                const bool outer =
+                    std::abs(x - envelopeXMin) <= boundaryToleranceMm ||
+                    std::abs(x - envelopeXMax) <= boundaryToleranceMm;
+                descriptor.role = outer ? WindingEnvelopeFaceRole::OuterLateral
+                                         : WindingEnvelopeFaceRole::InnerCavity;
+            } else if (nz >= 1.0 - axisTolerance) {
+                const double z = centroid.Z();
+                const bool outer =
+                    std::abs(z - envelopeZMin) <= boundaryToleranceMm ||
+                    std::abs(z - envelopeZMax) <= boundaryToleranceMm;
+                descriptor.role = outer ? WindingEnvelopeFaceRole::OuterLateral
+                                         : WindingEnvelopeFaceRole::InnerCavity;
+            }
         }
         faces.push_back(descriptor);
     }
