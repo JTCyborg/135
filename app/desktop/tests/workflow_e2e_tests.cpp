@@ -806,6 +806,25 @@ private slots:
         QVERIFY(results);
         QTRY_VERIFY_WITH_TIMEOUT(results->rowCount() > 0, 10000);
 
+        // The accepted Construction snapshot, pinned M235-35A material revision,
+        // explicit turns and harmonic branch result reach the revision-bound
+        // magnetic bridge. M235-35A is exploratory (sparse-anchor estimate), and
+        // the opt-in is deliberately off: the physical result must stay
+        // NOT_VERIFIED and must not publish a Construction-bound peak |B|.
+        auto* calculationLog = window_->findChild<QPlainTextEdit*>(
+            QStringLiteral("calculationActivityLog"));
+        QVERIFY(calculationLog);
+        const QString magneticLog = calculationLog->toPlainText();
+        QVERIFY2(magneticLog.contains(QStringLiteral(
+            "Construction-bound magnetic analysis NOT_VERIFIED")),
+            qPrintable(magneticLog));
+        QVERIFY2(magneticLog.contains(QStringLiteral("allowEstimatedBhModel")),
+            qPrintable(magneticLog));
+        QVERIFY(!magneticLog.contains(QStringLiteral(
+            "[MAGNETIC] PASS — Construction TEST-01-SYNTHETIC-GEOMETRY-R1")));
+        QVERIFY(!magneticLog.contains(QStringLiteral(
+            "Construction TEST-01-SYNTHETIC-GEOMETRY-R1; material SEED-TK-M235-35A-R1; B-H model ESTIMATED")));
+
         auto* currentPlot = window_->findChild<QWidget*>(
             QStringLiteral("resultsBankCurrentPlot"));
         QVERIFY(currentPlot);
