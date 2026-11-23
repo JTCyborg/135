@@ -513,6 +513,10 @@ private slots:
         auto* synthesize = window_->findChild<QPushButton*>(QStringLiteral("synthesizeLcBranch"));
         QVERIFY(synthesize);
         QTest::mouseClick(synthesize, Qt::LeftButton);
+        qInfo().noquote() << "[E2E-DIAG] after filter synthesis"
+            << "resultsNote=" << window_->findChild<QLabel*>(QStringLiteral("calculationResultsNote"))->text()
+            << "resultRows=" << window_->findChild<QTableWidget*>(QStringLiteral("calculationResultsTable"))->rowCount()
+            << "constructionState=" << window_->findChild<QLabel*>(QStringLiteral("constructionInputState"))->text();
         clickAndWait("confirmFilterDefinitionAndContinue", 2);
         clickAndWait("confirmConstructionAndContinue", 3);
     }
@@ -528,6 +532,10 @@ private slots:
         auto* synthesize = window_->findChild<QPushButton*>(QStringLiteral("synthesizeLcBranch"));
         QVERIFY(synthesize);
         QTest::mouseClick(synthesize, Qt::LeftButton);
+        qInfo().noquote() << "[E2E-DIAG] after filter synthesis"
+            << "resultsNote=" << window_->findChild<QLabel*>(QStringLiteral("calculationResultsNote"))->text()
+            << "resultRows=" << window_->findChild<QTableWidget*>(QStringLiteral("calculationResultsTable"))->rowCount()
+            << "constructionState=" << window_->findChild<QLabel*>(QStringLiteral("constructionInputState"))->text();
         QTest::mouseClick(window_->findChild<QPushButton*>(
             QStringLiteral("confirmFilterDefinitionAndContinue")), Qt::LeftButton);
         QTRY_COMPARE(tabs->currentIndex(), 2);
@@ -626,6 +634,10 @@ private slots:
             QStringLiteral("synthesizeLcBranch"));
         QVERIFY(synthesize);
         QTest::mouseClick(synthesize, Qt::LeftButton);
+        qInfo().noquote() << "[E2E-DIAG] after filter synthesis"
+            << "resultsNote=" << window_->findChild<QLabel*>(QStringLiteral("calculationResultsNote"))->text()
+            << "resultRows=" << window_->findChild<QTableWidget*>(QStringLiteral("calculationResultsTable"))->rowCount()
+            << "constructionState=" << window_->findChild<QLabel*>(QStringLiteral("constructionInputState"))->text();
 
         auto* filterConfirm = window_->findChild<QPushButton*>(
             QStringLiteral("confirmFilterDefinitionAndContinue"));
