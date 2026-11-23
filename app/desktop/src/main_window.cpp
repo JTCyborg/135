@@ -886,6 +886,11 @@ protected:
                     const double top = yPixel(yValue);
                     painter.drawRect(QRectF(center - barWidth * 0.5, top,
                                              barWidth, area.bottom() - top));
+                    painter.setPen(palette().color(QPalette::Text));
+                    painter.drawText(QRectF(center - 34.0, top - 19.0, 68.0, 16.0),
+                        Qt::AlignHCenter | Qt::AlignVCenter,
+                        QString::number(yValue, 'g', 4));
+                    painter.setPen(QPen(color.darker(115), 0.8));
                 }
                 painter.setBrush(Qt::NoBrush);
             } else if (!curve.markersOnly) {
@@ -7478,7 +7483,7 @@ void MainWindow::calculateFilter()
                     if (zoneStopHz > zoneStartHz)
                         resonanceBands.push_back(PlotBand{
                             zoneStartHz, zoneStopHz,
-                            tr("Impedance amplification: |Zbus| > |Zgrid|"), true
+                            tr("Amplification: |Zbus| > |Zgrid|"), true
                         });
                     inAmplificationZone = false;
                 }
