@@ -6,8 +6,43 @@
 using namespace p135;
 using namespace p135::thermal;
 
+
+void testHorizontalPlateCorrelations()
+{
+    HorizontalPlateNaturalConvectionRequest request;
+    request.exposedArea = units::Area{0.25};
+    request.exposedPerimeter = units::Length{2.0};
+    request.ambientTemperature = units::TemperatureKelvin{313.15};
+    request.surfaceTemperature = units::TemperatureKelvin{353.15};
+    request.fluid = NaturalConvectionFluidProperties{
+        0.0275, 1.7e-5, 2.4e-5, 0.71, "TEST-AIR-PROPERTIES"
+    };
+    request.geometrySourceReference = "TEST-PLATE-GEOMETRY";
+    request.unobstructedQuiescentAmbient = true;
+
+    const auto upward = analyzeHorizontalPlateNaturalConvection(request);
+    assert(upward.has_value());
+    assert(upward.value().rayleighNumber >= 1.0e4);
+    assert(upward.value().rayleighNumber <= 1.0e11);
+    assert(upward.value().nusseltNumber > 0.0);
+    assert(upward.value().thermalResistanceKPerW > 0.0);
+    assert(upward.value().status == "PRELIMINARY");
+
+    request.orientation = HorizontalPlateOrientation::HeatedFaceDownward;
+    const auto downward = analyzeHorizontalPlateNaturalConvection(request);
+    if (downward.has_value()) {
+        assert(downward.value().rayleighNumber >= 1.0e5);
+        assert(downward.value().rayleighNumber <= 1.0e10);
+    }
+
+    request.unobstructedQuiescentAmbient = false;
+    const auto obstructed = analyzeHorizontalPlateNaturalConvection(request);
+    assert(!obstructed.has_value());
+}
+ 
 int main()
 {
+    testHorizontalPlateCorrelations();
     VerticalPlateNaturalConvectionRequest request;
     request.exposedArea = units::Area{0.12};
     request.verticalCharacteristicLength = units::Length{0.30};
