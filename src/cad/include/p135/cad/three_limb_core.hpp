@@ -32,8 +32,10 @@ namespace p135::cad {
 [[nodiscard]] Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
     const domain::ReactorPhysicalGeometry& geometry);
 
-// Builds the core, three bobbins and three positioned winding-pack envelope
-// solids. The existing core-and-bobbin assembly API remains unchanged.
+// Builds the core, three bobbins and three positioned winding representations.
+// Explicit single-section rectangular/foil data produces independent conductor
+// solids; other constructions retain the clearly identified envelope fallback.
+// The existing core-and-bobbin assembly API remains unchanged.
 [[nodiscard]] Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
     const domain::ReactorPhysicalGeometry& geometry);
 
