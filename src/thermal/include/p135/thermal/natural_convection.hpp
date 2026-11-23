@@ -50,4 +50,31 @@ struct NaturalConvectionResult {
 [[nodiscard]] Result<NaturalConvectionResult> analyzeVerticalPlateNaturalConvection(
     const VerticalPlateNaturalConvectionRequest& request);
 
+
+/// Orientation of a heated horizontal plate relative to gravity.
+enum class HorizontalPlateOrientation {
+    HeatedFaceUpward,
+    HeatedFaceDownward
+};
+
+/// Horizontal plate boundary conditions. Characteristic length is derived
+/// from exposed area / perimeter; perimeter must describe the exposed outline.
+struct HorizontalPlateNaturalConvectionRequest {
+    units::Area exposedArea;
+    units::Length exposedPerimeter;
+    units::TemperatureKelvin ambientTemperature;
+    units::TemperatureKelvin surfaceTemperature;
+    NaturalConvectionFluidProperties fluid;
+    std::string geometrySourceReference;
+    HorizontalPlateOrientation orientation{HorizontalPlateOrientation::HeatedFaceUpward};
+    bool unobstructedQuiescentAmbient{false};
+};
+
+/// McAdams horizontal-plate free-convection correlations for a heated face:
+/// upward-facing: Nu=0.54 Ra^(1/4) [1e4,1e7], 0.15 Ra^(1/3) [1e7,1e11];
+/// downward-facing: Nu=0.27 Ra^(1/4) [1e5,1e10].
+/// Results are preliminary and do not model winding enclosures or radiation.
+[[nodiscard]] Result<NaturalConvectionResult> analyzeHorizontalPlateNaturalConvection(
+    const HorizontalPlateNaturalConvectionRequest& request);
+
 } // namespace p135::thermal
