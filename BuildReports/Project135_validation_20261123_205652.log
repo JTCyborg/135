@@ -1,0 +1,691 @@
+================================================================ 
+Project135 validation run 
+Started: 23.11.2026 20:56:52,59 
+Project: C:\Temp\trdos\135\ 
+================================================================ 
+VCPKG_ROOT: C:\vcpkg
+[VCPKG] OCCT archive found and will be preserved: C:\vcpkg\downloads\Open-Cascade-SAS-OCCT-V8_0_1.tar.gz
+[VCPKG] Using existing checkout and pinned baseline b94b6bdc326c0faea9070b4862e0e0d4e4ac5396.
+[VCPKG] Binary cache: C:\vcpkg\binary-cache
+[VCPKG] Persistent installed tree: C:\Temp\trdos\135\vcpkg_installed
+[VCPKG] Cached OCCT source archive and buildtrees are left untouched.
+[VCPKG] Tool checkout commit: b94b6bdc326c0faea9070b4862e0e0d4e4ac5396
+[ENVIRONMENT]
+Computer: DESKTOP-H1DJP3C
+User: JTCyb
+
+
+[RUN] CMake version
+cmake version 4.4.4
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+[PASS] CMake version
+
+[RUN] Git version
+git version 2.56.0.windows.4
+[PASS] Git version
+Current branch: feature/natural-convection-vertical-plate
+Validation branch: feature/natural-convection-vertical-plate
+
+[RUN] Fetch target branch feature/natural-convection-vertical-plate
+From https://github.com/JTCyborg/135
+ * branch            feature/natural-convection-vertical-plate -> FETCH_HEAD
+[PASS] Fetch target branch feature/natural-convection-vertical-plate
+
+[RUN] Update target branch feature/natural-convection-vertical-plate
+From https://github.com/JTCyborg/135
+ * branch            feature/natural-convection-vertical-plate -> FETCH_HEAD
+Already up to date.
+[PASS] Update target branch feature/natural-convection-vertical-plate
+Current branch after sync: feature/natural-convection-vertical-plate
+Validation branch: feature/natural-convection-vertical-plate
+Synchronized source commit: dbbca4adab6d1fc3284bdfa520ed88f5896abbfd
+
+[RUN] Configure Debug
+-- Running vcpkg install
+Detecting compiler hash for triplet x64-windows...
+Compiler found: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe
+The following packages are already installed:
+  * brotli:x64-windows@1.2.1
+  * bzip2[core,tool]:x64-windows@1.0.8#6
+  * egl-registry:x64-windows@2026-11-06
+  * freetype[core,zlib,png,bzip2,brotli]:x64-windows@2.15.0
+  * libpng:x64-windows@1.6.59#1
+    nlohmann-json:x64-windows@3.12.0#2
+    opencascade[core,freetype]:x64-windows@8.0.1#1
+  * opengl:x64-windows@2022-12-04#3
+  * opengl-registry:x64-windows@2026-08-03
+    openssl:x64-windows@3.6.5#2
+    sqlite3[core,json1]:x64-windows@3.54.1
+  * vcpkg-cmake:x64-windows@2026-11-09
+  * vcpkg-cmake-config:x64-windows@2026-07-21
+  * vcpkg-cmake-get-vars:x64-windows@2025-05-29
+  * zlib:x64-windows@1.4
+The package nlohmann-json provides CMake targets:
+
+    find_package(nlohmann_json CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE nlohmann_json::nlohmann_json)
+
+The package nlohmann-json can be configured to not provide implicit conversions via a custom triplet file:
+
+    set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
+
+For more information, see the docs here:
+    
+    https://json.nlohmann.me/api/macros/json_use_implicit_conversions/
+
+opencascade provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(OpenCASCADE CONFIG REQUIRED)
+  # note: 46 additional targets are not displayed.
+  target_link_libraries(main PRIVATE TKBO TKDE TKBin TKCAF)
+
+openssl is compatible with built-in CMake targets:
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(main PRIVATE OpenSSL::SSL)
+  target_link_libraries(main PRIVATE OpenSSL::Crypto)
+
+sqlite3 provides pkgconfig bindings.
+sqlite3 provides CMake targets:
+
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
+
+All requested installations completed successfully in: 1.1 ms
+-- Running vcpkg install - done
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Project135: auto-detected Qt 6 at C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Configuring done (7.7s)
+-- Generating done (3.1s)
+-- Build files have been written to: C:/Temp/trdos/135/out/build/vs2026-desktop-debug
+[PASS] Configure Debug
+
+[RUN] Configure Release
+-- Running vcpkg install
+Detecting compiler hash for triplet x64-windows...
+Compiler found: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe
+The following packages are already installed:
+  * brotli:x64-windows@1.2.1
+  * bzip2[core,tool]:x64-windows@1.0.8#6
+  * egl-registry:x64-windows@2026-11-06
+  * freetype[core,zlib,png,bzip2,brotli]:x64-windows@2.15.0
+  * libpng:x64-windows@1.6.59#1
+    nlohmann-json:x64-windows@3.12.0#2
+    opencascade[core,freetype]:x64-windows@8.0.1#1
+  * opengl:x64-windows@2022-12-04#3
+  * opengl-registry:x64-windows@2026-08-03
+    openssl:x64-windows@3.6.5#2
+    sqlite3[core,json1]:x64-windows@3.54.1
+  * vcpkg-cmake:x64-windows@2026-11-09
+  * vcpkg-cmake-config:x64-windows@2026-07-21
+  * vcpkg-cmake-get-vars:x64-windows@2025-05-29
+  * zlib:x64-windows@1.4
+The package nlohmann-json provides CMake targets:
+
+    find_package(nlohmann_json CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE nlohmann_json::nlohmann_json)
+
+The package nlohmann-json can be configured to not provide implicit conversions via a custom triplet file:
+
+    set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
+
+For more information, see the docs here:
+    
+    https://json.nlohmann.me/api/macros/json_use_implicit_conversions/
+
+opencascade provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(OpenCASCADE CONFIG REQUIRED)
+  # note: 46 additional targets are not displayed.
+  target_link_libraries(main PRIVATE TKBO TKDE TKBin TKCAF)
+
+openssl is compatible with built-in CMake targets:
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(main PRIVATE OpenSSL::SSL)
+  target_link_libraries(main PRIVATE OpenSSL::Crypto)
+
+sqlite3 provides pkgconfig bindings.
+sqlite3 provides CMake targets:
+
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
+
+All requested installations completed successfully in: 802 us
+-- Running vcpkg install - done
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Project135: auto-detected Qt 6 at C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Configuring done (6.3s)
+-- Generating done (3.1s)
+-- Build files have been written to: C:/Temp/trdos/135/out/build/vs2026-desktop-release
+[PASS] Configure Release
+
+[RUN] Build Debug
+Версия MSBuild 18.11.1-1.26513.3+940033be3 для .NET Framework
+
+  Project135Circuit.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\circuit\Debug\Project135Circuit.lib
+  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CircuitTests.exe
+  Project135Domain.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\domain\Debug\Project135Domain.lib
+  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\filter\Debug\Project135Filter.lib
+  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DesignParameterTests.exe
+  Project135DesignDependencyTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DesignDependencyTests.exe
+  Project135DomainTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135DomainTests.exe
+  Project135CoreTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreTests.exe
+  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\application\Debug\Project135Application.lib
+  Project135FilterHarmonicsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterHarmonicsTests.exe
+  Project135FilterAnalysisTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterAnalysisTests.exe
+  Project135FilterNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterNetworkTests.exe
+  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\thermal\Debug\Project135Thermal.lib
+  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ComponentCatalogTests.exe
+  Project135FilterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterTests.exe
+  Project135FilterExcitationStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterExcitationStageAdapterTests.exe
+  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MagneticOperatingPointStageAdapterTests.exe
+  Project135IdealReactorSizingTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135IdealReactorSizingTests.exe
+  Project135FilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135FilterReactorMagneticTests.exe
+  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135MechanicalGeometryTests.exe
+  assembly_presentation.cpp
+  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ApplicationTests.exe
+  Project135PhysicalFilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135PhysicalFilterReactorMagneticTests.exe
+  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignExecutionTests.exe
+  Project135NaturalConvectionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135NaturalConvectionTests.exe
+  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\infrastructure\Debug\Project135InfrastructureSqlite.lib
+  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignGraphTests.exe
+  Project135ReactorDesignInputsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorDesignInputsTests.exe
+  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ReactorThermalNetworkTests.exe
+  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreComponentGeometryLoaderTests.exe
+  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundPhysicalFilterMagneticTests.exe
+  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundReactorThermalNetworkTests.exe
+  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135CoreMaterialRevisionLoaderTests.exe
+  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingCopperLossTests.exe
+  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135RevisionBoundWindingElectrothermalTests.exe
+  Project135ConductorMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ConductorMaterialRevisionLoaderTests.exe
+  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135SqliteInfrastructureTests.exe
+  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135Test01FilterSizingScenario.exe
+  Project135ThermalFilterBridgeTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalFilterBridgeTests.exe
+  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalNetworkTests.exe
+  Project135ThermalSteadyStateTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThermalSteadyStateTests.exe
+  Project135ThreeLimbCoreLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbCoreLossTests.exe
+  Project135ThreeLimbCoreMassTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbCoreMassTests.exe
+  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbGeometryAdapterTests.exe
+  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbSolverTests.exe
+  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135ThreeLimbTest01Regression.exe
+  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectricalTests.exe
+  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-debug\tests\Debug\Project135WindingElectrothermalTests.exe
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,18): error C2065: TopExp_Explorer: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,34): error C2146: синтаксическая ошибка: отсутствие ";" перед идентификатором "it" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,58): warning C4834: удаление возвращаемого значения функции с атрибутом [[nodiscard]] [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,76): error C2065: it: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,87): error C2146: синтаксическая ошибка: отсутствие ")" перед идентификатором "it" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,85): error C2059: синтаксическая ошибка: ; [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,87): error C2065: it: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,96): error C2059: синтаксическая ошибка: ) [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(256,17): error C2275: "p135::cad::AssemblyPresentationNode": ожидается выражение вместо типа [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(256,42): error C2146: синтаксическая ошибка: отсутствие ")" перед идентификатором "turn" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(265,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(269,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(273,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(274,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(275,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(275,30): error C2065: it: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(276,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(277,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(278,54): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(281,11): error C2181: недопустимый else без парного if [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(282,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(283,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(283,48): error C2065: phaseId: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(284,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(285,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(286,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(286,38): error C2065: windingIndex: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(289,9): error C2065: phaseNode: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(289,48): error C2065: bobbin: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(290,9): error C2065: phaseNode: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(290,48): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(291,51): error C2065: phaseNode: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,5): error C3927: "->": конечный тип возвращаемого значения недопустим после оператора объявления, не относящегося к функции. [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,9): error C3484: синтаксическая ошибка: требуется "->" перед возвращающим типом [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,10): error C3613: отсутствует тип возвращаемого значения после "->" (предполагается int) [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,5): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,10): error C2146: синтаксическая ошибка: отсутствие ";" перед идентификатором "children" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,29): error C2664: "p135::Result<void> p135::cad::validateAssemblyPresentation(const p135::cad::AssemblyPresentationNode &)": невозможно преобразовать аргумент 1 из "int" в "const p135::cad::AssemblyPresentationNode &" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+      Причина: невозможно преобразовать "int" в "const p135::cad::AssemblyPresentationNode"
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+      "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode": ни одна перегруженная функция не может преобразовать все типы аргументов
+          C:\Temp\trdos\135\src\cad\include\p135\cad\assembly_presentation.hpp(71,1):
+          может быть "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(p135::cad::AssemblyPresentationNode &&)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+              "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(p135::cad::AssemblyPresentationNode &&)": невозможно преобразовать аргумент 1 из "int" в "p135::cad::AssemblyPresentationNode &&"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Причина: невозможно преобразовать "int" в "p135::cad::AssemblyPresentationNode"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Для преобразования требуется второй оператор пользовательского преобразования или конструктор
+          C:\Temp\trdos\135\src\cad\include\p135\cad\assembly_presentation.hpp(71,1):
+          или       "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(const p135::cad::AssemblyPresentationNode &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+              "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(const p135::cad::AssemblyPresentationNode &)": невозможно преобразовать аргумент 1 из "int" в "const p135::cad::AssemblyPresentationNode &"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Причина: невозможно преобразовать "int" в "const p135::cad::AssemblyPresentationNode"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Для преобразования требуется второй оператор пользовательского преобразования или конструктор
+          C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+          при попытке сопоставить список аргументов "(int)"
+      C:\Temp\trdos\135\src\cad\include\p135\cad\assembly_presentation.hpp(81,28):
+       см. объявление "p135::cad::validateAssemblyPresentation"
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,29):
+      при попытке сопоставить список аргументов "(int)"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(296,5): error C2059: синтаксическая ошибка: if [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(297,5): error C2059: синтаксическая ошибка: return [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,13): error C2065: AssemblyPresentationDisplayItem: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,6): error C2923: std::vector: "AssemblyPresentationDisplayItem" не является допустимым аргументом типа шаблон для параметра "_Ty" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,13):
+       см. объявление "AssemblyPresentationDisplayItem"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,6): error C2976: std::vector: слишком мало аргументов шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+       см. объявление "std::vector"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,41): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,71): error C2143: синтаксическая ошибка: отсутствие "," перед "&" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,1): error C2955: "std::vector": для использования класс шаблон требуется список аргументов шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+       см. объявление "std::vector"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,1): error C2079: "collectAssemblyPresentationDisplayItems" использует не имеющую определения структуру class "std::vector" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,17): error C2065: AssemblyPresentationDisplayItem: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,10): error C2923: std::vector: "AssemblyPresentationDisplayItem" не является допустимым аргументом типа шаблон для параметра "_Ty" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,17):
+       см. объявление "AssemblyPresentationDisplayItem"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,10): error C2976: std::vector: слишком мало аргументов шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+       см. объявление "std::vector"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50): error C2641: Не удается вывести аргументы шаблона для "std::vector". [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+      "std::vector": не найдена соответствующая перегруженная функция
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(2258,1):
+          может быть "std::vector<conditional_t<std::_Is_from_primary<std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>,std::indirectly_readable_traits<remove_cv<remove_reference<_Ty>::type>::type>,std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>::value_type,_Alloc> std::vector(_Iter,_Iter,_Alloc)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<conditional_t<std::_Is_from_primary<std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>,std::indirectly_readable_traits<remove_cv<remove_reference<_Ty>::type>::type>,std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>::value_type,_Alloc> std::vector(_Iter,_Iter,_Alloc)": ожидаются аргументы 3 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(770,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&,const _Identity<_Alloc>::type &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&,const _Identity<_Alloc>::type &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(761,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&)": ожидаются аргументы 1 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(754,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &,const _Identity<_Alloc>::type &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &,const _Identity<_Alloc>::type &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(747,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &)": ожидаются аргументы 1 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(721,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::initializer_list<_Elem>,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::initializer_list<_Elem>,const _Alloc &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(694,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(_Iter,_Iter,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(_Iter,_Iter,const _Alloc &)": ожидаются аргументы 3 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(688,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Ty &,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Ty &,const _Alloc &)": ожидаются аргументы 3 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(680,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Alloc &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(676,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const _Alloc &)": ожидаются аргументы 1 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(672,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(void)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(void)": не удается вывести аргумент шаблон для "_Ty"
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc>)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc>)": ожидаются аргументы 1 — 0 предоставлены
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(304,25): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(304,5): error C3861: collectDisplayItems: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(305,5): error C2440: return: невозможно преобразовать "std::vector" в "std::vector" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(305,5):
+      Создать class "std::vector" с помощью конструктора копий невозможно, так как конструкторы копий неоднозначны или отсутствуют
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(308,1): error C7568: Список аргументов отсутствует после предполагаемого шаблона функции "Result". [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(309,5): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(309,35): error C2143: синтаксическая ошибка: отсутствие "," перед "&" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(311,58): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(311,29): error C3861: validateAssemblyPresentation: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(313,9): error C2065: filePath: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(315,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(315,24): error C2065: InvalidInput: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,9): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,52): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,51): error C2512: BRepCheck_Analyzer: нет подходящего конструктора по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,51):
+      BRepCheck_Analyzer::BRepCheck_Analyzer: нет подходящего конструктора по умолчанию
+          C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,51):
+          при попытке сопоставить список аргументов "()"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(319,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(319,24): error C2065: SolverFailure: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(322,49): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(322,16): error C2737: "transferStatus": необходимо инициализировать объект const [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(323,9): error C3536: transferStatus: не может использоваться до инициализации [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(325,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(325,24): error C2065: SolverFailure: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(327,43): error C2065: filePath: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(327,16): error C2737: "writeStatus": необходимо инициализировать объект const [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(328,9): error C3536: writeStatus: не может использоваться до инициализации [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(330,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(330,24): error C2065: SolverFailure: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(332,24): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(332,12): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(332,26): error C3861: success: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,1): error C7568: Список аргументов отсутствует после предполагаемого шаблона функции "Result". [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,43): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,73): error C2143: синтаксическая ошибка: отсутствие "," перед "&" [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,73): error C1003: число ошибок превышает 100; остановка компиляции [C:\Temp\trdos\135\out\build\vs2026-desktop-debug\src\cad\Project135Cad.vcxproj]
+  three_limb_core.cpp
+  Создание кода...
+[FAIL] Build Debug (exit 1)
+
+[RUN] Build Release
+Версия MSBuild 18.11.1-1.26513.3+940033be3 для .NET Framework
+
+  Project135Domain.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\domain\Release\Project135Domain.lib
+  Project135Circuit.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\circuit\Release\Project135Circuit.lib
+  Project135CoreTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreTests.exe
+  Project135CircuitTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CircuitTests.exe
+  Project135Filter.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\filter\Release\Project135Filter.lib
+  Project135DomainTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DomainTests.exe
+  Project135DesignDependencyTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DesignDependencyTests.exe
+  assembly_presentation.cpp
+  Project135Application.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\application\Release\Project135Application.lib
+  Project135Thermal.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\thermal\Release\Project135Thermal.lib
+  Project135FilterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterTests.exe
+  Project135DesignParameterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135DesignParameterTests.exe
+  Project135FilterNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterNetworkTests.exe
+  Project135MechanicalGeometryTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MechanicalGeometryTests.exe
+  Project135FilterHarmonicsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterHarmonicsTests.exe
+  Project135ComponentCatalogTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ComponentCatalogTests.exe
+  Project135ReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorThermalNetworkTests.exe
+  Project135ThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalNetworkTests.exe
+  Project135FilterAnalysisTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterAnalysisTests.exe
+  Project135ThermalFilterBridgeTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalFilterBridgeTests.exe
+  Project135NaturalConvectionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135NaturalConvectionTests.exe
+  Project135ThermalSteadyStateTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThermalSteadyStateTests.exe
+  Project135ReactorDesignExecutionTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignExecutionTests.exe
+  Project135ThreeLimbCoreLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbCoreLossTests.exe
+  Project135Test01FilterSizingScenario.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135Test01FilterSizingScenario.exe
+  Project135ThreeLimbCoreMassTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbCoreMassTests.exe
+  Project135ReactorDesignGraphTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignGraphTests.exe
+  Project135ReactorDesignInputsTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ReactorDesignInputsTests.exe
+  Project135PhysicalFilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135PhysicalFilterReactorMagneticTests.exe
+  Project135IdealReactorSizingTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135IdealReactorSizingTests.exe
+  Project135MagneticOperatingPointStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135MagneticOperatingPointStageAdapterTests.exe
+  Project135ApplicationTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ApplicationTests.exe
+  Project135ThreeLimbGeometryAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbGeometryAdapterTests.exe
+  Project135FilterReactorMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterReactorMagneticTests.exe
+  Project135ThreeLimbSolverTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbSolverTests.exe
+  Project135ThreeLimbTest01Regression.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ThreeLimbTest01Regression.exe
+  Project135FilterExcitationStageAdapterTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135FilterExcitationStageAdapterTests.exe
+  Project135WindingElectricalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectricalTests.exe
+  Project135WindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135WindingElectrothermalTests.exe
+  Project135InfrastructureSqlite.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\infrastructure\Release\Project135InfrastructureSqlite.lib
+  Project135SqliteInfrastructureTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135SqliteInfrastructureTests.exe
+  Project135RevisionBoundWindingElectrothermalTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingElectrothermalTests.exe
+  Project135CoreMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreMaterialRevisionLoaderTests.exe
+  Project135RevisionBoundReactorThermalNetworkTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundReactorThermalNetworkTests.exe
+  Project135ConductorMaterialRevisionLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135ConductorMaterialRevisionLoaderTests.exe
+  Project135RevisionBoundWindingCopperLossTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundWindingCopperLossTests.exe
+  Project135RevisionBoundPhysicalFilterMagneticTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135RevisionBoundPhysicalFilterMagneticTests.exe
+  Project135CoreComponentGeometryLoaderTests.vcxproj -> C:\Temp\trdos\135\out\build\vs2026-desktop-release\tests\Release\Project135CoreComponentGeometryLoaderTests.exe
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,18): error C2065: TopExp_Explorer: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,34): error C2146: синтаксическая ошибка: отсутствие ";" перед идентификатором "it" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,58): warning C4834: удаление возвращаемого значения функции с атрибутом [[nodiscard]] [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,76): error C2065: it: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,87): error C2146: синтаксическая ошибка: отсутствие ")" перед идентификатором "it" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,85): error C2059: синтаксическая ошибка: ; [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,87): error C2065: it: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(255,96): error C2059: синтаксическая ошибка: ) [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(256,17): error C2275: "p135::cad::AssemblyPresentationNode": ожидается выражение вместо типа [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(256,42): error C2146: синтаксическая ошибка: отсутствие ")" перед идентификатором "turn" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(265,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(269,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(273,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(274,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(275,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(275,30): error C2065: it: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(276,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(277,17): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(278,54): error C2065: turn: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(281,11): error C2181: недопустимый else без парного if [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(282,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(283,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(283,48): error C2065: phaseId: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(284,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(285,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(286,13): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(286,38): error C2065: windingIndex: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(289,9): error C2065: phaseNode: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(289,48): error C2065: bobbin: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(290,9): error C2065: phaseNode: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(290,48): error C2065: winding: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(291,51): error C2065: phaseNode: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,5): error C3927: "->": конечный тип возвращаемого значения недопустим после оператора объявления, не относящегося к функции. [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,9): error C3484: синтаксическая ошибка: требуется "->" перед возвращающим типом [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,10): error C3613: отсутствует тип возвращаемого значения после "->" (предполагается int) [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,5): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(293,10): error C2146: синтаксическая ошибка: отсутствие ";" перед идентификатором "children" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,29): error C2664: "p135::Result<void> p135::cad::validateAssemblyPresentation(const p135::cad::AssemblyPresentationNode &)": невозможно преобразовать аргумент 1 из "int" в "const p135::cad::AssemblyPresentationNode &" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+      Причина: невозможно преобразовать "int" в "const p135::cad::AssemblyPresentationNode"
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+      "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode": ни одна перегруженная функция не может преобразовать все типы аргументов
+          C:\Temp\trdos\135\src\cad\include\p135\cad\assembly_presentation.hpp(71,1):
+          может быть "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(p135::cad::AssemblyPresentationNode &&)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+              "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(p135::cad::AssemblyPresentationNode &&)": невозможно преобразовать аргумент 1 из "int" в "p135::cad::AssemblyPresentationNode &&"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Причина: невозможно преобразовать "int" в "p135::cad::AssemblyPresentationNode"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Для преобразования требуется второй оператор пользовательского преобразования или конструктор
+          C:\Temp\trdos\135\src\cad\include\p135\cad\assembly_presentation.hpp(71,1):
+          или       "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(const p135::cad::AssemblyPresentationNode &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+              "p135::cad::AssemblyPresentationNode::AssemblyPresentationNode(const p135::cad::AssemblyPresentationNode &)": невозможно преобразовать аргумент 1 из "int" в "const p135::cad::AssemblyPresentationNode &"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Причина: невозможно преобразовать "int" в "const p135::cad::AssemblyPresentationNode"
+                  C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+                  Для преобразования требуется второй оператор пользовательского преобразования или конструктор
+          C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,58):
+          при попытке сопоставить список аргументов "(int)"
+      C:\Temp\trdos\135\src\cad\include\p135\cad\assembly_presentation.hpp(81,28):
+       см. объявление "p135::cad::validateAssemblyPresentation"
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(295,29):
+      при попытке сопоставить список аргументов "(int)"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(296,5): error C2059: синтаксическая ошибка: if [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(297,5): error C2059: синтаксическая ошибка: return [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,13): error C2065: AssemblyPresentationDisplayItem: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,6): error C2923: std::vector: "AssemblyPresentationDisplayItem" не является допустимым аргументом типа шаблон для параметра "_Ty" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,13):
+       см. объявление "AssemblyPresentationDisplayItem"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(300,6): error C2976: std::vector: слишком мало аргументов шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+       см. объявление "std::vector"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,41): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,71): error C2143: синтаксическая ошибка: отсутствие "," перед "&" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,1): error C2955: "std::vector": для использования класс шаблон требуется список аргументов шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+       см. объявление "std::vector"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(301,1): error C2079: "collectAssemblyPresentationDisplayItems" использует не имеющую определения структуру class "std::vector" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,17): error C2065: AssemblyPresentationDisplayItem: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,10): error C2923: std::vector: "AssemblyPresentationDisplayItem" не является допустимым аргументом типа шаблон для параметра "_Ty" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,17):
+       см. объявление "AssemblyPresentationDisplayItem"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,10): error C2976: std::vector: слишком мало аргументов шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+       см. объявление "std::vector"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50): error C2641: Не удается вывести аргументы шаблона для "std::vector". [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+      "std::vector": не найдена соответствующая перегруженная функция
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(2258,1):
+          может быть "std::vector<conditional_t<std::_Is_from_primary<std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>,std::indirectly_readable_traits<remove_cv<remove_reference<_Ty>::type>::type>,std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>::value_type,_Alloc> std::vector(_Iter,_Iter,_Alloc)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<conditional_t<std::_Is_from_primary<std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>,std::indirectly_readable_traits<remove_cv<remove_reference<_Ty>::type>::type>,std::iterator_traits<remove_cv<remove_reference<_Ty>::type>::type>>::value_type,_Alloc> std::vector(_Iter,_Iter,_Alloc)": ожидаются аргументы 3 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(770,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&,const _Identity<_Alloc>::type &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&,const _Identity<_Alloc>::type &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(761,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc> &&)": ожидаются аргументы 1 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(754,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &,const _Identity<_Alloc>::type &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &,const _Identity<_Alloc>::type &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(747,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const std::vector<_Ty,_Alloc> &)": ожидаются аргументы 1 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(721,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::initializer_list<_Elem>,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::initializer_list<_Elem>,const _Alloc &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(694,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(_Iter,_Iter,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(_Iter,_Iter,const _Alloc &)": ожидаются аргументы 3 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(688,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Ty &,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Ty &,const _Alloc &)": ожидаются аргументы 3 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(680,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const allocator_traits<allocator_traits<_Alloc>::rebind_alloc<_Ty>>::size_type,const _Alloc &)": ожидаются аргументы 2 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(676,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(const _Alloc &)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(const _Alloc &)": ожидаются аргументы 1 — 0 предоставлены
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(672,5):
+          или       "std::vector<_Ty,_Alloc> std::vector(void)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(void)": не удается вывести аргумент шаблон для "_Ty"
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector(459,7):
+          или       "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc>)"
+              C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(303,50):
+              "std::vector<_Ty,_Alloc> std::vector(std::vector<_Ty,_Alloc>)": ожидаются аргументы 1 — 0 предоставлены
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(304,25): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(304,5): error C3861: collectDisplayItems: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(305,5): error C2440: return: невозможно преобразовать "std::vector" в "std::vector" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(305,5):
+      Создать class "std::vector" с помощью конструктора копий невозможно, так как конструкторы копий неоднозначны или отсутствуют
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(308,1): error C7568: Список аргументов отсутствует после предполагаемого шаблона функции "Result". [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(309,5): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(309,35): error C2143: синтаксическая ошибка: отсутствие "," перед "&" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(311,58): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(311,29): error C3861: validateAssemblyPresentation: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(313,9): error C2065: filePath: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(315,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(315,24): error C2065: InvalidInput: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(314,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,9): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,52): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,51): error C2512: BRepCheck_Analyzer: нет подходящего конструктора по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+      C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,51):
+      BRepCheck_Analyzer::BRepCheck_Analyzer: нет подходящего конструктора по умолчанию
+          C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(317,51):
+          при попытке сопоставить список аргументов "()"
+  
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(319,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(319,24): error C2065: SolverFailure: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(318,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(322,49): error C2065: root: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(322,16): error C2737: "transferStatus": необходимо инициализировать объект const [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(323,9): error C3536: transferStatus: не может использоваться до инициализации [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(325,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(325,24): error C2065: SolverFailure: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(324,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(327,43): error C2065: filePath: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(327,16): error C2737: "writeStatus": необходимо инициализировать объект const [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(328,9): error C3536: writeStatus: не может использоваться до инициализации [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,28): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,16): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(330,13): error C2653: ErrorCode: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(330,24): error C2065: SolverFailure: необъявленный идентификатор [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,38): error C3861: presentationError: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(329,30): error C3861: failure: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(332,24): error C2653: Result: не является именем класса или пространства имен [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(332,12): error C2903: Result: символ не является ни классом шаблон, ни функцией шаблон [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(332,26): error C3861: success: идентификатор не найден [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,1): error C7568: Список аргументов отсутствует после предполагаемого шаблона функции "Result". [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,43): error C4430: отсутствует спецификатор типа - предполагается int. Примечание. C++ не поддерживает int по умолчанию [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,73): error C2143: синтаксическая ошибка: отсутствие "," перед "&" [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+C:\Temp\trdos\135\src\cad\src\assembly_presentation.cpp(335,73): error C1003: число ошибок превышает 100; остановка компиляции [C:\Temp\trdos\135\out\build\vs2026-desktop-release\src\cad\Project135Cad.vcxproj]
+  three_limb_core.cpp
+  Создание кода...
+[FAIL] Build Release (exit 1)
+[SKIP] Debug tests skipped because Debug build status is FAIL.
+[SKIP] Release tests skipped because Release build status is FAIL.
+
+===================== FINAL SUMMARY =====================
+Overall: FAILED
+Debug build: FAIL
+Debug tests: SKIPPED
+Release build: FAIL
+Release tests: SKIPPED
+Source commit: dbbca4adab6d1fc3284bdfa520ed88f5896abbfd
+Finished: 23.11.2026 20:57:49,33
+==========================================================
+[ARTIFACTS] Debug plot PNG files: 0
