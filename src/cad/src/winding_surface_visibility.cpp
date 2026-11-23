@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -87,11 +88,12 @@ analyzeWindingEnvelopeFaceVisibility(
         return failure<std::vector<WindingFaceVisibilityResult>>(
             ErrorCode::SolverFailure, "Could not derive a finite occlusion ray length.", "geometry.bounds");
 
-    std::vector<IntCurvesFace_ShapeIntersector> intersectors;
+    std::vector<std::unique_ptr<IntCurvesFace_ShapeIntersector>> intersectors;
     intersectors.reserve(occluders.size());
     for (const auto& occluder : occluders) {
-        intersectors.emplace_back();
-        intersectors.back().Load(occluder, options.geometricToleranceMm);
+        auto intersector = std::make_unique<IntCurvesFace_ShapeIntersector>();
+        intersector->Load(occluder, options.geometricToleranceMm);
+        intersectors.push_back(std::move(intersector));
     }
 
     const auto descriptors = extractWindingEnvelopeFaceGeometry(windingEnvelope);
@@ -154,7 +156,7 @@ analyzeWindingEnvelopeFaceVisibility(
                 bool blocked = false;
                 for (std::size_t occluderIndex = 0;
                      occluderIndex < intersectors.size(); ++occluderIndex) {
-                    auto& intersector = intersectors[occluderIndex];
+                    auto& intersector = *intersectors[occluderIndex];
                     intersector.Perform(ray, 0.0, rayLength);
                     if (!intersector.IsDone())
                         return failure<std::vector<WindingFaceVisibilityResult>>(
