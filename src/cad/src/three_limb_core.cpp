@@ -354,9 +354,10 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
     if (!windingValidation) return Result<TopoDS_Shape>::failure(windingValidation.error());
 
     if (!winding.turns || !winding.turnsPerLayer || !winding.parallelConductors ||
+        winding.sections != 1 ||
         (winding.conductorShape != "rectangular" && winding.conductorShape != "foil"))
         return failure<TopoDS_Shape>(ErrorCode::UnsupportedConfiguration,
-            "Individual turn solids currently require explicit rectangular or foil conductor dimensions.",
+            "Individual turn solids currently require explicit rectangular/foil dimensions and a single section; multi-section spacers need explicit geometry.",
             "windingPack.conductorGeometry");
 
     constexpr double mm = 1000.0;
@@ -585,6 +586,7 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
         const bool hasDetailedRectangularConductor =
             windingGeometry.turns && windingGeometry.turnsPerLayer &&
             windingGeometry.parallelConductors &&
+            windingGeometry.sections == 1 &&
             (windingGeometry.conductorShape == "rectangular" ||
              windingGeometry.conductorShape == "foil");
         const auto winding = hasDetailedRectangularConductor
