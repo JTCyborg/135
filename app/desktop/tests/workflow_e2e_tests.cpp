@@ -1169,8 +1169,10 @@ private slots:
         const std::complex<double> harmonicSourceZ{
             sourceR, fifthHarmonicOmega * sourceL
         };
+        const std::complex<double> fifthSourceVoltageHarmonic{12.5, 0.0};
         const double expectedPreFilterPccVoltage =
-            100.0 * std::abs(harmonicSourceZ * injectedHarmonicCurrent) /
+            100.0 * std::abs(fifthSourceVoltageHarmonic -
+                             harmonicSourceZ * injectedHarmonicCurrent) /
             phaseVoltage;
         QVERIFY(qAbs(voltageBeforePoint[1].toDouble() -
                      expectedPreFilterPccVoltage) < 1.0e-8);
