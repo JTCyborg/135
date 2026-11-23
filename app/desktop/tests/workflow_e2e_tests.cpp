@@ -1320,8 +1320,12 @@ private slots:
                 QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
             }
         }
-        QVERIFY(window_->findChild<QPlainTextEdit*>(QStringLiteral("historyDetails"))->toPlainText()
-            .contains(QStringLiteral("Graph comparison:")));
+        auto* historyDetails = window_->findChild<QPlainTextEdit*>(
+            QStringLiteral("historyDetails"));
+        QVERIFY(historyDetails);
+        QVERIFY(historyDetails->toPlainText().contains(QStringLiteral("Graph comparison:")));
+        QVERIFY(comparedCurves[0].toMap().value(QStringLiteral("name")).toString() !=
+            comparedCurves[1].toMap().value(QStringLiteral("name")).toString());
         tabs->setCurrentIndex(4);
         QTRY_COMPARE(tabs->currentIndex(), 4);
 
