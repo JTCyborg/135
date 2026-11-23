@@ -917,6 +917,30 @@ private slots:
             QVERIFY(std::isfinite(point[1].toDouble()));
             QVERIFY(point[1].toDouble() > 0.0);
         }
+        auto* harmonicTransferPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsHarmonicTransferPlot"));
+        QVERIFY(harmonicTransferPlot);
+        const auto transferCurves = harmonicTransferPlot->property("plotCurves").toList();
+        QCOMPARE(transferCurves.size(), 3);
+        const auto transferPoints = transferCurves[0].toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(transferPoints.size(), 1);
+        const auto transferPoint = transferPoints.front().toList();
+        QCOMPARE(transferPoint.size(), 2);
+        QCOMPARE(transferPoint[0].toDouble(), 250.0);
+        QVERIFY(std::isfinite(transferPoint[1].toDouble()));
+        QVERIFY(transferPoint[1].toDouble() >= 0.0);
+        const auto unityPoints = transferCurves[1].toMap()
+            .value(QStringLiteral("points")).toList();
+        QCOMPARE(unityPoints.size(), 1);
+        QCOMPARE(unityPoints.front().toList()[1].toDouble(), 1.0);
+        QVERIFY(transferCurves[2].toMap()
+            .value(QStringLiteral("markersOnly")).toBool());
+        const auto* harmonicTransferTitle = window_->findChild<QLabel*>(
+            QStringLiteral("harmonicTransferPlotTitle"));
+        QVERIFY(harmonicTransferTitle);
+        QVERIFY(harmonicTransferTitle->text().contains(QStringLiteral("K_I(f)")));
+
         auto* busTitle = window_->findChild<QLabel*>(
             QStringLiteral("busImpedancePlotTitle"));
         QVERIFY(busTitle);
@@ -977,6 +1001,8 @@ private slots:
             artifactProjectId + QStringLiteral("_reactor_current.png")));
         const QFileInfo impedancePng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_bus_impedance.png")));
+        const QFileInfo harmonicTransferPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_harmonic_transfer.png")));
         const QFileInfo coreFluxPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_core_flux.png")));
         const QFileInfo materialBhPng(artifactRoot.filePath(
@@ -986,12 +1012,13 @@ private slots:
         QVERIFY(historyPlot);
         const QFileInfo historyPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_history_comparison.png")));
-        const std::array<QFileInfo, 5> plotFiles{
-            currentPng, impedancePng, coreFluxPng, materialBhPng, historyPng
+        const std::array<QFileInfo, 6> plotFiles{
+            currentPng, impedancePng, harmonicTransferPng, coreFluxPng, materialBhPng, historyPng
         };
-        const std::array<QWidget*, 5> plotWidgets{
+        const std::array<QWidget*, 6> plotWidgets{
             window_->findChild<QWidget*>(QStringLiteral("resultsBankCurrentPlot")),
             window_->findChild<QWidget*>(QStringLiteral("resultsBusImpedancePlot")),
+            harmonicTransferPlot,
             coreFluxPlot,
             window_->findChild<QWidget*>(QStringLiteral("resultsMaterialBhPlot")),
             historyPlot
