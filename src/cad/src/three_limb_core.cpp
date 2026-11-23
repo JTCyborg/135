@@ -623,19 +623,42 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
             "OCCT failed to create a valid core, bobbin and winding-envelope assembly.",
             "assembly");
 
-    std::size_t solids = 0;
-    for (TopExp_Explorer it(assembly, TopAbs_SOLID); it.More(); it.Next()) ++solids;
-    if (solids != expectedCoreSolids + 2 * geometry.bobbins.size())
-        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-            "The assembly must retain every core solid, all three bobbins and all three winding envelopes.",
-            "assembly");
-
-    // Reject any unintended volumetric overlap. Face/edge contact is allowed.
+    std::size_t expectedSolidCount = expectedCoreSolids;
+    std::array<std::size_t, 3> windingSolidCounts{};
+    for (std::size_t phase = 0; phase < geometry.windingPacks.size(); ++phase) {
+        const auto& winding = geometry.windingPacks[phase];
+        const bool detailed =
+            winding.turns && winding.parallelConductors &&
+            winding.turnsPerLayer &&
+            (winding.conductorShape == "rectangular" || winding.conductorShape == "foil");
+        windingSolidCounts[phase] = detailed
+            ? static_cast<std::size_t>(*winding.turns) * *winding.parallelConductors
+            : 1U;
+        expectedSolidCount += 1U + windingSolidCounts[phase]; // bobbin + conductors/envelope
+    }
     std::vector<TopoDS_Shape> members;
     for (TopExp_Explorer it(assembly, TopAbs_SOLID); it.More(); it.Next())
         members.push_back(it.Current());
+    if (members.size() != expectedSolidCount)
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "The assembly solid count must match its core, bobbins and explicitly modelled winding conductors.",
+            "assembly");
+
+    // Reject unintended volumetric overlap. Turns within one winding are
+    // generated from a deterministic non-overlapping pitch; checking every
+    // pair of hundreds of turns with Boolean Common is prohibitively costly.
+    // Still check every conductor against the core, bobbins and other phases.
+    std::vector<int> windingGroup(members.size(), -1);
+    std::size_t memberCursor = expectedCoreSolids;
+    for (std::size_t phase = 0; phase < windingSolidCounts.size(); ++phase) {
+        ++memberCursor; // skip this phase's bobbin
+        for (std::size_t turn = 0; turn < windingSolidCounts[phase]; ++turn)
+            windingGroup[memberCursor++] = static_cast<int>(phase);
+    }
     for (std::size_t i = 0; i < members.size(); ++i) {
         for (std::size_t j = i + 1; j < members.size(); ++j) {
+            if (windingGroup[i] >= 0 && windingGroup[i] == windingGroup[j])
+                continue;
             BRepAlgoAPI_Common common(members[i], members[j]);
             common.Build();
             if (!common.IsDone())
