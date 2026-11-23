@@ -451,9 +451,25 @@ public:
         setProperty("plotCurves", serializedCurves);
         QStringList categoryLabels;
         if (barChart_) {
-            for (const auto& curve : curves_) {
-                if (curve.points.size() == 1)
+            const bool namedSinglePointCategories = !curves_.empty() &&
+                std::all_of(curves_.begin(), curves_.end(),
+                    [](const PlotCurve& curve) { return curve.points.size() == 1; });
+            if (namedSinglePointCategories) {
+                for (const auto& curve : curves_)
                     categoryLabels.push_back(curve.name);
+            } else {
+                std::vector<double> orders;
+                for (const auto& curve : curves_)
+                    for (const auto& [x, y] : curve.points)
+                        if (std::isfinite(x)) orders.push_back(x);
+                std::sort(orders.begin(), orders.end());
+                orders.erase(std::unique(orders.begin(), orders.end(),
+                    [](double left, double right) {
+                        return std::abs(left - right) <=
+                            1.0e-9 * std::max({1.0, std::abs(left), std::abs(right)});
+                    }), orders.end());
+                for (const double order : orders)
+                    categoryLabels.push_back(QString::number(order, 'g', 4));
             }
         }
         setProperty("plotCategoryLabels", categoryLabels);
@@ -792,13 +808,28 @@ protected:
         }
         if (barChart_) {
             std::vector<std::pair<double, QString>> categories;
-            for (const auto& curve : curves_) {
-                if (curve.points.size() == 1 &&
-                    std::isfinite(curve.points.front().first))
-                    categories.emplace_back(curve.points.front().first, curve.name);
+            const bool namedSinglePointCategories = !curves_.empty() &&
+                std::all_of(curves_.begin(), curves_.end(),
+                    [](const PlotCurve& curve) { return curve.points.size() == 1; });
+            if (namedSinglePointCategories) {
+                for (const auto& curve : curves_) {
+                    if (std::isfinite(curve.points.front().first))
+                        categories.emplace_back(curve.points.front().first, curve.name);
+                }
+            } else {
+                std::vector<double> orders;
+                for (const auto& curve : curves_)
+                    for (const auto& [x, y] : curve.points)
+                        if (std::isfinite(x)) orders.push_back(x);
+                std::sort(orders.begin(), orders.end());
+                orders.erase(std::unique(orders.begin(), orders.end(),
+                    [](double left, double right) {
+                        return std::abs(left - right) <=
+                            1.0e-9 * std::max({1.0, std::abs(left), std::abs(right)});
+                    }), orders.end());
+                for (const double order : orders)
+                    categories.emplace_back(order, QString::number(order, 'g', 4));
             }
-            std::sort(categories.begin(), categories.end(),
-                [](const auto& left, const auto& right) { return left.first < right.first; });
             for (std::size_t index = 0; index < categories.size(); ++index) {
                 const double x = xPixel(categories[index].first);
                 const double left = index == 0 ? area.left()
