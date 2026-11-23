@@ -12,8 +12,9 @@ namespace p135::cad {
 
 // Geometry detail is explicit so the UI cannot present envelopes or simplified
 // segments as detailed, manufacturing-ready laminations/conductors. Detailed
-// rectangular/foil turns are separate solids, but corner radii, leads, joints,
-// transpositions and multi-section spacers are not yet modelled.
+// rectangular/foil turns and round-wire copper/insulation helices are separate
+// solids; corner radii, terminal leads, joints, transpositions and multi-section
+// spacers are not yet modelled.
 enum class AssemblyGeometryRepresentation {
     PhysicalSolid,
     SimplifiedCoreSegment,
