@@ -7851,15 +7851,31 @@ void MainWindow::calculateFilter()
         engineVersions.insert(QStringLiteral("magneticTimeSampling"), QStringLiteral("adaptive-72-144-288-peak-B-1e-3-v2"));
         engineVersions.insert(QStringLiteral("frequencyPlotSchema"), QStringLiteral("frequency-response-v4-three-limb-magnetic-network-v1"));
 
-        const std::string inputJson = QJsonDocument(inputSnapshot)
-            .toJson(QJsonDocument::Compact).toStdString();
-        const std::string resultJson = QJsonDocument(resultSnapshot)
-            .toJson(QJsonDocument::Compact).toStdString();
-        const std::string versionsJson = QJsonDocument(engineVersions)
-            .toJson(QJsonDocument::Compact).toStdString();
+        // SQLite requires each stored JSON document to be byte-for-byte canonical
+        // according to the persistence codec (nlohmann::json). Qt's compact JSON is
+        // valid JSON but is not guaranteed to use the same numeric/string encoding.
+        // Canonicalize each document before both hashing and persistence.
+        const auto canonicalInput = p135::infrastructure::sqlite::canonicalizeJson(
+            QJsonDocument(inputSnapshot).toJson(QJsonDocument::Compact).toStdString());
+        const auto canonicalResult = p135::infrastructure::sqlite::canonicalizeJson(
+            QJsonDocument(resultSnapshot).toJson(QJsonDocument::Compact).toStdString());
+        const auto canonicalVersions = p135::infrastructure::sqlite::canonicalizeJson(
+            QJsonDocument(engineVersions).toJson(QJsonDocument::Compact).toStdString());
+        const auto snapshotJsonStatus = !canonicalInput
+            ? p135::Result<void>::failure(canonicalInput.error())
+            : (!canonicalResult
+                ? p135::Result<void>::failure(canonicalResult.error())
+                : (!canonicalVersions
+                    ? p135::Result<void>::failure(canonicalVersions.error())
+                    : p135::Result<void>::success()));
+        const std::string inputJson = canonicalInput ? canonicalInput.value() : std::string{};
+        const std::string resultJson = canonicalResult ? canonicalResult.value() : std::string{};
+        const std::string versionsJson = canonicalVersions ? canonicalVersions.value() : std::string{};
         const std::string hashEnvelope = "{\"engineVersions\":" + versionsJson +
             ",\"input\":" + inputJson + ",\"result\":" + resultJson + "}";
-        const auto canonicalEnvelope = p135::infrastructure::sqlite::canonicalizeJson(hashEnvelope);
+        const auto canonicalEnvelope = snapshotJsonStatus
+            ? p135::infrastructure::sqlite::canonicalizeJson(hashEnvelope)
+            : p135::Result<std::string>::failure(snapshotJsonStatus.error());
         const auto snapshotHash = canonicalEnvelope
             ? p135::infrastructure::sqlite::sha256Hex(canonicalEnvelope.value())
             : p135::Result<std::string>::failure(canonicalEnvelope.error());
