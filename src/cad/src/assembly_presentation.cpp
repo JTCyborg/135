@@ -97,7 +97,8 @@ std::array<double, 3> presentationColor(
     // are deliberately not inferred as verified material assignments.
     if (id.rfind("core.", 0) == 0) return {0.48, 0.55, 0.63}; // laminated steel
     if (id.rfind("bobbin.", 0) == 0) return {0.88, 0.78, 0.56}; // insulating former
-    if (id.rfind("winding.", 0) == 0) return {0.78, 0.39, 0.16}; // copper envelope
+    if (id.find(".insulation") != std::string::npos) return {0.88, 0.78, 0.56}; // conductor insulation
+    if (id.rfind("winding.", 0) == 0) return {0.78, 0.39, 0.16}; // copper conductor
     return {0.72, 0.75, 0.79};
 }
 
@@ -106,6 +107,8 @@ AssemblySurfaceFinish presentationFinish(
 {
     if (materialRevisionId == "SEED-TK-M235-35A-R1" || id.rfind("core.", 0) == 0)
         return AssemblySurfaceFinish::ElectricalSteelSatin;
+    if (id.find(".insulation") != std::string::npos)
+        return AssemblySurfaceFinish::InsulatorMatte;
     if (materialRevisionId == "SEED-CU-C10100-R1" || id.rfind("winding.", 0) == 0)
         return AssemblySurfaceFinish::CopperPolished;
     if (materialRevisionId == "SEED-DUPONT-NOMEX410-R1" || id.rfind("bobbin.", 0) == 0)
@@ -253,34 +256,76 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
              windingGeometry.conductorShape == "round");
         if (detailedTurns) {
             winding.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
-            std::size_t turnIndex = 0;
-            for (TopExp_Explorer it(topLevel[windingIndex], TopAbs_SOLID); it.More(); it.Next()) {
-                AssemblyPresentationNode turn;
-                const std::size_t conductorsPerLayer =
-                    static_cast<std::size_t>(*windingGeometry.turnsPerLayer) *
+            if (windingGeometry.conductorShape == "round") {
+                std::vector<TopoDS_Shape> windingSolids;
+                for (TopExp_Explorer it(topLevel[windingIndex], TopAbs_SOLID); it.More(); it.Next())
+                    windingSolids.push_back(it.Current());
+                const std::size_t expectedPaths =
+                    static_cast<std::size_t>(windingGeometry.layerCount) *
                     static_cast<std::size_t>(*windingGeometry.parallelConductors);
-                const std::size_t positionInLayer = turnIndex % conductorsPerLayer;
-                const std::size_t turnNumber =
-                    positionInLayer / static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
-                const std::size_t parallelNumber =
-                    positionInLayer % static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
-                turn.id = "winding." + phaseId + ".layer." +
-                    std::to_string(turnIndex / conductorsPerLayer + 1) +
-                    ".turn." + std::to_string(turnNumber) +
-                    ".conductor." + std::to_string(parallelNumber);
-                turn.displayName = "Winding " + phaseId + " layer " +
-                    std::to_string(turnIndex / conductorsPerLayer + 1) +
-                    ", turn " + std::to_string(turnNumber) +
-                    ", conductor " + std::to_string(parallelNumber);
-                turn.kind = AssemblyComponentKind::ConductorTurn;
-                turn.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
-                turn.shape = it.Current();
-                turn.materialRevisionId = geometry.conductorMaterialRevisionId;
-                turn.surfaceFinish = AssemblySurfaceFinish::CopperPolished;
-                winding.children.push_back(std::move(turn));
-                ++turnIndex;
-            }
-        } else {
+                if (windingSolids.size() != expectedPaths * 2)
+                    return Result<AssemblyPresentationNode>::failure(presentationError(
+                        ErrorCode::SolverFailure,
+                        "Round helical winding must expose one copper and one insulation solid per path.",
+                        "winding." + phaseId));
+                for (std::size_t pathIndex = 0; pathIndex < expectedPaths; ++pathIndex) {
+                    const std::size_t layer = pathIndex /
+                        static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
+                    const std::size_t parallel = pathIndex %
+                        static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
+                    AssemblyPresentationNode copper;
+                    copper.id = "winding." + phaseId + ".layer." +
+                        std::to_string(layer) + ".parallel." + std::to_string(parallel) + ".copper";
+                    copper.displayName = "Copper helix " + phaseId + " layer " +
+                        std::to_string(layer) + ", parallel " + std::to_string(parallel);
+                    copper.kind = AssemblyComponentKind::ConductorTurn;
+                    copper.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
+                    copper.shape = windingSolids[pathIndex * 2];
+                    copper.materialRevisionId = geometry.conductorMaterialRevisionId;
+                    copper.surfaceFinish = AssemblySurfaceFinish::CopperPolished;
+                    winding.children.push_back(std::move(copper));
+
+                    AssemblyPresentationNode insulation;
+                    insulation.id = "winding." + phaseId + ".layer." +
+                        std::to_string(layer) + ".parallel." + std::to_string(parallel) + ".insulation";
+                    insulation.displayName = "Conductor insulation " + phaseId + " layer " +
+                        std::to_string(layer) + ", parallel " + std::to_string(parallel);
+                    insulation.kind = AssemblyComponentKind::WindingInsulation;
+                    insulation.representation = AssemblyGeometryRepresentation::PhysicalSolid;
+                    insulation.shape = windingSolids[pathIndex * 2 + 1];
+                    insulation.materialRevisionId = geometry.insulationMaterialRevisionId;
+                    insulation.surfaceFinish = AssemblySurfaceFinish::InsulatorMatte;
+                    winding.children.push_back(std::move(insulation));
+                }
+            } else {
+                std::size_t turnIndex = 0;
+                for (TopExp_Explorer it(topLevel[windingIndex], TopAbs_SOLID); it.More(); it.Next()) {
+                    AssemblyPresentationNode turn;
+                    const std::size_t conductorsPerLayer =
+                        static_cast<std::size_t>(*windingGeometry.turnsPerLayer) *
+                        static_cast<std::size_t>(*windingGeometry.parallelConductors);
+                    const std::size_t positionInLayer = turnIndex % conductorsPerLayer;
+                    const std::size_t turnNumber =
+                        positionInLayer / static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
+                    const std::size_t parallelNumber =
+                        positionInLayer % static_cast<std::size_t>(*windingGeometry.parallelConductors) + 1;
+                    turn.id = "winding." + phaseId + ".layer." +
+                        std::to_string(turnIndex / conductorsPerLayer + 1) +
+                        ".turn." + std::to_string(turnNumber) +
+                        ".conductor." + std::to_string(parallelNumber);
+                    turn.displayName = "Winding " + phaseId + " layer " +
+                        std::to_string(turnIndex / conductorsPerLayer + 1) +
+                        ", turn " + std::to_string(turnNumber) +
+                        ", conductor " + std::to_string(parallelNumber);
+                    turn.kind = AssemblyComponentKind::ConductorTurn;
+                    turn.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
+                    turn.shape = it.Current();
+                    turn.materialRevisionId = geometry.conductorMaterialRevisionId;
+                    turn.surfaceFinish = AssemblySurfaceFinish::CopperPolished;
+                    winding.children.push_back(std::move(turn));
+                    ++turnIndex;
+                }
+            }        } else {
             winding.id += ".envelope";
             winding.displayName = "Winding " + phaseId + " (envelope only)";
             winding.kind = AssemblyComponentKind::WindingEnvelope;
