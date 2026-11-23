@@ -6471,6 +6471,7 @@ void MainWindow::calculateFilter()
     // Retain the exact Construction-bound result for the live plot and immutable
     // calculation snapshot. It is distinct from the legacy manual diagnostic model.
     std::optional<std::array<double, 7>> constructionBoundPeakFluxDensityT;
+    std::vector<p135::domain::ThreeLimbMagneticCycleSample> constructionBoundWaveform;
     bool constructionBoundWithinMeasuredBhCurve = false;
     bool constructionBoundUsedEstimatedBhModel = false;
     bool constructionBoundMaterialBhEstimated = false;
@@ -6568,6 +6569,7 @@ void MainWindow::calculateFilter()
                     for (std::size_t section = 0; section < peakValues.size(); ++section)
                         peakValues[section] = cycle.peakAbsoluteFluxDensity[section].si();
                     constructionBoundPeakFluxDensityT = peakValues;
+                    constructionBoundWaveform = cycle.waveform;
                     constructionBoundWithinMeasuredBhCurve = cycle.withinBhCurveRange;
                 } else {
                     constructionBoundMagneticWarning = magneticState;
@@ -8103,7 +8105,12 @@ void MainWindow::calculateFilter()
         std::vector<PlotCurve> waveformCurves;
         QString waveformEmptyMessage = tr(
             "NOT_VERIFIED: a converged multi-harmonic magnetic operating point is required.");
-        if (threeLimbOperatingPoint && !threeLimbOperatingPoint->waveform.empty() &&
+        const auto& acceptedWaveform = !constructionBoundWaveform.empty()
+            ? constructionBoundWaveform
+            : (threeLimbOperatingPoint
+                ? threeLimbOperatingPoint->waveform
+                : std::vector<p135::domain::ThreeLimbMagneticCycleSample>{});
+        if (!acceptedWaveform.empty() &&
             fundamentalFrequency_ && fundamentalFrequency_->value() > 0.0) {
             const std::array<QString, 7> waveformNames{
                 tr("Limb A"), tr("Limb B"), tr("Limb C"),
@@ -8114,7 +8121,7 @@ void MainWindow::calculateFilter()
             for (const auto& name : waveformNames)
                 waveformCurves.push_back(PlotCurve{name, {}});
             const double periodMs = 1000.0 / fundamentalFrequency_->value();
-            for (const auto& sample : threeLimbOperatingPoint->waveform) {
+            for (const auto& sample : acceptedWaveform) {
                 const double timeMs = sample.cycleFraction * periodMs;
                 for (std::size_t section = 0; section < waveformNames.size(); ++section)
                     waveformCurves[section].points.emplace_back(
@@ -8126,9 +8133,9 @@ void MainWindow::calculateFilter()
             tr("Time within fundamental cycle (ms)"),
             tr("Signed flux density B (T)"), false, waveformEmptyMessage, false, true);
         if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxWaveformPlotTitle"))) {
-            title->setText(threeLimbOperatingPoint
+            title->setText(!acceptedWaveform.empty()
                 ? tr("Core flux-density waveform B(t) — %1 samples")
-                    .arg(static_cast<qulonglong>(threeLimbOperatingPoint->waveform.size()))
+                    .arg(static_cast<qulonglong>(acceptedWaveform.size()))
                 : tr("Core flux-density waveform B(t) — NOT_VERIFIED"));
         }
     }
