@@ -159,7 +159,12 @@ Result<ThermalNetworkResult> analyzeThermalNetwork(
         matrix[b][a] -= conductance;
         adjacency[a].push_back(b);
         adjacency[b].push_back(a);
-        if (link.sourceReference.empty() || link.preliminaryModel)
+        // Natural-convection links remain preliminary even if a caller
+        // clears the convenience flag after creating the link.
+        const bool naturalConvectionLink =
+            link.sourceReference.starts_with("natural-convection;");
+        if (link.sourceReference.empty() || link.preliminaryModel ||
+            naturalConvectionLink)
             provenanceComplete = false;
     }
 
