@@ -946,7 +946,7 @@ private slots:
         for (const auto& markerValue : canonicalMarkers) {
             const auto marker = markerValue.toMap();
             if (!marker.value(QStringLiteral("label")).toString()
-                    .contains(QStringLiteral("series tune")))
+                    .contains(QStringLiteral("(tune)")))
                 continue;
             hasSeriesTuningMarker = true;
             QVERIFY(qAbs(marker.value(QStringLiteral("frequencyHz")).toDouble() -
