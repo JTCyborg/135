@@ -106,6 +106,7 @@ private:
     QTableWidget* resultsTable_{};
     PlotWidget* resultsBankCurrentPlot_{};
     PlotWidget* resultsBusImpedancePlot_{};
+    PlotWidget* resultsHarmonicTransferPlot_{};
     PlotWidget* resultsCoreFluxPlot_{};
     PlotWidget* resultsMaterialBhPlot_{};
     PlotWidget* historyComparisonPlot_{};
