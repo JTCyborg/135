@@ -7712,7 +7712,9 @@ void MainWindow::calculateFilter()
                 constructionBoundBhSourceAnchors, true
             });
         }
-        const QString bhEmptyMessage = constructionBoundBhCurve.empty()
+        const bool hasBhPlotData = !constructionBoundBhCurve.empty() ||
+            !constructionBoundBhSourceAnchors.empty();
+        const QString bhEmptyMessage = !hasBhPlotData
             ? tr("NOT_CALCULATED: a revision-bound magnetic analysis must load the selected core material B-H data.")
             : QString{};
         resultsMaterialBhPlot_->setCurves(std::move(materialBhCurves),
@@ -7724,11 +7726,13 @@ void MainWindow::calculateFilter()
                "An estimated curve is exploratory and NOT_VERIFIED.")
                 .arg(constructionBoundBhModelStatus, constructionBoundBhSourceStatus));
         if (auto* title = findChild<QLabel*>(QStringLiteral("materialBhPlotTitle"))) {
-            title->setText(constructionBoundBhCurve.empty()
+            title->setText(!hasBhPlotData
                 ? tr("Selected core material B-H characteristic — NOT_CALCULATED")
-                : constructionBoundMaterialBhEstimated
-                    ? tr("Selected core material B-H characteristic — ESTIMATED / NOT_VERIFIED")
-                    : tr("Selected core material B-H characteristic — source curve"));
+                : constructionBoundBhModelStatus == QStringLiteral("INSUFFICIENT_MAGNETIC_ANCHORS")
+                    ? tr("Selected core material B-H — SOURCE ANCHOR ONLY / INSUFFICIENT")
+                    : constructionBoundMaterialBhEstimated
+                        ? tr("Selected core material B-H characteristic — ESTIMATED / NOT_VERIFIED")
+                        : tr("Selected core material B-H characteristic — source curve"));
             title->setToolTip(resultsMaterialBhPlot_->toolTip());
         }
     }
