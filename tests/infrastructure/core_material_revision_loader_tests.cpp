@@ -130,6 +130,12 @@ int main(int argc, char** argv)
         loadCoreMaterialRevision(store, "SEED-TK-M235-35A-R1");
     assert(incompleteSteel);
     assert(incompleteSteel.value().material.bhCurve.size() == 49);
+    assert(incompleteSteel.value().bhCurveSourceAnchors.size() == 3);
+    assert(incompleteSteel.value().bhCurveSourceAnchors[0].first == 2500.0);
+    assert(incompleteSteel.value().bhCurveSourceAnchors[1].first == 5000.0);
+    assert(incompleteSteel.value().bhCurveSourceAnchors[2].first == 10000.0);
+    assert(incompleteSteel.value().bhCurveSourceAnchors[0].second > 1.49);
+    assert(incompleteSteel.value().bhCurveSourceAnchors[2].second > 1.70);
     assert(incompleteSteel.value().bhCurveStatus == "NOT_PUBLISHED_IN_IMPORTED_DATASET");
     assert(incompleteSteel.value().bhCurveModelStatus ==
            "ESTIMATED_FROM_SPARSE_MAGNETIC_ANCHORS");
