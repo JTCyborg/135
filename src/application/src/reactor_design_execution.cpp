@@ -60,6 +60,33 @@ Result<ReactorDesignExecutionReport> executeReactorDesignPlan(
         previousPosition = position;
     }
 
+    // A stage may be executed as a focused recalculation only when every
+    // upstream stage outside this plan already has an accepted VALID artifact.
+    // Dependencies included in this plan are produced in dependency order below.
+    for (const auto& stageId : plan.orderedStages) {
+        for (const auto& pair : reactorDesignDependencyPairs()) {
+            const auto separator = pair.find('|');
+            if (separator == std::string::npos)
+                return Result<ReactorDesignExecutionReport>::failure(
+                    executionError(ErrorCode::InternalError, "Malformed reactor dependency graph."));
+            if (pair.substr(0, separator) != stageId)
+                continue;
+            const auto dependency = pair.substr(separator + 1);
+            if (dependency.starts_with("input.") ||
+                seen.contains(dependency))
+                continue;
+            const auto acceptedDependency = state.accepted.stages.find(dependency);
+            if (acceptedDependency == state.accepted.stages.end() ||
+                acceptedDependency->second.status != ReactorStageStatus::Valid ||
+                acceptedDependency->second.payload.empty()) {
+                return Result<ReactorDesignExecutionReport>::failure(
+                    executionError(ErrorCode::InvalidInput,
+                        "Stage '" + stageId + "' requires an accepted VALID upstream artifact: '" +
+                        dependency + "'."));
+            }
+        }
+    }
+
     state.candidateInProgress = true;
     state.failedStage.clear();
     state.candidate = state.accepted;
