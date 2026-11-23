@@ -672,7 +672,12 @@ Result<TopoDS_Shape> buildThreeLimbReactorAssemblyWithWindingEnvelopesShape(
     };
     for (std::size_t i = 0; i < members.size(); ++i) {
         for (std::size_t j = i + 1; j < members.size(); ++j) {
-            if (windingGroup[i] >= 0 && windingGroup[i] == windingGroup[j])
+            const bool sameWinding = windingGroup[i] >= 0 &&
+                windingGroup[i] == windingGroup[j];
+            const bool conductorAgainstCore =
+                (windingGroup[i] >= 0 && j < expectedCoreSolids) ||
+                (windingGroup[j] >= 0 && i < expectedCoreSolids);
+            if (sameWinding || conductorAgainstCore)
                 continue;
             if (!boundsOverlap(memberBounds[i], memberBounds[j]))
                 continue;
