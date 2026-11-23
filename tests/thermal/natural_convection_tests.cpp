@@ -30,10 +30,9 @@ void testHorizontalPlateCorrelations()
 
     request.orientation = HorizontalPlateOrientation::HeatedFaceDownward;
     const auto downward = analyzeHorizontalPlateNaturalConvection(request);
-    if (downward) {
-        assert(downward.value().rayleighNumber >= 1.0e5);
-        assert(downward.value().rayleighNumber <= 1.0e10);
-    }
+    assert(downward);
+    assert(downward.value().rayleighNumber >= 1.0e5);
+    assert(downward.value().rayleighNumber <= 1.0e10);
 
     request.unobstructedQuiescentAmbient = false;
     const auto obstructed = analyzeHorizontalPlateNaturalConvection(request);
