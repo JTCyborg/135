@@ -4094,9 +4094,9 @@ QWidget* MainWindow::createResultsPage()
     harmonicTransferTitle->setObjectName(QStringLiteral("harmonicTransferPlotTitle"));
     harmonicTransferTitle->setStyleSheet("font-weight: 600;");
     harmonicTransferTitle->setToolTip(tr(
-        "Plots |I_grid,h / I_load,h| for the entered harmonic current injections. "
-        "Values below 1 pu indicate current reduction at the source; values above 1 pu indicate amplification. "
-        "Only explicitly supplied harmonic injections are plotted; missing orders are not assumed to be zero."));
+        "The solid curve is the small-signal |I_grid / I_load| transfer characteristic for a unit load-current injection swept over frequency. "
+        "Markers show the actual entered operating harmonics. Values below 1 pu indicate current reduction at the source; values above 1 pu indicate amplification. "
+        "The continuous curve is a linear network response, not a harmonic-compliance or nonlinear operating-state simulation."));
     layout->addWidget(harmonicTransferTitle);
     resultsHarmonicTransferPlot_ = new PlotWidget;
     resultsHarmonicTransferPlot_->setObjectName(QStringLiteral("resultsHarmonicTransferPlot"));
@@ -7461,9 +7461,9 @@ void MainWindow::calculateFilter()
         }
     }
 
-    // The transfer curve is derived only from explicitly entered load-current
-    // injections. A zero/absent load harmonic has no meaningful I_grid/I_load ratio
-    // and is intentionally omitted rather than displayed as zero attenuation.
+    // The continuous curve is a small-signal network characteristic calculated
+    // with a unit load-current injection at every impedance-scan frequency. Actual
+    // entered harmonic injections are retained separately as measured operating points.
     std::vector<PlotCurve> harmonicTransferCurves;
     std::vector<PlotCurve> voltageSpectrumCurves;
     std::vector<PlotCurve> currentSpectrumCurves;
@@ -7471,13 +7471,29 @@ void MainWindow::calculateFilter()
     QJsonArray voltageSpectrumSnapshot;
     QJsonArray currentSpectrumSnapshot;
     std::optional<double> sourceVoltageThdBefore;
-    if (harmonicResult) {
-        PlotCurve transferCurve{tr("|I_grid,h / I_load,h|"), {}};
+    if (impedanceResult) {
+        PlotCurve transferCharacteristic{
+            tr("Small-signal grid/load current transfer"), {}};
         PlotCurve unityReference{tr("No attenuation / unity (1.0 pu)"), {}};
-        PlotCurve canonicalMarkers{tr("Canonical harmonic orders"), {}, true};
-        constexpr std::array<std::uint32_t, 9> canonicalOrders{
-            3, 5, 7, 11, 13, 17, 19, 23, 25
-        };
+        for (const auto& point : impedanceResult->points) {
+            transferCharacteristic.points.emplace_back(
+                point.frequency.si(), point.gridCurrentTransferMagnitudeRatio);
+        }
+        if (!transferCharacteristic.points.empty()) {
+            unityReference.points.emplace_back(
+                transferCharacteristic.points.front().first, 1.0);
+            unityReference.points.emplace_back(
+                transferCharacteristic.points.back().first, 1.0);
+            harmonicTransferCurves.push_back(std::move(transferCharacteristic));
+            harmonicTransferCurves.push_back(std::move(unityReference));
+        }
+    }
+
+    if (harmonicResult) {
+        // Discrete operating points use the actual entered load-current spectrum.
+        // Keep them marker-only so they cannot be mistaken for a swept response.
+        PlotCurve operatingHarmonics{
+            tr("Entered operating harmonics"), {}, true};
         for (const auto& point : harmonicResult->points) {
             if (point.order == 1 ||
                 !std::isfinite(point.loadCurrentMagnitudeA) ||
@@ -7488,7 +7504,7 @@ void MainWindow::calculateFilter()
             if (!std::isfinite(ratio) || ratio < 0.0)
                 continue;
             const double frequencyHz = point.frequency.si();
-            transferCurve.points.emplace_back(frequencyHz, ratio);
+            operatingHarmonics.points.emplace_back(frequencyHz, ratio);
             QJsonObject sample;
             sample.insert(QStringLiteral("order"), static_cast<int>(point.order));
             sample.insert(QStringLiteral("frequency_Hz"), frequencyHz);
@@ -7497,21 +7513,9 @@ void MainWindow::calculateFilter()
             sample.insert(QStringLiteral("filterCurrentRms_A"), point.filterCurrentMagnitudeA);
             sample.insert(QStringLiteral("gridToLoadCurrentRatio_pu"), ratio);
             harmonicTransferSnapshot.append(sample);
-            if (std::find(canonicalOrders.begin(), canonicalOrders.end(), point.order) !=
-                canonicalOrders.end())
-                canonicalMarkers.points.emplace_back(frequencyHz, 1.0);
         }
-        if (!transferCurve.points.empty()) {
-            const double firstFrequency = transferCurve.points.front().first;
-            const double lastFrequency = transferCurve.points.back().first;
-            unityReference.points.emplace_back(firstFrequency, 1.0);
-            if (lastFrequency > firstFrequency)
-                unityReference.points.emplace_back(lastFrequency, 1.0);
-            harmonicTransferCurves.push_back(std::move(transferCurve));
-            harmonicTransferCurves.push_back(std::move(unityReference));
-            if (!canonicalMarkers.points.empty())
-                harmonicTransferCurves.push_back(std::move(canonicalMarkers));
-        }
+        if (!operatingHarmonics.points.empty())
+            harmonicTransferCurves.push_back(std::move(operatingHarmonics));
     }
     if (harmonicResult) {
         const auto fundamental = std::find_if(harmonicResult->points.begin(),
