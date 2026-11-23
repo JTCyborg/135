@@ -236,13 +236,47 @@ Result<AssemblyPresentationNode> buildThreeLimbReactorPresentation(
         bobbin.surfaceFinish = AssemblySurfaceFinish::InsulatorMatte;
 
         AssemblyPresentationNode winding;
-        winding.id = "winding." + phaseId + ".envelope";
-        winding.displayName = "Winding " + phaseId + " (envelope only)";
-        winding.kind = AssemblyComponentKind::WindingEnvelope;
-        winding.representation = AssemblyGeometryRepresentation::WindingPackEnvelope;
-        winding.shape = topLevel[windingIndex];
+        winding.id = "winding." + phaseId;
+        winding.displayName = "Winding " + phaseId;
+        winding.kind = AssemblyComponentKind::WindingGroup;
         winding.materialRevisionId = geometry.conductorMaterialRevisionId;
         winding.surfaceFinish = AssemblySurfaceFinish::CopperPolished;
+
+        const auto& windingGeometry = geometry.windingPacks[phase];
+        const bool detailedTurns =
+            windingGeometry.turns && windingGeometry.turnsPerLayer &&
+            windingGeometry.parallelConductors &&
+            (windingGeometry.conductorShape == "rectangular" ||
+             windingGeometry.conductorShape == "foil");
+        if (detailedTurns) {
+            winding.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
+            std::size_t turnIndex = 0;
+            for (TopExp_Explorer it(topLevel[windingIndex], TopAbs_SOLID); it.More(); it.Next()) {
+                AssemblyPresentationNode turn;
+                turn.id = "winding." + phaseId + ".layer." +
+                    std::to_string(turnIndex /
+                        (static_cast<std::size_t>(*windingGeometry.turnsPerLayer) *
+                         static_cast<std::size_t>(*windingGeometry.parallelConductors)) + 1) +
+                    ".turn." + std::to_string(turnIndex %
+                        (static_cast<std::size_t>(*windingGeometry.turnsPerLayer) *
+                         static_cast<std::size_t>(*windingGeometry.parallelConductors)) + 1);
+                turn.displayName = "Winding " + phaseId + " conductor " +
+                    std::to_string(turnIndex + 1);
+                turn.kind = AssemblyComponentKind::ConductorTurn;
+                turn.representation = AssemblyGeometryRepresentation::DetailedConductorTurn;
+                turn.shape = it.Current();
+                turn.materialRevisionId = geometry.conductorMaterialRevisionId;
+                turn.surfaceFinish = AssemblySurfaceFinish::CopperPolished;
+                winding.children.push_back(std::move(turn));
+                ++turnIndex;
+            }
+        } else {
+            winding.id += ".envelope";
+            winding.displayName = "Winding " + phaseId + " (envelope only)";
+            winding.kind = AssemblyComponentKind::WindingEnvelope;
+            winding.representation = AssemblyGeometryRepresentation::WindingPackEnvelope;
+            winding.shape = topLevel[windingIndex];
+        }
 
         phaseNode.children.push_back(std::move(bobbin));
         phaseNode.children.push_back(std::move(winding));
