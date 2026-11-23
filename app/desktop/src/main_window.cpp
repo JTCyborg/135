@@ -453,10 +453,28 @@ public:
 #endif
     }
 
+    void setHorizontalReference(double value, QString label)
+    {
+        horizontalReference_ = std::make_pair(value, std::move(label));
+        update();
+#if defined(_DEBUG) || !defined(NDEBUG)
+        scheduleDebugImageSave();
+#endif
+    }
+
     void setFrequencyMarkers(std::vector<PlotMarker> markers)
     {
         frequencyMarkers_ = std::move(markers);
         QVariantList serializedMarkers;
+        if (horizontalReference_ && std::isfinite(horizontalReference_->first) &&
+            horizontalReference_->first >= dataYMin && horizontalReference_->first <= yMax) {
+            const double y = yPixel(horizontalReference_->first);
+            painter.setPen(QPen(QColor(175, 105, 25), 1.5, Qt::DashLine));
+            painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
+            painter.setPen(QColor(155, 90, 20));
+            painter.drawText(QRectF(area.left() + 5, y - 18, area.width() - 10, 16),
+                Qt::AlignRight | Qt::AlignVCenter, horizontalReference_->second);
+        }
         for (const auto& marker : frequencyMarkers_) {
             QVariantMap item;
             item.insert(QStringLiteral("frequencyHz"), marker.frequencyHz);
@@ -836,6 +854,7 @@ private:
     bool allowNegativeY_{};
     std::vector<PlotBand> resonanceBands_;
     std::vector<PlotMarker> frequencyMarkers_;
+    std::optional<std::pair<double, QString>> horizontalReference_;
     std::optional<double> saturationPeakCurrentA_;
     std::optional<double> magneticKneeCurrentA_;
 };
@@ -8317,6 +8336,8 @@ void MainWindow::calculateFilter()
         resultsHarmonicTransferPlot_->setCurves(harmonicTransferCurves,
             tr("Frequency (Hz, logarithmic)"), tr("|I_grid,h / I_load,h| (p.u.)"), true,
             harmonicTransferCurves.empty() ? harmonicTransferEmptyMessage : QString{});
+        resultsHarmonicTransferPlot_->setHorizontalReference(
+            1.0, tr("Unity transfer: K_I = 1.0 p.u."));
     }
     if (resultsVoltageSpectrumPlot_) {
         resultsVoltageSpectrumPlot_->setCurves(voltageSpectrumCurves,
@@ -8324,6 +8345,8 @@ void MainWindow::calculateFilter()
             voltageSpectrumCurves.empty()
                 ? tr("NOT_VERIFIED: non-fundamental source voltage harmonics are unavailable.")
                 : QString{}, true);
+        resultsVoltageSpectrumPlot_->setHorizontalReference(
+            100.0, tr("Fundamental reference: 100% of U1"));
     }
     if (resultsCurrentSpectrumPlot_) {
         resultsCurrentSpectrumPlot_->setCurves(currentSpectrumCurves,
