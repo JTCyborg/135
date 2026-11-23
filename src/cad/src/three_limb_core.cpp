@@ -372,13 +372,13 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
 
     constexpr double mm = 1000.0;
     if (winding.conductorShape == "round") {
-        if (!winding.conductorBareDiameter || winding.conductorBareDiameter->si() <= 0.0)
+        if (!winding.bareConductorDiameter || winding.bareConductorDiameter->si() <= 0.0)
             return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
                 "Round detailed winding requires a positive bare conductor diameter.",
-                "windingPack.conductorBareDiameter");
-        const double diameter = winding.conductorInsulatedDiameter
-            ? winding.conductorInsulatedDiameter->si()
-            : winding.conductorBareDiameter->si() +
+                "windingPack.bareConductorDiameter");
+        const double diameter = winding.insulatedConductorDiameter
+            ? winding.insulatedConductorDiameter->si()
+            : winding.bareConductorDiameter->si() +
                 2.0 * winding.conductorInsulationBuild.si();
         const double radius = 0.5 * diameter * mm;
         const double bodyWidth = bobbin.innerWidth.si() + 2.0 * bobbin.wallThickness.si();
