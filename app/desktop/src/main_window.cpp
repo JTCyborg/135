@@ -662,6 +662,9 @@ protected:
         const auto xPixel = [&area, &xFraction](double value) {
             return area.left() + xFraction(value) * area.width();
         };
+        // Engineering-band captions occupy their own second row. Keeping them
+        // separate from frequency-marker captions prevents unrelated labels
+        // from being painted over one another at resonance boundaries.
         for (const auto& band : resonanceBands_) {
             if (!std::isfinite(band.startHz) || !std::isfinite(band.stopHz) ||
                 band.startHz <= 0.0 || band.stopHz <= band.startHz ||
@@ -675,9 +678,14 @@ protected:
             painter.setPen(QPen(QColor(190, 125, 20), 1.0, Qt::DashLine));
             painter.drawLine(QPointF(left, area.top()), QPointF(left, area.bottom()));
             painter.drawLine(QPointF(right, area.top()), QPointF(right, area.bottom()));
-            painter.setPen(QColor(170, 105, 15));
-            painter.drawText(QRectF(left + 3, area.top() + 3,
-                std::max(0.0, right - left - 6), 18), Qt::AlignLeft | Qt::AlignTop, band.label);
+            const QRectF labelRect(left + 3.0, area.top() + 20.0,
+                std::max(0.0, right - left - 6.0), 16.0);
+            if (labelRect.width() >= 24.0 && !band.label.isEmpty()) {
+                painter.setPen(QColor(170, 105, 15));
+                painter.drawText(labelRect, Qt::AlignLeft | Qt::AlignVCenter,
+                    painter.fontMetrics().elidedText(band.label, Qt::ElideRight,
+                        static_cast<int>(labelRect.width())));
+            }
         }
         double previousMarkerLabelRight = -std::numeric_limits<double>::infinity();
         for (const auto& marker : frequencyMarkers_) {
@@ -687,14 +695,18 @@ protected:
             painter.setPen(QPen(QColor(105, 105, 105, 170), 1.0, Qt::DotLine));
             painter.drawLine(QPointF(x, area.top()), QPointF(x, area.bottom()));
             // Keep every harmonic guide line, but suppress colliding labels on
-            // dense logarithmic sweeps. The nearest visible labels remain
-            // readable instead of being painted on top of one another.
-            const double labelLeft = x - 22.0;
-            const double labelRight = x + 22.0;
-            if (labelLeft >= previousMarkerLabelRight + 4.0) {
+            // dense logarithmic sweeps. Clamp captions to the plot bounds so
+            // edge markers are not clipped by the widget.
+            const double labelLeft = std::max(area.left(), x - 22.0);
+            const double labelRight = std::min(area.right(), x + 22.0);
+            if (labelRight - labelLeft >= 20.0 &&
+                labelLeft >= previousMarkerLabelRight + 4.0) {
                 painter.setPen(palette().color(QPalette::Text));
-                painter.drawText(QRectF(labelLeft, area.top() + 2, 44, 16),
-                    Qt::AlignHCenter | Qt::AlignTop, marker.label);
+                const QRectF labelRect(labelLeft, area.top() + 2.0,
+                    labelRight - labelLeft, 16.0);
+                painter.drawText(labelRect, Qt::AlignHCenter | Qt::AlignTop,
+                    painter.fontMetrics().elidedText(marker.label, Qt::ElideRight,
+                        static_cast<int>(labelRect.width())));
                 previousMarkerLabelRight = labelRight;
             }
         }
