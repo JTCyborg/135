@@ -16,6 +16,19 @@ int main()
     state.accepted.stages["core.material"] = {
         ReactorStageStatus::Valid, "7", "previous-core"
     };
+    // External prerequisites for the focused magnetic plan are already accepted.
+    state.accepted.stages["core.geometry"] = {
+        ReactorStageStatus::Valid, "7", "accepted-geometry"
+    };
+    state.accepted.stages["core.stacking_factor"] = {
+        ReactorStageStatus::Valid, "7", "accepted-stacking-factor"
+    };
+    state.accepted.stages["filter.excitation"] = {
+        ReactorStageStatus::Valid, "7", "accepted-excitation"
+    };
+    state.accepted.stages["winding.turns"] = {
+        ReactorStageStatus::Valid, "7", "accepted-turns"
+    };
 
     ReactorRecalculationPlan plan{{"core.material", "core.magnetic_properties",
                                    "magnetic.operating_point"}};
@@ -80,6 +93,22 @@ int main()
         });
     assert(!inputNode);
     assert(!inputNodeExecuted);
+
+    ReactorDesignExecutionState incompleteState;
+    bool magneticExecutorCalled = false;
+    const auto missingPrerequisite = executeReactorDesignPlan(
+        ReactorRecalculationPlan{{"magnetic.operating_point"}},
+        incompleteState,
+        [&magneticExecutorCalled](const std::string&) {
+            magneticExecutorCalled = true;
+            return Result<std::string>::success("must-not-run");
+        });
+    assert(!missingPrerequisite);
+    assert(missingPrerequisite.error().code == ErrorCode::InvalidInput);
+    assert(missingPrerequisite.error().message.find("filter.excitation") != std::string::npos);
+    assert(!magneticExecutorCalled);
+    assert(incompleteState.accepted.number == 0);
+    assert(!incompleteState.candidateInProgress);
 
     const auto noExecutor = executeReactorDesignPlan(plan, state, {});
     assert(!noExecutor);
