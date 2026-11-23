@@ -7130,8 +7130,27 @@ void MainWindow::calculateFilter()
     if (harmonicResult) {
         const auto fundamental = std::find_if(harmonicResult->points.begin(),
             harmonicResult->points.end(), [](const auto& point) { return point.order == 1; });
-        const double voltageBase = fundamental == harmonicResult->points.end()
-            ? 0.0 : fundamental->sourceVoltageMagnitudeV;
+        const double sourceFundamentalFrequency = fundamental == harmonicResult->points.end()
+            ? 0.0 : fundamental->frequency.si();
+        const auto noFilterBusVoltage = [&](const p135::filter::HarmonicAnalysisPoint& point) {
+            const auto voltage = std::find_if(harmonicRequest.sourceVoltageSpectrum.begin(),
+                harmonicRequest.sourceVoltageSpectrum.end(), [&point](const auto& item) {
+                    return item.order == point.order;
+                });
+            if (voltage == harmonicRequest.sourceVoltageSpectrum.end())
+                return 0.0;
+            std::complex<double> loadPhasor{};
+            for (const auto& injection : harmonicRequest.loadCurrentInjections) {
+                if (injection.order == point.order && injection.sequence == voltage->sequence)
+                    loadPhasor += injection.phaseCurrentRms;
+            }
+            const double omega = 2.0 * pi * point.frequency.si();
+            const std::complex<double> sourceZ{sourceResistance, omega * sourceInductance};
+            return std::abs(voltage->phaseVoltageRms - sourceZ * loadPhasor);
+        };
+        const double preFilterFundamentalVoltage = sourceFundamentalFrequency > 0.0
+            ? noFilterBusVoltage(*fundamental) : 0.0;
+        const double postFilterFundamentalVoltage = harmonicResult->busFundamentalVoltageV;
         PlotCurve voltageBefore{tr("Without filter — source U_h"), {}};
         PlotCurve voltageAfter{tr("With filter — PCC U_h"), {}};
         PlotCurve loadCurrent{tr("Load current I_load,h"), {}};
@@ -7142,13 +7161,14 @@ void MainWindow::calculateFilter()
         for (const auto& point : harmonicResult->points) {
             if (point.order <= 1) continue;
             const double order = static_cast<double>(point.order);
-            if (voltageBase > std::numeric_limits<double>::epsilon()) {
-                sourceVoltageHarmonicSquareSum +=
-                    point.sourceVoltageMagnitudeV * point.sourceVoltageMagnitudeV;
+            const double preFilterVoltage = noFilterBusVoltage(point);
+            if (preFilterFundamentalVoltage > std::numeric_limits<double>::epsilon() &&
+                postFilterFundamentalVoltage > std::numeric_limits<double>::epsilon()) {
+                sourceVoltageHarmonicSquareSum += preFilterVoltage * preFilterVoltage;
                 voltageBefore.points.emplace_back(order,
-                    100.0 * point.sourceVoltageMagnitudeV / voltageBase);
+                    100.0 * preFilterVoltage / preFilterFundamentalVoltage);
                 voltageAfter.points.emplace_back(order,
-                    100.0 * point.busVoltageMagnitudeV / voltageBase);
+                    100.0 * point.busVoltageMagnitudeV / postFilterFundamentalVoltage);
             }
             loadCurrent.points.emplace_back(order, point.loadCurrentMagnitudeA);
             filterCurrent.points.emplace_back(order, point.filterCurrentMagnitudeA);
@@ -7158,18 +7178,21 @@ void MainWindow::calculateFilter()
             QJsonObject sample;
             sample.insert(QStringLiteral("order"), static_cast<int>(point.order));
             sample.insert(QStringLiteral("frequency_Hz"), point.frequency.si());
-            sample.insert(QStringLiteral("sourceVoltagePercentOfFundamental"), voltageBase > 0.0
-                ? 100.0 * point.sourceVoltageMagnitudeV / voltageBase : 0.0);
-            sample.insert(QStringLiteral("pccVoltagePercentOfFundamental"), voltageBase > 0.0
-                ? 100.0 * point.busVoltageMagnitudeV / voltageBase : 0.0);
+            sample.insert(QStringLiteral("pccVoltageBeforeFilterPercentOfFundamental"),
+                preFilterFundamentalVoltage > 0.0
+                    ? 100.0 * preFilterVoltage / preFilterFundamentalVoltage : 0.0);
+            sample.insert(QStringLiteral("pccVoltageAfterFilterPercentOfFundamental"),
+                postFilterFundamentalVoltage > 0.0
+                    ? 100.0 * point.busVoltageMagnitudeV / postFilterFundamentalVoltage : 0.0);
             sample.insert(QStringLiteral("loadCurrentRms_A"), point.loadCurrentMagnitudeA);
             sample.insert(QStringLiteral("filterCurrentRms_A"), point.filterCurrentMagnitudeA);
             sample.insert(QStringLiteral("gridCurrentRms_A"), point.sourceCurrentMagnitudeA);
             voltageSpectrumSnapshot.append(sample);
             currentSpectrumSnapshot.append(sample);
         }
-        if (voltageBase > std::numeric_limits<double>::epsilon())
-            sourceVoltageThdBefore = std::sqrt(sourceVoltageHarmonicSquareSum) / voltageBase;
+        if (preFilterFundamentalVoltage > std::numeric_limits<double>::epsilon())
+            sourceVoltageThdBefore =
+                std::sqrt(sourceVoltageHarmonicSquareSum) / preFilterFundamentalVoltage;
         if (!voltageBefore.points.empty()) {
             voltageSpectrumCurves.push_back(std::move(voltageBefore));
             voltageSpectrumCurves.push_back(std::move(voltageAfter));
@@ -7521,7 +7544,7 @@ void MainWindow::calculateFilter()
         }
         if (resultsVoltageSpectrumPlot_) {
             resultsVoltageSpectrumPlot_->setCurves(voltageSpectrumCurves,
-                tr("Harmonic order h"), tr("Voltage (% of source fundamental)"), false,
+                tr("Harmonic order h"), tr("PCC voltage (% of U1)"), false,
                 voltageSpectrumCurves.empty()
                     ? tr("NOT_VERIFIED: non-fundamental source voltage harmonics are unavailable.")
                     : QString{}, true);
@@ -7814,7 +7837,7 @@ void MainWindow::calculateFilter()
     }
     if (resultsVoltageSpectrumPlot_) {
         resultsVoltageSpectrumPlot_->setCurves(voltageSpectrumCurves,
-            tr("Harmonic order h"), tr("Voltage (% of source fundamental)"), false,
+            tr("Harmonic order h"), tr("PCC voltage (% of U1)"), false,
             voltageSpectrumCurves.empty()
                 ? tr("NOT_VERIFIED: non-fundamental source voltage harmonics are unavailable.")
                 : QString{}, true);
