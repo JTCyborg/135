@@ -7401,7 +7401,7 @@ void MainWindow::calculateFilter()
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
-        resultSnapshot.insert(QStringLiteral("plotDataVersion"), 2);
+        resultSnapshot.insert(QStringLiteral("plotDataVersion"), 3);
     resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
         resultSnapshot.insert(QStringLiteral("impedanceScan"), impedanceScanSnapshot);
         resultSnapshot.insert(QStringLiteral("harmonicCurrentTransfer"), harmonicTransferSnapshot);
