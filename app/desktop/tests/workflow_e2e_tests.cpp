@@ -1058,6 +1058,8 @@ private slots:
             QStringLiteral("resultsVoltageSpectrumPlot"));
         QVERIFY(voltageSpectrumPlot);
         QVERIFY(voltageSpectrumPlot->property("plotBarChart").toBool());
+        QCOMPARE(voltageSpectrumPlot->property("plotHorizontalReference").toDouble(), 100.0);
+        QVERIFY(!voltageSpectrumPlot->property("plotHorizontalReferenceLabel").toString().isEmpty());
         const auto voltageSpectrumCurves =
             voltageSpectrumPlot->property("plotCurves").toList();
         QCOMPARE(voltageSpectrumCurves.size(), 2);
