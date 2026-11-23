@@ -94,6 +94,8 @@ Result<NaturalConvectionResult> analyzeVerticalPlateNaturalConvection(
     result.heatTransferCoefficientWPerM2K = coefficient;
     result.thermalResistanceKPerW = resistance;
     result.correlation = "Churchill-Chu vertical isothermal plate";
+    result.geometrySourceReference = request.geometrySourceReference;
+    result.fluidPropertiesSourceReference = fluid.sourceReference;
     result.status = "PRELIMINARY";
     result.explanation =
         "PRELIMINARY: isolated vertical-plate free-convection estimate using explicit film-temperature fluid properties. "
