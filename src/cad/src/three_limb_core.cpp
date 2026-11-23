@@ -18,6 +18,7 @@
 #include <gp_Circ.hxx>
 #include <gp_Dir.hxx>
 #include <TopoDS_Wire.hxx>
+#include <TopoDS_Face.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
