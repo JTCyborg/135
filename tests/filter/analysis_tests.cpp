@@ -1,6 +1,7 @@
 #include "p135/filter/analysis.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <complex>
 #include <cmath>
