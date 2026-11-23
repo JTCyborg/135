@@ -414,7 +414,8 @@ public:
     }
 
     void setCurves(std::vector<PlotCurve> curves, QString xLabel, QString yLabel,
-                   bool logarithmicX = true, QString emptyMessage = {}, bool barChart = false)
+                   bool logarithmicX = true, QString emptyMessage = {}, bool barChart = false,
+                   bool allowNegativeY = false)
     {
         curves_ = std::move(curves);
         xLabel_ = std::move(xLabel);
@@ -422,7 +423,9 @@ public:
         logarithmicX_ = logarithmicX;
         emptyMessage_ = std::move(emptyMessage);
         barChart_ = barChart;
+        allowNegativeY_ = allowNegativeY;
         setProperty("plotBarChart", barChart_);
+        setProperty("plotAllowsNegativeY", allowNegativeY_);
         QVariantList serializedCurves;
         for (const auto& curve : curves_) {
             QVariantMap serializedCurve;
@@ -551,14 +554,17 @@ protected:
 
         double minX = std::numeric_limits<double>::max();
         double maxX = std::numeric_limits<double>::lowest();
-        double minY = 0.0;
+        double minY = allowNegativeY_ ? std::numeric_limits<double>::max() : 0.0;
         double maxY = std::numeric_limits<double>::lowest();
         bool hasPoints = false;
         for (const auto& curve : curves_) {
             for (const auto& [x, y] : curve.points) {
-                if (!std::isfinite(x) || !std::isfinite(y) || x <= 0.0 || y < 0.0) continue;
+                if (!std::isfinite(x) || !std::isfinite(y) ||
+                    (logarithmicX_ ? x <= 0.0 : x < 0.0) ||
+                    (!allowNegativeY_ && y < 0.0)) continue;
                 minX = std::min(minX, x);
                 maxX = std::max(maxX, x);
+                minY = std::min(minY, y);
                 maxY = std::max(maxY, y);
                 hasPoints = true;
             }
@@ -582,10 +588,17 @@ protected:
             const double coordinate = logarithmicX_ ? std::log10(value) : value;
             return (coordinate - axisMin) / (axisMax - axisMin);
         };
-        const double dataYMax = maxY > 0.0 ? maxY * 1.08 : 1.0;
+        const double yPadding = allowNegativeY_
+            ? std::max((maxY - minY) * 0.08, 1.0e-9) : 0.0;
+        const double dataYMin = allowNegativeY_ ? minY - yPadding : 0.0;
+        const double dataYMax = allowNegativeY_
+            ? maxY + yPadding : (maxY > 0.0 ? maxY * 1.08 : 1.0);
         const double yMax = std::max({dataYMax,
             saturationPeakCurrentA_.value_or(0.0) * 1.08,
             magneticKneeCurrentA_.value_or(0.0) * 1.08});
+        const auto yPixel = [&area, dataYMin, yMax](double value) {
+            return area.bottom() - ((value - dataYMin) / (yMax - dataYMin)) * area.height();
+        };
         const auto xPixel = [&area, &xFraction](double value) {
             return area.left() + xFraction(value) * area.width();
         };
@@ -612,7 +625,7 @@ protected:
             const double y = area.bottom() - fraction * area.height();
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
             painter.drawText(QRectF(26, y - 9, 56, 18), Qt::AlignRight | Qt::AlignVCenter,
-                QString::number(yMax * fraction, 'g', 4));
+                QString::number(dataYMin + (yMax - dataYMin) * fraction, 'g', 4));
             const double xValue = logarithmicX_
                 ? std::pow(10.0, axisMin + (axisMax - axisMin) * fraction)
                 : minX + (maxX - minX) * fraction;
@@ -624,7 +637,7 @@ protected:
 
         if (saturationPeakCurrentA_ && std::isfinite(*saturationPeakCurrentA_) &&
             *saturationPeakCurrentA_ > 0.0) {
-            const double y = area.bottom() - (*saturationPeakCurrentA_ / yMax) * area.height();
+            const double y = yPixel(*saturationPeakCurrentA_);
             painter.setPen(QPen(QColor(195, 45, 45), 2.0, Qt::DashLine));
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
             painter.setPen(QColor(180, 35, 35));
@@ -635,7 +648,7 @@ protected:
 
         if (magneticKneeCurrentA_ && std::isfinite(*magneticKneeCurrentA_) &&
             *magneticKneeCurrentA_ > 0.0) {
-            const double y = area.bottom() - (*magneticKneeCurrentA_ / yMax) * area.height();
+            const double y = yPixel(*magneticKneeCurrentA_);
             painter.setPen(QPen(QColor(125, 65, 165), 2.0, Qt::DashDotLine));
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
             painter.setPen(QColor(115, 55, 155));
@@ -655,12 +668,13 @@ protected:
             QPointF onlyPoint;
             for (const auto& [xValue, yValue] : curve.points) {
                 if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
-                    xValue <= 0.0 || yValue < 0.0) {
+                    (logarithmicX_ ? xValue <= 0.0 : xValue < 0.0) ||
+                    (!allowNegativeY_ && yValue < 0.0)) {
                     started = false;
                     continue;
                 }
                 const double x = xPixel(xValue);
-                const double y = area.bottom() - (yValue / yMax) * area.height();
+                const double y = yPixel(yValue);
                 onlyPoint = QPointF(x, y);
                 ++validPointCount;
                 if (!started) { path.moveTo(x, y); started = true; }
@@ -692,9 +706,10 @@ protected:
                 painter.setPen(QPen(color.darker(115), 0.8));
                 for (const auto& [xValue, yValue] : curve.points) {
                     if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
-                        xValue <= 0.0 || yValue < 0.0) continue;
+                        (logarithmicX_ ? xValue <= 0.0 : xValue < 0.0) ||
+                        (!allowNegativeY_ && yValue < 0.0)) continue;
                     const double center = xPixel(xValue) + offset;
-                    const double top = area.bottom() - (yValue / yMax) * area.height();
+                    const double top = yPixel(yValue);
                     painter.drawRect(QRectF(center - barWidth * 0.5, top,
                                              barWidth, area.bottom() - top));
                 }
@@ -707,8 +722,7 @@ protected:
                 for (const auto& [xValue, yValue] : curve.points) {
                     if (!std::isfinite(xValue) || !std::isfinite(yValue) ||
                         xValue <= 0.0 || yValue < 0.0) continue;
-                    const QPointF marker(xPixel(xValue),
-                        area.bottom() - (yValue / yMax) * area.height());
+                    const QPointF marker(xPixel(xValue), yPixel(yValue));
                     painter.drawEllipse(marker, 4.0, 4.0);
                 }
                 painter.setBrush(Qt::NoBrush);
@@ -749,6 +763,7 @@ private:
     QString emptyMessage_;
     bool logarithmicX_{true};
     bool barChart_{};
+    bool allowNegativeY_{};
     std::vector<PlotBand> resonanceBands_;
     std::optional<double> saturationPeakCurrentA_;
     std::optional<double> magneticKneeCurrentA_;
@@ -7935,7 +7950,7 @@ void MainWindow::calculateFilter()
         }
         resultsCoreFluxWaveformPlot_->setCurves(std::move(waveformCurves),
             tr("Time within fundamental cycle (ms)"),
-            tr("Signed flux density B (T)"), false, waveformEmptyMessage);
+            tr("Signed flux density B (T)"), false, waveformEmptyMessage, false, true);
         if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxWaveformPlotTitle"))) {
             title->setText(threeLimbOperatingPoint
                 ? tr("Core flux-density waveform B(t) — %1 samples")
