@@ -3916,6 +3916,24 @@ QWidget* MainWindow::createResultsPage()
     resultsCoreFluxPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(resultsCoreFluxPlot_);
 
+    auto* coreWaveformTitle = new QLabel(tr("Core flux-density waveform B(t) — three limbs and four yoke segments"));
+    coreWaveformTitle->setObjectName(QStringLiteral("coreFluxWaveformPlotTitle"));
+    coreWaveformTitle->setStyleSheet("font-weight: 600;");
+    coreWaveformTitle->setToolTip(tr(
+        "Plots signed instantaneous flux density from the converged multi-harmonic nonlinear magnetic-cycle solver. "
+        "No saturation limit is fabricated when the selected material does not provide one."));
+    layout->addWidget(coreWaveformTitle);
+    resultsCoreFluxWaveformPlot_ = new PlotWidget;
+    resultsCoreFluxWaveformPlot_->setObjectName(QStringLiteral("resultsCoreFluxWaveformPlot"));
+    resultsCoreFluxWaveformPlot_->setProperty("debugImagePath", projectArtifactPath(
+        QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux_waveform.png")));
+    resultsCoreFluxWaveformPlot_->setCurves({}, tr("Time within fundamental cycle (ms)"),
+        tr("Signed flux density B (T)"), false,
+        tr("NOT_VERIFIED: a converged multi-harmonic magnetic operating point is required."));
+    resultsCoreFluxWaveformPlot_->setMinimumHeight(250);
+    resultsCoreFluxWaveformPlot_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    layout->addWidget(resultsCoreFluxWaveformPlot_);
+
     auto* materialBhPlotTitle = new QLabel(tr("Selected core material B-H characteristic"));
     materialBhPlotTitle->setObjectName(QStringLiteral("materialBhPlotTitle"));
     materialBhPlotTitle->setStyleSheet("font-weight: 600;");
@@ -7578,6 +7596,19 @@ void MainWindow::calculateFilter()
             resultSnapshot.insert(QStringLiteral("sourceVoltageThdBefore"), *sourceVoltageThdBefore);
         if (harmonicResult)
             resultSnapshot.insert(QStringLiteral("pccVoltageThdAfter"), harmonicResult->busVoltageThd);
+        QJsonArray magneticWaveformSnapshot;
+        if (threeLimbOperatingPoint) {
+            for (const auto& sample : threeLimbOperatingPoint->waveform) {
+                QJsonObject point;
+                point.insert(QStringLiteral("cycleFraction"), sample.cycleFraction);
+                QJsonArray fluxDensity;
+                for (const auto& value : sample.signedFluxDensity)
+                    fluxDensity.append(value.si());
+                point.insert(QStringLiteral("signedFluxDensity_T"), fluxDensity);
+                magneticWaveformSnapshot.append(point);
+            }
+        }
+        resultSnapshot.insert(QStringLiteral("magneticWaveform"), magneticWaveformSnapshot);
         QJsonArray magneticSweepSnapshot;
         if (magneticCircuitBase && magneticSweepValid) {
             for (const auto& [frequencyHz, fluxDensityT] : magneticFluxDensityPoints) {
@@ -7879,6 +7910,40 @@ void MainWindow::calculateFilter()
 
     // The magnetic plot is a live calculation result, not a persistence artifact.
     // Keep it independent of SQLite availability and snapshot-write success.
+    if (resultsCoreFluxWaveformPlot_) {
+        std::vector<PlotCurve> waveformCurves;
+        QString waveformEmptyMessage = tr(
+            "NOT_VERIFIED: a converged multi-harmonic magnetic operating point is required.");
+        if (threeLimbOperatingPoint && !threeLimbOperatingPoint->waveform.empty() &&
+            fundamentalFrequency_ && fundamentalFrequency_->value() > 0.0) {
+            const std::array<QString, 7> waveformNames{
+                tr("Limb A"), tr("Limb B"), tr("Limb C"),
+                tr("Top yoke A-B"), tr("Top yoke B-C"),
+                tr("Bottom yoke A-B"), tr("Bottom yoke B-C")
+            };
+            waveformCurves.reserve(waveformNames.size());
+            for (const auto& name : waveformNames)
+                waveformCurves.push_back(PlotCurve{name, {}});
+            const double periodMs = 1000.0 / fundamentalFrequency_->value();
+            for (const auto& sample : threeLimbOperatingPoint->waveform) {
+                const double timeMs = sample.cycleFraction * periodMs;
+                for (std::size_t section = 0; section < waveformNames.size(); ++section)
+                    waveformCurves[section].points.emplace_back(
+                        timeMs, sample.signedFluxDensity[section].si());
+            }
+            waveformEmptyMessage.clear();
+        }
+        resultsCoreFluxWaveformPlot_->setCurves(std::move(waveformCurves),
+            tr("Time within fundamental cycle (ms)"),
+            tr("Signed flux density B (T)"), false, waveformEmptyMessage);
+        if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxWaveformPlotTitle"))) {
+            title->setText(threeLimbOperatingPoint
+                ? tr("Core flux-density waveform B(t) — %1 samples")
+                    .arg(static_cast<qulonglong>(threeLimbOperatingPoint->waveform.size()))
+                : tr("Core flux-density waveform B(t) — NOT_VERIFIED"));
+        }
+    }
+
     if (resultsCoreFluxPlot_) {
         std::vector<PlotCurve> coreCurves;
         QString corePlotTitle;
@@ -8135,6 +8200,9 @@ void MainWindow::updateProjectTitle()
     if (resultsCoreFluxPlot_)
         resultsCoreFluxPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux.png")));
+    if (resultsCoreFluxWaveformPlot_)
+        resultsCoreFluxWaveformPlot_->setDebugImagePath(
+            projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_core_flux_waveform.png")));
     if (historyComparisonPlot_)
         historyComparisonPlot_->setDebugImagePath(
             projectArtifactPath(QStringLiteral("Debug/Plots"), projectId_, QStringLiteral("_history_comparison.png")));
