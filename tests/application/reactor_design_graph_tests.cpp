@@ -29,7 +29,14 @@ int main()
     const auto& winding = windingPlan.value().orderedStages;
     assert(std::find(winding.begin(), winding.end(), "winding.resistance") != winding.end());
     assert(std::find(winding.begin(), winding.end(), "winding.losses") != winding.end());
-    assert(std::find(winding.begin(), winding.end(), "winding.geometry") != winding.end());
+    const auto windingGeometry = std::find(winding.begin(), winding.end(), "winding.geometry");
+    const auto windingResistance = std::find(winding.begin(), winding.end(), "winding.resistance");
+    const auto windingLosses = std::find(winding.begin(), winding.end(), "winding.losses");
+    assert(windingGeometry != winding.end());
+    assert(windingResistance != winding.end());
+    assert(windingLosses != winding.end());
+    assert(windingGeometry < windingResistance);
+    assert(windingResistance < windingLosses);
     assert(std::find(winding.begin(), winding.end(), "thermal.steady_state") != winding.end());
     assert(std::find(winding.begin(), winding.end(), "core.magnetic_properties") == winding.end());
 
