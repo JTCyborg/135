@@ -116,7 +116,13 @@ Result<ConductorMaterialRevisionSnapshot> loadConductorMaterialRevision(
         snapshot.contentHash = revision.contentHash;
         snapshot.sourceReference = revision.sourceReference;
         snapshot.datasetRevision = revision.datasetRevision;
-        snapshot.resistivityStatus = requiredString(quality, "resistivityStatus");
+        // Schema-v1 starter catalog records publish the conductor's
+        // electrical-property quality under electricalPropertiesStatus.
+        // Older imported records used resistivityStatus; accept that exact
+        // legacy field when present, but never synthesize a quality status.
+        snapshot.resistivityStatus = quality.contains("electricalPropertiesStatus")
+            ? requiredString(quality, "electricalPropertiesStatus")
+            : requiredString(quality, "resistivityStatus");
         snapshot.designReleaseStatus = requiredString(quality, "designReleaseStatus");
         snapshot.notes = requiredString(quality, "notes");
 
