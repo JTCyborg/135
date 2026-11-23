@@ -375,6 +375,17 @@ else()
     target_compile_options(Project135RevisionBoundWindingCopperLossTests PRIVATE -UNDEBUG)
 endif()
 
+add_executable(Project135NaturalConvectionTests
+    thermal/natural_convection_tests.cpp
+)
+target_link_libraries(Project135NaturalConvectionTests PRIVATE Project135::Thermal)
+add_test(NAME Project135NaturalConvectionTests COMMAND Project135NaturalConvectionTests)
+if(MSVC)
+    target_compile_options(Project135NaturalConvectionTests PRIVATE /UNDEBUG)
+else()
+    target_compile_options(Project135NaturalConvectionTests PRIVATE -UNDEBUG)
+endif()
+
 add_executable(Project135WindingElectrothermalTests
     thermal/winding_electrothermal_tests.cpp
 )
