@@ -7902,6 +7902,12 @@ void MainWindow::calculateFilter()
             addMaterialReference(capacitorComponent_);
             addMaterialReference(resistorComponent_);
             for (const auto& revisionId : constructionMaterialRevisionIds) {
+                const auto duplicate = std::find_if(
+                    materialReferences.begin(), materialReferences.end(),
+                    [&revisionId](const auto& existing) {
+                        return existing.revisionId == revisionId;
+                    });
+                if (duplicate != materialReferences.end()) continue;
                 materialReferences.push_back({
                     QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString(),
                     revisionId
