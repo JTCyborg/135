@@ -1007,6 +1007,7 @@ private slots:
         auto* coreFluxPlot = window_->findChild<QWidget*>(
             QStringLiteral("resultsCoreFluxPlot"));
         QVERIFY(coreFluxPlot);
+        QVERIFY(coreFluxPlot->property("plotBarChart").toBool());
         const auto fluxCurves = coreFluxPlot->property("plotCurves").toList();
         QCOMPARE(fluxCurves.size(), 7);
         // The graph must contain the seven actual section peaks returned by
