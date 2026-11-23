@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 namespace p135::thermal {
@@ -50,6 +51,36 @@ Result<ReactorThermalNetworkResult> analyzeReactorThermalNetwork(
     networkRequest.links = request.links;
     networkRequest.ambientLinks = request.ambientLinks;
 
+    ReactorThermalNetworkResult result;
+    result.naturalConvectionSurfaces.reserve(request.naturalConvectionSurfaces.size());
+    for (std::size_t i = 0; i < request.naturalConvectionSurfaces.size(); ++i) {
+        const auto& boundary = request.naturalConvectionSurfaces[i];
+        if (boundary.nodeId.empty() || boundary.boundaryModelSourceReference.empty())
+            return fail(ErrorCode::MissingRequiredData,
+                "Every natural-convection surface requires a target node and boundary-model source reference.",
+                "naturalConvectionSurfaces[" + std::to_string(i) + "]");
+
+        const auto convection = std::visit(
+            [](const auto& surfaceRequest) -> Result<NaturalConvectionResult> {
+                using SurfaceRequest = std::decay_t<decltype(surfaceRequest)>;
+                if constexpr (std::is_same_v<SurfaceRequest, VerticalPlateNaturalConvectionRequest>)
+                    return analyzeVerticalPlateNaturalConvection(surfaceRequest);
+                else
+                    return analyzeHorizontalPlateNaturalConvection(surfaceRequest);
+            }, boundary.surface);
+        if (!convection)
+            return Result<ReactorThermalNetworkResult>::failure(convection.error());
+
+        const auto ambientLink = makeNaturalConvectionAmbientLink(
+            boundary.nodeId, convection.value(), boundary.boundaryModelSourceReference);
+        if (!ambientLink)
+            return Result<ReactorThermalNetworkResult>::failure(ambientLink.error());
+
+        networkRequest.ambientLinks.push_back(ambientLink.value());
+        result.naturalConvectionSurfaces.push_back(
+            ReactorNaturalConvectionSurfaceResult{boundary.nodeId, convection.value()});
+    }
+
     for (std::size_t i = 0; i < coreIds.size(); ++i) {
         const auto& region = request.coreLosses.regions[i];
         const double watts = region.totalLoss.si();
@@ -74,7 +105,6 @@ Result<ReactorThermalNetworkResult> analyzeReactorThermalNetwork(
         networkRequest.nodes.push_back(std::move(node));
     }
 
-    ReactorThermalNetworkResult result;
     for (const auto& harmonic : request.windingCopperLosses.harmonicLosses) {
         for (std::size_t phase = 0; phase < 3; ++phase) {
             const double watts = harmonic.phaseLoss[phase].si();
