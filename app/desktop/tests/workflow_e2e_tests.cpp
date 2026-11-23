@@ -1278,6 +1278,24 @@ private slots:
         QVERIFY(historyDetails->toPlainText().contains(QStringLiteral("Graph comparison:")));
         QVERIFY(comparedCurves[0].toMap().value(QStringLiteral("name")).toString() !=
             comparedCurves[1].toMap().value(QStringLiteral("name")).toString());
+        const auto firstCurrentHistoryPoints = comparedCurves[0].toMap()
+            .value(QStringLiteral("points")).toList();
+        const auto secondCurrentHistoryPoints = comparedCurves[1].toMap()
+            .value(QStringLiteral("points")).toList();
+        bool currentHistoryCurvesDiffer = false;
+        const qsizetype currentHistoryCount = std::min(
+            firstCurrentHistoryPoints.size(), secondCurrentHistoryPoints.size());
+        for (qsizetype pointIndex = 0; pointIndex < currentHistoryCount; ++pointIndex) {
+            const auto firstPoint = firstCurrentHistoryPoints[pointIndex].toList();
+            const auto secondPoint = secondCurrentHistoryPoints[pointIndex].toList();
+            if (firstPoint.size() == 2 && secondPoint.size() == 2 &&
+                qAbs(firstPoint[1].toDouble() - secondPoint[1].toDouble()) > 1.0e-6) {
+                currentHistoryCurvesDiffer = true;
+                break;
+            }
+        }
+        QVERIFY2(currentHistoryCurvesDiffer,
+            "History comparison must distinguish different source-impedance scenarios.");
 
         // Repeat the same two-snapshot comparison for the second supported
         // metric so both persisted result arrays are covered by the E2E path.
@@ -1296,6 +1314,24 @@ private slots:
                 QVERIFY(std::isfinite(point[1].toDouble()) && point[1].toDouble() >= 0.0);
             }
         }
+        const auto firstImpedanceHistoryPoints = historyImpedanceCurves[0].toMap()
+            .value(QStringLiteral("points")).toList();
+        const auto secondImpedanceHistoryPoints = historyImpedanceCurves[1].toMap()
+            .value(QStringLiteral("points")).toList();
+        bool impedanceHistoryCurvesDiffer = false;
+        const qsizetype impedanceHistoryCount = std::min(
+            firstImpedanceHistoryPoints.size(), secondImpedanceHistoryPoints.size());
+        for (qsizetype pointIndex = 0; pointIndex < impedanceHistoryCount; ++pointIndex) {
+            const auto firstPoint = firstImpedanceHistoryPoints[pointIndex].toList();
+            const auto secondPoint = secondImpedanceHistoryPoints[pointIndex].toList();
+            if (firstPoint.size() == 2 && secondPoint.size() == 2 &&
+                qAbs(firstPoint[1].toDouble() - secondPoint[1].toDouble()) > 1.0e-6) {
+                impedanceHistoryCurvesDiffer = true;
+                break;
+            }
+        }
+        QVERIFY2(impedanceHistoryCurvesDiffer,
+            "Bus-impedance history comparison must show distinct source scenarios.");
         tabs->setCurrentIndex(4);
         QTRY_COMPARE(tabs->currentIndex(), 4);
 
