@@ -21,7 +21,7 @@ void testHorizontalPlateCorrelations()
     request.unobstructedQuiescentAmbient = true;
 
     const auto upward = analyzeHorizontalPlateNaturalConvection(request);
-    assert(upward.has_value());
+    assert(upward);
     assert(upward.value().rayleighNumber >= 1.0e4);
     assert(upward.value().rayleighNumber <= 1.0e11);
     assert(upward.value().nusseltNumber > 0.0);
@@ -30,7 +30,7 @@ void testHorizontalPlateCorrelations()
 
     request.orientation = HorizontalPlateOrientation::HeatedFaceDownward;
     const auto downward = analyzeHorizontalPlateNaturalConvection(request);
-    if (downward.has_value()) {
+    if (downward) {
         assert(downward.value().rayleighNumber >= 1.0e5);
         assert(downward.value().rayleighNumber <= 1.0e10);
     }
@@ -87,7 +87,7 @@ int main()
         assert(!analyzeVerticalPlateNaturalConvection(invalid));
     }
     {
-        auto invalid = request();
+        auto invalid = request;
         invalid.fluid.prandtlNumber = 1.2;
         assert(!analyzeVerticalPlateNaturalConvection(invalid));
     }
