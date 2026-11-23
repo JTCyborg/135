@@ -11,6 +11,7 @@
 #include <BRepGProp.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepOffsetAPI_MakePipe.hxx>
 #include <gp_Ax2.hxx>
@@ -438,7 +439,14 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                             "OCCT failed to create the circular conductor profile wire.",
                             "windingPack.turns");
-                    BRepOffsetAPI_MakePipe pipe(path.Wire(), profileWireBuilder.Wire());
+                    BRepBuilderAPI_MakeFace profileFaceBuilder(profileWireBuilder.Wire());
+                    if (!profileFaceBuilder.IsDone())
+                        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                            "OCCT failed to create a filled circular conductor profile.",
+                            "windingPack.turns");
+                    // A wire profile produces only a swept shell. Use a filled
+                    // circular face so MakePipe constructs the actual conductor solid.
+                    BRepOffsetAPI_MakePipe pipe(path.Wire(), profileFaceBuilder.Face());
                     pipe.Build();
                     if (!pipe.IsDone() || pipe.Shape().IsNull() ||
                         !BRepCheck_Analyzer(pipe.Shape()).IsValid())
@@ -449,7 +457,8 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     for (TopExp_Explorer it(pipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++solids;
                     if (solids != 1)
                         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                            "Each round conductor turn must be one connected solid.",
+                            "Each round conductor turn must be one connected solid; OCCT produced " +
+                                std::to_string(solids) + " solids.",
                             "windingPack.turns");
                     builder.Add(turns, pipe.Shape());
                 }
