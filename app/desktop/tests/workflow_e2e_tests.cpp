@@ -782,6 +782,20 @@ private slots:
         sourceResistance->setValue(0.25);
         sourceInductance->setValue(1.2);
 
+        // Supply an explicit fifth-harmonic load-current injection so the
+        // Construction-bound magnetic bridge receives a real branch harmonic
+        // result rather than silently exercising only the fundamental.
+        auto* loadCurrentHarmonics = window_->findChild<QTableWidget*>(
+            QStringLiteral("filterLoadCurrentHarmonics"));
+        QVERIFY(loadCurrentHarmonics);
+        loadCurrentHarmonics->setRowCount(1);
+        loadCurrentHarmonics->setColumnCount(5);
+        loadCurrentHarmonics->setItem(0, 0, new QTableWidgetItem(QStringLiteral("E2E-LOAD-1")));
+        loadCurrentHarmonics->setItem(0, 1, new QTableWidgetItem(QStringLiteral("5")));
+        loadCurrentHarmonics->setItem(0, 2, new QTableWidgetItem(QStringLiteral("Negative")));
+        loadCurrentHarmonics->setItem(0, 3, new QTableWidgetItem(QStringLiteral("3.25")));
+        loadCurrentHarmonics->setItem(0, 4, new QTableWidgetItem(QStringLiteral("-15.0")));
+
         // Explicit synthetic magnetic inputs exercise the real coupled
         // three-limb operating-point solver and its Results chart. These are
         // regression-fixture values only, not manufacturer material data or
