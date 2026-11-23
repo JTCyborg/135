@@ -706,7 +706,9 @@ int main()
     assert(partiallyBlocked);
     const auto partialXFace = std::find_if(
         partiallyBlocked.value().begin(), partiallyBlocked.value().end(),
-        [](const auto& face) { return face.faceIndex == 3; });
+        [positiveXFaceIndex](const auto& face) {
+            return face.faceIndex == positiveXFaceIndex;
+        });
     assert(partialXFace != partiallyBlocked.value().end());
     assert(partialXFace->visibility == p135::cad::WindingFaceVisibility::PartiallyOccluded);
     assert(partialXFace->visibleFraction > 0.0 && partialXFace->visibleFraction < 1.0);
