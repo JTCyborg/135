@@ -754,8 +754,8 @@ int main()
     }
     assert(detailedSolidCount == 160);
 
-    // Round-wire fixture: a circular insulated profile swept around each
-    // rectangular turn path. Vary turns/layers from the rectangular fixture.
+    // Round-wire fixture: continuous four-sided helical paths with independent
+    // copper and insulation solids. Vary turns/layers from the rectangular fixture.
     auto roundWinding = geometry.windingPacks[0];
     roundWinding.sections = 1;
     roundWinding.layerCount = 2;
@@ -779,7 +779,7 @@ int main()
         BRepGProp::VolumeProperties(it.Current(), properties);
         assert(std::isfinite(properties.Mass()) && properties.Mass() > 0.0);
     }
-    assert(roundSolidCount == 8);
+    assert(roundSolidCount == 4); // Two layers x (copper + insulation).
 
     auto roundGeometry = geometry;
     for (auto& winding : roundGeometry.windingPacks) {
@@ -798,9 +798,11 @@ int main()
     assert(roundPresentation);
     const auto roundDisplayItems =
         p135::cad::collectAssemblyPresentationDisplayItems(roundPresentation.value());
-    assert(roundDisplayItems.size() == 7 + 3 + 3 * 8);
+    assert(roundDisplayItems.size() == 7 + 3 + 3 * 4);
     assert(std::any_of(roundDisplayItems.begin(), roundDisplayItems.end(),
-        [](const auto& item) { return item.id == "winding.L1.layer.1.turn.1.conductor.1"; }));
+        [](const auto& item) { return item.id == "winding.L1.layer.1.parallel.1.copper"; }));
+    assert(std::any_of(roundDisplayItems.begin(), roundDisplayItems.end(),
+        [](const auto& item) { return item.id == "winding.L1.layer.1.parallel.1.insulation"; }));
 
     auto detailedGeometry = geometry;
     for (auto& winding : detailedGeometry.windingPacks) {
