@@ -7224,6 +7224,33 @@ void MainWindow::calculateFilter()
         }
     }
 
+        // Preserve fractional series tuning points that do not coincide with
+        // integer harmonic markers. Coincident markers share one annotation.
+        for (const auto& filterBranch : result.value().branches) {
+            const double tuningOrder = filterBranch.tuningHarmonicOrder;
+            if (!std::isfinite(tuningOrder) || tuningOrder <= 0.0)
+                continue;
+            const double tuningFrequencyHz = fundamentalFrequency_->value() * tuningOrder;
+            if (tuningFrequencyHz < startHz || tuningFrequencyHz > stopHz)
+                continue;
+
+            const auto coincidentMarker = std::find_if(
+                canonicalHarmonicMarkers.begin(), canonicalHarmonicMarkers.end(),
+                [tuningFrequencyHz](const PlotMarker& marker) {
+                    return std::abs(marker.frequencyHz - tuningFrequencyHz) <=
+                        std::max(1.0e-6, tuningFrequencyHz * 1.0e-9);
+                });
+            const QString tuningLabel = tr("series tune h=%1")
+                .arg(tuningOrder, 0, 'g', 6);
+            if (coincidentMarker != canonicalHarmonicMarkers.end()) {
+                coincidentMarker->label += QStringLiteral(" · ") + tuningLabel;
+            } else {
+                canonicalHarmonicMarkers.push_back(PlotMarker{
+                    tuningFrequencyHz, tuningLabel
+                });
+            }
+        }
+
     // The transfer curve is derived only from explicitly entered load-current
     // injections. A zero/absent load harmonic has no meaningful I_grid/I_load ratio
     // and is intentionally omitted rather than displayed as zero attenuation.
@@ -7720,8 +7747,26 @@ void MainWindow::calculateFilter()
         QJsonObject resultSnapshot;
         resultSnapshot.insert(QStringLiteral("results"), outputSnapshot);
         resultSnapshot.insert(QStringLiteral("calculationSummary"), calculationSummary);
-        resultSnapshot.insert(QStringLiteral("plotDataVersion"), 3);
-    resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
+        resultSnapshot.insert(QStringLiteral("plotDataVersion"), 4);
+        QJsonArray impedanceMarkerSnapshot;
+        for (const auto& marker : canonicalHarmonicMarkers) {
+            QJsonObject item;
+            item.insert(QStringLiteral("frequency_Hz"), marker.frequencyHz);
+            item.insert(QStringLiteral("label"), marker.label);
+            impedanceMarkerSnapshot.append(item);
+        }
+        resultSnapshot.insert(QStringLiteral("impedanceFrequencyMarkers"), impedanceMarkerSnapshot);
+        QJsonArray impedanceBandSnapshot;
+        for (const auto& band : resonanceBands) {
+            QJsonObject item;
+            item.insert(QStringLiteral("startFrequency_Hz"), band.startHz);
+            item.insert(QStringLiteral("stopFrequency_Hz"), band.stopHz);
+            item.insert(QStringLiteral("label"), band.label);
+            item.insert(QStringLiteral("amplification"), band.amplification);
+            impedanceBandSnapshot.append(item);
+        }
+        resultSnapshot.insert(QStringLiteral("impedanceEngineeringBands"), impedanceBandSnapshot);
+        resultSnapshot.insert(QStringLiteral("frequencySweep"), frequencySweepSnapshot);
         resultSnapshot.insert(QStringLiteral("impedanceScan"), impedanceScanSnapshot);
         resultSnapshot.insert(QStringLiteral("harmonicCurrentTransfer"), harmonicTransferSnapshot);
         resultSnapshot.insert(QStringLiteral("voltageHarmonicSpectrum"), voltageSpectrumSnapshot);
