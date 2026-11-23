@@ -880,8 +880,12 @@ private slots:
             .value(QStringLiteral("points")).toList();
         const auto gridImpedancePoints = impedanceCurves[1].toMap()
             .value(QStringLiteral("points")).toList();
-        QCOMPARE(impedancePoints.size(), 501);
-        QCOMPARE(gridImpedancePoints.size(), 501);
+        QCOMPARE(impedancePoints.size(), 1001);
+        QCOMPARE(gridImpedancePoints.size(), 1001);
+        QVERIFY(impedancePoints.front().toList()[0].toDouble() == 10.0);
+        QVERIFY(impedancePoints.back().toList()[0].toDouble() >= 2500.0);
+        const auto canonicalMarkers = impedancePlot->property("plotFrequencyMarkers").toList();
+        QCOMPARE(canonicalMarkers.size(), 9);
         QVERIFY(impedanceCurves[1].toMap().value(QStringLiteral("dashed")).toBool());
         for (std::size_t sample = 0; sample < impedancePoints.size(); ++sample) {
             const auto point = impedancePoints[static_cast<qsizetype>(sample)].toList();
