@@ -1010,6 +1010,27 @@ private slots:
             QStringLiteral("busImpedancePlotTitle"));
         QVERIFY(busTitle);
         QVERIFY(busTitle->text().contains(QStringLiteral("source/filter frequency scan")));
+        auto* coreWaveformPlot = window_->findChild<QWidget*>(
+            QStringLiteral("resultsCoreFluxWaveformPlot"));
+        QVERIFY(coreWaveformPlot);
+        const auto waveformCurves = coreWaveformPlot->property("plotCurves").toList();
+        QCOMPARE(waveformCurves.size(), 7);
+        for (const auto& curveValue : waveformCurves) {
+            const auto curve = curveValue.toMap();
+            const auto points = curve.value(QStringLiteral("points")).toList();
+            QVERIFY(points.size() >= 72);
+            QCOMPARE(points.front().toList()[0].toDouble(), 0.0);
+            for (const auto& pointValue : points) {
+                const auto point = pointValue.toList();
+                QCOMPARE(point.size(), 2);
+                QVERIFY(std::isfinite(point[1].toDouble()));
+            }
+        }
+        auto* coreWaveformTitle = window_->findChild<QLabel*>(
+            QStringLiteral("coreFluxWaveformPlotTitle"));
+        QVERIFY(coreWaveformTitle);
+        QVERIFY(coreWaveformTitle->text().contains(QStringLiteral("samples")));
+
         auto* coreFluxTitle = window_->findChild<QLabel*>(
             QStringLiteral("coreFluxPlotTitle"));
         QVERIFY(coreFluxTitle);
@@ -1074,6 +1095,8 @@ private slots:
             artifactProjectId + QStringLiteral("_current_harmonic_spectrum.png")));
         const QFileInfo coreFluxPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_core_flux.png")));
+        const QFileInfo coreFluxWaveformPng(artifactRoot.filePath(
+            artifactProjectId + QStringLiteral("_core_flux_waveform.png")));
         const QFileInfo materialBhPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_material_bh.png")));
         auto* historyPlot = window_->findChild<QWidget*>(
@@ -1081,17 +1104,18 @@ private slots:
         QVERIFY(historyPlot);
         const QFileInfo historyPng(artifactRoot.filePath(
             artifactProjectId + QStringLiteral("_history_comparison.png")));
-        const std::array<QFileInfo, 8> plotFiles{
+        const std::array<QFileInfo, 9> plotFiles{
             currentPng, impedancePng, harmonicTransferPng, voltageSpectrumPng,
-            currentSpectrumPng, coreFluxPng, materialBhPng, historyPng
+            currentSpectrumPng, coreFluxPng, coreFluxWaveformPng, materialBhPng, historyPng
         };
-        const std::array<QWidget*, 8> plotWidgets{
+        const std::array<QWidget*, 9> plotWidgets{
             window_->findChild<QWidget*>(QStringLiteral("resultsBankCurrentPlot")),
             window_->findChild<QWidget*>(QStringLiteral("resultsBusImpedancePlot")),
             harmonicTransferPlot,
             voltageSpectrumPlot,
             currentSpectrumPlot,
             coreFluxPlot,
+            coreWaveformPlot,
             window_->findChild<QWidget*>(QStringLiteral("resultsMaterialBhPlot")),
             historyPlot
         };
