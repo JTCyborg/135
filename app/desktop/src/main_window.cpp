@@ -666,6 +666,7 @@ protected:
                 })))
             .arg(minX, 0, 'g', 4).arg(maxX, 0, 'g', 4)
             .arg(minY, 0, 'g', 4).arg(maxY, 0, 'g', 4);
+        setProperty("plotAxisSummary", rangeSummary);
         painter.drawText(QRectF(area.left() + 4, 27, area.width() - 8, 16),
             Qt::AlignLeft | Qt::AlignVCenter, rangeSummary);
         const auto xPixel = [&area, &xFraction](double value) {
@@ -8339,8 +8340,6 @@ void MainWindow::calculateFilter()
         resultsHarmonicTransferPlot_->setCurves(harmonicTransferCurves,
             tr("Frequency (Hz, logarithmic)"), tr("|I_grid,h / I_load,h| (p.u.)"), true,
             harmonicTransferCurves.empty() ? harmonicTransferEmptyMessage : QString{});
-        resultsHarmonicTransferPlot_->setHorizontalReference(
-            1.0, tr("Unity transfer: K_I = 1.0 p.u."));
     }
     if (resultsVoltageSpectrumPlot_) {
         resultsVoltageSpectrumPlot_->setCurves(voltageSpectrumCurves,
