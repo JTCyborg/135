@@ -941,6 +941,14 @@ private slots:
         QCOMPARE(transferPoint[0].toDouble(), 250.0);
         QVERIFY(std::isfinite(transferPoint[1].toDouble()));
         QVERIFY(transferPoint[1].toDouble() >= 0.0);
+        const double harmonicOmega = 2.0 * std::acos(-1.0) * 250.0;
+        const std::complex<double> harmonicSourceZ{sourceR, harmonicOmega * sourceL};
+        const std::complex<double> harmonicFilterZ{
+            branchR, harmonicOmega * branchL - 1.0 / (harmonicOmega * branchC)
+        };
+        const double expectedGridToLoadRatio =
+            1.0 / std::abs(1.0 + harmonicSourceZ / harmonicFilterZ);
+        QVERIFY(qAbs(transferPoint[1].toDouble() - expectedGridToLoadRatio) < 1.0e-9);
         const auto unityPoints = transferCurves[1].toMap()
             .value(QStringLiteral("points")).toList();
         QCOMPARE(unityPoints.size(), 1);
