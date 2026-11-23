@@ -733,6 +733,7 @@ int main()
     // two parallel conductors per turn. Every conductor path must remain an
     // independently selectable, valid solid (not one fused winding envelope).
     auto detailedWinding = geometry.windingPacks[0];
+    detailedWinding.sections = 1;
     detailedWinding.turns = 80;
     detailedWinding.turnsPerLayer = 10;
     detailedWinding.parallelConductors = 2;
@@ -755,6 +756,7 @@ int main()
 
     auto detailedGeometry = geometry;
     for (auto& winding : detailedGeometry.windingPacks) {
+        winding.sections = 1;
         winding.turns = 80;
         winding.turnsPerLayer = 10;
         winding.parallelConductors = 2;
