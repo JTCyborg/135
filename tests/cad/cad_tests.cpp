@@ -615,6 +615,9 @@ int main()
     assert(windingFaces.value().size() >= 10);
     double extractedFaceArea = 0.0;
     std::size_t planarFaceCount = 0;
+    std::size_t outerLateralCount = 0;
+    std::size_t innerCavityCount = 0;
+    std::size_t axialEndCount = 0;
     for (const auto& face : windingFaces.value()) {
         assert(face.areaMm2 > 0.0);
         assert(std::isfinite(face.centroidMm[0]));
@@ -632,8 +635,24 @@ int main()
             assert(std::abs(normalLength - 1.0) < 1.0e-9);
             ++planarFaceCount;
         }
+        switch (face.role) {
+        case p135::cad::WindingEnvelopeFaceRole::OuterLateral:
+            ++outerLateralCount;
+            break;
+        case p135::cad::WindingEnvelopeFaceRole::InnerCavity:
+            ++innerCavityCount;
+            break;
+        case p135::cad::WindingEnvelopeFaceRole::AxialEnd:
+            ++axialEndCount;
+            break;
+        case p135::cad::WindingEnvelopeFaceRole::Other:
+            break;
+        }
     }
     assert(planarFaceCount >= 10);
+    assert(outerLateralCount == 4);
+    assert(innerCavityCount == 4);
+    assert(axialEndCount == 2);
     assert(extractedFaceArea > 0.0);
     assert(!p135::cad::extractWindingEnvelopeFaceGeometry(TopoDS_Shape{}));
 
