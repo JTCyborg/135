@@ -18,6 +18,7 @@
 #include <gp_Circ.hxx>
 #include <gp_Dir.hxx>
 #include <TopoDS_Wire.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopAbs_ShapeEnum.hxx>
@@ -452,7 +453,7 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                         "OCCT failed to create a continuous four-sided helical winding path.",
                         "windingPack.helicalPath");
 
-                const gp_Vec tangent(previous.X() + 2.0 * halfX * mm,
+                const gp_Vec tangent(2.0 * halfX * mm,
                     turnsPerLayerPitch * 0.25 * mm, 0.0);
                 const gp_Pnt profileOrigin(
                     -halfX * mm, firstY * mm, -halfZ * mm);
