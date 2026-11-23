@@ -8574,12 +8574,15 @@ void MainWindow::calculateFilter()
             corePlotTooltip = coreEmptyMessage;
         }
 
+        // The operating-point branch contains one measured value per physical
+        // core section, not a continuous curve. Render it as a grouped categorical
+        // bar chart so all seven section peaks are directly comparable.
         resultsCoreFluxPlot_->setCurves(std::move(coreCurves),
             logarithmicCoreAxis
                 ? tr("Frequency (Hz, logarithmic)")
                 : tr("Core section index (see legend)"),
             tr("Peak flux density |B| (T)"),
-            logarithmicCoreAxis, coreEmptyMessage);
+            logarithmicCoreAxis, coreEmptyMessage, !logarithmicCoreAxis);
         resultsCoreFluxPlot_->setToolTip(corePlotTooltip);
         if (auto* title = findChild<QLabel*>(QStringLiteral("coreFluxPlotTitle"))) {
             title->setText(corePlotTitle);
