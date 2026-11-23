@@ -148,6 +148,35 @@ int main()
         assert(boundary.value().preliminaryModel);
     }
     {
+        NaturalConvectionResult vertical;
+        vertical.thermalResistanceKPerW = 2.0;
+        vertical.correlation = "vertical-test";
+        vertical.geometrySourceReference = "vertical-face:geometry-r1";
+        vertical.fluidPropertiesSourceReference = "air:film-r1";
+        vertical.status = "PRELIMINARY";
+        NaturalConvectionResult topFace;
+        topFace.thermalResistanceKPerW = 4.0;
+        topFace.correlation = "horizontal-test";
+        topFace.geometrySourceReference = "top-face:geometry-r1";
+        topFace.fluidPropertiesSourceReference = "air:film-r1";
+        topFace.status = "PRELIMINARY";
+        const auto sideLink =
+            makeNaturalConvectionAmbientLink("A", vertical, "surface-boundary:r1");
+        const auto topLink =
+            makeNaturalConvectionAmbientLink("A", topFace, "surface-boundary:r1");
+        assert(sideLink && topLink);
+
+        ThermalNetworkRequest request;
+        request.nodes = {node("A", 3.0, 330.0)};
+        request.ambientLinks = {sideLink.value(), topLink.value()};
+        const auto result = analyzeThermalNetwork(request);
+        assert(result);
+        // Parallel surface paths: G_total = 1/2 + 1/4 = 0.75 W/K.
+        assert(std::abs(result.value().nodes.front().estimatedTemperature.si() -
+                        (293.15 + 3.0 / 0.75)) < 1.0e-9);
+        assert(result.value().nodes.front().status == AssessmentStatus::NotVerified);
+    }
+    {
         NaturalConvectionResult invalidConvection;
         invalidConvection.thermalResistanceKPerW = 0.0;
         assert(!makeNaturalConvectionAmbientLink("A", invalidConvection, "boundary:rev-1"));
