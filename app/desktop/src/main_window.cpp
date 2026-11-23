@@ -815,7 +815,7 @@ protected:
         }
 
         if (horizontalReference_ && std::isfinite(horizontalReference_->first) &&
-            horizontalReference_->first >= dataYMin && horizontalReference_->first <= yMax) {
+            horizontalReference_->first >= dataYMin && horizontalReference_->first <= dataYMax) {
             const double y = yPixel(horizontalReference_->first);
             painter.setPen(QPen(QColor(175, 105, 25), 1.5, Qt::DashLine));
             painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
