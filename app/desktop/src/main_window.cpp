@@ -7906,9 +7906,11 @@ void MainWindow::calculateFilter()
         if (windingCopperLossResult) {
             const auto& windingLoss = *windingCopperLossResult;
             windingCopperLossSnapshot.insert(QStringLiteral("status"),
-                windingLoss.conductorMaterialRevision.designReleaseStatus == "VERIFIED"
-                    ? QStringLiteral("CALCULATED_MATERIAL_RELEASED_AC_EFFECTS_EXCLUDED")
-                    : QStringLiteral("CALCULATED_MATERIAL_NOT_VERIFIED_AC_EFFECTS_EXCLUDED"));
+                QStringLiteral("PRELIMINARY_NOT_VERIFIED_AC_EFFECTS_EXCLUDED"));
+            windingCopperLossSnapshot.insert(QStringLiteral("materialDesignReleaseStatus"),
+                QString::fromStdString(windingLoss.conductorMaterialRevision.designReleaseStatus));
+            windingCopperLossSnapshot.insert(QStringLiteral("meanTurnLengthMethod"),
+                QStringLiteral("RECTANGULAR_MEAN_PERIMETER_FROM_BOBBIN_APERTURE_WALL_AND_RADIAL_BUILD"));
             windingCopperLossSnapshot.insert(QStringLiteral("conductorMaterialRevisionId"),
                 QString::fromStdString(windingLoss.conductorMaterialRevision.revisionId));
             windingCopperLossSnapshot.insert(QStringLiteral("conductorMaterialContentHash"),
@@ -8312,7 +8314,8 @@ void MainWindow::calculateFilter()
             tr("Harmonic order h"), tr("Three-phase copper loss (W)"), false,
             emptyMessage, true);
         resultsWindingCopperLossPlot_->setToolTip(tr(
-            "Exact conductor revision: %1. Temperature-corrected DC resistance at the accepted ambient temperature. "
+            "PRELIMINARY rectangular mean-turn-length estimate. Exact conductor revision: %1. "
+            "Temperature-corrected DC resistance at the accepted ambient temperature. "
             "Skin, proximity, circulating-current, lead and joint losses are excluded. "
             "Material release status: %2.")
             .arg(windingCopperLossResult
@@ -8582,7 +8585,7 @@ void MainWindow::calculateFilter()
             visibleWarnings.push_back(tr("Winding copper loss uses exact conductor revision %1, but its design-release status is %2. The result is NOT_VERIFIED.")
                 .arg(QString::fromStdString(windingCopperLossResult->conductorMaterialRevision.revisionId),
                      QString::fromStdString(windingCopperLossResult->conductorMaterialRevision.designReleaseStatus)));
-        visibleWarnings.push_back(tr("Winding copper loss is a temperature-corrected DC I²R model only; skin, proximity, circulating-current, lead/joint and core losses are excluded."));
+        visibleWarnings.push_back(tr("Winding copper loss is PRELIMINARY: mean turn length uses a rectangular bobbin/winding-envelope estimate. The model is temperature-corrected DC I²R only; skin, proximity, circulating-current, lead/joint and core losses are excluded."));
     } else if (!windingCopperLossWarning.isEmpty()) {
         visibleWarnings.push_back(windingCopperLossWarning);
     }
