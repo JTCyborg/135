@@ -307,7 +307,9 @@ Result<ThermalAmbientLink> makeNaturalConvectionAmbientLink(
         ";geometry=" + convection.geometrySourceReference +
         ";fluid=" + convection.fluidPropertiesSourceReference +
         ";boundary=" + boundaryModelSourceReference;
-    link.preliminaryModel = convection.status != "VERIFIED";
+    // Current natural-convection correlations are research estimates only;
+    // caller-supplied status text cannot promote them to a verified boundary.
+    link.preliminaryModel = true;
     return Result<ThermalAmbientLink>::success(std::move(link));
 }
 
