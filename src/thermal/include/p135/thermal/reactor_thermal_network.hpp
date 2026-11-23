@@ -5,13 +5,25 @@
 #include "p135/domain/core_loss.hpp"
 #include "p135/domain/winding_electrical.hpp"
 #include "p135/thermal/thermal_network.hpp"
+#include "p135/thermal/natural_convection.hpp"
 
 #include <array>
 #include <optional>
 #include <string>
 #include <vector>
+#include <variant>
 
 namespace p135::thermal {
+
+/// One explicitly described exposed reactor surface. The selected isolated-plate
+/// correlation is evaluated by the reactor network adapter; the surface is
+/// never inferred from the reactor CAD or nominal cooling method.
+struct ReactorNaturalConvectionSurfaceBoundary {
+    std::string nodeId;
+    std::variant<VerticalPlateNaturalConvectionRequest,
+                 HorizontalPlateNaturalConvectionRequest> surface;
+    std::string boundaryModelSourceReference;
+};
 
 /// Thermal boundary conditions and explicit network topology. No values are
 /// inferred from material, geometry, or a nominal cooling method.
@@ -23,6 +35,7 @@ struct ReactorThermalNetworkConfiguration {
     std::array<std::string, 3> windingTemperatureLimitSourceReferences{};
     std::vector<ThermalConductanceLink> links;
     std::vector<ThermalAmbientLink> ambientLinks;
+    std::vector<ReactorNaturalConvectionSurfaceBoundary> naturalConvectionSurfaces;
 };
 
 struct ReactorThermalNetworkRequest : ReactorThermalNetworkConfiguration {
@@ -40,14 +53,21 @@ struct ReactorThermalNetworkRequest : ReactorThermalNetworkConfiguration {
     std::string conductorMaterialDesignReleaseStatus;
 };
 
+struct ReactorNaturalConvectionSurfaceResult {
+    std::string nodeId;
+    NaturalConvectionResult convection;
+};
+
 struct ReactorThermalNetworkResult {
     ThermalNetworkResult network;
     std::array<units::Power, 3> phaseWindingLosses{};
+    std::vector<ReactorNaturalConvectionSurfaceResult> naturalConvectionSurfaces;
 };
 
-/// Builds seven core-region and three phase-winding thermal nodes and solves
-/// the explicitly supplied coupled conductance network. It does not infer
-/// conductances, cooling paths, limits, or material release state.
+/// Builds seven core-region and three phase-winding thermal nodes, evaluates
+/// every explicitly supplied isolated-plate surface, converts its R-theta to
+/// an ambient link, and solves the coupled conductance network. It does not
+/// infer surface geometry, fluid properties, cooling paths, limits, or release state.
 [[nodiscard]] Result<ReactorThermalNetworkResult> analyzeReactorThermalNetwork(
     const ReactorThermalNetworkRequest& request);
 
