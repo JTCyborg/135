@@ -148,9 +148,7 @@ analyzeWindingEnvelopeFaceVisibility(
                 BRepClass_FaceClassifier classifier(face, gp_Pnt2d(u, v), options.geometricToleranceMm);
                 if (classifier.State() != TopAbs_IN && classifier.State() != TopAbs_ON) continue;
 
-                gp_Pnt point;
-                gp_Vec sampleDu, sampleDv;
-                surface.D1(u, v, point, sampleDu, sampleDv);
+                const gp_Pnt point = surface.Value(u, v);
                 const gp_Pnt rayOrigin = point.Translated(normal * options.rayStartOffsetMm);
                 const gp_Lin ray(rayOrigin, gp_Dir(normal));
                 bool blocked = false;
