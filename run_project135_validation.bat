@@ -195,7 +195,7 @@ echo.>>"%LOG%"
 echo [RUN] Update target branch %TARGET_BRANCH%>>"%LOG%"
 rem Execute Git through PowerShell so its native exit code is propagated
 rem explicitly to CMD; this avoids stale ERRORLEVEL state in batch control flow.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "& git pull --ff-only origin '%TARGET_BRANCH%'; exit $LASTEXITCODE" >>"%LOG%" 2>&1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "git pull --ff-only origin %TARGET_BRANCH%; exit $LASTEXITCODE" >>"%LOG%" 2>&1
 if errorlevel 1 (
     echo [FAIL] Update target branch %TARGET_BRANCH% (Git returned a nonzero exit code)
     echo [FAIL] Update target branch %TARGET_BRANCH% (Git returned a nonzero exit code)>>"%LOG%"
