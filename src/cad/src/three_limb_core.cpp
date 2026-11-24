@@ -1,4 +1,5 @@
 #include "p135/cad/three_limb_core.hpp"
+#include <sstream>
 
 #include <BRep_Builder.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -714,10 +715,22 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 std::size_t copperSolids = 0, insulationSolids = 0;
                 for (TopExp_Explorer it(copperShape, TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
                 for (TopExp_Explorer it(insulationCut.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
-                if (copperSolids != 1 || insulationSolids != 1)
+                if (copperSolids != 1 || insulationSolids != 1) {
+                    GProp_GProps copperDiagnosticVolume;
+                    GProp_GProps insulationDiagnosticVolume;
+                    BRepGProp::VolumeProperties(copperShape, copperDiagnosticVolume);
+                    BRepGProp::VolumeProperties(insulationCut.Shape(), insulationDiagnosticVolume);
+                    std::ostringstream diagnostic;
+                    diagnostic << "Rounded helical path topology mismatch: copper solids="
+                        << copperSolids << ", insulation solids=" << insulationSolids
+                        << ", copper volume=" << copperDiagnosticVolume.Mass()
+                        << " mm^3, insulation volume=" << insulationDiagnosticVolume.Mass()
+                        << " mm^3, copper shape type=" << static_cast<int>(copperShape.ShapeType())
+                        << ", insulation shape type="
+                        << static_cast<int>(insulationCut.Shape().ShapeType()) << '.';
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Each rounded helical path must produce one copper solid and one separate insulation solid.",
-                        "windingPack.helicalSolids");
+                        diagnostic.str(), "windingPack.helicalSolids");
+                }
 
                 // Audit the swept section over the complete path (all four
                 // straight sides and all four rounded corners). A constant
