@@ -194,15 +194,18 @@ echo [RUN] Update target branch %TARGET_BRANCH%
 echo.>>"%LOG%"
 echo [RUN] Update target branch %TARGET_BRANCH%>>"%LOG%"
 git pull --ff-only origin "%TARGET_BRANCH%" >>"%LOG%" 2>&1
-set "PULL_RC=!ERRORLEVEL!"
-if not "!PULL_RC!"=="0" (
-    echo [FAIL] Update target branch %TARGET_BRANCH% (Git exit !PULL_RC!)
-    echo [FAIL] Update target branch %TARGET_BRANCH% (Git exit !PULL_RC!)>>"%LOG%"
-    set "OVERALL=FAILED"
-    goto STOP_WITH_LOCAL_LOG
-)
+if errorlevel 1 goto PULL_TARGET_FAILED
 echo [PASS] Update target branch %TARGET_BRANCH%
 echo [PASS] Update target branch %TARGET_BRANCH%>>"%LOG%"
+goto PULL_TARGET_DONE
+
+:PULL_TARGET_FAILED
+echo [FAIL] Update target branch %TARGET_BRANCH% (Git returned a non-zero exit code)
+echo [FAIL] Update target branch %TARGET_BRANCH% (Git returned a non-zero exit code)>>"%LOG%"
+set "OVERALL=FAILED"
+goto STOP_WITH_LOCAL_LOG
+
+:PULL_TARGET_DONE
 
 rem Record and test the exact feature-branch commit after fast-forward update.
 rem Use a file for the hash instead of a FOR command; this avoids CMD parser
