@@ -563,26 +563,18 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "OCCT failed to wrap the interpolated spline into a sweep wire.",
                         "windingPack.helicalPath");
 
-                // A swept wire produces only a lateral shell with open ends.
-                // PipeShell must receive filled circular faces to cap the ends
-                // and construct closed solids; the enamel annulus is then made
-                // by subtracting the copper solid from the insulated outer solid.
-                BRepBuilderAPI_MakeFace copperProfileFace(copperProfile);
-                BRepBuilderAPI_MakeFace insulationProfileFace(insulationProfile);
-                if (!copperProfileFace.IsDone() || !insulationProfileFace.IsDone())
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to create filled circular faces for the copper/insulation sweep.",
-                        "windingPack.helicalProfile");
-
+                // PipeShell sections are closed wires, not faces. A closed
+                // circular wire is the supported section type; MakeSolid()
+                // caps the resulting sweep when the section is closed.
                 BRepOffsetAPI_MakePipeShell copperSweep(pathWire.Wire());
                 copperSweep.SetMode(false); // corrected Frenet trihedron
-                copperSweep.Add(copperProfileFace.Face(), false, false);
+                copperSweep.Add(copperProfile, false, false);
                 copperSweep.Build();
                 const bool copperSolidBuilt = copperSweep.IsDone() && copperSweep.MakeSolid();
 
                 BRepOffsetAPI_MakePipeShell insulationSweep(pathWire.Wire());
                 insulationSweep.SetMode(false); // corrected Frenet trihedron
-                insulationSweep.Add(insulationProfileFace.Face(), false, false);
+                insulationSweep.Add(insulationProfile, false, false);
                 insulationSweep.Build();
                 const bool insulationSolidBuilt =
                     insulationSweep.IsDone() && insulationSweep.MakeSolid();
