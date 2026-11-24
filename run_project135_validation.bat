@@ -188,12 +188,21 @@ if /I not "%CURRENT_BRANCH%"=="%TARGET_BRANCH%" (
     set "CURRENT_BRANCH=%TARGET_BRANCH%"
 )
 
-set "RUN_CMD=git pull --ff-only origin %TARGET_BRANCH%"
-call :RUN "Update target branch %TARGET_BRANCH%"
-if errorlevel 1 (
+rem Run pull directly (without CALL :RUN). Git for Windows can return through
+rem nested batch CALL with a stale ERRORLEVEL on some CMD/PowerShell launches.
+echo [RUN] Update target branch %TARGET_BRANCH%
+echo.>>"%LOG%"
+echo [RUN] Update target branch %TARGET_BRANCH%>>"%LOG%"
+git pull --ff-only origin "%TARGET_BRANCH%" >>"%LOG%" 2>&1
+set "PULL_RC=%ERRORLEVEL%"
+if not "%PULL_RC%"=="0" (
+    echo [FAIL] Update target branch %TARGET_BRANCH% (exit %PULL_RC%)
+    echo [FAIL] Update target branch %TARGET_BRANCH% (exit %PULL_RC%)>>"%LOG%"
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
+echo [PASS] Update target branch %TARGET_BRANCH%
+echo [PASS] Update target branch %TARGET_BRANCH%>>"%LOG%"
 
 rem Record and test the exact feature-branch commit after fast-forward update.
 rem Use a file for the hash instead of a FOR command; this avoids CMD parser
