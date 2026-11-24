@@ -646,6 +646,13 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         diagnostic = "Closed shell could not be oriented as a finite material solid.";
                         return false;
                     }
+                    // OrientClosedSolid repairs shell face orientation, but the
+                    // TopoDS_Solid wrapper can still carry REVERSED orientation
+                    // inherited from the sewn shell. Boolean algorithms interpret
+                    // that wrapper as the complementary region. A material solid
+                    // must itself have FORWARD orientation.
+                    if (orientedSolid.Orientation() != TopAbs_FORWARD)
+                        orientedSolid.Reverse();
                     solid = orientedSolid;
                     if (!BRepCheck_Analyzer(solid).IsValid()) {
                         diagnostic = "Sewn solid failed BRepCheck.";
