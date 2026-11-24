@@ -717,16 +717,21 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 for (TopExp_Explorer it(insulationCut.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
                 if (copperSolids != 1 || insulationSolids != 1) {
                     GProp_GProps copperDiagnosticVolume;
+                    GProp_GProps outerInsulationDiagnosticVolume;
                     GProp_GProps insulationDiagnosticVolume;
                     BRepGProp::VolumeProperties(copperShape, copperDiagnosticVolume);
+                    BRepGProp::VolumeProperties(insulationOuterShape, outerInsulationDiagnosticVolume);
                     BRepGProp::VolumeProperties(insulationCut.Shape(), insulationDiagnosticVolume);
                     std::ostringstream diagnostic;
                     diagnostic << "Rounded helical path topology mismatch: copper solids="
                         << copperSolids << ", insulation solids=" << insulationSolids
                         << ", copper volume=" << copperDiagnosticVolume.Mass()
-                        << " mm^3, insulation volume=" << insulationDiagnosticVolume.Mass()
+                        << " mm^3, outer insulation volume=" << outerInsulationDiagnosticVolume.Mass()
+                        << " mm^3, insulation-after-cut volume=" << insulationDiagnosticVolume.Mass()
                         << " mm^3, copper shape type=" << static_cast<int>(copperShape.ShapeType())
-                        << ", insulation shape type="
+                        << ", outer insulation shape type="
+                        << static_cast<int>(insulationOuterShape.ShapeType())
+                        << ", insulation-after-cut shape type="
                         << static_cast<int>(insulationCut.Shape().ShapeType()) << '.';
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         diagnostic.str(), "windingPack.helicalSolids");
