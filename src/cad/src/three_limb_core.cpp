@@ -696,29 +696,49 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "Outer insulation solid failed: " + insulationDiagnostic,
                         "windingPack.helicalSweep.insulation");
 
+                const auto shapeMetrics = [](const TopoDS_Shape& shape) {
+                    std::pair<std::size_t, double> metrics{0, 0.0};
+                    if (shape.IsNull()) return metrics;
+                    for (TopExp_Explorer it(shape, TopAbs_SOLID); it.More(); it.Next())
+                        ++metrics.first;
+                    GProp_GProps properties;
+                    BRepGProp::VolumeProperties(shape, properties);
+                    metrics.second = properties.Mass();
+                    return metrics;
+                };
+                BRepAlgoAPI_Common copperOverlap(insulationOuterShape, copperShape);
+                copperOverlap.SetFuzzyValue(1.0e-6);
+                copperOverlap.Build();
+                const auto outerMetrics = shapeMetrics(insulationOuterShape);
+                const auto copperMetrics = shapeMetrics(copperShape);
+                const auto overlapMetrics = copperOverlap.IsDone() && !copperOverlap.Shape().IsNull()
+                    ? shapeMetrics(copperOverlap.Shape())
+                    : std::pair<std::size_t, double>{0, 0.0};
+
                 BRepAlgoAPI_Cut insulationCut(insulationOuterShape, copperShape);
                 insulationCut.SetFuzzyValue(1.0e-6);
                 insulationCut.Build();
-                if (!insulationCut.IsDone() || insulationCut.Shape().IsNull() ||
-                    !BRepCheck_Analyzer(insulationCut.Shape()).IsValid())
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Insulation boolean cut failed to produce a valid annular solid.",
-                        "windingPack.helicalSweep.insulation");
-                insulationShape = insulationCut.Shape();
+                const bool cutValid = insulationCut.IsDone() &&
+                    !insulationCut.Shape().IsNull() &&
+                    BRepCheck_Analyzer(insulationCut.Shape()).IsValid();
+                if (cutValid) insulationShape = insulationCut.Shape();
 
-                std::size_t copperSolids = 0, insulationSolids = 0;
-                for (TopExp_Explorer it(copperShape, TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
-                for (TopExp_Explorer it(insulationShape, TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
-                if (copperSolids != 1 || insulationSolids != 1) {
-                    GProp_GProps copperDiagnosticVolume, insulationDiagnosticVolume;
-                    BRepGProp::VolumeProperties(copperShape, copperDiagnosticVolume);
-                    BRepGProp::VolumeProperties(insulationShape, insulationDiagnosticVolume);
+                const auto insulationMetrics = shapeMetrics(insulationShape);
+                if (!cutValid || copperMetrics.first != 1 ||
+                    insulationMetrics.first != 1) {
                     std::ostringstream diagnostic;
-                    diagnostic << "Rounded helical path topology mismatch: copper solids="
-                        << copperSolids << ", insulation solids=" << insulationSolids
-                        << ", copper volume=" << copperDiagnosticVolume.Mass()
-                        << " mm^3, insulation volume=" << insulationDiagnosticVolume.Mass()
-                        << " mm^3.";
+                    diagnostic << "Rounded helical insulation Boolean audit failed: "
+                        << "outer-envelope solids=" << outerMetrics.first
+                        << ", volume=" << outerMetrics.second << " mm^3; "
+                        << "copper solids=" << copperMetrics.first
+                        << ", volume=" << copperMetrics.second << " mm^3; "
+                        << "outer/copper common done=" << (copperOverlap.IsDone() ? "true" : "false")
+                        << ", solids=" << overlapMetrics.first
+                        << ", volume=" << overlapMetrics.second << " mm^3; "
+                        << "cut done=" << (insulationCut.IsDone() ? "true" : "false")
+                        << ", valid=" << (cutValid ? "true" : "false")
+                        << ", solids=" << insulationMetrics.first
+                        << ", volume=" << insulationMetrics.second << " mm^3.";
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         diagnostic.str(), "windingPack.helicalSolids");
                 }
