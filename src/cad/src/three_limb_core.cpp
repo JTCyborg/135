@@ -542,7 +542,7 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     profileOrigin, gp_Dir(tangent), gp_Dir(0.0, 0.0, 1.0));
                 const auto makeCircleWire = [&](double radius) -> TopoDS_Wire {
                     const gp_Circ circle(profileAxis, radius);
-                    const auto edge = BRepBuilderAPI_MakeEdge(circle);
+                    auto edge = BRepBuilderAPI_MakeEdge(circle);
                     if (!edge.IsDone()) return TopoDS_Wire();
                     BRepBuilderAPI_MakeWire wire;
                     wire.Add(edge.Edge());
