@@ -576,18 +576,46 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                                                   TopoDS_Shape& result,
                                                   std::string& diagnostic) -> bool {
                     BRepOffsetAPI_MakePipeShell pipeShell(pathWire.Wire());
-                    pipeShell.SetMode(false);
+                    // The winding rises along Y while wrapping in the XZ plane.
+                    // A fixed Z binormal keeps the circular section orientation
+                    // stable through the near-straight portions of the rounded
+                    // rectangular helix; corrected-Frenet can become singular
+                    // there and make OCCT abandon the entire pipe construction.
+                    pipeShell.SetMode(gp_Dir(0.0, 0.0, 1.0));
+                    pipeShell.SetForceApproxC1(true);
                     pipeShell.Add(profile, false, false);
+                    if (!pipeShell.IsReady()) {
+                        diagnostic = "PipeShell is not ready after adding the circular profile.";
+                        return false;
+                    }
                     try {
                         pipeShell.Build();
                     } catch (const Standard_Failure& exception) {
-                        const char* message = exception.GetMessageString();
+                        const char* message = exception.what();
                         diagnostic = std::string("PipeShell Build exception: ") +
                             (message ? message : "no OCCT message");
                         return false;
                     }
                     if (!pipeShell.IsDone() || pipeShell.Shape().IsNull()) {
-                        diagnostic = "PipeShell did not produce a lateral shell.";
+                        const auto status = pipeShell.GetStatus();
+                        const char* statusText = "unknown";
+                        switch (status) {
+                        case BRepBuilderAPI_PipeDone:
+                            statusText = "PipeDone";
+                            break;
+                        case BRepBuilderAPI_PlaneNotIntersectGuide:
+                            statusText = "PlaneNotIntersectGuide";
+                            break;
+                        case BRepBuilderAPI_ImpossibleContact:
+                            statusText = "ImpossibleContact";
+                            break;
+                        case BRepBuilderAPI_PipeNotDone:
+                            statusText = "PipeNotDone";
+                            break;
+                        }
+                        diagnostic = std::string("PipeShell failed (status=") +
+                            statusText + ", ready=" +
+                            (pipeShell.IsReady() ? "true" : "false") + ").";
                         return false;
                     }
 
