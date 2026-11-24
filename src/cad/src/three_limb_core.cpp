@@ -673,7 +673,7 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Zero terminal tangent on winding spine.", "windingPack.helicalSweep");
                 const gp_Pln startPlane(profileAxis);
-                const gp_Pln endPlane(gp_Pnt(endPoint), gp_Dir(endTangent));
+                const gp_Pln endPlane{gp_Pnt(endPoint), gp_Dir(endTangent)};
 
                 BRepBuilderAPI_MakeFace copperStart(startPlane, copperStartWire);
                 BRepBuilderAPI_MakeFace copperFinish(endPlane, copperEndWire);
