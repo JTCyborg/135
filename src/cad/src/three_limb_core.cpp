@@ -563,20 +563,57 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "OCCT failed to wrap the interpolated spline into a sweep wire.",
                         "windingPack.helicalPath");
 
-                // MakePipe builds the swept solid directly for a closed wire
-                // section along an open helical spine. PipeShell::MakeSolid()
-                // only succeeds when its generated shell is already closed;
-                // an open multi-turn winding spine has two end boundaries.
-                BRepOffsetAPI_MakePipe copperPipe(pathWire.Wire(), copperProfile);
-                copperPipe.Build();
-                BRepOffsetAPI_MakePipe insulationPipe(pathWire.Wire(), insulationProfile);
-                insulationPipe.Build();
-
-                if (!copperPipe.IsDone() || !insulationPipe.IsDone() ||
-                    copperPipe.Shape().IsNull() || insulationPipe.Shape().IsNull())
+                // Validate the exact inputs before invoking OCCT's pipe builder.
+                // A sweep failure must identify whether the spine/profile topology
+                // or the copper/insulation builder is responsible.
+                const bool spineValid = BRepCheck_Analyzer(pathWire.Wire()).IsValid();
+                const bool copperProfileValid =
+                    BRepCheck_Analyzer(copperProfile).IsValid();
+                const bool insulationProfileValid =
+                    BRepCheck_Analyzer(insulationProfile).IsValid();
+                if (!spineValid || !copperProfileValid || !insulationProfileValid)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT pipe sweep could not form copper and insulated winding solids.",
-                        "windingPack.helicalSweep");
+                        "OCCT winding sweep input topology is invalid (spine=" +
+                            std::string(spineValid ? "valid" : "invalid") +
+                            ", copperProfile=" +
+                            (copperProfileValid ? "valid" : "invalid") +
+                            ", insulationProfile=" +
+                            (insulationProfileValid ? "valid" : "invalid") + ").",
+                        "windingPack.helicalSweep.input");
+
+                BRepOffsetAPI_MakePipe copperPipe(pathWire.Wire(), copperProfile);
+                BRepOffsetAPI_MakePipe insulationPipe(pathWire.Wire(), insulationProfile);
+                try {
+                    copperPipe.Build();
+                    insulationPipe.Build();
+                } catch (const Standard_Failure& exception) {
+                    const char* message = exception.GetMessageString();
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT pipe sweep raised Standard_Failure: " +
+                            std::string(message ? message : "no OCCT message") +
+                            ".",
+                        "windingPack.helicalSweep.exception");
+                } catch (const std::exception& exception) {
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT pipe sweep raised std::exception: " +
+                            std::string(exception.what()) + ".",
+                        "windingPack.helicalSweep.exception");
+                }
+
+                const bool copperDone = copperPipe.IsDone();
+                const bool insulationDone = insulationPipe.IsDone();
+                const bool copperNull = !copperDone || copperPipe.Shape().IsNull();
+                const bool insulationNull =
+                    !insulationDone || insulationPipe.Shape().IsNull();
+                if (copperNull || insulationNull)
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT pipe sweep failed (copper: IsDone=" +
+                            std::string(copperDone ? "true" : "false") +
+                            ", null=" + (copperNull ? "true" : "false") +
+                            "; insulation: IsDone=" +
+                            (insulationDone ? "true" : "false") +
+                            ", null=" + (insulationNull ? "true" : "false") + ").",
+                        "windingPack.helicalSweep.status");
 
                 BRepAlgoAPI_Cut insulationCut(insulationPipe.Shape(), copperPipe.Shape());
                 insulationCut.Build();
