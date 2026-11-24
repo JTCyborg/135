@@ -231,65 +231,94 @@ echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
 
 rem FAST: incremental Debug build + focused CAD tests; FULL: both configs + complete CTest.
 echo.
-if /I "%VALIDATION_MODE%"=="FAST" (
-    echo [3/5] Configuring Debug only...
-    set "RUN_CMD=cmake --preset vs2026-desktop-debug"
-    call :RUN "Configure Debug"
-    if errorlevel 1 (
-        set "OVERALL=FAILED"
-        goto FINALIZE
-    )
-    echo.
-    echo [4/5] Building Debug only...
-    set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
-    call :RUN "Build Debug"
-    if errorlevel 1 (
-        set "DEBUG_BUILD_OK=FAIL"
-        set "OVERALL=FAILED"
-        goto FINALIZE
-    )
+if /I "%VALIDATION_MODE%"=="FAST" goto RUN_FAST
+goto RUN_FULL
+
+:RUN_FAST
+echo [3/5] Configuring Debug only...
+set "RUN_CMD=cmake --preset vs2026-desktop-debug"
+call :RUN "Configure Debug"
+if errorlevel 1 (
+    set "OVERALL=FAILED"
+    goto FINALIZE
+)
+echo.
+echo [4/5] Building Debug only...
+set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
+call :RUN "Build Debug"
+if errorlevel 1 (
+    set "DEBUG_BUILD_OK=FAIL"
+    set "OVERALL=FAILED"
+    goto FINALIZE
+)
+set "DEBUG_BUILD_OK=PASS"
+set "RELEASE_BUILD_OK=SKIPPED_FAST_MODE"
+echo.
+echo [5/5] Running focused CAD tests (E2E and Release deferred to /FULL)...
+set "RUN_CMD=ctest --preset test-desktop-debug -R Project135CadTests"
+call :RUN "Focused CAD tests Debug"
+if errorlevel 1 (
+    set "DEBUG_TEST_OK=FAIL"
+    set "OVERALL=FAILED"
+) else (
+    set "DEBUG_TEST_OK=PASS"
+)
+set "RELEASE_TEST_OK=SKIPPED_FAST_MODE"
+goto FINALIZE
+
+:RUN_FULL
+echo [3/6] Configuring Debug and Release...
+set "RUN_CMD=cmake --preset vs2026-desktop-debug"
+call :RUN "Configure Debug"
+if errorlevel 1 goto FULL_CONFIGURE_FAILED
+set "RUN_CMD=cmake --preset vs2026-desktop-release"
+call :RUN "Configure Release"
+if errorlevel 1 goto FULL_CONFIGURE_FAILED
+echo.
+echo [4/6] Building Debug and Release...
+set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
+call :RUN "Build Debug"
+if errorlevel 1 (
+    set "DEBUG_BUILD_OK=FAIL"
+    set "OVERALL=FAILED"
+) else (
     set "DEBUG_BUILD_OK=PASS"
-    set "RELEASE_BUILD_OK=SKIPPED_FAST_MODE"
-    echo.
-    echo [5/5] Running focused CAD tests (E2E and Release deferred to /FULL)...
-    set "RUN_CMD=ctest --preset test-desktop-debug -R Project135CadTests"
-    call :RUN "Focused CAD tests Debug"
+)
+set "RUN_CMD=cmake --build --preset build-desktop-release --parallel 4"
+call :RUN "Build Release"
+if errorlevel 1 (
+    set "RELEASE_BUILD_OK=FAIL"
+    set "OVERALL=FAILED"
+) else (
+    set "RELEASE_BUILD_OK=PASS"
+)
+echo.
+echo [5/6] Running complete CTest suites...
+if "!DEBUG_BUILD_OK!"=="PASS" (
+    set "RUN_CMD=ctest --preset test-desktop-debug"
+    call :RUN "CTest Debug"
     if errorlevel 1 (
         set "DEBUG_TEST_OK=FAIL"
         set "OVERALL=FAILED"
     ) else (
         set "DEBUG_TEST_OK=PASS"
     )
-    set "RELEASE_TEST_OK=SKIPPED_FAST_MODE"
-) else (
-    echo [3/6] Configuring Debug and Release...
-    set "RUN_CMD=cmake --preset vs2026-desktop-debug"
-    call :RUN "Configure Debug"
-    if errorlevel 1 (set "OVERALL=FAILED"&goto FINALIZE)
-    set "RUN_CMD=cmake --preset vs2026-desktop-release"
-    call :RUN "Configure Release"
-    if errorlevel 1 (set "OVERALL=FAILED"&goto FINALIZE)
-    echo.
-    echo [4/6] Building Debug and Release...
-    set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
-    call :RUN "Build Debug"
-    if errorlevel 1 (set "DEBUG_BUILD_OK=FAIL"&set "OVERALL=FAILED") else (set "DEBUG_BUILD_OK=PASS")
-    set "RUN_CMD=cmake --build --preset build-desktop-release --parallel 4"
-    call :RUN "Build Release"
-    if errorlevel 1 (set "RELEASE_BUILD_OK=FAIL"&set "OVERALL=FAILED") else (set "RELEASE_BUILD_OK=PASS")
-    echo.
-    echo [5/6] Running complete CTest suites...
-    if "!DEBUG_BUILD_OK!"=="PASS" (
-        set "RUN_CMD=ctest --preset test-desktop-debug"
-        call :RUN "CTest Debug"
-        if errorlevel 1 (set "DEBUG_TEST_OK=FAIL"&set "OVERALL=FAILED") else (set "DEBUG_TEST_OK=PASS")
-    )
-    if "!RELEASE_BUILD_OK!"=="PASS" (
-        set "RUN_CMD=ctest --preset test-desktop-release"
-        call :RUN "CTest Release"
-        if errorlevel 1 (set "RELEASE_TEST_OK=FAIL"&set "OVERALL=FAILED") else (set "RELEASE_TEST_OK=PASS")
+)
+if "!RELEASE_BUILD_OK!"=="PASS" (
+    set "RUN_CMD=ctest --preset test-desktop-release"
+    call :RUN "CTest Release"
+    if errorlevel 1 (
+        set "RELEASE_TEST_OK=FAIL"
+        set "OVERALL=FAILED"
+    ) else (
+        set "RELEASE_TEST_OK=PASS"
     )
 )
+goto FINALIZE
+
+:FULL_CONFIGURE_FAILED
+set "OVERALL=FAILED"
+goto FINALIZE
 
 :FINALIZE
 echo.>>"%LOG%"
