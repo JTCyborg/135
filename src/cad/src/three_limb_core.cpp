@@ -14,6 +14,8 @@
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepOffsetAPI_MakePipe.hxx>
+#include <GeomAPI_Interpolate.hxx>
+#include <TColgp_HArray1OfPnt.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Dir.hxx>
@@ -401,6 +403,14 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
         if (conductorsPerLayer == 0)
             return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
                 "Round winding has zero conductors per layer.", "windingPack.turnsPerLayer");
+        const std::uint64_t configuredTurns =
+            static_cast<std::uint64_t>(*winding.turnsPerLayer) *
+            static_cast<std::uint64_t>(winding.layerCount);
+        if (configuredTurns != static_cast<std::uint64_t>(*winding.turns))
+            return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                "Total turns must equal turns per layer multiplied by the number of layers; refusing to silently reduce the winding turn count.",
+                "windingPack.turns");
+
         const double axialPitch = (winding.axialHeight.si() - insulatedDiameter) /
             static_cast<double>(conductorsPerLayer + *winding.parallelConductors - 1ULL);
         const double tolerance = std::max(1.0e-9, radialPitch * 1.0e-6);
@@ -420,44 +430,120 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
         const double turnsPerLayerPitch =
             axialPitch * static_cast<double>(*winding.parallelConductors);
 
-        // Each layer/parallel path is one continuous rectangular helix. The
-        // centreline advances axially on all four sides on every revolution;
-        // it is not a stack of independent closed rectangular rings.
+        // Each conductor follows a continuous rounded-rectangle helix.
+        // A single interpolated 3-D spline gives the corners a finite bend
+        // radius instead of joining straight edges at sharp 90-degree turns.
+        constexpr std::size_t sideSamples = 8;
+        constexpr std::size_t cornerSamples = 12;
+        constexpr double pi = 3.14159265358979323846;
+        const double bendRadius = 1.5 * insulatedDiameter;
+        const double innerClearance =
+            bobbin.windingClearance.si() + winding.mainInsulationBuild.si();
+        const double axialStart = winding.endClearance.si();
+
+        const auto roundedPerimeter = [&](double halfX, double halfZ,
+                                           double yStart, double yPitch) {
+            std::vector<gp_Pnt> points;
+            const double straightX = halfX - bendRadius;
+            const double straightZ = halfZ - bendRadius;
+            const double perimeter =
+                4.0 * (straightX + straightZ) + 2.0 * pi * bendRadius;
+            double travelled = 0.0;
+            auto append = [&](double x, double z, double ds) {
+                travelled += ds;
+                points.emplace_back(x * mm,
+                    (yStart + yPitch * travelled / perimeter) * mm,
+                    z * mm);
+            };
+            points.emplace_back(-straightX * mm, yStart * mm, -halfZ * mm);
+            auto line = [&](double x0, double z0, double x1, double z1) {
+                const double length = std::hypot(x1 - x0, z1 - z0);
+                for (std::size_t i = 1; i <= sideSamples; ++i) {
+                    const double t = static_cast<double>(i) /
+                        static_cast<double>(sideSamples);
+                    append(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t,
+                        length / static_cast<double>(sideSamples));
+                }
+            };
+            auto arc = [&](double cx, double cz, double startAngle) {
+                const double arcLength = 0.5 * pi * bendRadius;
+                for (std::size_t i = 1; i <= cornerSamples; ++i) {
+                    const double angle = startAngle + 0.5 * pi *
+                        static_cast<double>(i) / static_cast<double>(cornerSamples);
+                    append(cx + bendRadius * std::cos(angle),
+                        cz + bendRadius * std::sin(angle),
+                        arcLength / static_cast<double>(cornerSamples));
+                }
+            };
+            line(-straightX, -halfZ, straightX, -halfZ);
+            arc(straightX, -straightZ, -0.5 * pi);
+            line(halfX, -straightZ, halfX, straightZ);
+            arc(straightX, straightZ, 0.0);
+            line(straightX, halfZ, -straightX, halfZ);
+            arc(-straightX, straightZ, 0.5 * pi);
+            line(-halfX, straightZ, -halfX, -straightZ);
+            arc(-straightX, -straightZ, pi);
+            return points;
+        };
+
         for (std::uint32_t layer = 0; layer < winding.layerCount; ++layer) {
             const double layerOffset = static_cast<double>(layer) * radialPitch;
             const double halfX = 0.5 * bodyWidth + innerClearance +
                 layerOffset + 0.5 * insulatedDiameter;
             const double halfZ = 0.5 * bodyDepth + innerClearance +
                 layerOffset + 0.5 * insulatedDiameter;
+            if (bendRadius >= std::min(halfX, halfZ))
+                return failure<TopoDS_Shape>(ErrorCode::InvalidInput,
+                    "The insulated wire diameter leaves no room for the required corner bend radius.",
+                    "windingPack.cornerBendRadius");
 
             for (std::uint32_t parallel = 0; parallel < *winding.parallelConductors; ++parallel) {
                 const double firstY = axialStart + 0.5 * insulatedDiameter +
                     static_cast<double>(parallel) * axialPitch;
-                BRepBuilderAPI_MakeWire path;
-                gp_Pnt previous(-halfX * mm, firstY * mm, -halfZ * mm);
+                const double turnsPitch =
+                    axialPitch * static_cast<double>(*winding.parallelConductors);
+                std::vector<gp_Pnt> helixPoints;
                 for (std::uint32_t turn = 0; turn < *winding.turnsPerLayer; ++turn) {
-                    const double y0 = firstY + static_cast<double>(turn) * turnsPerLayerPitch;
-                    const std::array<gp_Pnt, 4> corners{{
-                        gp_Pnt( halfX * mm, (y0 + 0.25 * turnsPerLayerPitch) * mm, -halfZ * mm),
-                        gp_Pnt( halfX * mm, (y0 + 0.50 * turnsPerLayerPitch) * mm,  halfZ * mm),
-                        gp_Pnt(-halfX * mm, (y0 + 0.75 * turnsPerLayerPitch) * mm,  halfZ * mm),
-                        gp_Pnt(-halfX * mm, (y0 + 1.00 * turnsPerLayerPitch) * mm, -halfZ * mm)
-                    }};
-                    for (const auto& corner : corners) {
-                        path.Add(BRepBuilderAPI_MakeEdge(previous, corner).Edge());
-                        previous = corner;
-                    }
+                    const auto loop = roundedPerimeter(
+                        halfX, halfZ,
+                        firstY + static_cast<double>(turn) * turnsPitch,
+                        turnsPitch);
+                    if (helixPoints.empty())
+                        helixPoints.insert(helixPoints.end(), loop.begin(), loop.end());
+                    else
+                        helixPoints.insert(helixPoints.end(), loop.begin() + 1, loop.end());
                 }
-                if (!path.IsDone())
+                if (helixPoints.size() < 4)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to create a continuous four-sided helical winding path.",
+                        "Rounded helical winding path has insufficient interpolation points.",
                         "windingPack.helicalPath");
 
-                const gp_Vec tangent(2.0 * halfX * mm,
-                    turnsPerLayerPitch * 0.25 * mm, 0.0);
+                Handle(TColgp_HArray1OfPnt) interpolationPoints =
+                    new TColgp_HArray1OfPnt(1,
+                        static_cast<Standard_Integer>(helixPoints.size()));
+                for (std::size_t point = 0; point < helixPoints.size(); ++point)
+                    interpolationPoints->SetValue(
+                        static_cast<Standard_Integer>(point + 1), helixPoints[point]);
+                GeomAPI_Interpolate interpolation(
+                    interpolationPoints, Standard_False, 1.0e-6);
+                interpolation.Perform();
+                if (!interpolation.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to interpolate the rounded four-sided helical path.",
+                        "windingPack.helicalPath");
+                BRepBuilderAPI_MakeEdge path(interpolation.Curve());
+                if (!path.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to create the rounded helical path edge.",
+                        "windingPack.helicalPath");
+
+                const gp_Vec tangent(1.0, turnsPitch / 
+                    (4.0 * (2.0 * (halfX + halfZ - 4.0 * bendRadius) +
+                     2.0 * pi * bendRadius)), 0.0);
                 const gp_Pnt profileOrigin(
                     -halfX * mm, firstY * mm, -halfZ * mm);
-                const gp_Ax2 profileAxis(profileOrigin, gp_Dir(tangent), gp_Dir(0.0, 0.0, 1.0));
+                const gp_Ax2 profileAxis(
+                    profileOrigin, gp_Dir(tangent), gp_Dir(0.0, 0.0, 1.0));
                 const auto makeProfile = [&](double radius) -> TopoDS_Face {
                     const gp_Circ circle(profileAxis, radius);
                     const auto edge = BRepBuilderAPI_MakeEdge(circle).Edge();
@@ -473,10 +559,6 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                         "OCCT failed to create the copper circular profile.",
                         "windingPack.helicalProfile");
 
-                // Sweep the enamel as an annular profile directly. Subtracting
-                // two coincident pipe sweeps is numerically fragile in OCCT and
-                // can split the thin insulation into multiple solids. A face
-                // with an inner wire preserves the coating as one hollow solid.
                 const gp_Circ outerCircle(profileAxis, insulatedRadius);
                 const gp_Circ innerCircle(profileAxis, copperRadius);
                 BRepBuilderAPI_MakeWire outerWire;
@@ -494,16 +576,16 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                         "OCCT failed to create a valid annular insulation profile.",
                         "windingPack.helicalProfile");
 
-                BRepOffsetAPI_MakePipe copperPipe(path.Wire(), copperProfile);
+                BRepOffsetAPI_MakePipe copperPipe(path.Edge(), copperProfile);
                 copperPipe.Build();
-                BRepOffsetAPI_MakePipe insulationPipe(path.Wire(), annularFace.Face());
+                BRepOffsetAPI_MakePipe insulationPipe(path.Edge(), annularFace.Face());
                 insulationPipe.Build();
                 if (!copperPipe.IsDone() || !insulationPipe.IsDone() ||
                     copperPipe.Shape().IsNull() || insulationPipe.Shape().IsNull() ||
                     !BRepCheck_Analyzer(copperPipe.Shape()).IsValid() ||
                     !BRepCheck_Analyzer(insulationPipe.Shape()).IsValid())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to sweep the copper helix and its annular enamel insulation.",
+                        "OCCT failed to sweep the copper helix and its rounded enamel insulation.",
                         "windingPack.helicalSweep");
 
                 std::size_t copperSolids = 0, insulationSolids = 0;
@@ -511,7 +593,7 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                 for (TopExp_Explorer it(insulationPipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
                 if (copperSolids != 1 || insulationSolids != 1)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Each helical path must produce one copper solid and one separate insulation solid.",
+                        "Each rounded helical path must produce one copper solid and one separate insulation solid.",
                         "windingPack.helicalSolids");
                 builder.Add(windingSolids, copperPipe.Shape());
                 builder.Add(windingSolids, insulationPipe.Shape());
