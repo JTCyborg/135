@@ -22,7 +22,9 @@
 #include <gp_Ax2.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Dir.hxx>
+#include <gp_Pln.hxx>
 #include <TopoDS_Wire.hxx>
+#include <TopoDS_Shell.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Compound.hxx>
