@@ -224,7 +224,7 @@ if /I "%VALIDATION_MODE%"=="FAST" (
     set "RELEASE_BUILD_OK=SKIPPED_FAST_MODE"
     echo.
     echo [5/5] Running focused CAD tests (E2E and Release deferred to /FULL)...
-    set "RUN_CMD=ctest --preset test-desktop-debug -R ^Project135CadTests$"
+    set "RUN_CMD=ctest --preset test-desktop-debug -R Project135CadTests"
     call :RUN "Focused CAD tests Debug"
     if errorlevel 1 (
         set "DEBUG_TEST_OK=FAIL"
