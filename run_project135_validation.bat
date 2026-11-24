@@ -188,17 +188,26 @@ if /I not "%CURRENT_BRANCH%"=="%TARGET_BRANCH%" (
     set "CURRENT_BRANCH=%TARGET_BRANCH%"
 )
 
-rem Run pull directly (without CALL :RUN). Git for Windows can return through
-rem nested batch CALL with a stale ERRORLEVEL on some CMD/PowerShell launches.
+rem Capture Git's native exit code in a file. Do not rely on the exit code
+rem of powershell.exe, which can be altered by native-command/host behavior.
 echo [RUN] Update target branch %TARGET_BRANCH%
 echo.>>"%LOG%"
 echo [RUN] Update target branch %TARGET_BRANCH%>>"%LOG%"
-rem Execute Git through PowerShell so its native exit code is propagated
-rem explicitly to CMD; this avoids stale ERRORLEVEL state in batch control flow.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "git pull --ff-only origin %TARGET_BRANCH%; exit $LASTEXITCODE" >>"%LOG%" 2>&1
-if errorlevel 1 (
-    echo [FAIL] Update target branch %TARGET_BRANCH% (Git returned a nonzero exit code)
-    echo [FAIL] Update target branch %TARGET_BRANCH% (Git returned a nonzero exit code)>>"%LOG%"
+set "PULL_RC_FILE=BuildReports\git_pull_exit_%STAMP%.tmp"
+if exist "%PULL_RC_FILE%" del "%PULL_RC_FILE%" 2>nul
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "git pull --ff-only origin %TARGET_BRANCH%; $rc = $LASTEXITCODE; [IO.File]::WriteAllText('%PULL_RC_FILE%', [string]$rc)" >>"%LOG%" 2>&1
+if not exist "%PULL_RC_FILE%" (
+    echo [FAIL] Update target branch %TARGET_BRANCH% (Git exit-code file was not created)
+    echo [FAIL] Update target branch %TARGET_BRANCH% (Git exit-code file was not created)>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+set "PULL_RC="
+set /p PULL_RC=<"%PULL_RC_FILE%"
+del "%PULL_RC_FILE%" 2>nul
+if not "%PULL_RC%"=="0" (
+    echo [FAIL] Update target branch %TARGET_BRANCH% (Git exit %PULL_RC%)
+    echo [FAIL] Update target branch %TARGET_BRANCH% (Git exit %PULL_RC%)>>"%LOG%"
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
