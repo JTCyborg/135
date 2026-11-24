@@ -595,6 +595,34 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Each rounded helical path must produce one copper solid and one separate insulation solid.",
                         "windingPack.helicalSolids");
+
+                // Audit the swept section over the complete path (all four
+                // straight sides and all four rounded corners). A constant
+                // circular/annular profile must preserve its analytical area
+                // times the measured centreline length.
+                GProp_GProps pathLengthProperties;
+                GProp_GProps copperVolumeProperties;
+                GProp_GProps insulationVolumeProperties;
+                BRepGProp::LinearProperties(pathWire.Wire(), pathLengthProperties);
+                BRepGProp::VolumeProperties(copperPipe.Shape(), copperVolumeProperties);
+                BRepGProp::VolumeProperties(insulationPipe.Shape(), insulationVolumeProperties);
+                const double pathLength = pathLengthProperties.Mass();
+                const double expectedCopperVolume =
+                    pi * copperRadius * copperRadius * pathLength;
+                const double expectedInsulationVolume =
+                    pi * (insulatedRadius * insulatedRadius -
+                          copperRadius * copperRadius) * pathLength;
+                const auto sectionMatches = [](double actual, double expected) {
+                    return std::isfinite(actual) && std::isfinite(expected) &&
+                        expected > 0.0 &&
+                        std::abs(actual - expected) <= std::max(1.0e-7, expected * 2.0e-3);
+                };
+                if (!sectionMatches(copperVolumeProperties.Mass(), expectedCopperVolume) ||
+                    !sectionMatches(insulationVolumeProperties.Mass(), expectedInsulationVolume))
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "The swept conductor/insulation cross-section changed along a phase winding path; diameter audit failed.",
+                        "windingPack.conductorDiameterAudit");
+
                 builder.Add(windingSolids, copperPipe.Shape());
                 builder.Add(windingSolids, insulationPipe.Shape());
             }
