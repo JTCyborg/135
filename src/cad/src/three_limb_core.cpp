@@ -571,26 +571,10 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 // Build the copper as a capped pipe. Build insulation as a
                 // separate annular shell: outer and inner lateral sweeps share
                 // the same spine, and planar annular end faces close the gap.
-                const auto makeEndWire = [&](double radius, TopoDS_Wire& wire,
-                                             gp_Ax2& axis, std::string& diagnostic) -> bool {
-                    gp_Pnt point;
-                    gp_Vec tangent;
-                    interpolation.Curve()->D1(interpolation.Curve()->LastParameter(), point, tangent);
-                    if (tangent.SquareMagnitude() <= 1.0e-18) {
-                        diagnostic = "Zero terminal tangent on winding spine.";
-                        return false;
-                    }
-                    axis = gp_Ax2(point, gp_Dir(tangent), gp_Dir(0.0, 0.0, 1.0));
-                    BRepBuilderAPI_MakeEdge edge(gp_Circ(axis, radius));
-                    if (!edge.IsDone()) { diagnostic = "Cannot create terminal circle."; return false; }
-                    BRepBuilderAPI_MakeWire maker;
-                    maker.Add(edge.Edge());
-                    if (!maker.IsDone()) { diagnostic = "Cannot create terminal wire."; return false; }
-                    wire = maker.Wire();
-                    return true;
-                };
                 const auto makeLateral = [&](const TopoDS_Wire& profile,
                                              TopoDS_Shape& lateral,
+                                             TopoDS_Wire& firstSection,
+                                             TopoDS_Wire& lastSection,
                                              std::string& diagnostic) -> bool {
                     BRepOffsetAPI_MakePipeShell pipe(pathWire.Wire());
                     pipe.SetMode(gp_Dir(0.0, 0.0, 1.0));
@@ -604,6 +588,15 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         return false;
                     }
                     lateral = pipe.Shape();
+                    const TopoDS_Shape first = pipe.FirstShape();
+                    const TopoDS_Shape last = pipe.LastShape();
+                    if (first.IsNull() || last.IsNull() ||
+                        first.ShapeType() != TopAbs_WIRE || last.ShapeType() != TopAbs_WIRE) {
+                        diagnostic = "PipeShell did not expose its exact terminal section wires.";
+                        return false;
+                    }
+                    firstSection = TopoDS::Wire(first);
+                    lastSection = TopoDS::Wire(last);
                     if (!BRepCheck_Analyzer(lateral).IsValid()) {
                         diagnostic = "PipeShell lateral surface is invalid.";
                         return false;
@@ -656,44 +649,49 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 };
 
                 TopoDS_Shape copperLateral, insulationOuterLateral, insulationInnerLateral;
+                TopoDS_Wire copperStartWire, copperEndWire;
+                TopoDS_Wire insulationOuterStartWire, insulationOuterEndWire;
+                TopoDS_Wire insulationInnerStartWire, insulationInnerEndWire;
                 std::string copperDiagnostic, insulationDiagnostic;
-                if (!makeLateral(copperProfile, copperLateral, copperDiagnostic))
+                if (!makeLateral(copperProfile, copperLateral, copperStartWire, copperEndWire, copperDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Copper lateral sweep failed: " + copperDiagnostic, "windingPack.helicalSweep.copper");
-                if (!makeLateral(insulationProfile, insulationOuterLateral, insulationDiagnostic) ||
-                    !makeLateral(copperProfile, insulationInnerLateral, insulationDiagnostic))
+                if (!makeLateral(insulationProfile, insulationOuterLateral,
+                                 insulationOuterStartWire, insulationOuterEndWire, insulationDiagnostic) ||
+                    !makeLateral(copperProfile, insulationInnerLateral,
+                                 insulationInnerStartWire, insulationInnerEndWire, insulationDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Insulation lateral sweep failed: " + insulationDiagnostic, "windingPack.helicalSweep.insulation");
 
-                TopoDS_Wire copperEnd, insulationOuterEnd, insulationInnerEnd;
-                gp_Ax2 copperEndAxis, insulationOuterEndAxis, insulationInnerEndAxis;
-                if (!makeEndWire(copperRadius, copperEnd, copperEndAxis, copperDiagnostic) ||
-                    !makeEndWire(insulatedRadius, insulationOuterEnd, insulationOuterEndAxis, insulationDiagnostic) ||
-                    !makeEndWire(copperRadius, insulationInnerEnd, insulationInnerEndAxis, insulationDiagnostic))
+                // Build the end caps from the exact section wires returned by
+                // each PipeShell. Reconstructing circles from a tangent/frame
+                // can leave a microscopic unmatched edge and an open shell.
+                gp_Pnt endPoint;
+                gp_Vec endTangent;
+                interpolation.Curve()->D1(interpolation.Curve()->LastParameter(), endPoint, endTangent);
+                if (endTangent.SquareMagnitude() <= 1.0e-18)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Winding terminal profile failed: " + (copperDiagnostic.empty() ? insulationDiagnostic : copperDiagnostic),
-                        "windingPack.helicalSweep");
+                        "Zero terminal tangent on winding spine.", "windingPack.helicalSweep");
+                const gp_Pln startPlane(profileAxis);
+                const gp_Pln endPlane(gp_Pnt(endPoint), gp_Dir(endTangent));
 
-                BRepBuilderAPI_MakeFace copperStart(gp_Pln(profileAxis), copperProfile);
-                BRepBuilderAPI_MakeFace copperFinish(gp_Pln(copperEndAxis), copperEnd);
-                BRepBuilderAPI_MakeFace insulationStart(gp_Pln(profileAxis), insulationProfile);
-                BRepBuilderAPI_MakeFace insulationFinish(gp_Pln(insulationOuterEndAxis), insulationOuterEnd);
+                BRepBuilderAPI_MakeFace copperStart(startPlane, copperStartWire);
+                BRepBuilderAPI_MakeFace copperFinish(endPlane, copperEndWire);
+                BRepBuilderAPI_MakeFace insulationStart(startPlane, insulationOuterStartWire);
+                BRepBuilderAPI_MakeFace insulationFinish(endPlane, insulationOuterEndWire);
                 if (!copperStart.IsDone() || !copperFinish.IsDone() ||
                     !insulationStart.IsDone() || !insulationFinish.IsDone())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT could not create winding end-cap faces.", "windingPack.helicalSweep");
 
-                // The inner wall bounds the annular material from the inside,
-                // so its face orientation must oppose the outer wall. The start
-                // caps point against the sweep direction; finish caps point with it.
                 TopoDS_Shape insulationInnerWall = insulationInnerLateral;
                 insulationInnerWall.Reverse();
                 TopoDS_Face copperStartFace = copperStart.Face();
                 copperStartFace.Reverse();
 
-                // Add the copper boundary as an inner wire to both annular caps.
-                insulationStart.Add(copperProfile);
-                insulationFinish.Add(insulationInnerEnd);
+                // Use the inner sweep's own terminal sections as the holes.
+                insulationStart.Add(insulationInnerStartWire);
+                insulationFinish.Add(insulationInnerEndWire);
                 if (!insulationStart.IsDone() || !insulationFinish.IsDone())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT could not create annular insulation end caps.", "windingPack.helicalSweep.insulation");
