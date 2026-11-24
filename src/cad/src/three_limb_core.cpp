@@ -622,8 +622,18 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         shell = TopoDS::Shell(it.Current());
                         break;
                     }
-                    if (shell.IsNull() || !BRepCheck_Analyzer(shell).IsValid()) {
-                        diagnostic = "Sewing did not create a valid closed shell.";
+                    if (shell.IsNull()) {
+                        diagnostic = "Sewing did not produce a shell (free edges=" +
+                            std::to_string(sewing.NbFreeEdges()) + ", multiple edges=" +
+                            std::to_string(sewing.NbMultipleEdges()) + ").";
+                        return false;
+                    }
+                    if (!shell.Closed() || !BRepCheck_Analyzer(shell).IsValid()) {
+                        diagnostic = "Sewing produced an open or invalid shell (closed=" +
+                            std::string(shell.Closed() ? "true" : "false") +
+                            ", free edges=" + std::to_string(sewing.NbFreeEdges()) +
+                            ", multiple edges=" + std::to_string(sewing.NbMultipleEdges()) +
+                            ", contiguous edges=" + std::to_string(sewing.NbContigousEdges()) + ").";
                         return false;
                     }
                     BRepBuilderAPI_MakeSolid maker(shell);
@@ -673,6 +683,16 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT could not create winding end-cap faces.", "windingPack.helicalSweep");
 
+                // The inner wall bounds the annular material from the inside,
+                // so its face orientation must oppose the outer wall. The start
+                // caps point against the sweep direction; finish caps point with it.
+                TopoDS_Shape insulationInnerWall = insulationInnerLateral;
+                insulationInnerWall.Reverse();
+                TopoDS_Face copperStartFace = copperStart.Face();
+                copperStartFace.Reverse();
+                TopoDS_Face insulationStartFace = insulationStart.Face();
+                insulationStartFace.Reverse();
+
                 // Add the copper boundary as an inner wire to both annular caps.
                 insulationStart.Add(copperProfile);
                 insulationFinish.Add(insulationInnerEnd);
@@ -681,12 +701,12 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "OCCT could not create annular insulation end caps.", "windingPack.helicalSweep.insulation");
 
                 TopoDS_Shape copperShape, insulationShape;
-                if (!makeSolidFromFaces({copperLateral, copperStart.Face(), copperFinish.Face()},
+                if (!makeSolidFromFaces({copperLateral, copperStartFace, copperFinish.Face()},
                                         copperShape, copperDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Copper solid failed: " + copperDiagnostic, "windingPack.helicalSweep.copper");
-                if (!makeSolidFromFaces({insulationOuterLateral, insulationInnerLateral,
-                                         insulationStart.Face(), insulationFinish.Face()},
+                if (!makeSolidFromFaces({insulationOuterLateral, insulationInnerWall,
+                                         insulationStartFace, insulationFinish.Face()},
                                         insulationShape, insulationDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Annular insulation solid failed: " + insulationDiagnostic,
