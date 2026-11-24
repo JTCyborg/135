@@ -537,11 +537,13 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                         "OCCT failed to create the rounded helical path edge.",
                         "windingPack.helicalPath");
 
-                const gp_Vec tangent(1.0, turnsPitch / 
-                    (4.0 * (2.0 * (halfX + halfZ - 4.0 * bendRadius) +
-                     2.0 * pi * bendRadius)), 0.0);
+                const double straightX = halfX - bendRadius;
+                const double straightZ = halfZ - bendRadius;
+                const double perimeter =
+                    4.0 * (straightX + straightZ) + 2.0 * pi * bendRadius;
+                const gp_Vec tangent(1.0, turnsPitch / perimeter, 0.0);
                 const gp_Pnt profileOrigin(
-                    -halfX * mm, firstY * mm, -halfZ * mm);
+                    -straightX * mm, firstY * mm, -halfZ * mm);
                 const gp_Ax2 profileAxis(
                     profileOrigin, gp_Dir(tangent), gp_Dir(0.0, 0.0, 1.0));
                 const auto makeProfile = [&](double radius) -> TopoDS_Face {
@@ -576,9 +578,14 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                         "OCCT failed to create a valid annular insulation profile.",
                         "windingPack.helicalProfile");
 
-                BRepOffsetAPI_MakePipe copperPipe(path.Edge(), copperProfile);
+                BRepBuilderAPI_MakeWire pathWire(path.Edge());
+                if (!pathWire.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to wrap the interpolated spline into a sweep wire.",
+                        "windingPack.helicalPath");
+                BRepOffsetAPI_MakePipe copperPipe(pathWire.Wire(), copperProfile);
                 copperPipe.Build();
-                BRepOffsetAPI_MakePipe insulationPipe(path.Edge(), annularFace.Face());
+                BRepOffsetAPI_MakePipe insulationPipe(pathWire.Wire(), annularFace.Face());
                 insulationPipe.Build();
                 if (!copperPipe.IsDone() || !insulationPipe.IsDone() ||
                     copperPipe.Shape().IsNull() || insulationPipe.Shape().IsNull() ||
