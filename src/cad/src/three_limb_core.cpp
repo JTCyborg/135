@@ -427,9 +427,6 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
         const double innerClearance =
             bobbin.windingClearance.si() + winding.mainInsulationBuild.si();
         const double axialStart = winding.endClearance.si();
-        const double turnsPerLayerPitch =
-            axialPitch * static_cast<double>(*winding.parallelConductors);
-
         // Each conductor follows a continuous rounded-rectangle helix.
         // A single interpolated 3-D spline gives the corners a finite bend
         // radius instead of joining straight edges at sharp 90-degree turns.
@@ -437,10 +434,6 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
         constexpr std::size_t cornerSamples = 12;
         constexpr double pi = 3.14159265358979323846;
         const double bendRadius = 1.5 * insulatedDiameter;
-        const double innerClearance =
-            bobbin.windingClearance.si() + winding.mainInsulationBuild.si();
-        const double axialStart = winding.endClearance.si();
-
         const auto roundedPerimeter = [&](double halfX, double halfZ,
                                            double yStart, double yPitch) {
             std::vector<gp_Pnt> points;
