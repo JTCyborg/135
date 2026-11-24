@@ -663,22 +663,14 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Insulation lateral sweep failed: " + insulationDiagnostic, "windingPack.helicalSweep.insulation");
 
-                // Build the end caps from the exact section wires returned by
-                // each PipeShell. Reconstructing circles from a tangent/frame
-                // can leave a microscopic unmatched edge and an open shell.
-                gp_Pnt endPoint;
-                gp_Vec endTangent;
-                interpolation.Curve()->D1(interpolation.Curve()->LastParameter(), endPoint, endTangent);
-                if (endTangent.SquareMagnitude() <= 1.0e-18)
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Zero terminal tangent on winding spine.", "windingPack.helicalSweep");
-                const gp_Pln startPlane(profileAxis);
-                const gp_Pln endPlane{gp_Pnt(endPoint), gp_Dir(endTangent)};
-
-                BRepBuilderAPI_MakeFace copperStart(startPlane, copperStartWire);
-                BRepBuilderAPI_MakeFace copperFinish(endPlane, copperEndWire);
-                BRepBuilderAPI_MakeFace insulationStart(startPlane, insulationOuterStartWire);
-                BRepBuilderAPI_MakeFace insulationFinish(endPlane, insulationOuterEndWire);
+                // Build each cap directly from the exact planar terminal wire
+                // returned by PipeShell. Do not impose a tangent-derived plane:
+                // the fixed-trihedron sweep may orient its terminal section
+                // differently from the spine tangent.
+                BRepBuilderAPI_MakeFace copperStart(copperStartWire);
+                BRepBuilderAPI_MakeFace copperFinish(copperEndWire);
+                BRepBuilderAPI_MakeFace insulationStart(insulationOuterStartWire);
+                BRepBuilderAPI_MakeFace insulationFinish(insulationOuterEndWire);
                 if (!copperStart.IsDone() || !copperFinish.IsDone() ||
                     !insulationStart.IsDone() || !insulationFinish.IsDone())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
