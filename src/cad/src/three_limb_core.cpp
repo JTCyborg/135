@@ -10,6 +10,7 @@
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepGProp.hxx>
+#include <BRepLib.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
@@ -634,7 +635,18 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         diagnostic = "Cannot convert sewn shell to solid.";
                         return false;
                     }
-                    solid = maker.Solid();
+                    // Sewing preserves the face orientations supplied by the
+                    // sweep and caps. A closed shell can therefore be topologically
+                    // valid while enclosing the *outside* as its material region.
+                    // Normalize the resulting solid before Boolean operations;
+                    // otherwise Common/Cut may interpret the copper as the
+                    // complement of its intended finite volume.
+                    TopoDS_Solid orientedSolid = maker.Solid();
+                    if (!BRepLib::OrientClosedSolid(orientedSolid)) {
+                        diagnostic = "Closed shell could not be oriented as a finite material solid.";
+                        return false;
+                    }
+                    solid = orientedSolid;
                     if (!BRepCheck_Analyzer(solid).IsValid()) {
                         diagnostic = "Sewn solid failed BRepCheck.";
                         return false;
