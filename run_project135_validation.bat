@@ -279,12 +279,16 @@ rem Publish the report even if a build or test failed.
 rem All UUID-named plots produced by the Debug E2E scenarios belong to this
 rem validation run. Keep them all; record their provenance instead of pruning
 rem all but the last project UUID (which would discard valid test evidence).
-echo [ARTIFACTS] Writing Debug plot manifest...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $root=Join-Path (Get-Location) 'Debug\Plots'; New-Item -ItemType Directory -Path $root -Force | Out-Null; $files=@(Get-ChildItem -LiteralPath $root -Filter '*.png' -File -Recurse | Sort-Object FullName); $lines=@('Project135 validation plot manifest','Run: %STAMP%','Source commit: %SOURCE_COMMIT%','Branch: %CURRENT_BRANCH%',('Generated PNG count: {0}' -f $files.Count),''); foreach($f in $files){ $rel=$f.FullName.Substring((Get-Location).Path.Length+1); $lines+=('{0} | {1} bytes | {2:yyyy-MM-dd HH:mm:ss}' -f $rel,$f.Length,$f.LastWriteTime) }; [IO.File]::WriteAllLines((Join-Path $root 'validation_run.txt'),$lines,[Text.UTF8Encoding]::new($false)); Write-Output ('[ARTIFACTS] Debug plot PNG files: '+$files.Count)" >>"%LOG%" 2>&1
-if errorlevel 1 (
-    echo ERROR: Could not create Debug plot manifest.
-    set "PUBLISH_OK=MANIFEST_FAILED"
-    goto END_LOCAL
+if /I "%VALIDATION_MODE%"=="FULL" (
+    echo [ARTIFACTS] Writing Debug plot manifest...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $root=Join-Path (Get-Location) 'Debug\Plots'; New-Item -ItemType Directory -Path $root -Force | Out-Null; $files=@(Get-ChildItem -LiteralPath $root -Filter '*.png' -File -Recurse | Sort-Object FullName); $lines=@('Project135 validation plot manifest','Run: %STAMP%','Source commit: %SOURCE_COMMIT%','Branch: %CURRENT_BRANCH%',('Generated PNG count: {0}' -f $files.Count),''); foreach($f in $files){ $rel=$f.FullName.Substring((Get-Location).Path.Length+1); $lines+=('{0} | {1} bytes | {2:yyyy-MM-dd HH:mm:ss}' -f $rel,$f.Length,$f.LastWriteTime) }; [IO.File]::WriteAllLines((Join-Path $root 'validation_run.txt'),$lines,[Text.UTF8Encoding]::new($false)); Write-Output ('[ARTIFACTS] Debug plot PNG files: '+$files.Count)" >>"%LOG%" 2>&1
+    if errorlevel 1 (
+        echo ERROR: Could not create Debug plot manifest.
+        set "PUBLISH_OK=MANIFEST_FAILED"
+        goto END_LOCAL
+    )
+) else (
+    echo [FAST] Plot manifest skipped; existing Debug artifacts are preserved.>>"%LOG%"
 )
 if /I "%VALIDATION_MODE%"=="FAST" (
     git add -- "%LOG%" >>"%LOG%" 2>&1
