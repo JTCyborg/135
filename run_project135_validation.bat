@@ -194,10 +194,9 @@ echo [RUN] Update target branch %TARGET_BRANCH%
 echo.>>"%LOG%"
 echo [RUN] Update target branch %TARGET_BRANCH%>>"%LOG%"
 git pull --ff-only origin "%TARGET_BRANCH%" >>"%LOG%" 2>&1
-set "PULL_RC=%ERRORLEVEL%"
-if not "%PULL_RC%"=="0" (
-    echo [FAIL] Update target branch %TARGET_BRANCH% (exit %PULL_RC%)
-    echo [FAIL] Update target branch %TARGET_BRANCH% (exit %PULL_RC%)>>"%LOG%"
+if errorlevel 1 (
+    echo [FAIL] Update target branch %TARGET_BRANCH% (exit code is nonzero)
+    echo [FAIL] Update target branch %TARGET_BRANCH% (exit code is nonzero)>>"%LOG%"
     set "OVERALL=FAILED"
     goto STOP_WITH_LOCAL_LOG
 )
