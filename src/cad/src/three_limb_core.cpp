@@ -568,171 +568,143 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "OCCT failed to wrap the interpolated spline into a sweep wire.",
                         "windingPack.helicalPath");
 
-                // Sweep only the lateral wall, then cap both ends explicitly.
-                // PipeShell::MakeSolid() cannot close an open multi-turn spine by
-                // itself; sewing the two profile faces to the lateral shell creates
-                // the closed shell required by BRepBuilderAPI_MakeSolid.
-                const auto buildCappedSweep = [&](const TopoDS_Wire& profile,
-                                                  double radius,
-                                                  TopoDS_Shape& result,
-                                                  std::string& diagnostic) -> bool {
-                    BRepOffsetAPI_MakePipeShell pipeShell(pathWire.Wire());
-                    // The winding rises along Y while wrapping in the XZ plane.
-                    // A fixed Z binormal keeps the circular section orientation
-                    // stable through the near-straight portions of the rounded
-                    // rectangular helix; corrected-Frenet can become singular
-                    // there and make OCCT abandon the entire pipe construction.
-                    pipeShell.SetMode(gp_Dir(0.0, 0.0, 1.0));
-                    pipeShell.SetForceApproxC1(true);
-                    pipeShell.Add(profile, false, false);
-                    if (!pipeShell.IsReady()) {
-                        diagnostic = "PipeShell is not ready after adding the circular profile.";
+                // Build the copper as a capped pipe. Build insulation as a
+                // separate annular shell: outer and inner lateral sweeps share
+                // the same spine, and planar annular end faces close the gap.
+                const auto makeEndWire = [&](double radius, TopoDS_Wire& wire,
+                                             gp_Ax2& axis, std::string& diagnostic) -> bool {
+                    gp_Pnt point;
+                    gp_Vec tangent;
+                    interpolation.Curve()->D1(interpolation.Curve()->LastParameter(), point, tangent);
+                    if (tangent.SquareMagnitude() <= 1.0e-18) {
+                        diagnostic = "Zero terminal tangent on winding spine.";
                         return false;
                     }
-                    try {
-                        pipeShell.Build();
-                    } catch (const Standard_Failure& exception) {
-                        const char* message = exception.what();
-                        diagnostic = std::string("PipeShell Build exception: ") +
-                            (message ? message : "no OCCT message");
+                    axis = gp_Ax2(point, gp_Dir(tangent), gp_Dir(0.0, 0.0, 1.0));
+                    BRepBuilderAPI_MakeEdge edge(gp_Circ(axis, radius));
+                    if (!edge.IsDone()) { diagnostic = "Cannot create terminal circle."; return false; }
+                    BRepBuilderAPI_MakeWire maker;
+                    maker.Add(edge.Edge());
+                    if (!maker.IsDone()) { diagnostic = "Cannot create terminal wire."; return false; }
+                    wire = maker.Wire();
+                    return true;
+                };
+                const auto makeLateral = [&](const TopoDS_Wire& profile,
+                                             TopoDS_Shape& lateral,
+                                             std::string& diagnostic) -> bool {
+                    BRepOffsetAPI_MakePipeShell pipe(pathWire.Wire());
+                    pipe.SetMode(gp_Dir(0.0, 0.0, 1.0));
+                    pipe.SetForceApproxC1(true);
+                    pipe.Add(profile, false, false);
+                    if (!pipe.IsReady()) { diagnostic = "PipeShell profile is not ready."; return false; }
+                    pipe.Build();
+                    if (!pipe.IsDone() || pipe.Shape().IsNull()) {
+                        diagnostic = "PipeShell failed, status=" +
+                            std::to_string(static_cast<int>(pipe.GetStatus()));
                         return false;
                     }
-                    if (!pipeShell.IsDone() || pipeShell.Shape().IsNull()) {
-                        const auto status = pipeShell.GetStatus();
-                        const char* statusText = "unknown";
-                        switch (status) {
-                        case BRepBuilderAPI_PipeDone:
-                            statusText = "PipeDone";
-                            break;
-                        case BRepBuilderAPI_PlaneNotIntersectGuide:
-                            statusText = "PlaneNotIntersectGuide";
-                            break;
-                        case BRepBuilderAPI_ImpossibleContact:
-                            statusText = "ImpossibleContact";
-                            break;
-                        case BRepBuilderAPI_PipeNotDone:
-                            statusText = "PipeNotDone";
-                            break;
-                        }
-                        diagnostic = std::string("PipeShell failed (status=") +
-                            statusText + ", ready=" +
-                            (pipeShell.IsReady() ? "true" : "false") + ").";
+                    lateral = pipe.Shape();
+                    if (!BRepCheck_Analyzer(lateral).IsValid()) {
+                        diagnostic = "PipeShell lateral surface is invalid.";
                         return false;
                     }
-
-                    const auto curve = interpolation.Curve();
-                    gp_Pnt endPoint;
-                    gp_Vec endTangent;
-                    curve->D1(curve->LastParameter(), endPoint, endTangent);
-                    if (endTangent.SquareMagnitude() <= 1.0e-18) {
-                        diagnostic = "The winding spine has a zero end tangent.";
-                        return false;
-                    }
-                    const gp_Ax2 endAxis(endPoint, gp_Dir(endTangent),
-                                         gp_Dir(0.0, 0.0, 1.0));
-                    const gp_Circ endCircle(endAxis, radius);
-                    BRepBuilderAPI_MakeEdge endEdge(endCircle);
-                    if (!endEdge.IsDone()) {
-                        diagnostic = "OCCT could not create the terminal profile edge.";
-                        return false;
-                    }
-                    BRepBuilderAPI_MakeWire endWireMaker;
-                    endWireMaker.Add(endEdge.Edge());
-                    if (!endWireMaker.IsDone()) {
-                        diagnostic = "OCCT could not create the terminal profile wire.";
-                        return false;
-                    }
-
-                    BRepBuilderAPI_MakeFace startCap(
-                        gp_Pln(profileAxis), profile);
-                    BRepBuilderAPI_MakeFace endCap(
-                        gp_Pln(endAxis), endWireMaker.Wire());
-                    if (!startCap.IsDone() || !endCap.IsDone()) {
-                        diagnostic = "OCCT could not create one or both winding end caps.";
-                        return false;
-                    }
-
+                    return true;
+                };
+                const auto makeSolidFromFaces = [&](const std::vector<TopoDS_Shape>& faces,
+                                                    TopoDS_Shape& solid,
+                                                    std::string& diagnostic) -> bool {
                     BRepBuilderAPI_Sewing sewing(1.0e-5);
-                    sewing.Add(pipeShell.Shape());
-                    sewing.Add(startCap.Face());
-                    sewing.Add(endCap.Face());
+                    for (const auto& face : faces) sewing.Add(face);
                     sewing.Perform();
-                    const TopoDS_Shape sewed = sewing.SewedShape();
-                    TopoDS_Shell closedShell;
-                    for (TopExp_Explorer it(sewed, TopAbs_SHELL); it.More(); it.Next()) {
-                        closedShell = TopoDS::Shell(it.Current());
+                    TopoDS_Shell shell;
+                    const auto sewn = sewing.SewedShape();
+                    for (TopExp_Explorer it(sewn, TopAbs_SHELL); it.More(); it.Next()) {
+                        shell = TopoDS::Shell(it.Current());
                         break;
                     }
-                    if (closedShell.IsNull() ||
-                        !BRepCheck_Analyzer(closedShell).IsValid()) {
-                        diagnostic = "Sewing did not produce a valid closed winding shell.";
+                    if (shell.IsNull() || !BRepCheck_Analyzer(shell).IsValid()) {
+                        diagnostic = "Sewing did not create a valid closed shell.";
                         return false;
                     }
-
-                    BRepBuilderAPI_MakeSolid solidMaker(closedShell);
-                    if (!solidMaker.IsDone() || solidMaker.Solid().IsNull()) {
-                        diagnostic = "OCCT could not convert the capped shell into a solid.";
+                    BRepBuilderAPI_MakeSolid maker(shell);
+                    if (!maker.IsDone() || maker.Solid().IsNull()) {
+                        diagnostic = "Cannot convert sewn shell to solid.";
                         return false;
                     }
-                    result = solidMaker.Solid();
-                    if (!BRepCheck_Analyzer(result).IsValid()) {
-                        diagnostic = "The capped winding solid failed BRepCheck.";
+                    solid = maker.Solid();
+                    if (!BRepCheck_Analyzer(solid).IsValid()) {
+                        diagnostic = "Sewn solid failed BRepCheck.";
                         return false;
                     }
                     GProp_GProps volume;
-                    BRepGProp::VolumeProperties(result, volume);
+                    BRepGProp::VolumeProperties(solid, volume);
                     if (!std::isfinite(volume.Mass()) || volume.Mass() <= 0.0) {
-                        diagnostic = "The capped winding solid has no positive finite volume.";
+                        diagnostic = "Sewn solid has no positive volume.";
                         return false;
                     }
                     return true;
                 };
 
-                TopoDS_Shape copperShape;
-                TopoDS_Shape insulationOuterShape;
-                std::string copperDiagnostic;
-                std::string insulationDiagnostic;
-                if (!buildCappedSweep(copperProfile, copperRadius,
-                                      copperShape, copperDiagnostic))
+                TopoDS_Shape copperLateral, insulationOuterLateral, insulationInnerLateral;
+                std::string copperDiagnostic, insulationDiagnostic;
+                if (!makeLateral(copperProfile, copperLateral, copperDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Copper winding sweep failed: " + copperDiagnostic,
-                        "windingPack.helicalSweep.copper");
-                if (!buildCappedSweep(insulationProfile, insulatedRadius,
-                                      insulationOuterShape, insulationDiagnostic))
+                        "Copper lateral sweep failed: " + copperDiagnostic, "windingPack.helicalSweep.copper");
+                if (!makeLateral(insulationProfile, insulationOuterLateral, insulationDiagnostic) ||
+                    !makeLateral(copperProfile, insulationInnerLateral, insulationDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Insulation winding sweep failed: " + insulationDiagnostic,
-                        "windingPack.helicalSweep.insulation");
+                        "Insulation lateral sweep failed: " + insulationDiagnostic, "windingPack.helicalSweep.insulation");
 
-                BRepAlgoAPI_Cut insulationCut(insulationOuterShape, copperShape);
-                insulationCut.Build();
-                if (!insulationCut.IsDone() || insulationCut.Shape().IsNull() ||
-                    !BRepCheck_Analyzer(copperShape).IsValid() ||
-                    !BRepCheck_Analyzer(insulationCut.Shape()).IsValid())
+                TopoDS_Wire copperEnd, insulationOuterEnd, insulationInnerEnd;
+                gp_Ax2 copperEndAxis, insulationOuterEndAxis, insulationInnerEndAxis;
+                if (!makeEndWire(copperRadius, copperEnd, copperEndAxis, copperDiagnostic) ||
+                    !makeEndWire(insulatedRadius, insulationOuterEnd, insulationOuterEndAxis, insulationDiagnostic) ||
+                    !makeEndWire(copperRadius, insulationInnerEnd, insulationInnerEndAxis, insulationDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to form a valid annular enamel solid around the copper helix.",
+                        "Winding terminal profile failed: " + (copperDiagnostic.empty() ? insulationDiagnostic : copperDiagnostic),
                         "windingPack.helicalSweep");
+
+                BRepBuilderAPI_MakeFace copperStart(gp_Pln(profileAxis), copperProfile);
+                BRepBuilderAPI_MakeFace copperFinish(gp_Pln(copperEndAxis), copperEnd);
+                BRepBuilderAPI_MakeFace insulationStart(gp_Pln(profileAxis), insulationProfile);
+                BRepBuilderAPI_MakeFace insulationFinish(gp_Pln(insulationOuterEndAxis), insulationOuterEnd);
+                if (!copperStart.IsDone() || !copperFinish.IsDone() ||
+                    !insulationStart.IsDone() || !insulationFinish.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT could not create winding end-cap faces.", "windingPack.helicalSweep");
+
+                // Add the copper boundary as an inner wire to both annular caps.
+                insulationStart.Add(copperProfile);
+                insulationFinish.Add(insulationInnerEnd);
+                if (!insulationStart.IsDone() || !insulationFinish.IsDone())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT could not create annular insulation end caps.", "windingPack.helicalSweep.insulation");
+
+                TopoDS_Shape copperShape, insulationShape;
+                if (!makeSolidFromFaces({copperLateral, copperStart.Face(), copperFinish.Face()},
+                                        copperShape, copperDiagnostic))
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "Copper solid failed: " + copperDiagnostic, "windingPack.helicalSweep.copper");
+                if (!makeSolidFromFaces({insulationOuterLateral, insulationInnerLateral,
+                                         insulationStart.Face(), insulationFinish.Face()},
+                                        insulationShape, insulationDiagnostic))
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "Annular insulation solid failed: " + insulationDiagnostic,
+                        "windingPack.helicalSweep.insulation");
 
                 std::size_t copperSolids = 0, insulationSolids = 0;
                 for (TopExp_Explorer it(copperShape, TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
-                for (TopExp_Explorer it(insulationCut.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
+                for (TopExp_Explorer it(insulationShape, TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
                 if (copperSolids != 1 || insulationSolids != 1) {
-                    GProp_GProps copperDiagnosticVolume;
-                    GProp_GProps outerInsulationDiagnosticVolume;
-                    GProp_GProps insulationDiagnosticVolume;
+                    GProp_GProps copperDiagnosticVolume, insulationDiagnosticVolume;
                     BRepGProp::VolumeProperties(copperShape, copperDiagnosticVolume);
-                    BRepGProp::VolumeProperties(insulationOuterShape, outerInsulationDiagnosticVolume);
-                    BRepGProp::VolumeProperties(insulationCut.Shape(), insulationDiagnosticVolume);
+                    BRepGProp::VolumeProperties(insulationShape, insulationDiagnosticVolume);
                     std::ostringstream diagnostic;
                     diagnostic << "Rounded helical path topology mismatch: copper solids="
                         << copperSolids << ", insulation solids=" << insulationSolids
                         << ", copper volume=" << copperDiagnosticVolume.Mass()
-                        << " mm^3, outer insulation volume=" << outerInsulationDiagnosticVolume.Mass()
-                        << " mm^3, insulation-after-cut volume=" << insulationDiagnosticVolume.Mass()
-                        << " mm^3, copper shape type=" << static_cast<int>(copperShape.ShapeType())
-                        << ", outer insulation shape type="
-                        << static_cast<int>(insulationOuterShape.ShapeType())
-                        << ", insulation-after-cut shape type="
-                        << static_cast<int>(insulationCut.Shape().ShapeType()) << '.';
+                        << " mm^3, insulation volume=" << insulationDiagnosticVolume.Mass()
+                        << " mm^3.";
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         diagnostic.str(), "windingPack.helicalSolids");
                 }
@@ -746,7 +718,7 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 GProp_GProps insulationVolumeProperties;
                 BRepGProp::LinearProperties(pathWire.Wire(), pathLengthProperties);
                 BRepGProp::VolumeProperties(copperShape, copperVolumeProperties);
-                BRepGProp::VolumeProperties(insulationCut.Shape(), insulationVolumeProperties);
+                BRepGProp::VolumeProperties(insulationShape, insulationVolumeProperties);
                 const double pathLength = pathLengthProperties.Mass();
                 const double expectedCopperVolume =
                     pi * copperRadius * copperRadius * pathLength;
@@ -765,7 +737,7 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "windingPack.conductorDiameterAudit");
 
                 builder.Add(windingSolids, copperShape);
-                builder.Add(windingSolids, insulationCut.Shape());
+                builder.Add(windingSolids, insulationShape);
             }
         }
 
