@@ -14,6 +14,7 @@
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepOffsetAPI_MakePipe.hxx>
+#include <BRepOffsetAPI_MakePipeShell.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <gp_Ax2.hxx>
@@ -539,36 +540,19 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     -straightX * mm, firstY * mm, -halfZ * mm);
                 const gp_Ax2 profileAxis(
                     profileOrigin, gp_Dir(tangent), gp_Dir(0.0, 0.0, 1.0));
-                const auto makeProfile = [&](double radius) -> TopoDS_Face {
+                const auto makeCircleWire = [&](double radius) -> TopoDS_Wire {
                     const gp_Circ circle(profileAxis, radius);
-                    const auto edge = BRepBuilderAPI_MakeEdge(circle).Edge();
+                    const auto edge = BRepBuilderAPI_MakeEdge(circle);
+                    if (!edge.IsDone()) return TopoDS_Wire();
                     BRepBuilderAPI_MakeWire wire;
-                    wire.Add(edge);
-                    if (!wire.IsDone()) return TopoDS_Face();
-                    BRepBuilderAPI_MakeFace face(wire.Wire());
-                    return face.IsDone() ? face.Face() : TopoDS_Face();
+                    wire.Add(edge.Edge());
+                    return wire.IsDone() ? wire.Wire() : TopoDS_Wire();
                 };
-                const TopoDS_Face copperProfile = makeProfile(copperRadius);
-                if (copperProfile.IsNull())
+                const TopoDS_Wire copperProfile = makeCircleWire(copperRadius);
+                const TopoDS_Wire insulationProfile = makeCircleWire(insulatedRadius);
+                if (copperProfile.IsNull() || insulationProfile.IsNull())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to create the copper circular profile.",
-                        "windingPack.helicalProfile");
-
-                const gp_Circ outerCircle(profileAxis, insulatedRadius);
-                const gp_Circ innerCircle(profileAxis, copperRadius);
-                BRepBuilderAPI_MakeWire outerWire;
-                outerWire.Add(BRepBuilderAPI_MakeEdge(outerCircle).Edge());
-                BRepBuilderAPI_MakeWire innerWire;
-                innerWire.Add(BRepBuilderAPI_MakeEdge(innerCircle).Edge());
-                if (!outerWire.IsDone() || !innerWire.IsDone())
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to create the annular insulation profile wires.",
-                        "windingPack.helicalProfile");
-                BRepBuilderAPI_MakeFace annularFace(outerWire.Wire());
-                annularFace.Add(TopoDS::Wire(innerWire.Wire().Reversed()));
-                if (!annularFace.IsDone())
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to create a valid annular insulation profile.",
+                        "OCCT failed to create the circular copper/insulation sweep profiles.",
                         "windingPack.helicalProfile");
 
                 BRepBuilderAPI_MakeWire pathWire(path.Edge());
@@ -576,21 +560,43 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT failed to wrap the interpolated spline into a sweep wire.",
                         "windingPack.helicalPath");
-                BRepOffsetAPI_MakePipe copperPipe(pathWire.Wire(), copperProfile);
-                copperPipe.Build();
-                BRepOffsetAPI_MakePipe insulationPipe(pathWire.Wire(), annularFace.Face());
-                insulationPipe.Build();
-                if (!copperPipe.IsDone() || !insulationPipe.IsDone() ||
-                    copperPipe.Shape().IsNull() || insulationPipe.Shape().IsNull() ||
-                    !BRepCheck_Analyzer(copperPipe.Shape()).IsValid() ||
-                    !BRepCheck_Analyzer(insulationPipe.Shape()).IsValid())
+
+                // Use pipe-shell sweeps with the Frenet frame explicitly enabled.
+                // Sweeping an annular face directly is unstable for this long,
+                // multi-turn 3-D spine in some OCCT builds. Sweep the two closed
+                // circular sections as solids, then subtract copper from the
+                // insulated outer sweep to obtain a true annular enamel solid.
+                BRepOffsetAPI_MakePipeShell copperSweep(pathWire.Wire());
+                copperSweep.SetMode(Standard_True);
+                copperSweep.Add(copperProfile, Standard_False, Standard_False);
+                copperSweep.Build();
+                const bool copperSolidBuilt = copperSweep.IsDone() && copperSweep.MakeSolid();
+
+                BRepOffsetAPI_MakePipeShell insulationSweep(pathWire.Wire());
+                insulationSweep.SetMode(Standard_True);
+                insulationSweep.Add(insulationProfile, Standard_False, Standard_False);
+                insulationSweep.Build();
+                const bool insulationSolidBuilt =
+                    insulationSweep.IsDone() && insulationSweep.MakeSolid();
+
+                if (!copperSolidBuilt || !insulationSolidBuilt ||
+                    copperSweep.Shape().IsNull() || insulationSweep.Shape().IsNull())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT failed to sweep the copper helix and its rounded enamel insulation.",
+                        "OCCT pipe-shell sweep could not form closed copper and insulation solids.",
+                        "windingPack.helicalSweep");
+
+                BRepAlgoAPI_Cut insulationCut(insulationSweep.Shape(), copperSweep.Shape());
+                insulationCut.Build();
+                if (!insulationCut.IsDone() || insulationCut.Shape().IsNull() ||
+                    !BRepCheck_Analyzer(copperSweep.Shape()).IsValid() ||
+                    !BRepCheck_Analyzer(insulationCut.Shape()).IsValid())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "OCCT failed to form a valid annular enamel solid around the copper helix.",
                         "windingPack.helicalSweep");
 
                 std::size_t copperSolids = 0, insulationSolids = 0;
-                for (TopExp_Explorer it(copperPipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
-                for (TopExp_Explorer it(insulationPipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
+                for (TopExp_Explorer it(copperSweep.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
+                for (TopExp_Explorer it(insulationCut.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
                 if (copperSolids != 1 || insulationSolids != 1)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Each rounded helical path must produce one copper solid and one separate insulation solid.",
@@ -604,8 +610,8 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                 GProp_GProps copperVolumeProperties;
                 GProp_GProps insulationVolumeProperties;
                 BRepGProp::LinearProperties(pathWire.Wire(), pathLengthProperties);
-                BRepGProp::VolumeProperties(copperPipe.Shape(), copperVolumeProperties);
-                BRepGProp::VolumeProperties(insulationPipe.Shape(), insulationVolumeProperties);
+                BRepGProp::VolumeProperties(copperSweep.Shape(), copperVolumeProperties);
+                BRepGProp::VolumeProperties(insulationCut.Shape(), insulationVolumeProperties);
                 const double pathLength = pathLengthProperties.Mass();
                 const double expectedCopperVolume =
                     pi * copperRadius * copperRadius * pathLength;
@@ -623,8 +629,8 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
                         "The swept conductor/insulation cross-section changed along a phase winding path; diameter audit failed.",
                         "windingPack.conductorDiameterAudit");
 
-                builder.Add(windingSolids, copperPipe.Shape());
-                builder.Add(windingSolids, insulationPipe.Shape());
+                builder.Add(windingSolids, copperSweep.Shape());
+                builder.Add(windingSolids, insulationCut.Shape());
             }
         }
 
