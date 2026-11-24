@@ -676,31 +676,35 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT could not create winding end-cap faces.", "windingPack.helicalSweep");
 
-                TopoDS_Shape insulationInnerWall = insulationInnerLateral;
-                insulationInnerWall.Reverse();
                 TopoDS_Face copperStartFace = copperStart.Face();
                 copperStartFace.Reverse();
 
-                // Use the inner sweep's own terminal sections as the holes.
-                insulationStart.Add(insulationInnerStartWire);
-                insulationFinish.Add(insulationInnerEndWire);
-                if (!insulationStart.IsDone() || !insulationFinish.IsDone())
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT could not create annular insulation end caps.", "windingPack.helicalSweep.insulation");
-                TopoDS_Face insulationStartFace = insulationStart.Face();
-                insulationStartFace.Reverse();
-
-                TopoDS_Shape copperShape, insulationShape;
+                // First create the complete outer insulation envelope as a
+                // valid solid. Then subtract the already validated copper
+                // solid. This avoids sewing two independently swept lateral
+                // walls and annular caps whose inner/outer p-curves can be
+                // topologically closed yet fail OCCT face validation.
+                TopoDS_Shape copperShape, insulationOuterShape, insulationShape;
                 if (!makeSolidFromFaces({copperLateral, copperStartFace, copperFinish.Face()},
                                         copperShape, copperDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "Copper solid failed: " + copperDiagnostic, "windingPack.helicalSweep.copper");
-                if (!makeSolidFromFaces({insulationOuterLateral, insulationInnerWall,
-                                         insulationStartFace, insulationFinish.Face()},
-                                        insulationShape, insulationDiagnostic))
+                if (!makeSolidFromFaces({insulationOuterLateral,
+                                         insulationStart.Face(), insulationFinish.Face()},
+                                        insulationOuterShape, insulationDiagnostic))
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "Annular insulation solid failed: " + insulationDiagnostic,
+                        "Outer insulation solid failed: " + insulationDiagnostic,
                         "windingPack.helicalSweep.insulation");
+
+                BRepAlgoAPI_Cut insulationCut(insulationOuterShape, copperShape);
+                insulationCut.SetFuzzyValue(1.0e-6);
+                insulationCut.Build();
+                if (!insulationCut.IsDone() || insulationCut.Shape().IsNull() ||
+                    !BRepCheck_Analyzer(insulationCut.Shape()).IsValid())
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "Insulation boolean cut failed to produce a valid annular solid.",
+                        "windingPack.helicalSweep.insulation");
+                insulationShape = insulationCut.Shape();
 
                 std::size_t copperSolids = 0, insulationSolids = 0;
                 for (TopExp_Explorer it(copperShape, TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
