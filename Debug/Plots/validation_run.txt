@@ -1,6 +1,96 @@
 Project135 validation plot manifest
-Run: 20261124_082445
-Source commit: 45c6cb46e4df799aab9b7cc4b5d4576b04e97b11
+Run: 20261124_082629
+Source commit: 6f5343e1000ad104aaa07ab5de761cdb8059dc25
 Branch: feature/natural-convection-vertical-plate
-Generated PNG count: 0
+Generated PNG count: 90
 
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_bus_impedance.png | 5339 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_core_flux.png | 7038 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_history_comparison.png | 4857 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_material_bh.png | 5564 bytes | 2026-11-24 08:32:42
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_reactor_current.png | 5669 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:32:43
+Debug\Plots\20c2ca4e-fe59-4df3-8f78-6f450886d8dd_winding_copper_loss.png | 6168 bytes | 2026-11-24 08:32:43
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_bus_impedance.png | 5339 bytes | 2026-11-24 08:29:59
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_core_flux.png | 7038 bytes | 2026-11-24 08:30:00
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:30:00
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:29:59
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:29:59
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_history_comparison.png | 4857 bytes | 2026-11-24 08:29:59
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_material_bh.png | 5519 bytes | 2026-11-24 08:29:59
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_reactor_current.png | 5669 bytes | 2026-11-24 08:30:00
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:29:59
+Debug\Plots\3393f23a-d1dc-44af-8ec3-ab431f1c32fc_winding_copper_loss.png | 6200 bytes | 2026-11-24 08:29:59
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_bus_impedance.png | 35287 bytes | 2026-11-24 08:32:31
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_core_flux.png | 17353 bytes | 2026-11-24 08:32:32
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_core_flux_waveform.png | 60017 bytes | 2026-11-24 08:32:32
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_current_harmonic_spectrum.png | 11865 bytes | 2026-11-24 08:32:31
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_harmonic_transfer.png | 24467 bytes | 2026-11-24 08:32:31
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_history_comparison.png | 33161 bytes | 2026-11-24 08:32:32
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_material_bh.png | 21301 bytes | 2026-11-24 08:32:32
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_reactor_current.png | 25493 bytes | 2026-11-24 08:32:31
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_voltage_harmonic_spectrum.png | 13503 bytes | 2026-11-24 08:32:31
+Debug\Plots\424f0e86-5034-4bd6-9abf-0f4da27e6b18_winding_copper_loss.png | 12311 bytes | 2026-11-24 08:32:31
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_bus_impedance.png | 5339 bytes | 2026-11-24 08:30:19
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_core_flux.png | 7038 bytes | 2026-11-24 08:30:20
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:30:19
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:30:19
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:30:19
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_history_comparison.png | 4857 bytes | 2026-11-24 08:30:19
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_material_bh.png | 5519 bytes | 2026-11-24 08:30:19
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_reactor_current.png | 5669 bytes | 2026-11-24 08:30:20
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:30:19
+Debug\Plots\466cf0a9-4e6a-4363-8d73-2497efa08ded_winding_copper_loss.png | 6200 bytes | 2026-11-24 08:30:19
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_bus_impedance.png | 5339 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_core_flux.png | 7038 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_history_comparison.png | 4857 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_material_bh.png | 5519 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_reactor_current.png | 5669 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:29:34
+Debug\Plots\6b829104-da94-4e04-858f-6930d0a1a2e7_winding_copper_loss.png | 6200 bytes | 2026-11-24 08:29:33
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_bus_impedance.png | 5339 bytes | 2026-11-24 08:29:07
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_core_flux.png | 7038 bytes | 2026-11-24 08:29:08
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:29:07
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:29:07
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:29:07
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_history_comparison.png | 4857 bytes | 2026-11-24 08:29:07
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_material_bh.png | 5519 bytes | 2026-11-24 08:29:07
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_reactor_current.png | 5669 bytes | 2026-11-24 08:29:08
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:29:07
+Debug\Plots\8564b769-63c2-492b-be80-ced6d748ee7d_winding_copper_loss.png | 6200 bytes | 2026-11-24 08:29:07
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_bus_impedance.png | 5339 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_core_flux.png | 7038 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_history_comparison.png | 4857 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_material_bh.png | 5564 bytes | 2026-11-24 08:29:24
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_reactor_current.png | 5669 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:29:25
+Debug\Plots\aef81445-d767-42b1-a258-d038987d1c45_winding_copper_loss.png | 6168 bytes | 2026-11-24 08:29:25
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_bus_impedance.png | 5339 bytes | 2026-11-24 08:29:43
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_core_flux.png | 7038 bytes | 2026-11-24 08:29:43
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:29:43
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:29:42
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:29:42
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_history_comparison.png | 4857 bytes | 2026-11-24 08:29:42
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_material_bh.png | 5519 bytes | 2026-11-24 08:29:43
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_reactor_current.png | 5669 bytes | 2026-11-24 08:29:43
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:29:42
+Debug\Plots\b26a9f53-5cde-4be5-b68b-df4309f65290_winding_copper_loss.png | 6200 bytes | 2026-11-24 08:29:42
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_bus_impedance.png | 5339 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_core_flux.png | 7038 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_core_flux_waveform.png | 5495 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_current_harmonic_spectrum.png | 5240 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_harmonic_transfer.png | 5245 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_history_comparison.png | 4857 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_material_bh.png | 5564 bytes | 2026-11-24 08:29:14
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_reactor_current.png | 5669 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_voltage_harmonic_spectrum.png | 5193 bytes | 2026-11-24 08:29:15
+Debug\Plots\dbf85efa-039c-4970-8664-79d51267435d_winding_copper_loss.png | 6168 bytes | 2026-11-24 08:29:15
