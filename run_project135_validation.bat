@@ -1,6 +1,12 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title Project135 - Sync, Build and Test
+title Project135 - Fast/Full Validation
+
+rem Default to FAST iteration mode. Pass /FULL to run both configurations and all tests.
+set "VALIDATION_MODE=FAST"
+if /I "%~1"=="/FULL" set "VALIDATION_MODE=FULL"
+if /I "%~1"=="FULL" set "VALIDATION_MODE=FULL"
+
 
 set "ROOT=%~dp0"
 cd /d "%ROOT%"
@@ -9,14 +15,18 @@ if errorlevel 1 (
     exit /b 10
 )
 
-rem Start every validation run from clean generated-output folders.
-rem Only the explicitly listed output folders are cleared; source/configuration files
-rem and the vcpkg caches are never touched.
-echo [CLEAN] Clearing previous validation artifacts...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $dirs=@('BuildReports','CAD','Cad','Debug','Plots','Drawings'); foreach($d in $dirs){ if(Test-Path -LiteralPath $d){ Get-ChildItem -LiteralPath $d -Force | Remove-Item -Recurse -Force -ErrorAction Stop }; New-Item -ItemType Directory -Path $d -Force | Out-Null }; New-Item -ItemType Directory -Path 'Debug\Plots' -Force | Out-Null"
-if errorlevel 1 (
-    echo ERROR: Failed to clear generated-output folders. No build was started.
-    exit /b 11
+rem FAST mode preserves generated outputs and runs only the Debug CAD test target.
+rem FULL mode retains the clean, two-configuration validation behavior.
+if /I "%VALIDATION_MODE%"=="FULL" (
+    echo [CLEAN] Clearing previous full-validation artifacts...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $dirs=@('BuildReports','CAD','Cad','Debug','Plots','Drawings'); foreach($d in $dirs){ if(Test-Path -LiteralPath $d){ Get-ChildItem -LiteralPath $d -Force | Remove-Item -Recurse -Force -ErrorAction Stop }; New-Item -ItemType Directory -Path $d -Force | Out-Null }; New-Item -ItemType Directory -Path 'Debug\Plots' -Force | Out-Null"
+    if errorlevel 1 (
+        echo ERROR: Failed to clear generated-output folders. No build was started.
+        exit /b 11
+    )
+) else (
+    echo [FAST] Incremental mode: preserving build and generated-output caches.
+    if not exist "BuildReports" mkdir "BuildReports"
 )
 
 for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "STAMP=%%i"
@@ -33,13 +43,15 @@ set "PUBLISH_OK=NOT_ATTEMPTED"
 
 echo ================================================================ > "%LOG%"
 echo Project135 validation run >> "%LOG%"
+echo Validation mode: %VALIDATION_MODE% >> "%LOG%"
 echo Started: %DATE% %TIME% >> "%LOG%"
 echo Project: %ROOT% >> "%LOG%"
 echo ================================================================ >> "%LOG%"
 
 echo.
-echo Project135 validation
+echo Project135 validation - %VALIDATION_MODE%
 echo Log: %LOG%
+echo Validation mode: %VALIDATION_MODE%>>"%LOG%"
 echo.
 
 rem Resolve VCPKG_ROOT before evaluating CMake presets.
@@ -189,68 +201,66 @@ echo Current branch after sync: %CURRENT_BRANCH%>>"%LOG%"
 echo Validation branch: %CURRENT_BRANCH%>>"%LOG%"
 echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
 
-rem Configure both CMake presets before building.
+rem FAST: incremental Debug build + focused CAD tests; FULL: both configs + complete CTest.
 echo.
-echo [3/6] Configuring Debug and Release...
-rem Reuse the existing CMake cache; CMake will reconfigure only when inputs changed.
-rem Do not use --fresh here: it discards useful configure state on every validation run.
-set "RUN_CMD=cmake --preset vs2026-desktop-debug"
-call :RUN "Configure Debug"
-if errorlevel 1 (
-    set "OVERALL=FAILED"
-    goto FINALIZE
-)
-set "RUN_CMD=cmake --preset vs2026-desktop-release"
-call :RUN "Configure Release"
-if errorlevel 1 (
-    set "OVERALL=FAILED"
-    goto FINALIZE
-)
-
-echo.
-echo [4/6] Building Debug and Release...
-set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
-call :RUN "Build Debug"
-if errorlevel 1 (
-    set "DEBUG_BUILD_OK=FAIL"
-    set "OVERALL=FAILED"
-) else (
+if /I "%VALIDATION_MODE%"=="FAST" (
+    echo [3/5] Configuring Debug only...
+    set "RUN_CMD=cmake --preset vs2026-desktop-debug"
+    call :RUN "Configure Debug"
+    if errorlevel 1 (
+        set "OVERALL=FAILED"
+        goto FINALIZE
+    )
+    echo.
+    echo [4/5] Building Debug only...
+    set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
+    call :RUN "Build Debug"
+    if errorlevel 1 (
+        set "DEBUG_BUILD_OK=FAIL"
+        set "OVERALL=FAILED"
+        goto FINALIZE
+    )
     set "DEBUG_BUILD_OK=PASS"
-)
-set "RUN_CMD=cmake --build --preset build-desktop-release --parallel 4"
-call :RUN "Build Release"
-if errorlevel 1 (
-    set "RELEASE_BUILD_OK=FAIL"
-    set "OVERALL=FAILED"
-) else (
-    set "RELEASE_BUILD_OK=PASS"
-)
-
-echo.
-echo [5/6] Running CTest...
-if "!DEBUG_BUILD_OK!"=="PASS" (
-    set "RUN_CMD=ctest --preset test-desktop-debug"
-    call :RUN "CTest Debug"
+    set "RELEASE_BUILD_OK=SKIPPED_FAST_MODE"
+    echo.
+    echo [5/5] Running focused CAD tests (E2E and Release deferred to /FULL)...
+    set "RUN_CMD=ctest --preset test-desktop-debug -R ^Project135CadTests$"
+    call :RUN "Focused CAD tests Debug"
     if errorlevel 1 (
         set "DEBUG_TEST_OK=FAIL"
         set "OVERALL=FAILED"
     ) else (
         set "DEBUG_TEST_OK=PASS"
     )
+    set "RELEASE_TEST_OK=SKIPPED_FAST_MODE"
 ) else (
-    echo [SKIP] Debug tests skipped because Debug build status is !DEBUG_BUILD_OK!.>>"%LOG%"
-)
-if "!RELEASE_BUILD_OK!"=="PASS" (
-    set "RUN_CMD=ctest --preset test-desktop-release"
-    call :RUN "CTest Release"
-    if errorlevel 1 (
-        set "RELEASE_TEST_OK=FAIL"
-        set "OVERALL=FAILED"
-    ) else (
-        set "RELEASE_TEST_OK=PASS"
+    echo [3/6] Configuring Debug and Release...
+    set "RUN_CMD=cmake --preset vs2026-desktop-debug"
+    call :RUN "Configure Debug"
+    if errorlevel 1 (set "OVERALL=FAILED"&goto FINALIZE)
+    set "RUN_CMD=cmake --preset vs2026-desktop-release"
+    call :RUN "Configure Release"
+    if errorlevel 1 (set "OVERALL=FAILED"&goto FINALIZE)
+    echo.
+    echo [4/6] Building Debug and Release...
+    set "RUN_CMD=cmake --build --preset build-desktop-debug --parallel 4"
+    call :RUN "Build Debug"
+    if errorlevel 1 (set "DEBUG_BUILD_OK=FAIL"&set "OVERALL=FAILED") else (set "DEBUG_BUILD_OK=PASS")
+    set "RUN_CMD=cmake --build --preset build-desktop-release --parallel 4"
+    call :RUN "Build Release"
+    if errorlevel 1 (set "RELEASE_BUILD_OK=FAIL"&set "OVERALL=FAILED") else (set "RELEASE_BUILD_OK=PASS")
+    echo.
+    echo [5/6] Running complete CTest suites...
+    if "!DEBUG_BUILD_OK!"=="PASS" (
+        set "RUN_CMD=ctest --preset test-desktop-debug"
+        call :RUN "CTest Debug"
+        if errorlevel 1 (set "DEBUG_TEST_OK=FAIL"&set "OVERALL=FAILED") else (set "DEBUG_TEST_OK=PASS")
     )
-) else (
-    echo [SKIP] Release tests skipped because Release build status is !RELEASE_BUILD_OK!.>>"%LOG%"
+    if "!RELEASE_BUILD_OK!"=="PASS" (
+        set "RUN_CMD=ctest --preset test-desktop-release"
+        call :RUN "CTest Release"
+        if errorlevel 1 (set "RELEASE_TEST_OK=FAIL"&set "OVERALL=FAILED") else (set "RELEASE_TEST_OK=PASS")
+    )
 )
 
 :FINALIZE
@@ -276,7 +286,11 @@ if errorlevel 1 (
     set "PUBLISH_OK=MANIFEST_FAILED"
     goto END_LOCAL
 )
-git add -- BuildReports CAD Debug Plots Drawings >>"%LOG%" 2>&1
+if /I "%VALIDATION_MODE%"=="FAST" (
+    git add -- "%LOG%" >>"%LOG%" 2>&1
+) else (
+    git add -- BuildReports CAD Debug Plots Drawings >>"%LOG%" 2>&1
+)
 if errorlevel 1 (
     echo ERROR: Could not stage the report.
     set "PUBLISH_OK=STAGE_FAILED"
