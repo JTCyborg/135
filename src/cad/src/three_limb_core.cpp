@@ -563,39 +563,32 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "OCCT failed to wrap the interpolated spline into a sweep wire.",
                         "windingPack.helicalPath");
 
-                // PipeShell sections are closed wires, not faces. A closed
-                // circular wire is the supported section type; MakeSolid()
-                // caps the resulting sweep when the section is closed.
-                BRepOffsetAPI_MakePipeShell copperSweep(pathWire.Wire());
-                copperSweep.SetMode(false); // corrected Frenet trihedron
-                copperSweep.Add(copperProfile, false, false);
-                copperSweep.Build();
-                const bool copperSolidBuilt = copperSweep.IsDone() && copperSweep.MakeSolid();
+                // MakePipe builds the swept solid directly for a closed wire
+                // section along an open helical spine. PipeShell::MakeSolid()
+                // only succeeds when its generated shell is already closed;
+                // an open multi-turn winding spine has two end boundaries.
+                BRepOffsetAPI_MakePipe copperPipe(pathWire.Wire(), copperProfile);
+                copperPipe.Build();
+                BRepOffsetAPI_MakePipe insulationPipe(pathWire.Wire(), insulationProfile);
+                insulationPipe.Build();
 
-                BRepOffsetAPI_MakePipeShell insulationSweep(pathWire.Wire());
-                insulationSweep.SetMode(false); // corrected Frenet trihedron
-                insulationSweep.Add(insulationProfile, false, false);
-                insulationSweep.Build();
-                const bool insulationSolidBuilt =
-                    insulationSweep.IsDone() && insulationSweep.MakeSolid();
-
-                if (!copperSolidBuilt || !insulationSolidBuilt ||
-                    copperSweep.Shape().IsNull() || insulationSweep.Shape().IsNull())
+                if (!copperPipe.IsDone() || !insulationPipe.IsDone() ||
+                    copperPipe.Shape().IsNull() || insulationPipe.Shape().IsNull())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT pipe-shell sweep could not form closed copper and insulation solids.",
+                        "OCCT pipe sweep could not form copper and insulated winding solids.",
                         "windingPack.helicalSweep");
 
-                BRepAlgoAPI_Cut insulationCut(insulationSweep.Shape(), copperSweep.Shape());
+                BRepAlgoAPI_Cut insulationCut(insulationPipe.Shape(), copperPipe.Shape());
                 insulationCut.Build();
                 if (!insulationCut.IsDone() || insulationCut.Shape().IsNull() ||
-                    !BRepCheck_Analyzer(copperSweep.Shape()).IsValid() ||
+                    !BRepCheck_Analyzer(copperPipe.Shape()).IsValid() ||
                     !BRepCheck_Analyzer(insulationCut.Shape()).IsValid())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT failed to form a valid annular enamel solid around the copper helix.",
                         "windingPack.helicalSweep");
 
                 std::size_t copperSolids = 0, insulationSolids = 0;
-                for (TopExp_Explorer it(copperSweep.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
+                for (TopExp_Explorer it(copperPipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
                 for (TopExp_Explorer it(insulationCut.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
                 if (copperSolids != 1 || insulationSolids != 1)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
@@ -610,7 +603,7 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 GProp_GProps copperVolumeProperties;
                 GProp_GProps insulationVolumeProperties;
                 BRepGProp::LinearProperties(pathWire.Wire(), pathLengthProperties);
-                BRepGProp::VolumeProperties(copperSweep.Shape(), copperVolumeProperties);
+                BRepGProp::VolumeProperties(copperPipe.Shape(), copperVolumeProperties);
                 BRepGProp::VolumeProperties(insulationCut.Shape(), insulationVolumeProperties);
                 const double pathLength = pathLengthProperties.Mass();
                 const double expectedCopperVolume =
@@ -629,7 +622,7 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "The swept conductor/insulation cross-section changed along a phase winding path; diameter audit failed.",
                         "windingPack.conductorDiameterAudit");
 
-                builder.Add(windingSolids, copperSweep.Shape());
+                builder.Add(windingSolids, copperPipe.Shape());
                 builder.Add(windingSolids, insulationCut.Shape());
             }
         }
