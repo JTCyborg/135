@@ -13,6 +13,8 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepBuilderAPI_MakeSolid.hxx>
+#include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepOffsetAPI_MakePipe.hxx>
 #include <BRepOffsetAPI_MakePipeShell.hxx>
 #include <GeomAPI_Interpolate.hxx>
@@ -563,69 +565,124 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "OCCT failed to wrap the interpolated spline into a sweep wire.",
                         "windingPack.helicalPath");
 
-                // Validate the exact inputs before invoking OCCT's pipe builder.
-                // A sweep failure must identify whether the spine/profile topology
-                // or the copper/insulation builder is responsible.
-                const bool spineValid = BRepCheck_Analyzer(pathWire.Wire()).IsValid();
-                const bool copperProfileValid =
-                    BRepCheck_Analyzer(copperProfile).IsValid();
-                const bool insulationProfileValid =
-                    BRepCheck_Analyzer(insulationProfile).IsValid();
-                if (!spineValid || !copperProfileValid || !insulationProfileValid)
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT winding sweep input topology is invalid (spine=" +
-                            std::string(spineValid ? "valid" : "invalid") +
-                            ", copperProfile=" +
-                            (copperProfileValid ? "valid" : "invalid") +
-                            ", insulationProfile=" +
-                            (insulationProfileValid ? "valid" : "invalid") + ").",
-                        "windingPack.helicalSweep.input");
+                // Sweep only the lateral wall, then cap both ends explicitly.
+                // PipeShell::MakeSolid() cannot close an open multi-turn spine by
+                // itself; sewing the two profile faces to the lateral shell creates
+                // the closed shell required by BRepBuilderAPI_MakeSolid.
+                const auto buildCappedSweep = [&](const TopoDS_Wire& profile,
+                                                  double radius,
+                                                  TopoDS_Shape& result,
+                                                  std::string& diagnostic) -> bool {
+                    BRepOffsetAPI_MakePipeShell pipeShell(pathWire.Wire());
+                    pipeShell.SetMode(false);
+                    pipeShell.Add(profile, false, false);
+                    try {
+                        pipeShell.Build();
+                    } catch (const Standard_Failure& exception) {
+                        const char* message = exception.GetMessageString();
+                        diagnostic = std::string("PipeShell Build exception: ") +
+                            (message ? message : "no OCCT message");
+                        return false;
+                    }
+                    if (!pipeShell.IsDone() || pipeShell.Shape().IsNull()) {
+                        diagnostic = "PipeShell did not produce a lateral shell.";
+                        return false;
+                    }
 
-                BRepOffsetAPI_MakePipe copperPipe(pathWire.Wire(), copperProfile);
-                BRepOffsetAPI_MakePipe insulationPipe(pathWire.Wire(), insulationProfile);
-                try {
-                    copperPipe.Build();
-                    insulationPipe.Build();
-                } catch (const Standard_Failure& exception) {
-                    const char* message = exception.GetMessageString();
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT pipe sweep raised Standard_Failure: " +
-                            std::string(message ? message : "no OCCT message") +
-                            ".",
-                        "windingPack.helicalSweep.exception");
-                } catch (const std::exception& exception) {
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT pipe sweep raised std::exception: " +
-                            std::string(exception.what()) + ".",
-                        "windingPack.helicalSweep.exception");
-                }
+                    const auto curve = interpolation.Curve();
+                    gp_Pnt endPoint;
+                    gp_Vec endTangent;
+                    curve->D1(curve->LastParameter(), endPoint, endTangent);
+                    if (endTangent.SquareMagnitude() <= 1.0e-18) {
+                        diagnostic = "The winding spine has a zero end tangent.";
+                        return false;
+                    }
+                    const gp_Ax2 endAxis(endPoint, gp_Dir(endTangent),
+                                         gp_Dir(0.0, 0.0, 1.0));
+                    const gp_Circ endCircle(endAxis, radius);
+                    BRepBuilderAPI_MakeEdge endEdge(endCircle);
+                    if (!endEdge.IsDone()) {
+                        diagnostic = "OCCT could not create the terminal profile edge.";
+                        return false;
+                    }
+                    BRepBuilderAPI_MakeWire endWireMaker;
+                    endWireMaker.Add(endEdge.Edge());
+                    if (!endWireMaker.IsDone()) {
+                        diagnostic = "OCCT could not create the terminal profile wire.";
+                        return false;
+                    }
 
-                const bool copperDone = copperPipe.IsDone();
-                const bool insulationDone = insulationPipe.IsDone();
-                const bool copperNull = !copperDone || copperPipe.Shape().IsNull();
-                const bool insulationNull =
-                    !insulationDone || insulationPipe.Shape().IsNull();
-                if (copperNull || insulationNull)
-                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
-                        "OCCT pipe sweep failed (copper: IsDone=" +
-                            std::string(copperDone ? "true" : "false") +
-                            ", null=" + (copperNull ? "true" : "false") +
-                            "; insulation: IsDone=" +
-                            (insulationDone ? "true" : "false") +
-                            ", null=" + (insulationNull ? "true" : "false") + ").",
-                        "windingPack.helicalSweep.status");
+                    BRepBuilderAPI_MakeFace startCap(
+                        gp_Pln(profileAxis), profile);
+                    BRepBuilderAPI_MakeFace endCap(
+                        gp_Pln(endAxis), endWireMaker.Wire());
+                    if (!startCap.IsDone() || !endCap.IsDone()) {
+                        diagnostic = "OCCT could not create one or both winding end caps.";
+                        return false;
+                    }
 
-                BRepAlgoAPI_Cut insulationCut(insulationPipe.Shape(), copperPipe.Shape());
+                    BRepBuilderAPI_Sewing sewing(1.0e-5);
+                    sewing.Add(pipeShell.Shape());
+                    sewing.Add(startCap.Face());
+                    sewing.Add(endCap.Face());
+                    sewing.Perform();
+                    const TopoDS_Shape sewed = sewing.SewedShape();
+                    TopoDS_Shell closedShell;
+                    for (TopExp_Explorer it(sewed, TopAbs_SHELL); it.More(); it.Next()) {
+                        closedShell = TopoDS::Shell(it.Current());
+                        break;
+                    }
+                    if (closedShell.IsNull() ||
+                        !BRepCheck_Analyzer(closedShell).IsValid()) {
+                        diagnostic = "Sewing did not produce a valid closed winding shell.";
+                        return false;
+                    }
+
+                    BRepBuilderAPI_MakeSolid solidMaker(closedShell);
+                    if (!solidMaker.IsDone() || solidMaker.Solid().IsNull()) {
+                        diagnostic = "OCCT could not convert the capped shell into a solid.";
+                        return false;
+                    }
+                    result = solidMaker.Solid();
+                    if (!BRepCheck_Analyzer(result).IsValid()) {
+                        diagnostic = "The capped winding solid failed BRepCheck.";
+                        return false;
+                    }
+                    GProp_GProps volume;
+                    BRepGProp::VolumeProperties(result, volume);
+                    if (!std::isfinite(volume.Mass()) || volume.Mass() <= 0.0) {
+                        diagnostic = "The capped winding solid has no positive finite volume.";
+                        return false;
+                    }
+                    return true;
+                };
+
+                TopoDS_Shape copperShape;
+                TopoDS_Shape insulationOuterShape;
+                std::string copperDiagnostic;
+                std::string insulationDiagnostic;
+                if (!buildCappedSweep(copperProfile, copperRadius,
+                                      copperShape, copperDiagnostic))
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "Copper winding sweep failed: " + copperDiagnostic,
+                        "windingPack.helicalSweep.copper");
+                if (!buildCappedSweep(insulationProfile, insulatedRadius,
+                                      insulationOuterShape, insulationDiagnostic))
+                    return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+                        "Insulation winding sweep failed: " + insulationDiagnostic,
+                        "windingPack.helicalSweep.insulation");
+
+                BRepAlgoAPI_Cut insulationCut(insulationOuterShape, copperShape);
                 insulationCut.Build();
                 if (!insulationCut.IsDone() || insulationCut.Shape().IsNull() ||
-                    !BRepCheck_Analyzer(copperPipe.Shape()).IsValid() ||
+                    !BRepCheck_Analyzer(copperShape).IsValid() ||
                     !BRepCheck_Analyzer(insulationCut.Shape()).IsValid())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT failed to form a valid annular enamel solid around the copper helix.",
                         "windingPack.helicalSweep");
 
                 std::size_t copperSolids = 0, insulationSolids = 0;
-                for (TopExp_Explorer it(copperPipe.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
+                for (TopExp_Explorer it(copperShape, TopAbs_SOLID); it.More(); it.Next()) ++copperSolids;
                 for (TopExp_Explorer it(insulationCut.Shape(), TopAbs_SOLID); it.More(); it.Next()) ++insulationSolids;
                 if (copperSolids != 1 || insulationSolids != 1)
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
@@ -640,7 +697,7 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 GProp_GProps copperVolumeProperties;
                 GProp_GProps insulationVolumeProperties;
                 BRepGProp::LinearProperties(pathWire.Wire(), pathLengthProperties);
-                BRepGProp::VolumeProperties(copperPipe.Shape(), copperVolumeProperties);
+                BRepGProp::VolumeProperties(copperShape, copperVolumeProperties);
                 BRepGProp::VolumeProperties(insulationCut.Shape(), insulationVolumeProperties);
                 const double pathLength = pathLengthProperties.Mass();
                 const double expectedCopperVolume =
@@ -659,7 +716,7 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                         "The swept conductor/insulation cross-section changed along a phase winding path; diameter audit failed.",
                         "windingPack.conductorDiameterAudit");
 
-                builder.Add(windingSolids, copperPipe.Shape());
+                builder.Add(windingSolids, copperShape);
                 builder.Add(windingSolids, insulationCut.Shape());
             }
         }
