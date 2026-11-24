@@ -755,12 +755,12 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
 
 Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
     const domain::BobbinPhysicalGeometry& bobbin,
-    const domain::WindingPhysicalGeometry& winding)
+    const domain::WindingPackPhysicalGeometry& winding)
 {
     try {
         return buildDetailedWindingTurnsShapeImpl(bobbin, winding);
     } catch (const Standard_Failure& exception) {
-        const char* message = exception.GetMessageString();
+        const char* message = exception.what();
         return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
             std::string("OCCT exception while building detailed winding: ") +
                 (message != nullptr ? message : "unspecified Standard_Failure"),
