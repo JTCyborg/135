@@ -196,7 +196,23 @@ if errorlevel 1 (
 )
 
 rem Record and test the exact feature-branch commit after fast-forward update.
-for /f %%H in ('git rev-parse HEAD') do set "SOURCE_COMMIT=%%H"
+rem Use a file for the hash instead of a FOR command; this avoids CMD parser
+rem edge cases when this script is launched from PowerShell.
+git rev-parse HEAD > "BuildReports\source_commit_%STAMP%.tmp" 2>>"%LOG%"
+if errorlevel 1 (
+    echo ERROR: Could not read the synchronized source commit.
+    echo [FATAL] git rev-parse HEAD failed after branch update.>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
+set /p SOURCE_COMMIT=<"BuildReports\source_commit_%STAMP%.tmp"
+del "BuildReports\source_commit_%STAMP%.tmp" 2>nul
+if not defined SOURCE_COMMIT (
+    echo ERROR: Git returned an empty source commit.
+    echo [FATAL] Empty source commit after branch update.>>"%LOG%"
+    set "OVERALL=FAILED"
+    goto STOP_WITH_LOCAL_LOG
+)
 echo Current branch after sync: %CURRENT_BRANCH%>>"%LOG%"
 echo Validation branch: %CURRENT_BRANCH%>>"%LOG%"
 echo Synchronized source commit: %SOURCE_COMMIT%>>"%LOG%"
