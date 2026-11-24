@@ -690,8 +690,6 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 insulationInnerWall.Reverse();
                 TopoDS_Face copperStartFace = copperStart.Face();
                 copperStartFace.Reverse();
-                TopoDS_Face insulationStartFace = insulationStart.Face();
-                insulationStartFace.Reverse();
 
                 // Add the copper boundary as an inner wire to both annular caps.
                 insulationStart.Add(copperProfile);
@@ -699,6 +697,8 @@ static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
                 if (!insulationStart.IsDone() || !insulationFinish.IsDone())
                     return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
                         "OCCT could not create annular insulation end caps.", "windingPack.helicalSweep.insulation");
+                TopoDS_Face insulationStartFace = insulationStart.Face();
+                insulationStartFace.Reverse();
 
                 TopoDS_Shape copperShape, insulationShape;
                 if (!makeSolidFromFaces({copperLateral, copperStartFace, copperFinish.Face()},
