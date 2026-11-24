@@ -29,10 +29,12 @@
 #include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
 #include <GProp_GProps.hxx>
+#include <Standard_Failure.hxx>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <exception>
 #include <limits>
 #include <string>
 #include <vector>
@@ -359,7 +361,7 @@ Result<TopoDS_Shape> buildWindingPackEnvelopeShape(
     return Result<TopoDS_Shape>::success(cut.Shape());
 }
 
-Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
+static Result<TopoDS_Shape> buildDetailedWindingTurnsShapeImpl(
     const domain::BobbinPhysicalGeometry& bobbin,
     const domain::WindingPackPhysicalGeometry& winding)
 {
@@ -749,6 +751,29 @@ Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
             "Detailed winding CAD must contain exactly turns multiplied by parallel conductors independent solids.",
             "windingPack.turns");
     return Result<TopoDS_Shape>::success(turns);
+}
+
+Result<TopoDS_Shape> buildDetailedWindingTurnsShape(
+    const domain::BobbinPhysicalGeometry& bobbin,
+    const domain::WindingPhysicalGeometry& winding)
+{
+    try {
+        return buildDetailedWindingTurnsShapeImpl(bobbin, winding);
+    } catch (const Standard_Failure& exception) {
+        const char* message = exception.GetMessageString();
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            std::string("OCCT exception while building detailed winding: ") +
+                (message != nullptr ? message : "unspecified Standard_Failure"),
+            "windingPack.occtException");
+    } catch (const std::exception& exception) {
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            std::string("C++ exception while building detailed winding: ") + exception.what(),
+            "windingPack.cppException");
+    } catch (...) {
+        return failure<TopoDS_Shape>(ErrorCode::SolverFailure,
+            "Unknown exception while building detailed winding.",
+            "windingPack.unknownException");
+    }
 }
 
 Result<TopoDS_Shape> buildThreeLimbReactorAssemblyShape(
